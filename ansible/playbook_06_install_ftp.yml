@@ -1,0 +1,44 @@
+# Example: ansible-playbook playbook_06_install_ftp.yml
+# https://losst.ru/ustanovka-ftp-na-ubuntu-16-04
+- hosts: []
+  become: true
+  become_user: root
+  become_method: sudo
+  vars_files:
+   - vars_decrypted.yml
+
+  tasks:
+  # Обновить apt cache:
+  - name: ftp 1. Update cache
+    apt: update_cache=true
+    changed_when: no
+    tags: cache
+
+  - name: ftp 2. Install vsftpd
+    apt: name=vsftpd
+    tags: ftp
+
+  - name: ftp 3. Install vsftpd.conf
+    template:
+      src: files/etc/vsftpd.conf
+      dest: /etc/vsftpd.conf
+      backup: yes
+    notify: reload vsftpd
+    tags: conf
+
+  - name: ftp 4. Install vsftpd.user_list
+    template:
+      src: files/etc/vsftpd.user_list
+      dest: /etc/vsftpd.user_list
+      backup: yes
+    notify: reload vsftpd
+    tags: conf
+
+  - name: ftp 5. Enable vsftpd
+    service: name=vsftpd state=started enabled=true
+    tags: ftp
+
+  handlers:
+    - name: reload vsftpd
+      service: name=vsftpd state=reloaded enabled=true
+
