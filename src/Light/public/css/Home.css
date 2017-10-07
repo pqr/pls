@@ -1,0 +1,113 @@
+#home-username {
+    color: #902011;
+}
+
+#home-userright {
+    margin-left: 10px;
+}
+
+.home-block {
+    margin: 5px;
+}
+
+.home-block table.table {
+    width: 100%;
+}
+
+.home-block th.home-block-th div {
+    padding: 5px;
+    font-size: 1.6em;
+    font-weight: bold;
+    color: #FFFFFF;
+}
+
+.home-block th.home-block-th div > a {
+    color: #FFFFFF;
+    text-decoration: underline;
+}
+
+.home-block p {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.home-block .red {
+    background-color: #D95151
+}
+
+.home-block .red2 {
+    background-color: #CB8763
+}
+
+.home-block .orange {
+    background-color: #CBA663
+}
+
+.home-block .orange2 {
+    background-color: #CCCC65
+}
+
+.home-block .yellow {
+    background-color: #A8CB63
+}
+
+.home-block .yellow2 {
+    background-color: #8BCD68
+}
+
+.home-block .green {
+    background-color: #68CDA7
+}
+
+.home-block .green2 {
+    background-color: #63CBCB
+}
+
+.home-block .cyan {
+    background-color: #63CB63
+}
+
+.home-block .cyan2 {
+    background-color: #66CC87
+}
+
+.home-block .blue {
+    background-color: #65A8CC
+}
+
+.home-block .blue2 {
+    background-color: #6689CC
+}
+
+.home-block .darkblue {
+    background-color: #6363CB
+}
+
+.home-block .darkblue2 {
+    background-color: #8665CC
+}
+
+.home-block .purple {
+    background-color: #A663CB
+}
+
+.home-block .purple2 {
+    background-color: #CB8763
+}
+
+.home-block .pink {
+    background-color: #CD68AB
+}
+
+.home-block .pink2 {
+    background-color: #CD698D
+}
+
+.home-block table.table {
+    clear: both;
+}
+
+.home-block .viewalllink {
+    float: right;
+    margin: 5px 0;
+}

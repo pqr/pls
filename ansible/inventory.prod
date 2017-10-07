@@ -1,0 +1,2 @@
+[prod]
+webserver	ansible_ssh_user=ubuntu	ansible_ssh_host=ec2-52-57-97-180.eu-central-1.compute.amazonaws.com

@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "target": "es5",
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "removeComments": false,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "experimentalDecorators": false,
+    "listFiles": false,
+    "listEmittedFiles": false,
+    "pretty": true,
+    "allowJs": false,
+    "strictNullChecks": true,
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "newLine": "LF",
+    "declaration": false,
+    "outDir": "public/js",
+    "rootDir": "src/Forward"
+  },
+  "files": [
+    "src/Light/public/js/lightbuild.d.ts"
+  ],
+  "include": [
+    "src/Forward/**/*"
+  ]
+}

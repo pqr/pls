@@ -1,0 +1,21 @@
+﻿{
+	"GUID": "61333dc6-6544-11e7-8262-005056c00008",
+	"CompanyID": 12,
+	"CustomerAccountID": 221,
+	"Name": "151",
+	"Comments": "Оплата за межд. перевозки по счету №405 (36113,03) от 03.07.17г.Сумма 62484-23Без налога (НДС)",
+	"PaymentDate": "2017-7-7",
+	"Amount": 36113.03,
+	"CurrencyISO": "RUB",
+	"IsDeleted": false,
+	"Lines": [
+		{
+			"CInvoiceID": 11139,
+			"CInvoiceName": "405",
+			"CInvoiceDate": "2017-7-3",
+			"Amount": 36113.03,
+			"CurrencyRate": 62.0499,
+			"AmountInCurrency": 582
+		}
+	]
+}

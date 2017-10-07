@@ -1,0 +1,37 @@
+# Example: ansible-playbook playbook_02_install_nginx.yml
+- hosts: []
+  become: true
+  become_user: root
+  become_method: sudo
+  vars_files:
+  - vars_decrypted.yml
+
+  tasks:
+  # Обновить apt cache:
+  - name: nginx 1. Update cache
+    apt: update_cache=true
+    changed_when: no
+    tags: cache
+
+  # Установить nginx:
+  - name: nginx 2. Install nginx
+    apt: name=nginx
+    tags: nginx
+
+  # Установить конфигурацию nginx.conf
+  - name: nginx 3. Copy config for nginx
+    template:
+      src: files/etc/nginx/sites-available/default
+      dest: /etc/nginx/sites-available/default
+      backup: yes
+    notify: reload nginx
+    tags: config
+
+  # Активировать и запустить nginx:
+  - name: nginx 4. Enable nginx
+    service: name=nginx state=started enabled=true
+    tags: nginx
+
+  handlers:
+  - name: reload nginx
+    service: name=nginx state=reloaded enabled=true

@@ -1,0 +1,89 @@
+.cs-td table {
+    width: 100%;
+}
+
+.cs-income-title-td, td.cs-expenses-title-td {
+    min-width: 623px;
+}
+
+.cs-income-title-td {
+    border-bottom: 2px solid #68A9CD;
+}
+
+.cs-expenses-title-td {
+    border-bottom: 2px solid #CD8B68;
+}
+
+.cs-egp-div, .cs-gp-div {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 15px;
+    text-align: center;
+}
+
+.cs-deviation-div {
+    text-align: center;
+    font-weight: bold;
+}
+
+.cs-income-td input, .cs-income-td select, .cs-expenses-td input, .cs-expenses-td select {
+    font-size: 11px !important;
+}
+input.cs-price {
+    width: 45px;
+}
+input.cs-amount {
+    width: 55px;
+}
+
+input.cs-invoice {
+    width: 50px;
+}
+
+.cs-cancel-link {
+    margin-left: 30px;
+}
+
+.cs-cancel-link:hover {
+    color: #FF1111;
+}
+
+th[data-fieldkey=Amount] {
+    width: 110px;
+}
+
+.total-selected {
+    margin: 10px 80px 0 0 !important;
+    visibility: hidden;
+    float: right;
+}
+
+/* в таблицах в строке total в ячейке Amount бывает div с разбивкой по валютам. Нужно визуально отделить от основного total */
+.total div {
+    border-top: 1px solid #D0D7E5;
+    margin-top: 3px;
+    padding-top: 3px;
+    font-weight: normal;
+    font-size: 11px;
+    color: darkslategray;
+}
+
+.cs-td table.table > tbody > tr.selected {
+    background-color: #ffffff;
+    border-top: 1px solid #ffffff;
+    border-bottom: 1px solid #eaf2fb;
+}
+
+.cs-td table.table > tbody > tr.selected {
+    background-color: #eaf2fb;
+    border-top: 1px solid #eaf2fb;
+    border-bottom: 1px solid #eaf2fb;
+}
+
+.cs-td table.table > tbody > tr.hover > td , table.table > tbody > tr.hover > td {
+    background-color: transparent;
+}
+
+table h2 {
+    border-bottom: none;
+}

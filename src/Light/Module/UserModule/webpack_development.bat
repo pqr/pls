@@ -1,0 +1,1 @@
+webpack --config webpack.config.development.js --watch --progress --display-optimization-bailout

@@ -1,0 +1,21 @@
+﻿{
+	"GUID": "e288d818-617e-11e7-8262-005056c00008",
+	"CompanyID": 5,
+	"CustomerAccountID": 449,
+	"Name": "",
+	"Comments": "",
+	"PaymentDate": "",
+	"Amount": 21570.57,
+	"CurrencyISO": "RUB",
+	"IsDeleted": false,
+	"Lines": [
+		{
+			"CInvoiceID": 9402,
+			"CInvoiceName": "686",
+			"CInvoiceDate": "2016-11-24",
+			"Amount": 21570.57,
+			"CurrencyRate": 58.3054,
+			"AmountInCurrency": 369.96
+		}
+	]
+}

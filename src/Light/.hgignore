@@ -1,0 +1,9 @@
+syntax: glob
+node_modules
+Tests/PdfAssets/PdfSaveTest.pdf
+.git
+.gitignore
+*.orig
+i/users
+.DS_Store
+yarn-error.log

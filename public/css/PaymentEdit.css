@@ -1,0 +1,36 @@
+.ac-invoice {
+    display: inline-block;
+    width: 450px;
+}
+
+.ac-invoice-id {
+    position: absolute;
+    left: 30px;
+    width: 100px;
+    overflow: hidden;
+}
+
+.ac-invoice-name {
+    position: absolute;
+    left: 130px;
+    width: 80px;
+}
+
+.ac-invoice-amount {
+    position: absolute;
+    left: 210px;
+    width: 80px;
+    text-align: right;
+}
+
+.ac-invoice-outstandingamount {
+    position: absolute;
+    left: 300px;
+    width: 80px;
+    text-align: right;
+}
+
+.ac-invoice-currencyiso {
+    position: absolute;
+    left: 400px;
+}

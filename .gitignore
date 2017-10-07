@@ -1,0 +1,14 @@
+.idea
+src/Light/.hg
+config/config.php
+tests/_output
+tests/_support/_generated
+vendor
+logs
+node_modules
+lightpublic
+.vault-pass
+.tmp
+*.retry
+codeception.yml
+version.txt

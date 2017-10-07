@@ -1,0 +1,9 @@
+#global-content li {
+    margin-bottom: 20px;
+}
+
+#global-content img {
+    border-radius: 2px;
+    box-shadow: 0 10px 18px 0 rgba(0, 0, 0, 0.22), 0 15px 35px 0 rgba(0, 0, 0, 0.21);
+    margin: 5px 0 20px 0;
+}

@@ -1,0 +1,26 @@
+# Example: ansible-playbook playbook_01_initial.yml
+- hosts: []
+  become: true
+  become_user: root
+  become_method: sudo
+
+  tasks:
+  # Установка Timezone:
+  - name: initial 1. Setting timezone to Moscow
+    timezone: name=Europe/Moscow
+    tags: timezone
+
+  # Обновление кеша apt:
+  - name: initial 2. Update package cache
+    apt: update_cache=true
+    changed_when: no
+    tags: cache
+
+  # Установка python-software-properties
+  - name: initial 3. install python-software-properties
+    apt: name=python-software-properties
+    tags: python
+
+  # Добавление переменной для пути к coposer.phar:
+  # - name: initial 5. Set /home/ubuntu as a exec path
+  #  copy: content="PATH=$PATH:/home/ubuntu" dest="/etc/profile.d/composer_php_path.sh" mode=0755

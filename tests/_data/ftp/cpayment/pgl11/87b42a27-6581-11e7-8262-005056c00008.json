@@ -1,0 +1,21 @@
+﻿{
+	"GUID": "87b42a27-6581-11e7-8262-005056c00008",
+	"CompanyID": 11,
+	"CustomerAccountID": 400,
+	"Name": "434",
+	"Comments": "Оплата за транспортно-экспедиторское обслуживание с-но сч. №186 от 08/06/17 Сумма 823352-50 Без налога (НДС)",
+	"PaymentDate": "2017-6-13",
+	"Amount": 164670.5,
+	"CurrencyISO": "RUB",
+	"IsDeleted": false,
+	"Lines": [
+		{
+			"CInvoiceID": 0,
+			"CInvoiceName": "186",
+			"CInvoiceDate": "2017-6-8",
+			"Amount": 164670.5,
+			"CurrencyRate": 1,
+			"AmountInCurrency": 164670.5
+		}
+	]
+}

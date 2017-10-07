@@ -1,0 +1,54 @@
+<?php
+$activeModule = \Light\Request::getModule();
+?>
+<div id="mainmenu">
+    <div id="mainmenu__top">
+        <div style="text-align: right">
+            <a class="pin-menu-button"><i class="fa fa-thumb-tack"></i></a>
+        </div>
+        <div id="mainmenu__avatar">
+            <!--            <img src="Light/i/santa-hat.png" class="santa-hat">-->
+            <img id="mainmenu__avatarimg" src="<?= \Light\Img::getUserAvatarUrl(\Light\User::getId()) ?>">
+            <input id="mainmenu__avatarinputfile" type="file" name="avatar">
+        </div>
+
+        <div id="mainmenu__username" title="Username"><?= htmlspecialchars(\Light\User::getName()) ?></div>
+        <div id="mainmenu__usergroup" title="Usergroup"><?= htmlspecialchars(\Light\User::getGroupName()) ?></div>
+        <div>
+            <a href="index.php?a=Logout#ajax-post">Logout</a>
+        </div>
+    </div>
+
+    <?php foreach ($sections as $sectionText => $sectionParams): ?>
+
+        <?php if ($sectionText): ?>
+            <div class="mainmenu__sectionhead" data-name="<?= htmlspecialchars($sectionText) ?>">
+                <?= $sectionText ?>
+            </div>
+        <?php endif ?>
+
+        <ul class="mainmenu__section"
+            data-status="<?= $sectionParams['status'] ?>"<?= $sectionParams['status'] === 'closed' ? ' style="display: none"' : '' ?>>
+            <?php foreach ($sectionParams['items'] as $module): ?>
+
+                <li class="mainmenu__li">
+                    <a class="mainmenu__link<?= $module === $activeModule ? ' mainmenu__link_active' : '' ?>"
+                       href="index.php?a=<?= $module ?><?= isset($badges[$module]['urlParams']) ? '&' . http_build_query($badges[$module]['urlParams']) : '' ?>">
+                        <?= \Light\ModuleRegister::getModuleName($module) ?> <?= isset($badges[$module]) ? $badges[$module]['html'] : '' ?>
+                    </a>
+                </li>
+
+            <?php endforeach; ?>
+        </ul>
+
+    <?php endforeach; ?>
+</div>
+
+<p><strong>CBRF rates:</strong> <a href="http://news.yandex.ru/quotes/1.html" target="_blank" style="font-size: 10px">link</a>
+    <br><span class="note">(<?= $rates['Date'] ?>)</span>
+</p>
+<pre>
+<p>EUR / USD: <?= $rates['CBRFEURUSD'] ?></p>
+<p>USD / RUB: <?= $rates['CBRFUSDRUB'] ?></p>
+<p>EUR / RUB: <?= $rates['CBRFEURRUB'] ?></p>
+</pre>

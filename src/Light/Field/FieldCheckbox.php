@@ -1,0 +1,99 @@
+<?php
+
+namespace Light\Field;
+
+class FieldCheckbox extends FieldAbstract
+{
+
+    public $textYes = 'Yes';
+    public $textNo = 'No';
+
+    protected function initDefaultParams()
+    {
+        parent::initDefaultParams();
+
+        $this->default = 0;
+        $this->tableAlign = 'center';
+        $this->tableWidthExcel = 10;
+    }
+
+    public function getNameTableSettings()
+    {
+        return parent::getNameTableSettings() . ' (' . $this->textYes . '/' . $this->textNo . ')';
+    }
+
+    public function getViewCssClass($value, array $data = [], $forTable = false)
+    {
+        $viewCssClass = parent::getViewCssClass($value, $data, $forTable);
+        if ($value !== null) {
+            $viewCssClass .= ' ' . ($value ? 'yes' : 'no');
+        }
+
+        return $viewCssClass;
+    }
+
+    public function getText($value, array $data = [], $forTable = false)
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        return $value ? $this->textYes : $this->textNo;
+    }
+
+    protected function getHtmlInner($value, array $data, $forTable)
+    {
+        return $this->getText($value);
+    }
+
+    protected function ajaxify($value, array $data, $forTable, $outHtml)
+    {
+        if (!$this->hasMode(self::MODE_EDIT)) {
+            return $outHtml;
+        }
+
+        if ($this->groupconcat) {
+            return $outHtml;
+        }
+
+        if (!isset($data['ID']) || !$data['ID']) {
+            return $outHtml;
+        }
+
+        $cssClass = $this->getViewCssClass($value, $data, $forTable);
+        $cssClass = trim($cssClass . ' ajax-checkbox');
+
+        return '<a href="#" class="' . $cssClass . '" data-id="' . $data['ID'] . '" data-fieldkey="' . $this->key . '" data-value="' . $value . '">'
+            . $this->getText($value)
+            . '</a>';
+    }
+
+    protected function getExcelInner($value, array $data)
+    {
+        return $this->getText($value);
+    }
+
+    protected function getHtmlInputInner($value, array $data, $idPrefix)
+    {
+        $tdata = $this->getHtmlInputTplData($value, $data, $idPrefix);
+        $checked = ($value && $value !== 'off' && $value !== 'false') ? ' checked=""' : '';
+
+        return '<input type="checkbox" name="' . $tdata['editName'] . '" id="' . $tdata['editId'] . '" value="on"' .
+            $checked . $tdata['cssClass'] . $tdata['tagParams'] . '>';
+    }
+
+    protected function getDataFromRequestInner(array $request)
+    {
+        $val = $request[$this->key] ?? false;
+
+        // Здесь перечислены все возможные значения, которые могут прийти от браузера и которые будут интерпретированы
+        // как false
+        return $val === '0' || $val === 0 || $val === false || $val === 'false' ? 0 : 1;
+    }
+
+    public function allowSqlWhereValue($value)
+    {
+        return false;
+    }
+
+}

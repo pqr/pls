@@ -1,0 +1,33 @@
+{
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-concat": "^2.5.2",
+    "gulp-filter": "^4.0.0",
+    "gulp-plumber": "^1.0.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-uglify": "^2.0.0"
+  },
+  "dependencies": {
+    "@types/jquery": "latest",
+    "@types/jqueryui": "latest",
+    "@types/keypress.js": "latest",
+    "@types/lodash": "latest",
+    "@types/react": "latest",
+    "@types/select2": "latest",
+    "blueimp-file-upload": "latest",
+    "font-awesome": "latest",
+    "jquery": "latest",
+    "keypress.js": "latest",
+    "mobx": "latest",
+    "mobx-react": "latest",
+    "preact": "latest",
+    "preact-compat": "latest",
+    "raven-js": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "rollbar": "latest",
+    "select2": "latest",
+    "serializr": "latest",
+    "sticky-table-headers": "latest"
+  }
+}

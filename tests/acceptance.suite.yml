@@ -1,0 +1,23 @@
+# Codeception Test Suite Configuration
+#
+# Suite for acceptance tests.
+# Perform tests in browser using the WebDriver or PhpBrowser.
+# If you need both WebDriver and PHPBrowser tests - create a separate suite.
+
+# Добавляем собственный AdminSessionHelper, который при инициализации логинится и запоминает PHPSESSID из Cookie
+# в дальнейшем перед каждым acceptance тестом этот хелпер устанавливает PHPSESSID в Cookie, таким образом пользователь
+# автоматически залогинен в каждом тесте
+# username и password настраиваются в codeception.yml
+
+class_name: AcceptanceTester
+modules:
+    enabled:
+        - PhpBrowser
+        - REST:
+            depends: PhpBrowser
+            part: Json
+        - Asserts
+        - \Helper\Acceptance
+        - \Light\Codeception\AdminSessionHelper
+groups:
+    main: [tests/acceptance/HomeCest.php, tests/acceptance/ShipmentCest.php, tests/acceptance/CInvoiceCest.php, tests/acceptance/CPaymentCest.php, tests/acceptance/VInvoiceCest.php, tests/acceptance/VPaymentCest.php]

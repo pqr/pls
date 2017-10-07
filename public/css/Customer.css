@@ -1,0 +1,19 @@
+table[data-tablename=Quotations], table[data-tablename=Contacts], table[data-tablename=Agents] {
+    width: 100%;
+}
+
+select[name$="[CustomerAccountID]"] {
+    width: 260px;
+}
+
+.input-origin {
+    width: 200px !important;
+}
+
+.instructions-div {
+    background-color: #EAF2FB; padding: 5px;
+}
+
+input.input-surcharge-name {
+    width: 150px;
+}

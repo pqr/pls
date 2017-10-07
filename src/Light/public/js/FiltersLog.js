@@ -1,0 +1,1 @@
+$('#FieldID').select2();

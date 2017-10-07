@@ -1,0 +1,7 @@
+# PHP переменные
+php_version: "7.1"
+php_use_ppa: "ppa:ondrej/php"
+
+url: "https://forwardlog.net"
+project_dir: "/home/ubuntu/pls"
+filesfolder: "/home/ubuntu/files"

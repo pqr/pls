@@ -1,0 +1,155 @@
+<?php
+namespace Forward\Module\CInvoice\Subtables;
+
+use Forward\Classes\CInvoiceCommon;
+use Forward\Classes\Constant;
+use Light\Db;
+use Light\Link;
+use Light\ObjAbstract;
+use Light\SubtableBase\Subtable;
+use Light\User;
+
+class Lines extends Subtable
+{
+    public function __construct(ObjAbstract $masterObj)
+    {
+        parent::__construct($masterObj);
+
+        $this->setDbTable('cinvoiceline');
+
+        $this->_tableLayoutsEnabled = false;
+
+        $this->_tableLinkModule = 'Shipment';
+        $this->_tableLinkFieldKeys = ['FileNumber', 'ContainerName'];
+        $this->_tableLinkIdFieldKey = 'ShipmentID';
+
+        $this->_viewTableLayout = 'FileNumber|Name|UOMID|Quantity|Price|Amount';
+        $this->_editTableLayout = $this->_viewTableLayout;
+
+        $this->_tablePrintTotalRecordsFound = true;
+        $this->_tableTotalRowData = ['Name' => 'Total'];
+        $this->_tableTotalRowCalcFieldsKeys = ['Amount'];
+        $this->_copyOnAddFieldKeys = ['FileNumber', 'UOM', 'Quantity'];
+
+        $this->_cacheFieldsKeys = ['FileNumber'];
+        $this->_cacheOnlyUniqueValues = true;
+
+        $this->getField('Amount')->setParam('nameTable', "Amount in " . $this->_masterObj['CurrencyISO']);
+
+        if (Constant::isOneCCompany($masterObj['CompanyID'])) {
+            $this->getField('Name')->setGetHtmlFunction(function ($value, array $data, $outHtml) {
+                if (!isset($data['ID'])) {
+                    // Это строка Total
+                    return $outHtml;
+                }
+
+                // Попробуем найти перевод и приклеить к описанию услуги
+                $translation = Db::getRow("SELECT ID, NameRu FROM list_chargedescription WHERE Name = @s LIMIT 1", $value);
+
+                if ($translation && $translation['NameRu'] !== '') {
+
+                    $outHtml .= '<br><small>' . htmlspecialchars($translation['NameRu']) . '</small>';
+
+                } elseif (User::hasWriteAccess('ItemList')) {
+
+                    $linkText = 'Перевести';
+                    if ($translation) {
+
+                        $link = Link::moduleEdit($linkText, $translation['ID'], null, 'ItemList', null, null, true);
+
+                    } else {
+
+                        $link = Link::module($linkText, ['addnew' => 1, 'Name' => $value], 'ItemList', null, null,
+                            true);
+
+                    }
+                    $outHtml .= '<br><small>' . $link . '</small>';
+
+                }
+                return $outHtml;
+            });
+        }
+    }
+
+    protected function getExcelFilename()
+    {
+        return 'Customer Invoice ' . $this->_masterObj['Name'] . ' details';
+    }
+
+    protected function getExcelWorksheetName()
+    {
+        return 'Customer Invoice Details';
+    }
+
+    protected function getDataQuery()
+    {
+        $query = "SELECT cil.*
+                      , s.ID AS ShipmentID
+                  FROM cinvoiceline AS cil
+                      LEFT JOIN shipment s ON s.Name = cil.FileNumber
+                  WHERE cil.CInvoiceID = " . $this->_masterObj->getId() . "
+                      AND cil.CInvoiceID != 0
+                  ORDER BY cil.ID";
+
+        return $query;
+    }
+
+    public function getHtmlEdit()
+    {
+        $this->getField('Amount')->setParam(
+            'nameTable',
+            'Amount in <span id="cinvoice-currency">' . $this->_masterObj['CurrencyISO'] . '</span>'
+        );
+
+        if (isset($_GET['fromCostSheet'])) {
+
+            //Добавим строки в подтаблицу, если в GET запросе есть ключевой параметр fromCostSheet - значит попали сюда
+            //из Cost-sheet'а нажатием кнопки Create Customer Invoice
+            $shipmentId = (int)$_GET['fromCostSheet'];
+            $csLineIds = explode(',', $_GET['csLineIds']);
+            if (!Constant::isOneCCompany($this->_masterObj['CompanyID'])) {
+                // Для обычных компаний (не ООО) берём все строки из Cost-sheet
+                $linesData = CInvoiceCommon::getLinesDataFromCostSheet($shipmentId, $csLineIds);
+            } else {
+                // Для ООО компаний сворачиваем строки в одну строку Транспортно-экспедиторское обслуживание по маршруту: ...
+                $linesData = CInvoiceCommon::getLinesDataFromCostSheetPlsPgl($shipmentId, $csLineIds);
+            }
+            $this->setAdditionalData($linesData);
+
+        } elseif (isset($_GET['fromShipmentsMassaction'])) {
+
+            //Если в GET есть ключевой параметр fromShipmentsMassaction - значит попали сюда из диалогового окна
+            //Shipments Massaction "Создать Customer Invoice"
+            //В этом случае в POST лежат id строк из кост-шитов на основе которых делаем счёт
+            /** @var array $csLineIdsPerShipment */
+            $csLineIdsPerShipment = $_POST['csLineIdsPerShipment'];
+
+            $linesData = [];
+            //Пройдём в цикле по массиву из POST - внутри он содержит вложенные массивы с ID конкретных строк в Cost-sheet'ах
+            foreach ($csLineIdsPerShipment as $shipmentId => $csLineIds) {
+                //Накапливаем $linesData
+                /** @noinspection SlowArrayOperationsInLoopInspection */
+                $linesData = array_merge(
+                    $linesData,
+                    CInvoiceCommon::getLinesDataFromCostSheet($shipmentId, $csLineIds)
+                );
+            }
+
+            $this->setAdditionalData($linesData);
+
+        }
+
+        return parent::getHtmlEdit();
+    }
+
+    protected function getTableLinkUrlParams(): array
+    {
+        //Переопределяем метод (который предназначен именно для переопределения) чтобы добавить к ссылкам на модуль
+        //Shipment параметры, чтобы автоматически открывался нужный Cost-sheet,
+        //а также параметр fromInvNum - благодаря которому в Cost-sheet'е будут подсвечены все строки связанные с этим счётом
+        return [
+            'func' => 'cs',
+            'fromInvNum' => $this->_masterObj['Name']
+        ];
+    }
+}

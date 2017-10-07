@@ -1,0 +1,55 @@
+h2 {
+    text-transform: none;
+    font-weight: lighter;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+div + h2 {
+    margin-top: 20px;
+}
+
+.reportblock {
+    position: relative;
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.reportblock img {
+    width: 48px;
+    height: 48px;
+}
+
+.reportblock div:nth-child(2) {
+    margin-left: 10px;
+}
+
+.reportblock__accesslink {
+    visibility: hidden;
+    position: absolute;
+    right: 0;
+}
+
+.reportblock__accesslink:hover, .reportblock__accesslink:active {
+    color: #FF1111 !important;
+}
+
+.reportblock:hover .reportblock__accesslink {
+    visibility: visible;
+}
+
+.reportmenu {
+    -webkit-column-count: 2;
+    -moz-column-count: 2;
+    column-count: 2;
+    -webkit-column-gap: 2em;
+    -moz-column-gap: 2em;
+    column-gap: 2em;
+}
+
+.reportmenu > div {
+    display:inline-block;
+    -webkit-column-break-inside: avoid;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}

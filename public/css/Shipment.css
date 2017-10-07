@@ -1,0 +1,133 @@
+h1 span.fileopen, h1 span.fileblocked, h1 span.fileclosed {
+    padding: 2px;
+    float: right;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+h1 select#FileClosed {
+    font-size: 14px;
+}
+
+h1 span.fileopen {
+    border: 1px solid green;
+}
+
+h1 span.fileblocked {
+    border: 1px solid #DD0000;
+}
+
+h1 span.fileclosed {
+    border: 1px solid gray;
+}
+
+#ctable-Shipment-table tr td.fn a {
+    font-weight: bold;
+    display: block;
+}
+
+.bigfilenumber {
+    font-size: 18px;
+}
+
+span.grouped {
+    border-bottom: 1px solid black;
+}
+
+#ContainerName {
+    width: 190px;
+}
+
+#MAWBNumber1 {
+    width: 40px;
+}
+
+#MAWBNumber2 {
+    width: 100px;
+}
+
+.view2 .editcell2 select#TrafficID, .view2 .editcell2 select#CompanyID {
+    width: 120px;
+}
+
+#NatureOfGoods {
+    width: 110px;
+}
+
+#CarrierID,
+#POLID,
+#PODID,
+#PODTerminalID,
+#PortExpeditorID,
+#TruckerID {
+    width: 250px;
+}
+
+#VendorID {
+    width: 120px;
+}
+
+#Vessel {
+    width: 150px;
+}
+
+#CarrierRef,
+#VoyageNbr {
+    width: 80px;
+}
+
+/* в режиме просмотра нужно отодвинуть эти два блока */
+#bl-status-date,
+#ref-span,
+#voyage-span {
+    margin-left: 40px;
+}
+
+/* в режиме редактирования отодвигать не нужно */
+form #bl-status-date,
+form #ref-span,
+form #voyage-span {
+    margin-left: 0;
+}
+
+#Vessel {
+    float: left;
+}
+
+form #voyage-span,
+form #ref-span {
+    float: right;
+}
+
+input.shippers-Name {
+    width: 200px;
+}
+
+input.shippers-Reference {
+    width: 150px;
+}
+
+input.shippers-HAWBNumber {
+    width: 100px;
+}
+
+.ac-location {
+    position: absolute;
+    left: 50px;
+    width: 150px;
+}
+
+.invflexrow {
+    display: flex;
+}
+
+.invflexleft {
+    flex: 1;
+    padding-right: 3px;
+}
+
+.invflexright {
+    flex: 1;
+    padding-left: 3px;
+    text-align: right;
+}

@@ -1,0 +1,22 @@
+{
+  "config" : {
+    "optimize-autoloader": true
+  },
+  "require": {
+    "phpoffice/phpexcel": "@stable",
+    "swiftmailer/swiftmailer": "@stable",
+    "tedivm/fetch": "@stable",
+    "symfony/dom-crawler": "@stable",
+    "symfony/css-selector": "@stable",
+    "nesbot/carbon": "@stable",
+    "mtdowling/cron-expression": "@stable",
+    "guzzlehttp/guzzle": "@stable",
+    "studio-42/elfinder": "@stable",
+    "mobiledetect/mobiledetectlib": "@stable",
+    "sentry/sentry": "@stable"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "@stable",
+    "codeception/codeception": "@stable"
+  }
+}

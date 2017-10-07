@@ -1,0 +1,72 @@
+# Example: ansible-playbook playbook_deploy_toolkit.yml -i inventory.test
+- hosts: []
+  become: true
+  become_user: root
+  become_method: sudo
+  vars_files:
+   - vars_encrypted.yml
+
+  tasks:
+  # Обновить apt cache:
+  - name: toolkit 1. Update cache
+    apt: update_cache=true
+    changed_when: no
+
+  # Установить dependency libicu52 для wkhtmltopdf:
+  - name: toolkit 2. Install libicu52
+    apt: deb=http://launchpadlibrarian.net/201330288/libicu52_52.1-8_amd64.deb
+    tags: wkhtmltopdf
+
+  # Установить dependency libxrender1 для wkhtmltopdf:
+  - name: toolkit 2. Install libxrender1
+    apt: name=libxrender1
+    tags: wkhtmltopdf
+
+  # Установить wkhtmltopdf:
+  - name: toolkit 3. Download and unarchive wkhtmltopdf
+    unarchive:
+      src: https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
+      dest: /home/ubuntu
+      remote_src: yes
+    tags: wkhtmltopdf
+
+  - name: toolkit 4. Copy wkhtmltopdf to bin
+    copy:
+      remote_src: yes
+      src: /home/ubuntu/wkhtmltox/bin/wkhtmltopdf
+      dest: /usr/local/bin/wkhtmltopdf
+      mode: 0755
+    tags: wkhtmltopdf
+
+  - name: toolkit 5. Remove wkhtmltox dir from home
+    file:
+      state: absent
+      path: /home/ubuntu/wkhtmltox
+    tags: wkhtmltopdf
+
+  # Установить нужные в работе утилиты:
+  - name: toolkit 6. Install tools
+    apt: name={{ item }}
+    with_items:
+      - mc
+      - unzip
+      - unrar
+      - p7zip-full
+      - ghostscript
+      - imagemagick
+    tags: tools
+
+  # Установить mysql-client:
+  - name: toolkit 7. Install mysql-client
+    apt: name=mysql-client install_recommends=no
+    tags: mysql
+
+  # Установить конфигурацию my.cnf
+  - name: toolkit 8. Copy my.cnf
+    become: false
+    template:
+      src: files/my.cnf
+      dest: /home/ubuntu/.my.cnf
+      backup: yes
+      mode: 0600
+    tags: mysql

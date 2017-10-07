@@ -1,0 +1,57 @@
+<?php
+namespace Forward\Module\CustomerAccount\Subtables;
+
+use Forward\Classes\SubtablesBase\Many2ManyAbstract;
+use Light\Field\FieldAbstract as F;
+use Light\ObjAbstract;
+
+class Customers extends Many2ManyAbstract
+{
+    public function __construct(ObjAbstract $masterObj)
+    {
+        parent::__construct($masterObj);
+
+        $this->setDbTable('customer_customeraccount');
+        $this->_masterText = 'Customer Account';
+
+        $this->_slaveField = 'CustomerID';
+        $this->_slaveTable = 'customer';
+        $this->_slaveText = 'Customer';
+        $this->_slaveModule = 'Customer';
+
+        //Для определения по какому полю внутри массива data искать ID для данной строки
+        $this->_tableLinkIdFieldKey = 'CustomerID';
+        //Список полей, на которых нужно сделать ссылки
+        $this->_tableLinkFieldKeys = ['CustomerID'];
+        //Модуль на который нужно сделать ссылки на поле определённом в _tableLinkFieldKeys и при двойном клике
+        $this->_tableLinkModule = 'Customer';
+
+        $this->_textAddLink = 'Add Customer';
+
+        $this->_tableMsgIfEmpty = 'No linked customers';
+        $this->_folders = true;
+        $this->_folderBaseDir = 'Customer';
+        $this->_title = 'Customers';
+
+        $this->addFields(
+
+            F::createSelect('CustomerID', [
+                'name' => 'Customer',
+                'tableWidthHtml' => 280,
+                'options' => "SELECT ID, Name, Active FROM customer ORDER BY Name",
+                'empty' => false
+            ])
+
+        );
+
+        $this->setNameFieldKey('CustomerID'); // Для правильной записи логов, чтобы сработал метод getDescriptionHtml
+    }
+
+    protected function getFolderName(array $data)
+    {
+        if (isset($data['CustomerID'])) {
+            return $data['CustomerID'];
+        }
+        return false;
+    }
+}

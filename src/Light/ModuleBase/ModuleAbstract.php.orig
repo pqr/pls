@@ -1,0 +1,2631 @@
+<?php
+namespace Light\ModuleBase;
+
+use Light\ApplicationAbstract;
+use Light\Config;
+use Light\Css;
+use Light\Db;
+use Light\Field\FieldAbstract;
+use Light\Field\FieldAbstract as F;
+use Light\Fieldset;
+use Light\File;
+use Light\FilesFolder;
+use Light\Img;
+use Light\Js;
+use Light\Link;
+use Light\ModuleRegister;
+use Light\Msg;
+use Light\Obj;
+use Light\Pdf;
+use Light\Request;
+use Light\Response;
+use Light\Session;
+use Light\Table;
+use Light\Template;
+use Light\Timer;
+use Light\Traits\TableExcelExportable;
+use Light\Traits\TableFilterable;
+use Light\Traits\TableLayoutable;
+use Light\Traits\TablePaginatable;
+use Light\Traits\TableSortable;
+use Light\Traits\TableWithFoldersTrait;
+use Light\Traits\TableWithModuleSessionTrait;
+use Light\Traits\TableWithObjectTrait;
+use Light\User;
+
+abstract class ModuleAbstract extends Table
+{
+    use TablePaginatable, TableFilterable, TableSortable, TableLayoutable, TableExcelExportable, TableWithObjectTrait,
+        TableWithFoldersTrait, TableWithModuleSessionTrait;
+
+    const STATE_LIST = 'list';
+    const STATE_LIST_EXCEL = 'excel';
+    const STATE_ADDNEW = 'addnew';
+    const STATE_VIEW = 'view';
+    const STATE_PRINTFORM = 'printform';
+    const STATE_EDIT = 'edit';
+    const STATE_LOG = 'log';
+    const STATE_DELETE = 'delete';
+    const STATE_SUBMIT = 'submit';
+    const STATE_INSERT = 'insert';
+    const STATE_UPDATE = 'update';
+    const STATE_LIST_FUNC = 'list_func';
+    const STATE_VIEW_FUNC = 'view_func';
+    const STATE_VIEW_CHANGE_FIELD = 'view_change_field';
+    const STATE_MULTIPLEUPDATESUBMIT = 'multiupdate';
+    const STATE_SUBTABLE_RELOAD = 'subtable_reload';
+    const STATE_SUBTABLE_EXCEL = 'subtable_excel';
+    const STATE_SUBTABLE_FUNC = 'subtable_func';
+
+    //Общие настройки для всех режимов
+    protected $_allowAdd = true;
+    protected $_allowEdit = true;
+    protected $_allowLog = true;
+    protected $_allowDelete = true;
+
+    //Настройки сообщений на экран
+    protected $_textObjectName = '';
+
+    //SQL фрагмент, который будет добавлен в конец запроса ORDER BY ...
+    protected $_tableDefaultOrderBy = 'ID DESC';
+
+    //Внутренние переменные состояния
+    protected $_saveErrors = []; //Массив имя поля => сообщение об ошибке
+    protected $_dataFromRequest;
+    protected $_justInserted = false;
+    protected $_changedWhileUpdate = false;
+    protected $_state;
+    /**
+     * Наборы полей, которые нужно сохранять при копировании
+     * Можно определить несколько режимов копирования, задвая различные наборы полей
+     * ['default' => ['fieldKeys' => ['fieldKey1', 'fieldKey2'], 'subtables' => ['subtableName1', 'subtableName2']], ...]
+     * @var array
+     */
+    protected $_copyModes = [];
+    /**
+     * Массив эллементов печати
+     * @var array
+     */
+    protected $_documentPrintTemplates = [];
+    protected $_globalTemplate = 'GlobalPrint.tpl.php';
+
+    protected $_massactionOptions = [];
+    protected $_submenuItemsTplData = [];
+    protected $_printForms = [];
+
+    /**
+     * @var array(SubtableName)
+     * Массив с именами подтаблиц. Автоматизация следующая:
+     * - будут подключены файлы Subtable/<модуль>/<имя подтаблицы>.php
+     * - в режиме List будет вызван метод подтаблицы initFieldsFromSubtables
+     * - в функциях proceedSubmit, proceedDelete, getTplData будут созданы экземпляры этих классов и запущены соотвесвующие функции
+     */
+    private $_subtables = [];
+
+    /*
+     * Массив подтаблиц с даными
+     * @var Subtable[]
+     */
+    private $_initedSubtables = [];
+
+    private $_queryTime = 0;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->init();
+        $this->initObj();
+        $this->initFieldset();
+        $this->initModuleSessionFromRequest();
+
+        //Массив неймспейсов будет выглять так: <ProjectNamespace>\Module\<Module>\<ModuleClass>
+        $moduleClass = explode('\\', get_class($this));
+        $moduleClass = end($moduleClass);
+        $this->_obj->setMasterModuleForDbLog($moduleClass);
+    }
+
+    /**
+     * Метод для переопределения в классах потомках - здесь определяются поля и настройки модуля
+     */
+    abstract protected function init();
+
+    public function getTableExcelUrl()
+    {
+        return '?a=' . Request::getModule() . '&xls=1';
+    }
+
+    /**
+     * @return string JSON
+     */
+    final public function proceedMassaction()
+    {
+        //Инициализируем внутренний массив $this->_massactionOptions, метод initMassactionOptions() должен быть переопределён
+        //в классе потомке
+        $this->initMassactionOptions();
+        //Добавляем опции печати
+        $this->initPrintForms();
+        $this->initMassactionOptionsFromPrintForms();
+        $action = $_GET['action'];
+
+        //Проверим существование этого massaction среди доступных для данного пользователя _massactionOptions
+        if (!isset($this->_massactionOptions[$action])) {
+            Response::abort(400, 'Unknown action ' . $action);
+        }
+
+        $checkedIds = $this->getMassactionCheckedIds();
+
+        //Если имя выбранного пользователем action начинается со слов PrintForm - значит это особый action
+        //печати выбранных документов
+        if (strpos($action, 'PrintForm') === 0) {
+            //Отрезаем префикс PrintForm из action, чтобы получить условное имя документа для печати
+            $printForm = substr($action, 9);
+            $this->massactionPrintForm($checkedIds, $printForm);
+        } else {
+            //Попробуем вызывать обработчик - функции с префикстом massaction
+            $handler = 'massaction' . ucfirst($action);
+            if (method_exists($this, $handler)) {
+                call_user_func([$this, $handler], $checkedIds);
+            } else {
+                Response::abort(400, 'Unknown method ' . $handler);
+            }
+        }
+    }
+
+    /**
+     * Возвращает массив id элеметов в таблицы, которые были отмечены с помощью чекбоксов
+     * @return array|bool
+     */
+    final protected function getMassactionCheckedIds()
+    {
+        if (isset($_POST['CheckedIds'])) {
+            $ids = explode(',', $_POST['CheckedIds']);
+            //Преобразуем все элементы массива $_REQUEST['cb'] в числа
+            $ids = array_map('intval', $ids);
+            //Оставим только уникальные ID
+            $ids = array_unique($ids);
+            //Удалим нулевой элемент, если он есть
+            $ids = array_filter($ids);
+            if (count($ids)) {
+                return $ids;
+            }
+        }
+
+        return false;
+    }
+
+    final protected function sendMassactionSuccessDialog($titleHtml, $bodyHtml)
+    {
+        //Обновим таблицу, отправив специальный заголовок, который на стороне клиента вызовет перезагрузку
+        //Перезагрузка таблицы будет происходить в фоновом режиме, пока пользователь читает диалоговое окно о результатах
+        Response::sendHeaderJsEval('Light.tables.get("' . Request::getModule() . '").reload();');
+        Response::sendAjaxDialog($titleHtml, $bodyHtml, null, null, null, 'Close');
+    }
+
+    /**
+     * Срабатывает после отправки формы Mltiple Update через AJAX
+     * Возвращает AJAX сообщение об удачном multiple update, после закрытия котрого страница обновляется
+     * Метод вызывается напрямую, т.к. ulr формы Multiple Update содержит параметр p=MultipleUpdateSubmit
+     * @return string JSON
+     */
+    public function proceedMultipleUpdateSubmit()
+    {
+        $this->_state = self::STATE_MULTIPLEUPDATESUBMIT;
+
+        $msgBuff = new Msg();
+        $updated = 0;
+        $nothingChanged = 0;
+
+        //Отфильтруем fieldset только теми полями, которые обозначены как доступные для Multiple Update
+        $muFieldset = $this->getMultipleUpdateFieldset();
+
+        //Дополнительно, отфильтруем только теми полями, которые были на форме отмечены как редактируемые
+        //На форме были скрытые поля со статусами 1 или 0 - все они оформлены виде массива multipleupdate
+        $allFieldKeys = $_POST['multipleupdate'];
+        $changebaleFieldKeys = array_keys(
+            array_filter(
+                $allFieldKeys,
+                function ($value) {
+                    return $value == '1';
+                }
+            )
+        );
+
+        if ($changebaleFieldKeys) {
+
+            $muFieldset = $muFieldset->filterByKeys($changebaleFieldKeys);
+
+            //Соберём массив с данными по полям
+            $requestData = [];
+            foreach ($changebaleFieldKeys as $fieldKey) {
+                $requestData[$fieldKey] = $_POST[$fieldKey];
+            }
+
+            //Обработаем данные с помощью функций определённый в объектах полей
+            $dataFromRequest = $muFieldset->getDataFromRequest($requestData);
+
+            $ids = $this->getMassactionCheckedIds();
+
+            //Поочерёдно обновим каждый id
+            foreach ($ids as $id) {
+
+                //Проверим, что id числовой и больше 0
+                $idInt = (int)$id;
+                if ($idInt <= 0) {
+                    continue;
+                }
+
+                //Проверим существование объекта в базе, попробовав его загрузить
+                $obj = clone $this->_obj;
+                $obj->setId($idInt);
+                if (!$obj->loadData()) {
+                    $msgBuff->addError('Object with ID = ' . $idInt . ' not found');
+                    continue;
+                }
+
+                //Проверим, что у пользователя есть права доступа к этому объекту
+                if (!$this->hasAccessRightToObj($obj) || !$this->hasWriteAccessRightToObj($obj)) {
+                    $msgBuff->addError('No access to edit object with ID = ' . $idInt);
+                    continue;
+                }
+
+                if ($this->proceedUpdateObjFromMultipleUpdate($obj, $dataFromRequest)) {
+                    $updated++;
+                } else {
+                    $nothingChanged++;
+                }
+            }
+
+        }
+
+        $msg = 'Updated: ' . $updated;
+        //Стандартное сообщение о числе обновлённых записей (зелёное или серое)
+        if ($updated > 0) {
+            $msgBuff->addSuccess($msg);
+        } else {
+            $msgBuff->addInfo($msg);
+        }
+
+        //Стандратное сообщение о количесве ошибок
+        if ($nothingChanged > 0) {
+            $msgBuff->addInfo('Nothing changed: ' . $nothingChanged);
+        }
+
+        $this->sendMassactionSuccessDialog('Multiple Update', $msgBuff->getHtml());
+    }
+
+    /**
+     * Выполняет обновление еденичной записи из режима MultipleUpdate
+     * Функция удобна для переопределения в классах потмоках
+     * @param \Light\Obj $obj
+     * @param array $dataFromRequest
+     * @return bool
+     */
+    protected function proceedUpdateObjFromMultipleUpdate(Obj $obj, array $dataFromRequest)
+    {
+        return $obj->updateDb($dataFromRequest, 'Multiple Update');
+    }
+
+    /**
+     * Основный метод proceed осуществляет только функции роутинга - проверяет входящие параметры строки запроса и
+     * вызывает соответсвующий метод proceedList, proceedView, proceed...
+     * Никаких проверок прав доступа или существования объекта в глобальном методе proceed не происходит - это всё должны
+     * делать конкретные методы proceed
+     */
+    public function proceed()
+    {
+        if (isset($_GET['addnew'])) {
+            $this->proceedAddNew();
+        } elseif (isset($_GET['id'])) {
+            $this->proceedView();
+        } elseif (isset($_GET['editid'])) {
+            $this->proceedEdit();
+        } elseif (isset($_GET['logid'])) {
+            $this->proceedLog();
+        } elseif (isset($_GET['submitid'])) {
+            $this->proceedSubmit();
+        } elseif (isset($_GET['delid'])) {
+            $this->proceedDelete();
+        } else {
+            $this->proceedList();
+        }
+    }
+
+    protected function proceedAddNew()
+    {
+        $this->_state = self::STATE_ADDNEW;
+
+        //Проверим права на запись в этот модуль
+        if (!$this->_allowAdd || !User::hasWriteAccess()) {
+            //При обычном запросе сделаем редирект на режим просмотра с flash сообщенеим
+            Session::flashError('No acces to add new');
+            $this->redirectToList();
+        }
+
+        $this->initCssJs();
+
+        //Если в GET переданы параметры copymode и copyfrom - инициализируем текущий объект
+        if (isset($_GET['copymode']) && isset($_GET['copyfrom'])) {
+            $this->initCopyModes();
+            $this->initDataForCopy($_GET['copymode'], $_GET['copyfrom']);
+        }
+
+        $moduleName = ModuleRegister::getModuleName(Request::getModule());
+        $headText = Link::module($moduleName, $this->getModuleSessionUrlParams());
+        $headText .= ' - <strong>Add New</strong>';
+        Response::setPageHeadText($headText);
+        $this->addAddNewPageParams();
+
+        $formActionUrlParams = ['submitid' => 0] + $this->getModuleSessionUrlParams();
+        $tdata = [
+            'content' => $this->getViewEditContentHtml(),
+            'formActionUrl' => Link::url($formActionUrlParams),
+            'cancelUrl' => Link::url($this->getModuleSessionUrlParams()),
+            'fields' => $this->getFieldsForForm()
+        ];
+
+        Template::includeTpl('module/addnew.tpl.php', $tdata);
+    }
+
+    protected function redirectToList()
+    {
+        Response::redirect(Request::getModule(), $this->getModuleSessionUrlParams());
+    }
+
+    protected function initCssJs()
+    {
+        Css::addLight('Module.css');
+        Js::addLight('Module.js');
+
+        //Проверим, есть ли файлы для этого модуля в зависимости от текущего режима
+        $module = Request::getModule();
+        $jsFile = null;
+        switch ($this->_state) {
+            case self::STATE_LIST:
+                $jsFile = $module . 'List.js';
+                Js::addTableHistory();
+                break;
+            case self::STATE_VIEW:
+                $jsFile = $module . 'View.js';
+                break;
+            case self::STATE_ADDNEW:
+            case self::STATE_EDIT:
+                $jsFile = $module . 'Edit.js';
+        }
+
+        if ($jsFile) {
+            $moduleFile = ApplicationAbstract::getProjNamespace() . '/Module/' . $module . '/' . $jsFile;
+            if (file_exists(ApplicationAbstract::getWwwDir() . '/' . $moduleFile)) {
+                Js::add($moduleFile);
+            }
+        }
+
+        if (isset($this->_fieldset['Color'])) {
+            Css::addLight('Colors.css');
+        }
+    }
+
+    /**
+     * @desc инициализирует $this->_obj переменные данными из файла id=$copyfrom
+     * @param string $copymode
+     * @param int $copyfrom
+     * @return void
+     */
+    protected function initDataForCopy($copymode, $copyfrom)
+    {
+        //Проверим, есть ли набор полей определённых для текущего $copymode
+        if (isset($this->_copyModes[$copymode])) {
+            //Возьмём данные из объекта источника
+            $sourceObj = clone $this->_obj;
+            if ($sourceObj->setId($copyfrom)->loadData()) {
+                //Перенесём нужные поля в $this->_obj
+                $copyFieldKeys = $this->_copyModes[$copymode]['fieldKeys'];
+                if ($copyFieldKeys !== null) {
+                    if (is_array($copyFieldKeys)) {
+                        $fieldKeys = $copyFieldKeys;
+                    } else {
+                        //если $copyFieldKeys это строка, значит там строка 'all' - копируем все поля!
+                        $fieldKeys = $this->_obj->getFieldset()->getKeys();
+                    }
+                    foreach ($fieldKeys as $fieldKey) {
+                        if (isset($sourceObj[$fieldKey])) {
+                            //Поле существует в источнике
+                            //Инициализируем данные значением из источника
+                            $this->_obj[$fieldKey] = $sourceObj[$fieldKey];
+                        }
+                    }
+                }
+
+                $copySubtables = $this->_copyModes[$copymode]['subtables'];
+                if ($copySubtables !== null) {
+                    if (is_array($copySubtables)) {
+                        $subtables = $copySubtables;
+                    } else {
+                        //Нужно копировать все подтаблицы! Кроме тех, которые readonly
+                        $subtables = [];
+                        foreach ($this->_subtables as $subtableName => $subtableParams) {
+                            if (!$subtableParams['readonly']) {
+                                $subtables[] = $subtableName;
+                            }
+                        }
+                    }
+
+                    //Теперь приступим к копированию
+                    foreach ($subtables as $subtableName) {
+                        //Получим объект, который нужно заполнить данными из копируемого источника
+                        $subtableObj = $this->getSubtableObject($subtableName);
+                        //Источник - это на самом деле подтаблица того же класса, но с другим masterId
+                        $sourceSubtableObj = clone $subtableObj;
+                        //Заменим мастер-объект в подтаблице
+                        $sourceSubtableObj->setMasterObj($sourceObj);
+                        //Теперь загрузим данные в подтаблицу источник благодаря подменённому мастер объекту
+                        $sourceSubtableObj->loadData();
+                        //Копируем данные в подтаблицу текущего объекта
+                        //Метод $sourceSubtableObj->getData() возвращает массив где ключи - это ID в базе
+                        //чтобы добавить данные в $subtableObj нам не нужны ключи в виде ID, нам нужны ключи от 0 до N
+                        //для этого применим array_values
+                        $sourceData = array_values($sourceSubtableObj->getData());
+                        $subtableObj->setAdditionalData($sourceData);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Возвращает массив параметров, которые нужно передать в JS окружение через атрибут data-params
+     */
+    protected function addAddNewPageParams()
+    {
+        Response::addPageParams(['state' => 'addnew']);
+    }
+
+    private function getFieldsForForm()
+    {
+        //В JavaScript окружение нужно передать типы полей
+        $filteredFieldset = $this->getFieldset()->filterByMode(F::MODE_VIEW | F::MODE_EDIT);
+        $fields = [];
+        foreach ($filteredFieldset as $field) {
+            /** @var $field \Light\Field\FieldAbstract */
+            $fields[$field->key] = ['type' => $field->getType()];
+        }
+
+        return $fields;
+    }
+
+    protected function getViewEditContentHtml()
+    {
+        $template = $this->getViewEditTemplate();
+        return Template::parseTpl($template, $this->getTplData());
+    }
+
+    protected function getViewEditTemplate()
+    {
+        //Проверим, есть ли шаблон для отображения объектов этого модуля?
+        $module = Request::getModule();
+        $templateFile = $module . '.tpl.php';
+        if (!Template::findfile($templateFile)) {
+            $templateFile = 'module/auto.tpl.php';
+        }
+
+        return $templateFile;
+    }
+
+    /**
+     * @return array
+     */
+    protected function getTplData()
+    {
+        //Если есть поле Color и режим View - добавим ему параметр source
+        if (isset($this->_fieldset['Color']) && $this->_state == self::STATE_VIEW) {
+            $this->_fieldset['Color']->setParam(
+                'source',
+                '?a=' . Request::getModule() . '&id=' . $this->_obj->getId() . '&func=changeField'
+            );
+        }
+
+        $fieldMode = $this->_state == self::STATE_VIEW ? F::MODE_VIEW : F::MODE_EDIT;
+        $filteredFieldset = $this->_fieldset->filterByMode(F::MODE_VIEW | F::MODE_EDIT);
+
+        $data = $this->_obj->getData();
+        if ($this->_state === self::STATE_ADDNEW) {
+            //В режиме Add New изначальные данные для формы могли быть заданы в url
+            //Однако, проблема с чекбоксами - если их нет в $_GET, то они станут якобы сняты
+            //А на самом деле может быть они должны получить свои параметры из default!
+            $fieldsetWithoutCheckboxes = new Fieldset();
+            foreach ($this->_fieldset as $field) {
+                if ($field->getType() !== F::TYPE_CHECKBOX && $field->getType() !== F::TYPE_CHECKBOX_AJAX &&
+                    $field->getType() !== F::TYPE_CHECKBOX_SET
+                ) {
+                    $fieldsetWithoutCheckboxes->addField($field);
+                }
+            }
+            $data = array_merge($data, $fieldsetWithoutCheckboxes->getDataFromRequest($_GET));
+        }
+
+        $tdata = $filteredFieldset->getTplData($data, $fieldMode);
+
+        //В ModuleAbstract создадим ещё более общие переменные в tdata, которые будут формировать вёрстку всего блока
+        $tdata['_subtables'] = $this->getTplDataSubtables();
+
+        $tdata['_state'] = $this->_state;
+        $tdata['_id'] = $this->_obj->getId();
+
+        if ($this->_state === self::STATE_EDIT || $this->_state === self::STATE_ADDNEW) {
+            $tdata['_savetext'] = $this->_textObjectName;
+            $tdata['_continmethod'] = $this->getContinmethod();
+            $tdata['_continmethods'] = $this->getContinmethods();
+        }
+
+        return $tdata;
+    }
+
+    protected function getTplDataSubtables()
+    {
+        $tdataSubtables = [];
+        //Добавим в шаблонные переменные все зарегистрированные подтаблицы
+        foreach ($this->_subtables as $subtableName => $subtableParam) {
+
+            $tdataSubtables[$subtableName] = [
+                'obj' => $this->getSubtableObject($subtableName),
+                'readonly' => $subtableParam['readonly']
+            ];
+        }
+
+        return $tdataSubtables;
+    }
+
+    /**
+     * Возвращает массив доступных способов перехода после Save
+     * может переопределяться в классе потомке для добавления особой логики
+     * @return array
+     */
+    private function getContinmethods()
+    {
+        $continmetods = [
+            '' => 'Back to list',
+            'view' => 'View this',
+            'edit' => 'Edit this'
+        ];
+
+        if ($this->_allowAdd) {
+            $continmetods['addnew'] = 'Add new';
+        }
+
+        return $continmetods;
+    }
+
+    /**
+     * Определяет из $_REQUEST переменных способ перехода
+     * сохраняет в переменную класса и в базу данных как настройку пользователя для данного модуля
+     * @return int
+     */
+    private function getContinmethod()
+    {
+        $continmethod = User::getParam(Request::getModule() . '_continmethod');
+        $continmethodValid = $this->getContinmethodValid($continmethod);
+
+        return $continmethodValid;
+    }
+
+    private function getContinmethodValid($continmethod)
+    {
+        $validContinmethods = $this->getContinmethods();
+        if ($continmethod === null || !in_array($continmethod, array_keys($validContinmethods))) {
+            $continmethod = 'view';
+        }
+
+        return $continmethod;
+    }
+
+    /**
+     * Метод вызывается если в $_GET запросе есть параметр id
+     * Далее в этом методе попробуем разобраться что именно хочет сделать пользователь
+     * @return mixed
+     */
+    protected function proceedView()
+    {
+        //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
+        $this->loadObjAndCheck($_GET['id']);
+
+        //Проверим дополнительные GET параметры относящиеся к режиму просмотра
+        if (isset($_GET['subtable'])) {
+            //Методы работы с subtable
+            $this->proceedViewSubtable();
+        } elseif (isset($_GET['func'])) {
+            //Попытка вызвать пользовательскую функцию из режима просмотра - это может быть ajax запрос или печать
+            //документа или вывод в Excel особой формы
+            $this->proceedViewFunc();
+        } elseif (isset($_GET['printForm'])) {
+            $this->proceedViewPrintFrom();
+        } else {
+            $this->proceedViewPage();
+        }
+    }
+
+    /**
+     * Загружает данные в объект $this->_obj, проверяет права доступа к нему у текущего пользователя
+     * @param int $id
+     */
+    protected function loadObjAndCheck($id)
+    {
+        //Проверим, что id числовой и больше 0
+        $id = (int)$id;
+        if ($id <= 0) {
+            //Если id был не числовой (приведён к 0) или отрицательный - перенаправляем в режим List
+            Session::flashError('Invalid object id');
+            $this->redirectToList();
+        }
+
+        //Проверим существование объекта в базе, попробовав его загрузить
+        $this->_obj->setId($id);
+        if (!$this->_obj->loadData()) {
+            Session::flashError('Object ' . $id . ' not found');
+            $this->redirectToList();
+        }
+
+        //Проверим, что у пользователя есть права доступа к этому объекту
+        if (!$this->hasAccessRightToObj($this->_obj)) {
+            Session::flashError('No access to object');
+            $this->redirectToList();
+        }
+    }
+
+    private function proceedViewSubtable()
+    {
+        $subtableName = $_GET['subtable'];
+        //проверим, что такая подтаблица сщуетсвует
+        if (!isset($this->_subtables[$subtableName])) {
+            $this->abortView(404, 'Unknown subtable ' . $subtableName);
+        }
+
+        /** @var $subtableObj \Light\SubtableBase\Subtable */
+        $subtableObj = $this->getSubtableObject($subtableName);
+
+        //С подтаблицей можно осуществлять несколько действий
+        if (isset($_GET['reload'])) {
+            //Перезагрузка через ajax при изменении Table Layout
+            $subtableObj->proceedAjaxReload();
+        } elseif (Request::isXls()) {
+            //Отправка Excel файла
+            $subtableObj->proceedExcel();
+        } elseif (isset($_POST['fieldKey'])) {
+            //Изменение какого-то поля через ajax
+            if (!$this->_allowEdit || !User::hasWriteAccess() || !$this->hasWriteAccessRightToObj()) {
+                Response::abort(403, 'Edit not allowed');
+            }
+
+            $subtableObj->proceedChangeField();
+        } else {
+            //Не удалось определить действие с подтаблицей, сообщим об этом пользователю
+            $this->abortView(400, 'Bad subtable request');
+        }
+    }
+
+    private function abortView($code, $errMsg)
+    {
+        if (Request::isAjax()) {
+            //Если вызов был через ajax, просто вернём код ошибки
+            Response::abort($code, $errMsg);
+        } else {
+            //При обычном запросе сделаем редирект на режим просмотра с flash сообщенеим
+            Session::flashError($errMsg);
+            $this->redirectToView();
+        }
+    }
+
+    protected function redirectToView()
+    {
+        $urlParams = ['id' => $this->_obj->getId()] + $this->getModuleSessionUrlParams();
+        Response::redirect(Request::getModule(), $urlParams);
+    }
+
+    private function proceedViewFunc()
+    {
+        $this->_state = self::STATE_VIEW_FUNC;
+
+        $func = $_GET['func'];
+        $method = 'viewFunc' . ucfirst($func);
+        if (!method_exists($this, $method)) {
+            //Для совместимости пока оставим старый proceed...
+            $method2 = 'proceed' . ucfirst($func);
+            if (!method_exists($this, $method2)) {
+                $this->abortView(405, 'Unknown method ' . $method);
+            } else {
+                $method = $method2;
+            }
+        }
+
+        //Метод найден, вызовем его!
+        call_user_func([$this, $method]);
+    }
+
+    private function proceedViewPrintFrom()
+    {
+        //Проверим, есть ли такая форма, которую запросил пользователь
+        $this->initPrintForms();
+        $printForm = $_GET['printForm'];
+        if (!isset($this->_printForms[$printForm])) {
+            $this->abortView(405, 'Unknown print form ' . $printForm);
+        }
+
+        $this->_state = self::STATE_PRINTFORM;
+        //Инициализируем внутренний массив $this->_printForms
+        //чтобы при распечатке были известны параметры формы (шаблон, сохранять ли в pdf и проч.)
+        $this->initPrintForms();
+        //Имя печтной формы, которую нужно распечатать передаётся в $_GET параметре
+        $bodyHtml = $this->getPrintFormBodyHtml($this->_obj, $printForm);
+        //Оборачиваем в мастер-шаблон для печати и выводим на экран
+        $title = $this->getPrintFormTitle($this->_obj);
+        $additionalCssFile = $this->_printForms[$printForm]['additionalCssFile'];
+        $fullHtml = $this->getPrintFormFullHtml($title, $additionalCssFile, $bodyHtml);
+
+        //Выводим полный html на экран пользователя
+        print $fullHtml;
+
+        //Если у этой печатной пормы стоял флаг savePdfIntoFolder, то нужно сохранить и PDF вариант в папку
+        if ($this->_printForms[$printForm]['savePdfIntoFolder']) {
+            $this->savePrintFormPdfInFilesFolder($fullHtml, $this->_obj, $printForm);
+        }
+
+        ApplicationAbstract::terminate();
+    }
+
+    private function proceedViewPage()
+    {
+        $this->_state = self::STATE_VIEW;
+
+        //Наконец, это обычный режим view
+        $this->initCssJs();
+        $this->setPageHeadForObj();
+        $this->addViewPageParams();
+
+        if ($this->_folders) {
+            $this->createFolder($this->_obj->getData());
+        }
+
+        $this->addModuleSessionNextPrevLinks($this->_obj, 'id');
+        $this->initViewSubmenuItems();
+        $this->initPrintForms();
+        $this->addViewDocumentPrintTemplates();
+
+        $tdata = [
+            'content' => $this->getViewEditContentHtml(),
+            'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
+            'submenuItems' => $this->getSubmenuItemsTplData(),
+            'id' => $this->_obj->getId()
+        ];
+
+        Template::includeTpl('module/view.tpl.php', $tdata);
+    }
+
+    protected function setPageHeadForObj($stateText = '')
+    {
+        $moduleName = ModuleRegister::getModuleName(Request::getModule());
+        $headText = Link::module($moduleName, $this->getFindidUrlParams() + $this->getModuleSessionUrlParams());
+        $headText .= ' - ';
+        if ($stateText) {
+            $headText .= $stateText . ' ';
+        }
+        $headText .= '<strong>' . $this->_obj->getDescriptionHtml() . '</strong>';
+        $headText .= ' (ID: ' . $this->_obj->getId() . ')';
+        Response::setPageHeadText($headText);
+        Response::setPageTitle($headText);
+    }
+
+    /**
+     * Возвращает массив параметров, которые нужно передать в JS окружение через атрибут data-params
+     */
+    protected function addViewPageParams()
+    {
+        Response::addPageParams(
+            [
+                'state' => 'view',
+                'id' => $this->_obj->getId(),
+                'moduleSessionParams' => http_build_query($this->getModuleSessionUrlParams())
+            ]
+        );
+    }
+
+    /**
+     * Метод для переопределения в классах потоках. Здесь нужно последовательно вызывать метод
+     * $this->addSubmenuItemViewFunc() или $this->addSubmenuItemViewFuncAjax() или $this->addSubmenuItemUrl()
+     */
+    protected function initViewSubmenuItems()
+    {
+    }
+
+    /**
+     * Метод для определения списка печатных форм документа
+     * @deprecated
+     */
+    protected function addViewDocumentPrintTemplates()
+    {
+    }
+
+    protected function getViewEditLogTabsmenuItems()
+    {
+        $out = [];
+
+        $msUrlParams = $this->getModuleSessionUrlParams();
+
+        $out[] = [
+            'text' => 'List',
+            'url' => Link::url($this->getFindidUrlParams() + $msUrlParams),
+            'active' => false
+        ];
+
+        $out[] = [
+            'text' => 'View',
+            'url' => Link::url(['id' => $this->_obj->getId()] + $msUrlParams),
+            'active' => $this->_state === self::STATE_VIEW
+        ];
+
+        if (User::hasWriteAccess() && $this->hasWriteAccessRightToObj() && $this->_allowEdit) {
+            $out[] = [
+                'text' => 'Edit',
+                'url' => Link::url(['editid' => $this->_obj->getId()] + $msUrlParams),
+                'active' => $this->_state === self::STATE_EDIT
+            ];
+        }
+
+        if (User::hasLogAccess()) {
+            $out[] = [
+                'text' => 'Log ',
+                'url' => Link::url(['logid' => $this->_obj->getId()] + $msUrlParams),
+                'active' => $this->_state === self::STATE_LOG
+            ];
+        }
+
+        if (User::hasWriteAccess() && $this->_allowDelete) {
+            $out[] = [
+                'text' => 'Delete',
+                'url' => '#',
+                'linkCssClass' => 'del-link'
+            ];
+        }
+
+        return $out;
+    }
+
+    protected function getSubmenuItemsTplData()
+    {
+        $out = [];
+        if ($this->_folders) {
+            $out[] = $this->getFolderSubmenuItemTplData();
+        }
+
+        //Добавим ссылки на различные режимы копирования
+        if ($this->isStateView()) {
+
+            //Добавим ссылки на копирование
+            $this->initCopyModes();
+            if ($this->_copyModes) {
+                $urlCopy = '?a=' . Request::getModule() . '&addnew=1&copyfrom=' . $this->_obj->getId() . '&copymode=';
+                foreach (array_keys($this->_copyModes) as $name) {
+
+                    $out[] = [
+                        'text' => Img::sprite('copy') . ' ' . $name,
+                        'url' => $urlCopy . rawurlencode($name)
+                    ];
+                }
+            }
+
+            //Добавим ссылки на печать
+            if ($this->_printForms) {
+                /*
+                $out[] = [
+                    'html' => Template::parseTpl(
+                            'module/submenuprintforms.tpl.php',
+                            ['items' => $this->_printForms]
+                        )
+                ];
+                */
+                $urlPrintForm = '?a=' . Request::getModule() . '&id=' . $this->_obj->getId() . '&printForm=';
+                foreach ($this->_printForms as $printFormKey => $printFormParams) {
+                    $out[] = [
+                        'text' => Img::sprite('print') . ' ' . $printFormParams['text'],
+                        'url' => $urlPrintForm . $printFormKey,
+                        'blank' => true
+                    ];
+                }
+            }
+        }
+
+        //Если есть какие-то кнопки на печать, добавим и их
+        if ($this->isStateView() && $this->_documentPrintTemplates) {
+            $out[] = [
+                'html' => Template::parseTpl(
+                        'docprints.tpl.php',
+                        ['items' => $this->_documentPrintTemplates, 'id' => $this->_obj->getId()]
+                    )
+            ];
+        }
+
+        $out = array_merge($out, $this->_submenuItemsTplData);
+
+        return $out;
+    }
+
+    private function getFolderSubmenuItemTplData()
+    {
+        return [
+            'text' => FilesFolder::getImgHtml($this->getFolderRelativePath($this->_obj->getData())) . ' Folder',
+            'url' => FilesFolder::getUrl($this->getFolderRelativePath($this->_obj->getData()))
+        ];
+    }
+
+    final protected function isStateView()
+    {
+        return $this->_state == self::STATE_VIEW;
+    }
+
+    private function proceedEdit()
+    {
+        //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
+        $this->loadObjAndCheck($_GET['editid']);
+
+        $this->_state = self::STATE_EDIT;
+
+        //Проверим права на запись текущего объекта
+        if (!$this->_allowEdit || !User::hasWriteAccess() || !$this->hasWriteAccessRightToObj()) {
+            //При обычном запросе сделаем редирект на режим просмотра с flash сообщенеим
+            Session::flashError('No acces to edit');
+            $this->redirectToView();
+        }
+
+        $this->initCssJs();
+        $this->setPageHeadForObj('Edit');
+        $this->addEditPageParams();
+        $this->addModuleSessionNextPrevLinks($this->_obj, 'editid');
+        $this->addEditSubmenuItems();
+
+        $formActionUrlParams = ['submitid' => $this->_obj->getId()] + $this->getModuleSessionUrlParams();
+        $tdata = [
+            'content' => $this->getViewEditContentHtml(),
+            'formActionUrl' => Link::url($formActionUrlParams),
+            'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
+            'submenuItems' => $this->getSubmenuItemsTplData(),
+            'fields' => $this->getFieldsForForm()
+        ];
+
+        Template::includeTpl('module/edit.tpl.php', $tdata);
+    }
+
+    /**
+     * Возвращает массив параметров, которые нужно передать в JS окружение через атрибут data-params
+     */
+    protected function addEditPageParams()
+    {
+        Response::addPageParams(
+            [
+                'state' => 'edit',
+                'id' => $this->_obj->getId(),
+                'moduleSessionParams' => $this->getModuleSessionUrlParams()
+            ]
+        );
+    }
+
+    /**
+     * Метод для переопределения в классах потоках
+     */
+    protected function addEditSubmenuItems()
+    {
+    }
+
+    private function proceedLog()
+    {
+        $this->_state = self::STATE_LOG;
+
+        //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
+        $this->loadObjAndCheck($_GET['logid']);
+
+        if (!User::hasLogAccess()) {
+            Session::flashError('No access to log');
+            $this->redirectToView();
+        }
+
+        //В момент создания объект CrudModuleLog загрузит данные из базы и инициализирует фильты
+        $logTable = new ModuleAbstractLog($this->_obj->getId());
+
+        if (Request::isXls()) {
+
+            $logTable->sendExcel();
+
+        } elseif (Request::isAjax()) {
+
+            print $logTable->getHtmlTableForAjax();
+
+        } else {
+
+            $this->initCssJs();
+            $this->setPageHeadForObj('Log');
+            Response::addPageParams(['state' => 'log', 'id' => $this->_obj->getId()]);
+            $this->addModuleSessionNextPrevLinks($this->_obj, 'logid');
+
+            $tdata = [
+                'table' => $logTable->getHtmlTable(),
+                'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
+                'filters' => $logTable->getFiltersHtml()
+            ];
+
+            Template::includeTpl('module/log.tpl.php', $tdata);
+        }
+    }
+
+    private function proceedSubmit()
+    {
+        $this->_state = self::STATE_SUBMIT;
+
+        $id = (int)$_GET['submitid'];
+        if (!is_numeric($_GET['submitid']) || $id < 0) {
+            //Если id был не числовой (приведён к 0) или отрицательный - перенаправляем в режим List
+            $this->riseSaveErorr('Invalid object id');
+            $this->abortInsertUpdate(400);
+        }
+
+        //Проверим, есть ли права на запись в этот модуль?
+        if (!$this->_allowEdit || !User::hasWriteAccess()) {
+            $this->riseSaveErorr('Edit not allowed');
+            $this->abortInsertUpdate(403);
+        }
+
+        //Проверим можно ли вообще добавлять новые элементы, если это режим добавления?
+        if ($id === 0) {
+            if (!$this->_allowAdd) {
+                $this->riseSaveErorr('Add new records not allowed');
+                $this->abortInsertUpdate(403);
+            }
+        } else {
+            //Это режим редактирования - проверим, существует ли этот объект?
+            //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
+            $this->loadObjAndCheck($id);
+
+        }
+
+        $timer = new Timer();
+
+        $dataFromRequest = $this->getDataFromRequest();
+        $this->validateUnique($dataFromRequest);
+        $this->validateMandatory($dataFromRequest);
+
+        if ($this->hasCriticalErrors()) {
+            $this->abortInsertUpdate(400);
+        }
+
+        //Были ли другие ошибки? Если были, нажал ли пользователь кнопку Save Anyway?
+        if (count($this->_saveErrors) > 0 && !isset($_GET['saveanyway'])) {
+            $this->abortInsertUpdate(400);
+        }
+
+        $this->proceedInsertUpdateObj($dataFromRequest);
+
+        $msg = '<strong>' . $this->_obj->getDescriptionHtml() . '</strong> saved';
+        if ($timer->get() > 3) {
+            $msg .= ' (' . $timer->getHtml() . ')';
+        }
+
+        Session::flashSuccess($msg);
+
+        if ($this->_justInserted) {
+            $this->afterInsert($dataFromRequest);
+        } else {
+            $this->afterUpdate($dataFromRequest);
+        }
+        $this->afterSubmit($dataFromRequest);
+
+        $this->redirectWithContinmethod();
+    }
+
+    private function abortInsertUpdate($code)
+    {
+        Response::abort($code, json_encode($this->_saveErrors));
+    }
+
+    protected function getDataFromRequest()
+    {
+        return $this->_fieldset->filterByMode(F::MODE_EDITSUBMIT)->getDataFromRequest($_POST);
+    }
+
+    protected function validateUnique(array $dataFromRequest)
+    {
+        $nameFieldKey = $this->getNameFieldKey();
+        if (isset($dataFromRequest[$nameFieldKey]) && $dataFromRequest[$nameFieldKey] != '') {
+            //Проверим существование такого имени в базе по полю $nameFieldKey
+            $this->validateUniqueInName($dataFromRequest[$nameFieldKey], $nameFieldKey);
+
+            if (isset($this->_fieldset['Synonyms'])) {
+                $this->validateUniqueInSynonyms($dataFromRequest[$nameFieldKey], $nameFieldKey);
+            }
+        }
+
+        if (isset($this->_fieldset['Synonyms']) && isset($dataFromRequest['Synonyms']) &&
+            $dataFromRequest['Synonyms'] != ''
+        ) {
+            $synArr = explode("\n", $dataFromRequest['Synonyms']);
+            $synArr = array_map('trim', $synArr);
+            $synArr = array_filter($synArr);
+
+            foreach ($synArr as $v) {
+                $this->validateUniqueInName($v, 'Synonyms');
+                $this->validateUniqueInSynonyms($v, 'Synonyms');
+            }
+        }
+    }
+
+    protected function getNameFieldKey()
+    {
+        return $this->_obj->getNameFieldKey();
+    }
+
+    /**
+     * @param string $name текущее значение поля Name, которое ввёл пользователь
+     * @param string $fieldKey ключ поля которое подсветить в случае ошибки
+     */
+    protected function validateUniqueInName($name, $fieldKey = null)
+    {
+        $nameFieldKey = $this->getNameFieldKey();
+
+        $query = "SELECT ID
+                  FROM " . $this->getDbTable() . "
+                  WHERE " . $nameFieldKey . " = '" . Db::esc($name) . "'
+                      AND ID != " . $this->_obj->getId();
+
+        if ($existId = Db::getOne($query)) {
+            if ($fieldKey === null) {
+                $fieldKey = $nameFieldKey;
+            }
+            $this->riseSaveErorrAlreadyExists($name, $existId, $fieldKey);
+        }
+    }
+
+    /**
+     * @param string $name текущее значение поля Name, которое ввёл пользователь
+     * @param int $existId найденное значение уже существующего элемента в базе
+     * @param string $fieldKey ключ поля которое подсветить в случае ошибки
+     * @return void
+     */
+    protected function riseSaveErorrAlreadyExists($name, $existId, $fieldKey)
+    {
+        $this->riseSaveErorr(
+            $this->_textObjectName . ' <strong>' . htmlspecialchars($name) . '</strong> already exists ' .
+            Link::moduleViewBlank('view...', $existId),
+            $fieldKey,
+            'already exists'
+        );
+    }
+
+    /**
+     * @param string $name текущее значение поля Name, которое ввёл пользователь
+     * @param string $fieldKey ключ поля которое подсветить в случае ошибки
+     */
+    protected function validateUniqueInSynonyms($name, $fieldKey = null)
+    {
+        $query = "SELECT ID
+                  FROM " . $this->getDbTable() . "
+                  WHERE CONCAT(Synonyms, '\n') LIKE '%" . Db::esc($name) . "\n%'
+                      AND ID != " . $this->_obj->getId();
+
+        if ($existId = Db::getOne($query)) {
+            if ($fieldKey === null) {
+                $fieldKey = $this->getNameFieldKey();
+            }
+            $this->riseSaveErorrAlreadyExists($name, $existId, $fieldKey);
+        }
+    }
+
+    protected function validateMandatory(array $dataFromRequest)
+    {
+        //Проверим заполненность остальных полей, помеченных как editMandatory
+        $errors = $this->_fieldset->validateMandatory($dataFromRequest);
+        foreach ($errors as $error) {
+            $this->riseSaveErorr($error['msg'], $error['fieldKey'], $error['hint']);
+        }
+    }
+
+    /**
+     * Метод проверяет массив $this->_saveErrors на наличие критических ошибок
+     * Если критических ошибок нет, то возвращает false - это значит можно продолжить сохранение
+     */
+    private function hasCriticalErrors()
+    {
+        foreach ($this->_saveErrors as $error) {
+            //Как только найдём первую критическую ошибку, возвращаем true
+            if ($error['critical']) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function proceedInsertUpdateObj(array $dataFromRequest)
+    {
+        if ($this->_obj->getId() === 0) {
+            $this->proceedInsertObj($dataFromRequest);
+        } else {
+            $this->proceedUpdateObj($dataFromRequest);
+        }
+
+        $this->proceedSubmitSubtables();
+    }
+
+    /**
+     * Если нужно добавть какую-то дополнительную логику сохранения, следует переопределять метод afterSubmit(array $dataFromRequest)
+     * В нём можно проверить флаг $this->_justInserted, чтобы определить вставку или обнвление
+     * @param $dataFromRequest
+     */
+    private function proceedInsertObj($dataFromRequest)
+    {
+        $this->_state = self::STATE_INSERT;
+
+        $dataFromRequest = $this->getOnlySubmitFieldsData($dataFromRequest);
+        $this->_obj->insertDb($dataFromRequest);
+        $this->_obj->loadData();
+
+        $this->_justInserted = true;
+        $this->_changedWhileUpdate = true;
+
+        if ($this->_folders) {
+            $this->createFolder($this->_obj->getData());
+        }
+    }
+
+    /**
+     * Если нужно добавть какую-то дополнительную логику сохранения, следует переопределять метод afterSubmit(array $dataFromRequest)
+     * В нём можно проверить флаг $this->_justInserted, чтобы определить вставку или обнвление
+     * @param $dataFromRequest
+     */
+    private function proceedUpdateObj(array $dataFromRequest)
+    {
+        $this->_state = self::STATE_UPDATE;
+
+        $dataFromRequest = $this->getOnlySubmitFieldsData($dataFromRequest);
+        $affectedRows = $this->_obj->updateDb($dataFromRequest);
+        if ($affectedRows) {
+            $this->_obj->loadData();
+            $this->_changedWhileUpdate = true;
+        }
+    }
+
+    private function proceedSubmitSubtables()
+    {
+        if ($this->_subtables) {
+            //Перебираем все подтаблицы и вызываем метод getDataFromRequest у каждой из них
+            foreach ($this->_subtables as $subtableName => $subtableParams) {
+                if (!$subtableParams['readonly']) {
+                    $subtableObj = $this->getSubtableObject($subtableName);
+                    $subtableObj->proceedSubmit();
+                }
+            }
+        }
+    }
+
+    protected function afterInsert(array $dataFromRequest)
+    {
+    }
+
+    protected function afterUpdate(array $dataFromRequest)
+    {
+    }
+
+    /**
+     * Метод для переопределения в классах потомках. Вызывается после сохранения объекта и всех подтаблиц.
+     * Если нужно сделать отдельную логику после insert или после update, то можно проверить флаг $this->_justInserted
+     * @param array $dataFromRequest
+     */
+    protected function afterSubmit(array $dataFromRequest)
+    {
+    }
+
+    /**
+     * @param string $subtableName имя класса подтаблицы без суффикса Subtable и без неймспейса текущего модуля
+     * @return \Light\SubtableBase\Subtable
+     */
+    protected function getSubtableObject($subtableName)
+    {
+        if (!isset($this->_initedSubtables[$subtableName])) {
+
+            $class = ApplicationAbstract::getProjNamespace();
+            $class .= '\\Module';
+            $class .= '\\' . Request::getModule();
+            $class .= '\\Subtables';
+            $class .= '\\' . $subtableName;
+            $subtableObj = new $class($this->_obj);
+            $this->_initedSubtables[$subtableName] = $subtableObj;
+        }
+
+        return $this->_initedSubtables[$subtableName];
+    }
+
+    private function redirectWithContinmethod()
+    {
+        header('HTTP/1.1 200 OK');
+        //Используем свой собсвенный придуманный заголовок 'x-light-continueurl', чтобы вручную обработать его на клиенте
+        header('x-light-continueurl: ' . $this->getContinmethodUrl());
+        ApplicationAbstract::terminate();
+    }
+
+    /**
+     * Возвращает URL на который нужно перенаправить пользователя в соответсвие с выбранным на форме continmethod
+     */
+    private function getContinmethodUrl()
+    {
+        $module = Request::getModule();
+        $continmethod = isset($_POST['_continmethod']) ? $_POST['_continmethod'] : null;
+        $continmethodValid = $this->getContinmethodValid($continmethod);
+        if ($continmethodValid === $continmethod) {
+            //Если пользователь передал доопустимый метод перехода, то сохраним его в настройках пользователя
+            User::setParam($module . '_continmethod', $continmethod);
+        }
+
+        $urlParams = [];
+
+        if ($continmethodValid === 'view') {
+            $urlParams['id'] = $this->_obj->getId();
+        } elseif ($continmethodValid === 'edit') {
+            $urlParams['editid'] = $this->_obj->getId();
+        } elseif ($continmethodValid === 'addnew') {
+            $urlParams['addnew'] = 1;
+        } else {
+            $urlParams = $this->getFindidUrlParams();
+        }
+
+        if ($continmethodValid !== 'addnew') {
+            $urlParams += $this->getModuleSessionUrlParams();
+        }
+
+        return Link::url($urlParams);
+    }
+
+    /**
+     * Реальное удаление объекта из базы
+     * Если реальное удаление невозможно, т.к. пользователь не выбрал какие-то поля на форме подтверждения
+     * то следует вернуть http ответ 400 c текстом сообщения, которое будет выведено в alert()
+     */
+    private function proceedDelete()
+    {
+        //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
+        $this->loadObjAndCheck($_GET['delid']);
+
+        if (!$this->_allowDelete || !User::hasWriteAccess()) {
+            Response::abort(403, 'Delete not allowed');
+        }
+
+        if (isset($_GET['confirm'])) {
+            //Запрос пришел из диалогового окна, нужно проверить, приавильно ли было заполнено диалоговое окно?
+            //Если внутри checkDeleteConfirmResult выяснится, что пользователь что-то не заполнил - этот метод
+            //сам отправит пользователю новый диалог или другое сообщение
+            $this->checkDeleteConfirmResult();
+
+            //Непосредственное удаление
+            $timer = new Timer();
+
+            $this->proceedDeleteObj();
+            $deletedSubtablesData = $this->proceedDeleteSubtables();
+            $this->afterDelete($deletedSubtablesData);
+
+            $msg = '<strong>' . $this->_obj->getDescriptionHtml() . '</strong> deleted';
+            if ($timer->get() > 3) {
+                $msg .= ' (' . $timer->getHtml() . ')';
+            }
+
+            Session::flashSuccess($msg);
+
+            //Возвращаем специальный header, который позволяет выполнить js на стороне клиента
+            Response::sendHeaderJsEval('Light.module.deleteIoSuccessHandler()');
+            ApplicationAbstract::terminate();
+        }
+
+        //Флага подтверждения не было, выведем форму подтверждения в диалоговом окне
+        $module = Request::getModule();
+        $formAction = '?a=' . $module . '&delid=' . $this->_obj->getId() . '&confirm=1';
+        $bodyHtml = '<form action="' . $formAction . '">' . $this->getDeleteConfirmationDialogHtml() . '</form>';
+
+        Response::sendAjaxDialog('Delete?', $bodyHtml, 'Delete', 'Deleting...');
+    }
+
+    /**
+     * Метод для переопределения в классах потомках
+     * Вызывается после удаления текущего объекта и всех подтаблиц
+     * Данные текущего объекта при этом продолжают быть доступными в $this->_obj,
+     * а данные удалённых подтаблиц попадают в этот метод через параметр $deletedSubtablesData [<subtableName> => [<data>], ...]
+     * @param array $deletedSubtablesData
+     */
+    protected function afterDelete(array $deletedSubtablesData)
+    {
+    }
+
+    /**
+     * Метод для переопределения в классах потоках - здесь можно проверить какие-то поля пришедшие с формы подтверждения
+     * и вернуть новый диалог, если что-то не устраивает
+     */
+    protected function checkDeleteConfirmResult()
+    {
+    }
+
+    /**
+     * Этот метод удобно переопределять в классах потоках, если нужны дополнительные дейтсвия по удалению чего-либо
+     */
+    protected function proceedDeleteObj()
+    {
+        if ($this->_folders) {
+            $this->deleteFolder($this->_obj->getData());
+        }
+        $this->_obj->deleteDb();
+    }
+
+    /**
+     * Функция для переопределения в классах потомках
+     * @return array возвращает массив данных удалённых подтаблиц [<subtableName> => [<data>], ...]
+     */
+    private function proceedDeleteSubtables()
+    {
+        $deletedSubtablesData = [];
+
+        foreach ($this->_subtables as $subtableName => $subtableParams) {
+            if (!$subtableParams['readonly']) {
+                $subtableObj = $this->getSubtableObject($subtableName);
+                $subtableObj->loadData();
+                $deletedSubtablesData[$subtableName] = $subtableObj->getData();
+                $subtableObj->deleteAll();
+            }
+        }
+
+        return $deletedSubtablesData;
+    }
+
+    protected function getDeleteConfirmationDialogHtml()
+    {
+        return 'Delete <strong>' . $this->_obj->getDescriptionHtml() . '</strong>?';
+    }
+
+    private function proceedList()
+    {
+        //Правильно определим переменную _state
+        if (isset($_GET['xls']) && $this->_tableExcelEnabled) {
+            $this->_state = self::STATE_LIST_EXCEL;
+        } else {
+            $this->_state = self::STATE_LIST;
+        }
+
+        $this->initCssJs();
+
+        $this->initFieldsFromSubtables();
+        $this->proceedFilters();
+        $this->initList();
+
+        $this->initSortable();
+        $this->initLayoutable();
+
+        if ($this->_state != self::STATE_LIST_EXCEL) {
+            //Инициализируем пажинацию, только если это не экспорт в Excel
+            $this->initPaginatable();
+        }
+
+        //Установим номер страницы в зависимости от findid и moduleSession
+        $findid = $this->getTableFindid();
+        $newPage = $this->getTablePageFromModuleSession($findid);
+        if ($newPage !== null) {
+            $this->setTablePage($newPage);
+        }
+
+        $this->tableLoadData();
+
+        if ($this->isStateListExcel()) {
+
+            //Запрос через кнопку Export to Excel
+            $this->sendExcel();
+
+        } elseif (Request::isAjax()) {
+
+            //Запрос пришел через ajax - значит это обновление таблицы при пажинации или фильтрах
+            $flashMessagess = Session::flashGetAll();
+            if ($flashMessagess) {
+                header('x-light-flashmsg: ' . json_encode($flashMessagess));
+            }
+
+            print $this->getHtmlTableForAjax();
+
+        } else {
+
+            $moduleName = ModuleRegister::getModuleName(Request::getModule());
+            Response::setPageHeadText('<strong>' . $moduleName . '</strong>');
+            Response::setPageTitle($moduleName);
+            $this->addListPageParams();
+
+            //Это обычный запрос на рендринг таблицы в режиме List
+            $tdata = [
+                'table' => $this->getHtmlTable(),
+                'buttons' => $this->getListButtons(),
+                'filters' => $this->getFiltersHtml(),
+                'listParamsJson' => json_encode($this->getListParamsForJs())
+            ];
+
+            Template::includeTpl('module/list.tpl.php', $tdata);
+        }
+    }
+
+    protected function addListPageParams()
+    {
+        Response::addPageParams(['state' => 'list']);
+    }
+
+    protected function getListButtons()
+    {
+        $out = [];
+        if ($this->_allowAdd && User::hasWriteAccess()) {
+            $out[] = [
+                'text' => 'Add New',
+                'url' => '?a=' . Request::getModule() . '&addnew=1',
+                'linkCssClass' => 'addnew-link'
+            ];
+        }
+
+        return $out;
+    }
+
+    protected function getListParamsForJs()
+    {
+        return [];
+    }
+
+    final protected function addMassactionDelete()
+    {
+        $this->addMassactionOption('delete', 'Delete', 'bad');
+    }
+
+    /**
+     * @param string $key уникальный ключ этого massaction
+     * @param string $text текст отображаемый в выпадающем списке
+     * @param string $cssClass класс которым подсветить элемент в выпадающем списке
+     * @param string $optgroup
+     * @param bool $blank открывать при сабмите в новом окне браузера
+     */
+    final protected function addMassactionOption(
+        $key,
+        $text,
+        $cssClass = '',
+        $optgroup = '',
+        $blank = false
+    ) {
+
+        //Если передан флаг blank, значит нужно откывать новое окно браузера при сабмите massaction
+        //Это происходит в js окружении, поэтому нужно как-то передать информацию в js окружение, что данный massaction
+        //следует открывать в новом окне. Используем для этого css class
+        if ($blank) {
+            $cssClass = trim($cssClass . ' massaction-target-blank');
+        }
+
+        $this->_massactionOptions[$key] = [
+            'text' => $text,
+            'cssClass' => $cssClass,
+            'optgroup' => $optgroup
+        ];
+    }
+
+    final protected function addMassactionMultipleUpdate()
+    {
+        $this->addMassactionOption('MultipleUpdate', 'Multiple Update');
+    }
+
+    /**
+     * @param string $key условное обозначение из которого будет создан massaction 'Print' . $name
+     * @param string $text текст для вывода на экран пользователю
+     */
+    protected function addMassactionPrint($key, $text)
+    {
+        //Автоматически добавляем к ключу префикс 'Print', добавляем css class 'massaction-print'
+        //и указываем флаг $blank = true, т.к. печать всегда в новом окне
+        $this->addMassactionOption('Print' . $key, $text, 'massaction-print', true);
+    }
+
+    /**
+     * Метод для переопределения в классах потомках
+     * Здесь нужно последовательно вызывать $this->addCopyMode(), добавляя разные режимы копирования
+     */
+    protected function initCopyModes()
+    {
+    }
+
+    /**
+     * @param string $name
+     * @param string|array $fieldsKeys
+     * @param string|array $subtables
+     */
+    final protected function addCopyMode($name = 'Copy', $fieldsKeys = 'all', $subtables = 'all')
+    {
+        $this->_copyModes[$name] = ['fieldKeys' => $fieldsKeys, 'subtables' => $subtables];
+    }
+
+    protected function isStateList()
+    {
+        return $this->_state == self::STATE_LIST;
+    }
+
+    final protected function isStateAddNew()
+    {
+        return $this->_state == self::STATE_ADDNEW;
+    }
+
+    final protected function isStateEdit()
+    {
+        return $this->_state == self::STATE_EDIT;
+    }
+
+    final protected function isStateSubmit()
+    {
+        return $this->_state == self::STATE_SUBMIT;
+    }
+
+    final protected function isStateLog()
+    {
+        return $this->_state == self::STATE_LOG;
+    }
+
+    final protected function isMultipleupdateSubmitState()
+    {
+        return $this->_state == self::STATE_MULTIPLEUPDATESUBMIT;
+    }
+
+    protected function getFolderBaseDir()
+    {
+        return Request::getModule();
+    }
+
+    final public function getTableName()
+    {
+        return Request::getModule();
+    }
+
+    protected function getExcelFilename()
+    {
+        return ModuleRegister::getModuleName(Request::getModule());
+    }
+
+    protected function getExcelWorksheetName()
+    {
+        return ModuleRegister::getModuleName(Request::getModule());
+    }
+
+    /**
+     * Метод для использования в классах потомках
+     * Добавляет кнопку в подменю с тем расчётом, что при клике на это кнопку будет вызываться указанная viewFunc
+     * в текущем модуле
+     * @param string $text
+     * @param string $imgHtml
+     * @param string $viewFunc
+     * @param array $urlParams
+     * @param bool $blank
+     * @param bool $ajax
+     * @return void
+     */
+    final protected function addSubmenuItemViewFunc(
+        $text,
+        $imgHtml,
+        $viewFunc,
+        array $urlParams = [],
+        $blank = false,
+        $ajax = false
+    ) {
+        $urlParams['id'] = $this->_obj->getId();
+        $urlParams['func'] = $viewFunc;
+        $url = Link::url($urlParams);
+
+        $this->addSubmenuItemUrl($text, $imgHtml, $url, $blank, $ajax);
+    }
+
+    final protected function addSubmenuItemViewFuncAjax(
+        $text,
+        $imgHtml,
+        $viewFunc,
+        array $urlParams = [],
+        $blank = false
+    ) {
+        $this->addSubmenuItemViewFunc($text, $imgHtml, $viewFunc, $urlParams, $blank, true);
+    }
+
+    final protected function addSubmenuItemUrl($text, $imgHtml, $url, $blank = false, $ajax = false)
+    {
+        if ($imgHtml) {
+            $text = $imgHtml . ' ' . $text;
+        }
+
+        if ($ajax) {
+            //Если этот url нужгно открыть ajax запросом, добавим небольшую метку к url.
+            //По этой метке будет навешен обработчик клика в JS initAjaxLinkListeners() в Light.js
+            $url .= '#ajax';
+        }
+
+        $this->_submenuItemsTplData[] = [
+            'text' => $text,
+            'url' => $url,
+            'blank' => $blank
+        ];
+    }
+
+    /**
+     * @param $name
+     * @param bool $withStamp
+     * @param array $additionalParams
+     *
+     */
+    final protected function addDocumentPrint($name, $withStamp = false, $additionalParams = [])
+    {
+        $print['name'] = $name;
+        $print['additionalParams'] = $additionalParams;
+
+        if ($withStamp) {
+            $print['name'] = $name . ' With Stamp';
+            $print['additionalParams']['Stamp'] = 1;
+            $this->_documentPrintTemplates[] = $print;
+
+            $print['name'] = $name;
+            $print['additionalParams']['Stamp'] = 0;
+            $this->_documentPrintTemplates[] = $print;
+        } else {
+            $this->_documentPrintTemplates[] = $print;
+        }
+    }
+
+    protected function parseRequestParams()
+    {
+
+        $params = [
+            'char' => [
+                'ids', //id coma separated
+                'Lang', // doc Language En|Ru
+                'Module', // module if linked other module
+                'PDFName', // Doc Name if not set generates from ObjectName, ObjectId, Lang, Stamp
+                'PDFTemplate', // path to css file
+                'wordFunc', // method to save word
+                'printFunc', // method to get Html
+                'ObjectName'
+            ],
+            'int' => [
+                'Stamp', // w\wo stamp 1:0
+                'ObjectID' // ID if linked other module
+            ],
+            'checkbox' => [
+                'saveWord', // 1:0
+                'savePDF', // 1:0
+            ],
+            'array' => [
+                'Path', // path too save recieves multiple values if not set generated from Module, ObjectId
+                'extraParams' //if some extra values needed to passthrough into function "key=param,key1=param1"
+            ]
+        ];
+
+        $requestParams = [];
+
+        foreach ($params as $type => $values) {
+            foreach ($values as $param) {
+                if ($type == 'char') {
+                    $requestParams[$param] = (isset($_REQUEST[$param])) ? $_REQUEST[$param] : null;
+                }
+                if ($type == 'int') {
+                    $requestParams[$param] = (isset($_REQUEST[$param])) ? (int)$_REQUEST[$param] : 0;
+                }
+                if ($type == 'array') {
+                    if (isset($_REQUEST[$param])) {
+                        $arrayParam = explode(',', $_REQUEST[$param]);
+                        if (strpos($arrayParam[0], '=') !== false) {
+                            foreach ($arrayParam as $extraParam) {
+                                if (strpos($extraParam, '=') !== false) {
+                                    $array = explode('=', $extraParam);
+                                    $requestParams[$param][$array[0]] = $array[1];
+                                }
+                            }
+                        } else {
+                            $requestParams[$param] = $arrayParam;
+                        }
+                    } else {
+                        $requestParams[$param] = null;
+                    }
+                }
+                if ($type == 'checkbox') {
+                    if (isset($_REQUEST[$param])) {
+                        $requestParams[$param] = $_REQUEST[$param] == 'on' ? 1 : 0;
+                    } else {
+                        $requestParams[$param] = 0;
+                    }
+                }
+            }
+        }
+
+        //TODO временное решение, потом нужно переделать
+        $requestParams['savePDF'] = 1;
+
+        return $requestParams;
+    }
+
+    /**
+     * Этот метод вызывает ф-ии печати из подзапроса
+     */
+    public function proceedDocumentPrint()
+    {
+        $requestParams = $this->parseRequestParams();
+
+        if ($requestParams['ids'] != null) {
+            //Тут массовая печать, этим занимается отдельный метод
+            $this->proceedMassactionPrint($requestParams);
+        } else {
+            if ($this->_obj->getId() == null) {
+                //null может возникнуть когда приходим на proceedDocumentPrint из massaction. В massaction используется loadurlparams
+                //если пользователь сделает refresh таблицы, то loadurlparams пусто, таким образом ids тоже пусто и алгоритм попадает сюда
+                //но конкретный $this->_obj->getId() тоже не задан!
+                //это можно убрать, когда loadurlparams станет умным
+                $this->redirectToList();
+            }
+            //Тут обычная печать
+            //Метод для печати может быть задан вручную через additionalParams[printFunc] внутри addDocumentPrint()
+            $html = '';
+            $method = 'proceed' . $requestParams['printFunc'];
+
+            if ($requestParams['printFunc'] != null) {
+                if (!method_exists($this, $method)) {
+                    $this->abortView(405, 'Method "' . $method . '" doesn exist');
+                } else {
+                    $html = call_user_func([$this, $method], $requestParams);
+                }
+            } else {
+                //Если printFunc не был задан попробуем вызвать стандартный метод
+                $html = $this->proceedPrint($requestParams);
+            }
+
+            //Если все прошло как надо мы получаем html и думаем что делать дальше
+
+            if ($html != '') {
+                $finalHtml = Template::parseTpl(
+                    $this->_globalTemplate,
+                    [
+                        'title' => $this->_textObjectName . ' ' . $this->_obj->getId(),
+                        'body' => $html,
+                        'css' => $requestParams['PDFTemplate']
+                    ]
+                );
+                //Сохранение документа в PDF
+                if ($requestParams['savePDF'] == 1 && $requestParams['PDFTemplate'] != null && $this->_folders) {
+                    $this->proceedSavePDF($finalHtml, $this->getPDFParams($requestParams));
+                }
+
+                //Сохранение документа в Word, при условии что есть функция для этого
+                if ($requestParams['saveWord'] != 0 && $this->_folders) {
+                    $this->proceedSaveDocumentWord($finalHtml);
+                }
+
+                print $finalHtml;
+                ApplicationAbstract::terminate();
+            } else {
+                $this->abortView(405, 'Was no html to view');
+            }
+        }
+    }
+
+    protected function proceedMassactionPrint($params)
+    {
+        if ($params['ids'] != null) {
+            $ids = explode(',', $params['ids']);
+            //Временно
+            set_time_limit(2000);
+            $tdata = [
+                'css' => $params['PDFTemplate'],
+                'body' => ''
+            ];
+
+            foreach ($ids as $id) {
+
+                $this->_obj->setId($id);
+                $this->_obj->loadData($this->_fieldset->getKeys());
+
+                if (isset($params['printFunc'])) {
+                    $html = call_user_func([$this, 'proceed' . $_REQUEST['printFunc']], $params);
+                } else {
+                    $html = $this->proceedPrint($params);
+                }
+
+                $tdata['body'] .= '<div class="page-break">' . $html . '</div>';
+
+                $pdfHtml = Template::parseTpl(
+                    $this->_globalTemplate,
+                    [
+                        'body' => $html,
+                        'css' => $params['PDFTemplate']
+                    ]
+                );
+                $this->proceedSavePDF($pdfHtml, $this->getPDFParams($params));
+            }
+
+            $finalHtml = Template::parseTpl($this->_globalTemplate, $tdata);
+            print $finalHtml;
+
+            ApplicationAbstract::terminate();
+        }
+    }
+
+    protected function proceedPrint()
+    {
+        return '';
+    }
+
+    public function getPDFParams($params = [])
+    {
+        if ($params['Module'] == null || $params['ObjectID'] == null || $params['ObjectName'] == null) {
+            $defaultParams = [
+                'Module' => $this->getTableName(),
+                'ObjectID' => $this->_obj->getId(),
+                'ObjectName' => $this->_textObjectName
+            ];
+
+            $params = array_merge($params, $defaultParams);
+        }
+
+        return $params;
+    }
+
+    /**
+     * @param $html
+     * @param array $params
+     * @param bool $refresh пока всегда true
+     */
+    public function proceedSavePDF($html, array $params, $refresh = false)
+    {
+        /*
+        if ($this->_justInserted) {
+            $refresh = true;
+        }
+        File::saveDocumentPDFIntoShareFolder($html, $params, $refresh);
+        */
+
+        $filename = $this->_textObjectName . ' ' . $this->_obj->getId();
+
+        if ($params['Lang'] !== null) {
+            $filename .= '  ' . $params['Lang'];
+        }
+
+        if ($params['Stamp']) {
+            $filename .= ' With Stamp';
+        }
+
+        $filename .= '.pdf';
+
+        $destPath = $this->getFolderRelativePath($this->_obj->getData()) . '/' . $filename;
+        Pdf::saveIntoFilesFolder($html, $destPath);
+    }
+
+    protected function proceedSaveDocumentWord($html)
+    {
+    }
+
+    final protected function riseSaveWarning($msg, $fieldKey = '', $hint = '')
+    {
+        $this->riseSaveErorr($msg, $fieldKey, $hint, false);
+    }
+
+    /**
+     * Добавляет сообщение в массив ошибок при сохранении
+     * @param string $msg текстовое сообщение для вывода в диалоговое окно
+     * @param string $fieldKey имя поля, которое заполнено не верно
+     * @param string $hint
+     * @param bool $critical если этот параметр false - ошибка считается не критичной.
+     * Если все ошибки не критичные, то у пользователя будет возможность нажать "Save Anyway"
+     * @return void
+     */
+    final protected function riseSaveErorr($msg, $fieldKey = '', $hint = '', $critical = true)
+    {
+        if (isset($this->_fieldset[$fieldKey])) {
+            $type = $this->_fieldset[$fieldKey]->getType();
+        } else {
+            $type = '';
+        }
+        $this->_saveErrors[] = [
+            'msg' => $msg,
+            'fieldKey' => $fieldKey,
+            'hint' => $hint,
+            'type' => $type,
+            'critical' => $critical
+        ];
+    }
+
+    protected function getTableReloadUrl()
+    {
+        return '?a=' . Request::getModule();
+    }
+
+    /**
+     * @param string $subtableName имя класса подтаблицы без суффикса Subtable и без неймспейса текущего модуля
+     * @return void
+     */
+    protected function registerSubtable($subtableName)
+    {
+        $this->_subtables[$subtableName] = [
+            'readonly' => false
+        ];
+    }
+
+    protected function registerSubtableReadonly($subtableName)
+    {
+        $this->_subtables[$subtableName] = [
+            'readonly' => true
+        ];
+    }
+
+    final protected function sendMassactionErrorDialog($titleHtml, $bodyHtml)
+    {
+        Response::sendAjaxDialog($titleHtml, $bodyHtml, null, null, null, 'Close');
+    }
+
+    protected function massactionDelete($checkedIds)
+    {
+        $msgBuff = new Msg();
+        $deleted = 0;
+        foreach ($checkedIds as $id) {
+
+            //Проверим, что id числовой и больше 0
+            $idInt = (int)$id;
+            if ($idInt <= 0) {
+                continue;
+            }
+
+            //Проверим существование объекта в базе, попробовав его загрузить
+            $obj = clone $this->_obj;
+            $obj->setId($idInt);
+            if (!$obj->loadData()) {
+                $msgBuff->addError('Object with ID = ' . $idInt . ' not found');
+                continue;
+            }
+
+            //Проверим, что у пользователя есть права доступа к этому объекту
+            if (!$this->hasAccessRightToObj($obj) || !$this->hasWriteAccessRightToObj($obj)) {
+                $msgBuff->addError('No access to delete object with ID = ' . $obj->getId());
+                continue;
+            }
+
+            if ($this->_folders) {
+                $this->deleteFolder($obj->getData());
+            }
+            $obj->deleteDb('Multiple Delete');
+        }
+
+        //Стандартное сообщение о числе обновлённых записей (зелёное или серое)
+        $msg = 'Deleted: ' . $deleted;
+        if ($deleted > 0) {
+            $msgBuff->addSuccess($msg);
+        } else {
+            $msgBuff->addInfo($msg);
+        }
+
+        $this->sendMassactionSuccessDialog('Multiple Delete', $msgBuff->getHtml());
+    }
+
+    /**
+     * Метод для переопределения в классах потоках - здесь проверяются права доступа к объекту в режимах View/Edit/Log/Delete
+     */
+    protected function hasAccessRightToObj(Obj $obj)
+    {
+        return true;
+    }
+
+    final protected function getBeautyMassactionErrorsList($errors)
+    {
+        if (count($errors) > 1) {
+            return '<ol><li>' . implode('</li><li>', $errors) . '</li></ol>';
+        } else {
+            return $errors[0];
+        }
+    }
+
+    private function ajaxTableReloadAction()
+    {
+        $this->_state = self::STATE_LIST;
+
+        $this->initFieldsFromSubtables();
+        $this->initList();
+        $this->initPaginatable();
+        $this->initSortable();
+        $this->initLayoutable();
+
+        $this->proceedFilters();
+        $this->tableLoadData();
+
+        $outHtml = $this->getHtmlTableForAjax();
+        return $outHtml;
+    }
+
+    protected function initFieldsFromSubtables()
+    {
+        foreach ($this->_subtables as $subtableName => $subtableParams) {
+            $subtableObj = $this->getSubtableObject($subtableName);
+            //Добавим новые поля в $this->_fieldset
+            //Эти поля объявлены внутри подтаблиц с переменных $this->_groupconcatFieldKeys и $this->_cacheFieldsKeys
+            $subtableFields = $subtableObj->getFieldsForMasterModuleList();
+            if ($subtableFields) {
+                $this->_fieldset->addFields($subtableFields);
+            }
+        }
+    }
+
+    /**
+     * Подготовительные работы для режима List
+     * Добавлят дополнительные поля в начало и конец таблицы - чекбокс, инконки Color, Edit и Delete
+     * Устанавливает страницу $this->setTablePage() в зависимости от текущей сесии и _findid
+     * @return void
+     */
+    protected function initList()
+    {
+        //Параметр из класса Table: имя модуля на который автоматически делать ссылки в таблице
+        $this->_tableLinkModule = Request::getModule();
+
+        //Регистрируем массовые действия - метод initMassactionOptions должен быть переопределён в классе потомке
+        $this->initMassactionOptions();
+        //Добавляем опции печати
+        $this->initPrintForms();
+        $this->initMassactionOptionsFromPrintForms();
+
+        //Регистрирует поля типа Folder, Checkbox, Del, ...
+        $this->initTableFieldsAdditional();
+    }
+
+    /**
+     * Метод для переопределения в классах потомках - здесь должен заполняться массив $this->_massactionOptions
+     * Для более удобного заполнения массива _massactionOptions можно использовать метод $this->addMassactionOption()
+     */
+    protected function initMassactionOptions()
+    {
+    }
+
+    /**
+     * Регистрирует дополнительные поля для таблицы списка, такие как CheckBox, DEL ...
+     * @return void
+     */
+    protected function initTableFieldsAdditional()
+    {
+        //Общие параметры для всех полей типов
+        $commonParams['tableWidthHtml'] = 20;
+        $commonParams['tableOrderBy'] = '';
+        $commonParams['tableAlign'] = 'center';
+
+        if ($this->_massactionOptions) {
+            $params = $commonParams;
+            $params['nameTable'] = '<input type="checkbox" class="cb-all">';
+            $params['getHtmlFunction'] = function ($value, array $data) {
+                if (isset($data['ID'])) {
+                    return '<input type="checkbox" class="cb" value="' . $data['ID'] . '">';
+                }
+
+                return '';
+            };
+            $this->_fieldsetFirst->addField(F::create('CheckBox', F::TYPE_HTML, $params));
+        }
+
+        if ($this->_folders) {
+            $this->addFolderField();
+        }
+
+        if (User::hasWriteAccess()) {
+
+            if (isset($this->_fieldset['Color'])) {
+                $this->_fieldset['Color']->setParam(
+                    'source',
+                    '?a=' . Request::getModule() . '&id={id}&func=changeField'
+                );
+                $this->_fieldsetFirst->addField($this->_fieldset['Color']);
+            }
+
+            if ($this->_allowDelete || $this->_allowEdit) {
+                //Ширина колонки Del зависит от наличия иконки удаления
+                $params = $commonParams;
+                if ($this->_allowDelete && $this->_allowEdit) {
+                    $params['tableWidthHtml'] = 40;
+                } else {
+                    $params['tableWidthHtml'] = 20;
+                }
+                $params['nameTable'] = '';
+                $params['getHtmlFunction'] = function ($value, array $data) {
+
+                    $outHtml = '';
+                    if (isset($data['ID'])) {
+                        if ($this->_allowEdit) {
+                            $outHtml .= Link::moduleEdit(
+                                Img::sprite('edit', 'Edit'),
+                                $data['ID'],
+                                $this->getTableRowLinkUrlParams($data, 0) + $this->getModuleSessionUrlParams()
+                            );
+                        }
+                        if ($this->_allowDelete) {
+                            $outHtml .= '<a href="#" class="del-link" title="Delete">' . Img::sprite('del') . '</a>';
+                        }
+                    }
+
+                    return $outHtml;
+                };
+
+                $this->_fieldsetLast->addField(F::create('Actions', F::TYPE_HTML, $params));
+            }
+        }
+    }
+
+    protected function tableLoadData()
+    {
+        //Сделаем некую оптимизацию: сначала вынем все ID записей, которые должны в итоге попасть в таблицу
+        //После этого достанем все поля, указав в условии WHERE ID IN (...)
+        //Это значительно ускорит запрос, т.к. сортировка сначала LIMIT будут производиться на лёгком наборе ID
+        //При выборке остальных колонок объём данных будет уже меньше за счёт ограниченного набора WHERE ID IN (...)
+
+        $queryIds = "SELECT";
+
+        //В режиме выгрузки таблицы в Excel нам не важно сколько строк в таблице всего
+        if (!$this->isStateListExcel()) {
+            $queryIds .= " SQL_CALC_FOUND_ROWS";
+        }
+
+        $queryIds .= " ID";
+
+        //Проверим поле по которому идёт сортировка. Если оно вычисляемое, его тоже придётся добавить в этот запрос
+        //Причём у этого вычисляемого поля могут быть зависимости, поэтому используем $this->_fieldset->getSqlSelect()
+        $sortField = $this->getSortField();
+        if ($sortField && $sortField->getParam('sqlSelect')) {
+            $queryIds .= ', ' . $this->_fieldset->getSqlSelect([$sortField->key]);
+        }
+
+        $queryIds .= " FROM " . Db::quote($this->getDbTable());
+
+        $sqlWhere = $this->getFiltersSqlWhere();
+        if ($sqlWhere) {
+            $queryIds .= " WHERE " . $sqlWhere;
+        }
+
+        //Cформируем условие сортировки.
+        //Оно может состоять из сортировки указанной в trait TableSortable и из _tableDefaultOrderBy
+        //Сначала соберём всё в массив, потом из него склеим строку
+        $sqlOrderBy = [];
+        if ($sortField) {
+            $sqlOrderBy[] = $sortField->getParam('tableOrderBy') . ' ' . $this->getSortOrder();
+        }
+
+        if ($this->_tableDefaultOrderBy) {
+            $sqlOrderBy[] = $this->_tableDefaultOrderBy;
+        }
+
+        $sqlOrderBy = implode(', ', $sqlOrderBy);
+
+        if ($sqlOrderBy) {
+            $queryIds .= " ORDER BY " . $sqlOrderBy;
+        }
+
+        if ($this->isStateListExcel()) {
+            $queryIds .= ' LIMIT ' . $this->getTableExcelMaxRows();
+        } elseif ($this->_tablePaginationEnabled) {
+            $page = $this->getTablePage();
+            $rowsPerPage = $this->getTableRowsPerPage();
+            $queryIds .= ' LIMIT ' . ($page - 1) * $rowsPerPage . ', ' . $rowsPerPage;
+        }
+
+        //Получим все ID из базы
+        $timer = new Timer();
+        $ids = Db::getCol($queryIds);
+        $this->_queryTime += $timer->get();
+
+        if ($ids) {
+
+            //Сразу посчитаем общее количество строк, если это не режим экспорта в Excel
+            if (!$this->isStateListExcel()) {
+                $foundRows = Db::getOne("SELECT FOUND_ROWS()");
+                $this->setTableTotalRecordsFound($foundRows);
+            }
+
+            $idsString = implode(',', $ids);
+
+            //Если это не режим экспорта в Excel, запишем ID всех отображенных пользователю строк в базу
+            //Они понадобятся для навигации по стрелочкам в режимах View/Edit/Log
+            if (!$this->isStateListExcel()) {
+                $this->createModuleSession($idsString, $this->getTablePage());
+            }
+
+            //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->_tableData
+            $query = "SELECT ";
+
+            $selectFieldKeys = $this->getFieldsetShowed()->getKeys();
+            $query .= $this->_fieldset->getSqlSelect($selectFieldKeys);
+
+            $query .= " FROM " . Db::quote($this->getDbTable());
+            $query .= " WHERE ID IN (" . $idsString . ")";
+
+            if ($sqlOrderBy) {
+                $query .= " ORDER BY " . $sqlOrderBy;
+            }
+
+            $timer = new Timer();
+            $this->_tableData = Db::getAll($query);
+            $this->_queryTime += $timer->get();
+        }
+    }
+
+    final protected function isStateListExcel()
+    {
+        return $this->_state == self::STATE_LIST_EXCEL;
+    }
+
+    public function getHtmlTableForAjax($printHeadBlock = true, $printIfEmpty = false)
+    {
+        $outHtml = parent::getHtmlTableForAjax($printHeadBlock, $printIfEmpty);
+        if ($this->hasFilters()) {
+            $outHtml .= $this->getFiltersHiddenInput();
+        }
+
+        if ($this->_massactionOptions && $this->getTableDataCount() > 0) {
+            $tdata = [
+                'massactionsSelect' => F::create(
+                        'massaction-select',
+                        F::TYPE_SELECT,
+                        ['options' => $this->_massactionOptions]
+                    )->getHtmlInput('')
+            ];
+
+            $outHtml .= Template::parseTpl('module/listmassaction.tpl.php', $tdata);
+        }
+
+        return $outHtml;
+    }
+
+    /**
+     * Метод вызывается через POST ajax запросы на url типа ?a=module&id=123&func=changeField
+     */
+    private function proceedChangeField()
+    {
+        $this->_state = self::STATE_VIEW_CHANGE_FIELD;
+
+        if (!$this->_allowEdit || !User::hasWriteAccess() || !$this->hasWriteAccessRightToObj()) {
+            Response::abort(403, 'Edit not allowed');
+        }
+
+        $fieldKey = $_POST['fieldKey'];
+        $field = $this->_obj->getFieldset()->getField($fieldKey);
+        if (!$field) {
+            Response::abort(400, 'Field ' . $fieldKey . ' not found');
+        }
+
+        if (!$field->hasMode(F::MODE_SUBMIT)) {
+            Response::abort(403, 'Field ' . $fieldKey . ' not editable');
+        }
+
+        $value = $_POST['value'];
+        $data = [$fieldKey => $value];
+        $normilizedValue = $field->getDataFromRequest($data);
+        if ($normilizedValue === null) {
+            Response::abort(400, 'Invalid value ' . $value);
+        }
+
+        $this->_obj->updateDb([$fieldKey => $normilizedValue]);
+        //Возвращаем текст с новым значением
+        print $this->_obj[$fieldKey];
+        ApplicationAbstract::terminate();
+    }
+
+    /**
+     * Метод для переопределения в классах потоках - здесь проверяются права доступа к объекту в режиме Edit
+     */
+    protected function hasWriteAccessRightToObj()
+    {
+        return true;
+    }
+
+    private function massactionMultipleUpdate($checkedIds)
+    {
+        //Функция getHtmlMultipleUpdateForm может быть переопределена в классе потомке - именно она формирует HTML код формы
+        $bodyHtml = '<form action="?a=' . Request::getModule() . '&p=MultipleUpdateSubmit" method="post" class="multipleupdate">
+                     <input type="hidden" name="CheckedIds" value="' . implode(',', $checkedIds) . '">
+                     ' . $this->getHtmlMultipleUpdateFormBody() . '
+                     </form>';
+        Response::sendAjaxDialog(
+            'Multiple Update (' . count($checkedIds) . ')',
+            $bodyHtml,
+            'Multiple Update (' . count($checkedIds) . ')',
+            'Updating...'
+        );
+    }
+
+    /**
+     * Метод для переопределения в классах потомках
+     * Иногда к полям выводимым для редакитирования на форме Multiple Update нужно добавить какие-то особенные поля
+     * Например, поля связанные с подтаблицами
+     * @return Fieldset
+     */
+    protected function getMultipleUpdateFieldset()
+    {
+        return $this->_fieldset->filterByMode(F::MODE_MULTIPLEUPDATE);
+    }
+
+    /**
+     * Метод для переопределения в классах потомках, если нужно добавить какие-то переменные к шаблону
+     * @return array
+     */
+    protected function getTplDataMultipleUpdateFormBody()
+    {
+        return $this->getMultipleUpdateFieldset()->getTplData([], F::MODE_MULTIPLEUPDATE);
+    }
+
+    /**
+     * Для переопределения в классах потомках - возвращает HTML код формы БЕЗ ТЕГОВ form
+     * @return string HTML
+     */
+    protected function getHtmlMultipleUpdateFormBody()
+    {
+        $tdata = $this->getTplDataMultipleUpdateFormBody();
+
+        //Определим шаблон, который использовать для формы MultipleUpdate
+        $module = Request::getModule();
+        $templateFile = $module . 'MultipleUpdate.tpl.php';
+        if (!Template::findfile($templateFile)) {
+            $templateFile = 'module/multipleupdate/auto.tpl.php';
+        }
+
+        return Template::parseTpl($templateFile, $tdata);
+    }
+
+    protected function massactionPrintForm($checkedIds, $printForm)
+    {
+        $additionalCssFile = $this->_printForms[$printForm]['additionalCssFile'];
+
+        $bodyHtml = '';
+        foreach ($checkedIds as $id) {
+
+            $obj = clone $this->_obj;
+            $obj->setId($id);
+            $obj->loadData();
+            $currentBodyHtml = $this->getPrintFormBodyHtml($obj, $printForm);
+
+            //Если у этой печатной пормы стоял флаг savePdfIntoFolder, то нужно сохранить и PDF вариант в папку
+            if ($this->_printForms[$printForm]['savePdfIntoFolder']) {
+                $currentTitle = $this->getPrintFormTitle($obj);
+                $currentFullHtml = $this->getPrintFormFullHtml($currentTitle, $additionalCssFile, $currentBodyHtml);
+                $this->savePrintFormPdfInFilesFolder($currentFullHtml, $obj, $printForm);
+            }
+
+            $bodyHtml .= '<div style="page-break-after: always"></div>' . $currentBodyHtml;
+        }
+
+        //Оборачиваем в мастер-шаблон для печати и выводим на экран
+        $title = $this->_printForms['massactionTitle'] ? : $this->_printForms['text'];
+        print $this->getPrintFormFullHtml($title, $additionalCssFile, $bodyHtml);
+
+        ApplicationAbstract::terminate();
+    }
+
+    /**
+     * Метод для переорпделения в классах потомках. Здесь нужно последовательно вызывать $this->addPrintForm()
+     * для добавления новых печатных форм
+     */
+    protected function initPrintForms()
+    {
+    }
+
+    /**
+     * Этот метод вызывается автоматически, чтобы перенести печатные формы в выпадющий список massaction
+     */
+    private function initMassactionOptionsFromPrintForms()
+    {
+        foreach ($this->_printForms as $printForm => $params) {
+            $this->addMassactionOption('PrintForm' . $printForm, $params['text'], '', 'Print', true);
+        }
+    }
+
+    /**
+     * @param string $printForm условоное имя печатной формы
+     * @param string $text текст отображаемый на пользовательском интерфейсе
+     * @param string|null $massactionTitle при печати через massaction много документов склеиваются в один, что выводит
+     * в title html документа? Здесь можно задать какой-то фиксированный заголовк. Если этот параметр не передан, то
+     * используется предыдущий параметр $text, как заголовок
+     * @param string|null $bodyTemplate имя файла шаблона, если нужен какой-то особый файл. По умолчанию используется файл
+     * с именем печатной формы из папки PrintForms внутри папки текущего модуля
+     * @param string|null $additionalCssFile
+     * @param bool $savePdfIntoFolder сохранять ли pdf копию в папку?
+     * @param string|null $pdfFilenameSuffix
+     */
+    final protected function addPrintForm(
+        $printForm,
+        $text,
+        $massactionTitle = null,
+        $bodyTemplate = null,
+        $additionalCssFile = null,
+        $savePdfIntoFolder = false,
+        $pdfFilenameSuffix = null
+    ) {
+        $this->_printForms[$printForm] = [
+            'text' => $text,
+            'massactionTitle' => $massactionTitle,
+            'bodyTemplate' => $bodyTemplate,
+            'additionalCssFile' => $additionalCssFile,
+            'savePdfIntoFolder' => $savePdfIntoFolder,
+            'pdfFilenameSuffix' => $pdfFilenameSuffix
+        ];
+    }
+
+    /**
+     * Возвращает имя файла шаблона для указанной печатной формы. По умолчанию имя файла шаблона совпадает с условным
+     * именем печатной формы: происходит автоматический поиск в папке PrintForms внутри текущей папки
+     * Однако можно указать какой-то не стандартный шаблон, когда печатная форму регистрируется с помощью $this->addPrintForm()
+     * @param string $printForm условоное имя печатной формы
+     * @return string
+     */
+    protected function getPrintFormBodyTemplate($printForm)
+    {
+        $bodyTemplate = $this->_printForms[$printForm]['bodyTemplate'];
+        if (!$bodyTemplate) {
+            //Для данной печатной формы какой-то осбый шаблон не определён - используем стандартный из папки PrtinForms
+            $bodyTemplate = $printForm . '.tpl.php';
+        }
+
+        return $bodyTemplate;
+    }
+
+    /**
+     * Возвращает данные для файла-шаблона печати
+     * Этот метод можно переопределить в классах потомках, если нужно добавить больше переменных для текущего шаблона печати
+     * Например, если нужно добавить переменные содержащие подтаблицы
+     * @param \Light\Obj $obj
+     * @param string $printForm условоное имя печатной формы
+     * @return array
+     */
+    protected function getPrintFormTplData(Obj $obj, $printForm)
+    {
+        $tdata = $obj->getTplData(F::MODE_VIEW);
+        $tdata['_printForm'] = $printForm;
+        return $tdata;
+    }
+
+    /**
+     * Возвращает HTML код печатной формы для переданного объекта. Используется как из режима view, так и из режима massaction
+     * @param Obj $obj
+     * @param string $printForm условоное имя печатной формы
+     * @return string HTML код документа
+     */
+    protected function getPrintFormBodyHtml(Obj $obj, $printForm)
+    {
+        //Обычно печать происходит с помощью подготовленного шаблона из папки PrintForm
+        $template = 'PrintForms/' . $this->getPrintFormBodyTemplate($printForm);
+        $tdata = $this->getPrintFormTplData($obj, $printForm);
+        return Template::parseTpl($template, $tdata);
+    }
+
+    /**
+     * Возвращает title для HTML документа при печати из режима View и для pdf файла при массвой печати из massaction
+     * @param Obj $obj
+     * @return string
+     */
+    protected function getPrintFormTitle(Obj $obj)
+    {
+        return $this->_textObjectName . ' ' . strip_tags($obj->getDescriptionHtml());
+    }
+
+    protected function getPrintFormFullHtml($title, $additionalCssFile, $bodyHtml)
+    {
+        $tdata = ['title' => $title, 'additionalCssFile' => $additionalCssFile, 'body' => $bodyHtml];
+        return Template::parseTpl('module/PrintFormsMaster.tpl.php', $tdata);
+    }
+
+    protected function getPrintFormPdfFilename(Obj $obj, $printForm)
+    {
+        $filename = $this->_textObjectName . ' ' . strip_tags($obj->getDescriptionHtml());
+        if ($this->_printForms[$printForm]['pdfFilenameSuffix']) {
+            $filename .= ' ' . $this->_printForms[$printForm]['pdfFilenameSuffix'];
+        }
+        $filename .= '.pdf';
+
+        return $filename;
+    }
+
+    /**
+     * Вызывается из метода proceedViewPrintFrom(), когда пользователь печатает документ из режима View
+     * и из massactionPrintForm(), когда пользователь печатает через massaction
+     * @param string $fullHtml полный HTML код документа, готовый к конвертации в pdf
+     * @param Obj $obj объект для которого печатается форма (нужен для формирования имени pdf файла)
+     * @param string $printForm выбранная пользователем печатная форма (нужно для определения суффикса в имени pdf файла)
+     */
+    protected function savePrintFormPdfInFilesFolder($fullHtml, Obj $obj, $printForm)
+    {
+        $filename = $this->getPrintFormPdfFilename($obj, $printForm);
+        $filepath = $this->getFolderRelativePath($obj->getData()) . '/' . $filename;
+        Pdf::saveIntoFilesFolder($fullHtml, $filepath);
+    }
+}

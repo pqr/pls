@@ -1,0 +1,2 @@
+<?= $FiltersHtml ?>
+<?= $ResultsTableHtml ?>

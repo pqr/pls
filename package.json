@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@types/jquery": "latest",
+    "@types/lodash": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  }
+}

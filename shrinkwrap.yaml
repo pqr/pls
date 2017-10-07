@@ -1,0 +1,27 @@
+dependencies:
+  '@types/jquery': 3.2.12
+  '@types/lodash': 4.14.74
+  '@types/react': 16.0.5
+  '@types/react-dom': 15.5.4
+packages:
+  /@types/jquery/3.2.12:
+    resolution:
+      integrity: sha512-xZzTbUju6AYFE/088UcH2+dB7yTLHlujDju9pfncD1WLl2LWa6Mn+WzKjFfhn8YA+he53j5K0Rfdw89BN0kDug==
+  /@types/lodash/4.14.74:
+    resolution:
+      integrity: sha512-BZknw3E/z3JmCLqQVANcR17okqVTPZdlxvcIz0fJiJVLUCbSH1hK3zs9r634PVSmrzAxN+n/fxlVRiYoArdOIQ==
+  /@types/react-dom/15.5.4:
+    dependencies:
+      '@types/react': 16.0.5
+    resolution:
+      integrity: sha512-70jxjspCatgOXpRptyp/T8bag5prWMvd/rjc5trY3xiKQJOFfWMxGI8pSEJMHi9KQRAhpiLCbJLzcbVFX/nw2w==
+  /@types/react/16.0.5:
+    resolution:
+      integrity: sha512-Wo/JT6Cpl7XuLA1Ov2M2Rso4Tep7rX6h1csbqhNDaSxqeY8nxUbrDkT6vJrKVu+7tw7vmJP9libZSReV9GsG9A==
+registry: 'https://registry.npmjs.org/'
+shrinkwrapVersion: 3
+specifiers:
+  '@types/jquery': latest
+  '@types/lodash': latest
+  '@types/react': latest
+  '@types/react-dom': latest

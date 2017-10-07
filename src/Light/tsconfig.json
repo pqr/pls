@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "removeComments": false,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "experimentalDecorators": false,
+    "listFiles": true,
+    "listEmittedFiles": true,
+    "pretty": true,
+    "allowJs": false,
+    "strictNullChecks": true,
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "newLine": "LF",
+    "outFile": "public/js/lightbuild.js",
+    "declaration": true
+  },
+  "files": [
+    "TypeScript/interfaces.d.ts",
+    "TypeScript/Light.ts",
+    "TypeScript/AjaxFields.ts",
+    "TypeScript/Form.ts",
+    "TypeScript/MonthWidget.ts",
+    "TypeScript/Colorpalette.ts",
+    "TypeScript/Currency.ts",
+    "TypeScript/Dialog.ts",
+    "TypeScript/Table.ts",
+    "TypeScript/TableLayoutDialog.ts",
+    "TypeScript/Subtable.ts",
+    "TypeScript/Module.ts",
+    "TypeScript/Mainmenu.ts"
+  ]
+}

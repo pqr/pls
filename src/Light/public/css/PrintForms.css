@@ -1,0 +1,55 @@
+html, body {
+    margin: 0;
+    padding: 2px;
+    font-family: Verdana, Arial, sans-serif;
+    font-size: 13px;
+    background-color: #FFFFFF;
+}
+
+@media screen {
+    body {
+        width: 210mm;
+    }
+}
+
+.table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.table td, .table th {
+    padding: 2px;
+    border: 1px solid #000;
+}
+
+table.table tr.total {
+    font-weight: bold;
+}
+
+table.table td.tar {
+    text-align: right;
+}
+
+table.table td.tac {
+    text-align: center;
+}
+
+.page-break {
+    page-break-after: always;
+}
+
+.avoid-break {
+    page-break-inside: avoid;
+}
+
+.nobr {
+    white-space: nowrap;
+}
+
+div.text-ajax-container, div.text-ajax-container > div {
+    display: inline;
+}
+
+a.text-ajax {
+    display: none;
+}

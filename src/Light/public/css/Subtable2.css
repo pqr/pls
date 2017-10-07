@@ -1,0 +1,23 @@
+.subtable2-add-link {
+    font-size: 12px;
+}
+
+p.subtable2-add-p {
+    margin: 20px 2px;
+}
+
+.subtable2-del-div {
+    text-align: right;
+    margin: 0 10px 10px 0;
+}
+
+a.subtable2-del-link:hover {
+    color: #FF1111;
+}
+
+.subtable2-block {
+    margin-top: 20px;
+    border-radius: 2px;
+    padding: 10px 0;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12);
+}

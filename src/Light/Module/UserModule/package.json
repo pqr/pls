@@ -1,0 +1,24 @@
+{
+  "name": "usermodule",
+  "version": "1.0.0",
+  "dependencies": {
+    "@types/jquery": "latest",
+    "@types/keypress.js": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "mobx": "latest",
+    "mobx-react": "latest",
+    "serializr": "latest"
+  },
+  "devDependencies": {
+    "mobx-react-devtools": "latest",
+    "source-map-loader": "latest",
+    "ts-loader": "latest",
+    "typescript": "latest",
+    "webpack": "latest"
+  },
+  "scripts": {
+    "dev": "webpack --config webpack.config.development.js --progress --watch",
+    "prod": "webpack --config webpack.config.production.js"
+  }
+}

@@ -1,0 +1,48 @@
+# Example: ansible-playbook playbook_deploy_webserver.yml -i inventory.test --tags=nginx
+- hosts: []
+  become: true
+  become_user: root
+  become_method: sudo
+  vars_files:
+  - vars_decrypted.yml
+  - vars_encrypted.yml
+
+  tasks:
+  # Установить deploy ssh key (если его нет или отличается):
+  - name: deploy project 1. Copy id_rsa to user folder
+    copy: content={{ id_rsa }} dest=/home/ubuntu/.ssh/id_rsa mode=0600 owner=ubuntu group=ubuntu
+    tags: key
+
+  # Клонировать репозиторий prod website (и затереть изменения если были):
+  - name: deploy project 2. Clone git repo
+    become: false
+    git:
+      repo: git@bitbucket.org:pqr/pls.git
+      dest: "{{ project_dir }}"
+      clone: yes
+      force: yes
+      accept_hostkey: true
+    tags: code
+
+  # Проверить папки logs и temp и права 777 на них:
+  - name: deploy project 3. Check logs and temp folders and mode
+    file: path={{ item }} state=directory mode=0777
+    with_items:
+      - "{{ project_dir }}/logs"
+      - "{{ project_dir }}/temp"
+    tags: code
+
+  # Установить файл config.php с переменными
+  - name: deploy project 4. Copy config.php
+    template:
+      src: files/config.php
+      dest: "{{ project_dir }}/config.php"
+      backup: yes
+    tags: code
+
+  - name: deploy project 5. Install composer deps
+    composer:
+      command: install
+      working_dir: "{{ project_dir }}"
+      no_dev: true
+    tags: code

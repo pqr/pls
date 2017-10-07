@@ -1,0 +1,65 @@
+td.col-left {
+    width: 445px;
+    padding-right: 5px;
+}
+
+td.col-middle {
+    width: 445px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+td.col-right {
+    width: 265px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+table.form {
+    border-collapse: separate;
+    border-spacing: 1px;
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+table.form.form-full {
+    width: 100%;
+}
+
+/* Поле Name обычно оборачивается в h3 */
+table.form > tbody > tr > td > h3 {
+    font-size: 16px;
+    color: #2A2A2A;
+    margin: 0;
+    padding: 0;
+}
+
+table.form > tbody > tr > th {
+    text-align: right;
+    font-weight: normal;
+    padding: 5px 10px 5px 0;
+    width: 120px;
+}
+
+table.form > tbody > tr > td {
+    padding: 5px;
+    width: 304px;
+    background-color: #eaf2fb;
+}
+
+table.form.form-full > tbody > tr > td {
+    width: auto;
+}
+
+td.col-right table.form > tbody > tr > td {
+    width: 120px;
+}
+
+.form-actions {
+    background-color: #F8F8F8;
+    border-top: 1px solid #E5E5E5;
+    margin-bottom: 20px;
+    margin-top: 20px;
+    padding: 19px 20px 20px 135px;
+}

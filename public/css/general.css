@@ -1,0 +1,237 @@
+#DepartureIATA, #ArrivalIATA, #IATA {
+    width: 35px;
+}
+
+#DepartureLocationName, #ArrivalLocationName, #LocationName {
+    width: 250px;
+}
+
+#IncotermsLocationName {
+    width: 230px;
+}
+
+.filters #DepartureLocationName, .filters #ArrivalLocationName, .filters #LocationName {
+    width: 195px;
+}
+
+td.fn a {
+    padding-left: 5px;
+    font-weight: bold;
+    display: block;
+    cursor: pointer;
+}
+
+.bad.outstanding, .bad.outstanding a:link, .bad.outstanding a:visited {
+    color: #DD0000;
+}
+
+.bad.outstanding, .bad.outstanding a:hover, .bad.outstanding a:active {
+    color: #FF0000;
+}
+
+.warning.outstanding, .warning.outstanding a {
+    color: #CD853F !important;
+}
+
+.nocontainers {
+    font-style: italic;
+    color: red;
+}
+
+.nonumber {
+    font-style: italic;
+}
+
+/* ширина выпадающих списков на формах Edit */
+#CustomerID, #CustomerAccountID, #VendorID, #VendorAccountID, #ConsigneeID {
+    width: 300px;
+}
+
+/* ширина выпадающих списков на формах Filter */
+div.filters #CompanyID,
+div.filters #AccountID,
+div.filters #CustomerID,
+div.filters #CustomerAccountID,
+div.filters #VendorID,
+div.filters #VendorAccountID,
+div.filters #ConsigneeID {
+    width: 250px;
+}
+
+/* ширина различных полей в подтаблицах */
+.table input.mawb-no {
+    width: 100px;
+}
+
+.table input.file-no {
+    width: 60px;
+}
+
+.table input.cinvoicename {
+    width: 80px;
+}
+
+.table input.vinvoicename {
+    width: 200px;
+}
+
+.fileopen {
+    color: green;
+}
+
+div.fileopen {
+    border: 1px solid green;
+    padding: 2px;
+}
+
+.fileblocked {
+    color: #DD0000;
+}
+
+.fileclosed {
+    color: gray;
+}
+
+/* настроки AutoComplete в Customer Invocies, Vendor Invocies */
+.ac-mawb-filenumber {
+    width: 280px;
+    display: inline-block;
+}
+
+.ac-filenumber {
+    position: absolute;
+    left: 125px;
+}
+
+.ac-etd {
+    position: absolute;
+    text-align: center;
+    left: 180px;
+}
+
+.ac-location-iata-name {
+    width: 260px;
+    display: inline-block;
+}
+
+.ac-location-name {
+    position: absolute;
+    left: 60px;
+}
+
+span.cnt {
+    font-style: normal;
+    font-size: 100%;
+    opacity: 0.9;
+}
+
+#citadelerates td {
+    font-size: 11px;
+    padding: 2px;
+    text-align: center;
+}
+
+.selling {
+    color: #68A9CD;
+}
+
+.buying {
+    color: #CD8B68;
+}
+
+
+/* статусы счетов */
+.invopen, .invcleared, .invunderdispute, .invaccepted, .invpartcleared, .invcleared, .invcreditnoted, .invdeleted {
+    white-space: nowrap;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.invopen {
+    color: #636330;
+    background-color: #FFFFD4;
+}
+
+.invicon__open {
+    color: #FE8601;
+}
+
+.invunderdispute {
+    color: #B94A48;
+    background-color: #FFE3E3;
+}
+
+.invicon__underdispute {
+    color: #B94A48;
+}
+
+.invaccepted {
+    color: #006633;
+    background-color: #F1F5EC;
+}
+
+.invicon__accepted {
+    color: #006633;
+    font-weight: bold;
+}
+.invpartcleared {
+    color: #F9FFEF;
+    background-color: #64992C;
+}
+
+/* part-cleared */
+.invincon__partclearedleft {
+    display: inline-block;
+    width: 7px;
+    height: 14px;
+    border-radius: 7px 0 0 7px;
+    background-color: #64992C;
+}
+
+.invincon__partclearedright {
+    display: inline-block;
+    width: 7px;
+    height: 14px;
+    border-radius: 0 7px 7px 0;
+    background-color: darkgray;
+}
+
+.invcleared, .invcleared a, .invcleared a:visited {
+    color: #F1F5EC;
+    background-color: #006633;
+}
+
+.invicon__cleared {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: #006633;
+}
+
+.invcreditnoted {
+    color: gray;
+}
+
+.invicon__creditnoted {
+    color: gray;
+}
+
+option.invdeleted {
+    color: silver;
+}
+
+span.invdeleted, div.invdeleted {
+    color: gray;
+    background-color: silver;
+}
+
+tr.invoicerow_deleted {
+    text-decoration: line-through;
+    background-color: silver;
+}
+
+tr.invoicerow_creditnoted, tr.creditnoterow {
+    font-style: italic;
+    opacity: 0.8;
+}

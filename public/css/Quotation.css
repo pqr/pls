@@ -1,0 +1,7 @@
+table[data-tablename=Income], table[data-tablename=Expenses] {
+    width: 100%;
+}
+
+.input-per {
+    width: 55px;
+}

@@ -1,0 +1,27 @@
+# Example: ansible-playbook playbook_04_install_composer.yml
+- hosts: []
+  become: true
+  become_user: root
+  become_method: sudo
+
+  tasks:
+  # Загрузить установщик composer в /home/ubuntu:
+  - name: package 1. Get composer script
+    shell: php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    tags: composer
+
+  # Выполнить установку composer:
+  - name: package 2. Install composer from script
+    shell: php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    register: composer_php_install
+    tags: composer
+
+  # Показать результаты установки composer
+  - name: package 3. Show composer install results
+    debug: msg="{{ composer_php_install.stdout_lines }}"
+    tags: composer
+
+  # Удалить файл скрипта установки из директории
+  - name: package 4. Remove setup script file
+    file: path='/home/ubuntu/composer-setup.php' state=absent
+    tags: composer
