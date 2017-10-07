@@ -7,12 +7,12 @@
 
   tasks:
   # Установить deploy ssh key (если его нет или отличается):
-  - name: deploy project 1. Copy id_rsa to user folder
+  - name: deploy pls 1. Copy id_rsa to user folder
     copy: content={{ id_rsa }} dest=/home/ubuntu/.ssh/id_rsa mode=0600 owner=ubuntu group=ubuntu
     tags: key
 
   # Клонировать репозиторий prod website (и затереть изменения если были):
-  - name: deploy project 2. Clone git repo
+  - name: deploy pls 2. Clone git repo
     git:
       repo: git@bitbucket.org:pqr/pls.git
       dest: "{{ project_dir }}"
@@ -22,24 +22,34 @@
     tags: code
 
   # Проверить папки logs и temp и права 777 на них:
-  - name: deploy project 3. Check logs and temp folders and mode
+  - name: deploy pls 3. Check logs and temp folders and mode
     file: path={{ item }} state=directory mode=0777
     with_items:
       - "{{ project_dir }}/logs"
       - "{{ project_dir }}/temp"
-    tags: code
+    tags: dirs
 
   # Установить файл config.php с переменными
-  - name: deploy project 4. Copy config.php
+  - name: deploy pls 4. Copy config.php
     template:
       src: files/config.php
       dest: "{{ project_dir }}/config/config.php"
       backup: yes
-    tags: code
+    tags: dirs
 
-  - name: deploy project 5. Install composer deps
+  - name: deploy pls 5. Install composer deps
     composer:
       command: install
       working_dir: "{{ project_dir }}"
       no_dev: true
     tags: code
+
+    # Создать символические ссылки на папки для nginx
+  - name: deploy pls 6. Create lightpublic symlink
+    file:
+      state: link
+      src: "{{ project_dir }}/src/Light/public"
+      path: "{{ project_dir }}/public/lightpublic"
+    tags: dirs
+
+
