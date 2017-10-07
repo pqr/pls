@@ -1,8 +1,6 @@
 # Example: ansible-playbook playbook_deploy_webserver.yml -i inventory.test --tags=nginx
 - hosts: []
-  become: true
-  become_user: root
-  become_method: sudo
+  become: false
   vars_files:
   - vars_decrypted.yml
   - vars_encrypted.yml
@@ -15,7 +13,6 @@
 
   # Клонировать репозиторий prod website (и затереть изменения если были):
   - name: deploy project 2. Clone git repo
-    become: false
     git:
       repo: git@bitbucket.org:pqr/pls.git
       dest: "{{ project_dir }}"

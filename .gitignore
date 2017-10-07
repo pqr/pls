@@ -5,6 +5,7 @@ tests/_output
 tests/_support/_generated
 vendor
 logs
+temp
 node_modules
 lightpublic
 .vault-pass
