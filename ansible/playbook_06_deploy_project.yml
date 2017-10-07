@@ -33,7 +33,7 @@
   - name: deploy project 4. Copy config.php
     template:
       src: files/config.php
-      dest: "{{ project_dir }}/config.php"
+      dest: "{{ project_dir }}/config/config.php"
       backup: yes
     tags: code
 
