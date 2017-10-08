@@ -52,4 +52,93 @@
       path: "{{ project_dir }}/public/lightpublic"
     tags: dirs
 
+  - name: deploy pls 7. Cron Light/CurrencyRateCBRF today at 6am
+    become: false
+    cron:
+      name: "pls CurrencyRateCBRF today"
+      minute: "0"
+      hour: "6"
+      job: "php {{ project_dir }}/public/index.php Light/CurrencyRateCBRF today"
+    tags: cron
+
+  - name: deploy pls 8. Cron Light/CurrencyRateCBRF every 30 min 11-18
+    become: false
+    cron:
+      name: "pls CurrencyRateCBRF"
+      minute: "*/30"
+      hour: "11-18"
+      job: "php {{ project_dir }}/public/index.php Light/CurrencyRateCBRF"
+    tags: cron
+
+  - name: deploy pls 9. Cron CitadeleCurrencyLoader every hour 9-21
+    become: false
+    cron:
+      name: "pls CitadeleCurrencyLoader"
+      minute: "0"
+      hour: "9-21"
+      job: "php {{ project_dir }}/public/index.php CitadeleCurrencyLoader"
+    tags: cron
+
+  - name: deploy pls 10. Cron UpdateCustomerOutstandingCache at 8
+    become: false
+    cron:
+      name: "pls UpdateCustomerOutstandingCache"
+      minute: "0"
+      hour: "8"
+      job: "php {{ project_dir }}/public/index.php UpdateCustomerOutstandingCache"
+    tags: cron
+
+  - name: deploy pls 11. Cron UpdateShipmentCriteria at 0:10
+    become: false
+    cron:
+      name: "pls UpdateShipmentCriteria"
+      minute: "10"
+      hour: "0"
+      job: "php {{ project_dir }}/public/index.php UpdateShipmentCriteria"
+    tags: cron
+
+  - name: deploy pls 12. Cron Light/Email every minute
+    become: false
+    cron:
+      name: "pls Light/Email"
+      minute: "*"
+      job: "php {{ project_dir }}/public/index.php Light/Email"
+    tags: cron
+
+  - name: deploy pls 13. Cron EmailPendingQuotations14days at 16:30 working days
+    become: false
+    cron:
+      name: "pls EmailPendingQuotations14days"
+      minute: "30"
+      hour: "16"
+      weekday: "1-5"
+      job: "php {{ project_dir }}/public/index.php EmailPendingQuotations14days"
+    tags: cron
+
+  - name: deploy pls 14. Cron ImportCActFrom1C 8-23 every 5 min
+    become: false
+    cron:
+      name: "pls ImportCActFrom1C"
+      minute: "*/5"
+      hour: "8-23"
+      job: "php {{ project_dir }}/public/index.php ImportCActFrom1C"
+    tags: cron
+
+  - name: deploy pls 15. Cron ImportCInvoicesFrom1C 8-23 every 5 min
+    become: false
+    cron:
+      name: "pls ImportCInvoicesFrom1C"
+      minute: "*/5"
+      hour: "8-23"
+      job: "php {{ project_dir }}/public/index.php ImportCInvoicesFrom1C"
+    tags: cron
+
+  - name: deploy pls 16. Cron ImportCPaymentsFrom1C 8-23 every 5 min
+    become: false
+    cron:
+      name: "pls ImportCPaymentsFrom1C"
+      minute: "*/5"
+      hour: "8-23"
+      job: "php {{ project_dir }}/public/index.php ImportCPaymentsFrom1C"
+    tags: cron
 
