@@ -47,3 +47,19 @@
       dest: /home/ubuntu/vpnbuh-reconnect.sh
       mode: 0744
     tags: conf
+
+  - name: vpn 7. Cron on reboot
+    become: false
+    cron:
+      name: "vpnbuh connect"
+      special_time: reboot
+      job: "/home/ubuntu/vpnbuh-connect.sh"
+    tags: cron
+
+  - name: vpn 8. Cron check and reconnect every 15 min
+    become: false
+    cron:
+        name: "vpnbuh reconnect"
+        minute: "*/15"
+        job: "/home/ubuntu/vpnbuh-reconnect.sh"
+    tags: cron
