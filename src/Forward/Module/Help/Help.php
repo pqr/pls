@@ -1,14 +1,119 @@
 <?php
+use Light\Template;
+use Light\ApplicationAbstract;
+use Light\FilesFolder;
+
+    // Чтобы правильно работала функция basename с файлами на русском языке
+    // Перед этим нужно установить локаль в операционную систему:
+    // https://askubuntu.com/questions/76013/how-do-i-add-locale-to-ubuntu-server
+    // locale -a
+    // sudo locale-gen ru_RU
+    // sudo locale-gen ru_RU.UTF-8
+    // sudo update-locale
+    // sudo service php7.1-fpm restart
+if (isset($_GET['elfinder'])) {
+
+    if ($_GET['elfinder'] === 'dialog') {
+        // Это первичный запрос на рендер каркаса диалога (пока без содержимого с файлами)
+        Template::includeTpl(LIGHT_DIR_LIGHT . '/templates/module/elfinderdialog.tpl.php', [
+            'module' => 'Help',
+            'id' => 0,
+            'title' => 'Help'
+        ]);
+        ApplicationAbstract::terminate();
+        return;
+    }
+
+    if ($_GET['elfinder'] === 'api') {
+        // Пришел API запрос от окна с elfiner (это может быть API запрос на отображение списка файлов
+        // или upload нового файла
+        $relativePath = 'Help/0';
+        $opts = [
+            'locale' => "ru_RU.utf8",
+            'roots' => [
+                [
+                    'driver' => 'LocalFileSystem',
+                    'encoding' => 'UTF-8',
+                    'locale' => "ru_RU.utf8",
+                    'mimeDetect' => 'internal',
+                    // если не установить internal, то будет использована функция finfo_file, которая при обнаружении xls файла сбрасывает локаль в default заничеие ('C') и дальше все файлы с русскими буквами не смогут быть обработаны с помощью basename
+                    // driver for accessing file system (REQUIRED)
+                    'path' => FilesFolder::getAbsolutePath($relativePath),
+                    'URL' => "?a=Help&id=0&elfinder=download&file=",
+                    // URL to files (REQUIRED)
+                    'accessControl' => function ($attr, $path, $data, $volume) {
+                        if (strpos(basename($path), '.') === 0) {
+                            // Для путей начинающихся с .., если запрошен атрибут read или write - сразу вернём false
+                            if ($attr === 'read' || $attr === 'write') {
+                                return false;
+                            }
+                        }
+
+                        // Если elfinder хочет проверить атрибут на запись, делегируем эту проверку в ModuleAbstract
+                        /*
+                        if ($attr === 'write') {
+                            return $this->hasWriteAccessRightToFolder($this->_obj);
+                        }
+                        */
+
+                        // Возвращаем null - elfinder должен решить сам, что делать
+                        return true;
+
+                    }
+                ]
+            ],
+            'bind' => [
+                'mkdir mkfile rename duplicate upload rm paste' => function ($cmd, $result, $args, $elfinder) {
+
+                    /* @var \elFinder $elfinder */
+
+                    if (!empty($result['added'])) {
+                        foreach ($result['added'] as $file) {
+                            $mode = isset($file['mime']) && $file['mime'] === 'directory' ? 0777 : 0666;
+
+                            @chmod($elfinder->realpath($file['hash']), $mode);
+                        }
+                    }
+
+                    if (!empty($result['changed'])) {
+                        foreach ($result['changed'] as $file) {
+                            $mode = isset($file['mime']) && $file['mime'] === 'directory' ? 0777 : 0666;
+                            @chmod($elfinder->realpath($file['hash']), $mode);
+                        }
+                    }
+                },
+            ],
+        ];
+
+        // run elFinder
+        $connector = new \elFinderConnector(new \elFinder($opts));
+        $connector->run();
+        ApplicationAbstract::terminate();
+        return;
+    }
+
+    if ($_GET['elfinder'] === 'download' && isset($_GET['file'])) {
+
+        // Проверим, чтобы в имени скачиваемого файла file не было ..
+        $test = '/' . str_replace('\\', '/', $_GET['file']) . '/';
+        if (strpos($test, '/../') !== false) {
+            throw new \InvalidArgumentException("file contains ..: " . $_GET['file']);
+        }
+
+        $relativePath = 'Help/0';
+        FilesFolder::streamFile($relativePath . '/' . $_GET['file']);
+        ApplicationAbstract::terminate();
+        return;
+    }
+}
+
+
 \Light\Response::setPageHeadHtml('Help');
 \Light\Response::setPageTitle('Help');
 ?>
 
-<?php
-if (\Light\FilesFolder::isWindowsSharedFolderAllowed()): ?>
 <h2>Полезная информация</h2>
-<ul><li><?= \Light\FilesFolder::getLink('Help', 'Открыть папку с файлами с полезной информацией') ?></li></ul>
-<?php endif; ?>
-
+<ul><li><?= \Light\FilesFolder::getLink('Help/0', 'Открыть папку с файлами с полезной информацией') ?></li></ul>
 
 <?php
 $pdfs = glob(LIGHT_DIR_PUBLIC . "/Module/Help/*.pdf");
@@ -41,66 +146,3 @@ endif;
     endfor;
     ?>
 </ul>
-
-<h2>Настройка работы папок</h2>
-<ul>
-    <li><a href="#firefox">Настройка Firefox</a></li>
-    <li><a href="#ie">Настройка Internet Explorer</a></li>
-</ul>
-
-<a name="firefox"></a>
-<h2>Настройка Firefox</h2>
-<ol>
-    <li>Для начала нужно авторизоваться на сервере, открыв папку FilesFolder вручную. Для этого откройте "Мой Компьютер" и в строке
-        адерса наберите адрес папки на сервере: <b>\\192.168.17.7\FilesFolder</b> (при подключении по VPN адрес будет <b>\\10.20.1.1\FilesFolder</b>)
-        - появится диалоговое окно ввода логина и пароля.
-        Здесь нужно ввести логин и пароль от сервера, чтобы получить доступ к папке.
-        <br><img src="Module/Help/explorer.png"></li>
-    <li>Скачайте файл <a href="Module/Help/firefox_folders.zip">firefox_folders.zip</a>, сохранив, например, на рабочем
-        столе
-    </li>
-    <li>
-        В окне Firefox в верхнем правом углу раскройте меню как на скриншоте и нажмите кнопку с икнокой вопроса
-        <br><img src="Module/Help/ffsettings1.png">
-        <br>затем выберите пункт "Информация для решения проблем"
-        <br><img src="Module/Help/ffsettings2.png">
-    </li>
-    <li>
-        В открывшемся окне нажмите на кнопку "Показать папку" - откроется окно проводника с профилем текущего пользователя Fierefox. Это окно проводника нужно оставить, а сам Firefox закрыть
-        <br><img src="Module/Help/ffsettings3.png">
-    </li>
-    <li>
-        Из скаченного ранее firefox_folders.zip нужно вынуть файл user.js и скопировать его в папку профиля, которая была открыта на предыдущем шаге. Если файл уже существует, нужно подтвердить замену.
-        <br><img src="Module/Help/copyuserjs.png">
-    </li>
-    <li>Запустить Firefox заново, перейти в раздел Shipments и кликнуть на любую иконку папки - появится дилоговое окно в котором
-        нажать кнопку "Выбрать..."<br><img
-            src="Module/Help/ffdialog1.png"></li>
-    <li>Появится второе диалоговое окно: выбор файла приложения. Нужно перейти в папку C:\Windows и выбрать файл
-        explorer.exe, нажать
-        "Открыть"<br><img
-            src="Module/Help/ffdialog2.png"></li>
-    <li>После возвращения к предыдущему диалоговому окну нужно поставить галочку внизу "Запомнить мой выбор для file
-        ссылок" и
-        нажать OK<br><img
-            src="Module/Help/ffdialog3.png"></li>
-    <li>Папки открываются!</li>
-</ol>
-
-<a name="ie"></a>
-<h2>Настройка Internet Explorer</h2>
-<ol>
-    <li>Для начала нужно авторизоваться на сервере, открыв папку FilesFolder вручную. Для этого откройте "Мой Компьютер" и в строке
-        адерса наберите адрес папки на сервере: <b>\\192.168.17.7\FilesFolder</b> (при подключении по VPN адрес будет <b>\\10.20.1.1\FilesFolder</b>)
-        - появится диалоговое окно ввода логина и пароля.
-        Здесь нужно ввести логин и пароль от сервера, чтобы получить доступ к папке.
-        <br><img src="Module/Help/explorer.png"></li>
-    <li>В окне Internet Explorer нажать кнопку Alt - появится строка меню сверху. В ней выборать пункт Сервис ->
-        Свойства браузера<br><img
-            src="Module/Help/iemenu.png"></li>
-    <li>В открывшемся диалоговом окне перейти на вкладку Безопасность, выбрать пункт Надёжные сайты и нажать кнопку
-        Сайты<br><img src="Module/Help/iesecruritytab.png"></li>
-    <li>В список надёжных сайтов нужно добавить 192.167.17.7 и <b>снять</b> галочку внизу, нажать Закрыть<br><img
-            src="Module/Help/iesites.png"></li>
-    <li>Папки открываются!</li>
-</ol>
