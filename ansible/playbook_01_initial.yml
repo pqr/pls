@@ -21,6 +21,12 @@
     apt: name=python-software-properties
     tags: python
 
+  - name: initial 4. locale_gen
+    locale_gen:
+      name: ru_RU.UTF-8
+      state: present
+    tags: locale
+
   # Добавление переменной для пути к coposer.phar:
   # - name: initial 5. Set /home/ubuntu as a exec path
   #  copy: content="PATH=$PATH:/home/ubuntu" dest="/etc/profile.d/composer_php_path.sh" mode=0755
