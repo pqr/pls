@@ -16,27 +16,30 @@ class PingOneC extends AutolaunchAbstract
     protected function run(array $params)
     {
         $client = new Client();
-        $path = Constant::$onecCompany[Constant::OC_PLS_OOO];
-        $url = 'http://' . ForwardConfig::$onecIp . "/$path/hs/CreateCustomerInvoice";
-        try {
+        foreach(Constant::$onecCompany as $path) {
+            $this->_msgBuff->addEmptyLine();
+            $url = 'http://' . ForwardConfig::$onecIp . "/$path/hs/CreateCustomerInvoice";
+            $this->_msgBuff->addInfo("<strong>$url</strong>");
+            try {
 
-            $res = $client->get($url);
-            $resBody = (string)$res->getBody();
-            if (!$resBody) {
-                $msg = 'Не удалось прочитать ответ от 1С';
+                $res = $client->get($url);
+                $resBody = (string)$res->getBody();
+                if (!$resBody) {
+                    $msg = "$path: не удалось прочитать ответ от 1С";
+                    $this->_msgBuff->addError($msg);
+                    $this->_msgBuffShort->addError($msg);
+                } else {
+                    $this->_msgBuff->addInfo(nl2br($resBody));
+                    $this->_msgBuffShort->addSuccess('От 1С получен ответ длиной ' . strlen($resBody) . ' байт');
+                }
+
+            } catch (RequestException $e) {
+
+                $msg = "$path: Не удалось подключиться к серверу 1С.<br>" . $e->getMessage();
                 $this->_msgBuff->addError($msg);
                 $this->_msgBuffShort->addError($msg);
-            } else {
-                $this->_msgBuff->addInfo(nl2br($resBody));
-                $this->_msgBuffShort->addSuccess('От 1С получен ответ длиной ' . strlen($resBody) . ' байт');
+
             }
-
-        } catch (RequestException $e) {
-
-            $msg = 'Не удалось подключиться к серверу 1С.<br>' . $e->getMessage();
-            $this->_msgBuff->addError($msg);
-            $this->_msgBuffShort->addError($msg);
-
         }
 
 
