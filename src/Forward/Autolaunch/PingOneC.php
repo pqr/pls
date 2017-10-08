@@ -11,7 +11,7 @@ use Light\Module\Autolaunch\AutolaunchAbstract;
 class PingOneC extends AutolaunchAbstract
 {
     protected static $_title = 'Проверить подключение к 1С';
-    protected static $_description = 'Отправляет пустой запрос на создание счёта в 1С. Если получен ответ с сообщением об ошибке создания счёта - значит подключение есть! Этот метод в качестве мониторинга можно запускать каждые 10 минут.';
+    protected static $_description = 'Отправляет пустой GET запрос на hs/CreateCustomerInvoice". В качестве ответа должна прийти диагностическая информация с настройками 1С!';
 
     protected function run(array $params)
     {
@@ -30,12 +30,12 @@ class PingOneC extends AutolaunchAbstract
                     $this->_msgBuffShort->addError($msg);
                 } else {
                     $this->_msgBuff->addInfo(nl2br($resBody));
-                    $this->_msgBuffShort->addSuccess('От 1С получен ответ длиной ' . strlen($resBody) . ' байт');
+                    $this->_msgBuffShort->addSuccess("$path: " . explode("\n", $resBody, 2)[0]);
                 }
 
             } catch (RequestException $e) {
 
-                $msg = "$path: Не удалось подключиться к серверу 1С.<br>" . $e->getMessage();
+                $msg = "$path: не удалось подключиться к серверу 1С<br>" . $e->getMessage();
                 $this->_msgBuff->addError($msg);
                 $this->_msgBuffShort->addError($msg);
 
