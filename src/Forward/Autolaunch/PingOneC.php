@@ -15,13 +15,12 @@ class PingOneC extends AutolaunchAbstract
 
     protected function run(array $params)
     {
-        $data = ['ID' => 0];
         $client = new Client();
         $path = Constant::$onecCompany[Constant::OC_PLS_OOO];
         $url = 'http://' . ForwardConfig::$onecIp . "/$path/hs/CreateCustomerInvoice";
         try {
 
-            $res = $client->post($url, ['json' => $data]);
+            $res = $client->get($url);
             $resBody = (string)$res->getBody();
             if (!$resBody) {
                 $msg = 'Не удалось прочитать ответ от 1С';
