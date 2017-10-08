@@ -86,5 +86,6 @@ class Config
     public static $defaultDateFormat = 'd.m.Y';
     public static $defaultDateTimeFormat = 'd.m.Y H:i:s';
     public static $lang = 'ru';
+    public static $showRatesInMenu = true;
 
 }

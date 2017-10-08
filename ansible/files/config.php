@@ -8,6 +8,7 @@ Config::$mysqlDb = '{{ mysql_db }}';
 Config::$mysqlPort = '3306';
 Config::$title = 'PLS';
 Config::$filesfolderLocal = '{{ filesfolder }}';
+Config::$lang = 'en';
 
 Config::$sentry = [
     'dns' => '{{ sentry_dns }}',

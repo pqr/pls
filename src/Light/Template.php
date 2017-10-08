@@ -361,21 +361,24 @@ class Template
         if ($title) {
             $html .= '<h2>' . $title . ' (' . static::subtableCount($subtableName) . ')</h2>';
         }
-        $html .= static::subtableHtml($subtableName);
-        $html .= '</div>';
+        $html .= static::subtableHtml($subtableName)
+            . '</div>';
 
         return $html;
     }
 
     public static function filtersButtons()
     {
+        $textHistory = Config::$lang === 'ru' ? 'История фильтров' : 'Filters history';
+        $textSaved = Config::$lang === 'ru' ? 'Сохраненные фильтры' : 'Saved filters';
+        $textSettings = Config::$lang === 'ru' ? 'Настройка фильтров' : 'Filters layout';
         return '<div class="filters-buttons">
                 <button class="btn waves-effect waves-light btn-filter" type="submit">' . Img::iconSearch() . '</button>
                 <span class="btn-flat waves-effect filters-reset" title="Reset">Reset</span>
                 <nobr><div><div class="filters-buttons-icons">
-                    <span class="btn-flat waves-effect toggle-tooltip filters-history" title="История фильтров"><i class="fa fa-history"></i></span>
-                    <span class="btn-flat waves-effect toggle-tooltip filters-save" title="Сохраненные фильтры"><i class="fa fa-save"></i></span>
-                    ' . (!(static::issetvar('noSettings') && static::variable('noSettings')) ? '<span class="btn-flat waves-effect toggle-tooltip filters-settings" title="Настройка фильтров"><i class="fa fa-cog"></i></span>' : '') . '
+                    <span class="btn-flat waves-effect toggle-tooltip filters-history" title="' . $textHistory . '"><i class="fa fa-history"></i></span>
+                    <span class="btn-flat waves-effect toggle-tooltip filters-save" title="' . $textSaved . '"><i class="fa fa-save"></i></span>
+                    ' . (!(static::issetvar('noSettings') && static::variable('noSettings')) ? '<span class="btn-flat waves-effect toggle-tooltip filters-settings" title="' . $textSettings . '"><i class="fa fa-cog"></i></span>' : '') . '
                 </div></div></nobr>
                 </div>';
     }

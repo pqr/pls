@@ -1568,11 +1568,11 @@ packages:
 registry: 'https://registry.npmjs.org/'
 shrinkwrapVersion: 3
 specifiers:
-  '@types/jquery': ^3.2.13
+  '@types/jquery': latest
   '@types/jqueryui': latest
   '@types/keypress.js': latest
-  '@types/lodash': ^4.14.77
-  '@types/react': ^16.0.9
+  '@types/lodash': latest
+  '@types/react': latest
   '@types/select2': latest
   blueimp-file-upload: latest
   font-awesome: latest
@@ -1591,7 +1591,7 @@ specifiers:
   raven-js: latest
   react: latest
   react-dom: latest
-  rollbar: ^2.2.9
+  rollbar: latest
   select2: latest
   serializr: latest
   sticky-table-headers: latest

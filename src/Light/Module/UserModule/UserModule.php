@@ -185,9 +185,11 @@ class UserModule
             // Отедльно обработаем чекбоксы с выбором ролей пользователя - они приходят в виде ассоциативного массива
             // ключи массива - это названия ролей, значения - true/false
             $checkedRolesFromPost = [];
-            foreach ($_POST['ResponsibleRoles'] as $roleKey => $roleChecked) {
-                if ($roleChecked === 'true') {
-                    $checkedRolesFromPost[] = $roleKey;
+            if (isset($_POST['ResponsibleRoles']) && is_array($_POST['ResponsibleRoles'])) {
+                foreach ($_POST['ResponsibleRoles'] as $roleKey => $roleChecked) {
+                    if ($roleChecked === 'true') {
+                        $checkedRolesFromPost[] = $roleKey;
+                    }
                 }
             }
             if ($checkedRolesFromPost) {

@@ -554,7 +554,7 @@ a.ajax-input:empty {
     opacity: 0;
 }
 a.ajax-input:empty:after {
-    content: "изменить...";
+    content: "change...";
 }
 a.ajax-input:empty:hover {
     opacity: 1;

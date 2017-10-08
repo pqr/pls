@@ -1,3 +1,4 @@
+/// <reference types="jquery" />
 declare const angular: any;
 declare const _lightCsrfToken: string;
 declare const _lightModule: string;
@@ -6,6 +7,8 @@ declare const nativeParseInt: typeof parseInt;
 declare const nativeParseFloat: typeof parseFloat;
 declare namespace Light {
     const listener: any;
+    function getLang(): any;
+    const isLangRu: boolean;
     function initSelect2($root: JQuery): void;
     function initTooltip($root: JQuery): void;
     function showFlashMessagess(messagess: Array<{

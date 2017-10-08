@@ -50,9 +50,9 @@ namespace Light {
                 this.$div = $div;
                 this.$table = $div.find("table.table");
                 this.$tbody = this.$table.children("tbody");
-                this.name = $div.attr("data-tablename");
-                this.reloadUrl = $div.attr("data-reloadurl");
-                this.linkModule = $div.attr("data-linkmodule");
+                this.name = $div.attr("data-tablename") || "";
+                this.reloadUrl = $div.attr("data-reloadurl") || "";
+                this.linkModule = $div.attr("data-linkmodule") || "";
 
                 //Попробуем найти текущую страницу из вёрстки
                 //Необходимо хранить текущую страницу для метода reload() (удобно при смене table layout settings и при удалении в ModuleAbstract)
@@ -271,13 +271,16 @@ namespace Light {
 
                         that.offSettingsFilters();
 
-                        $.post("?a=Core&ps=SaveSettingsFilters",
-                            {
-                                TableName: that.getName(),
-                                Sort: sortData,
-                                Invisible: invisibleData,
-                                NewSystemFlag: that.filtersForm.getNewSystemFlag()}, function () {
-                            Light.toastSuccess("Настройки фильтров успешно сохранены");
+                        $.post("?a=Core&ps=SaveSettingsFilters", {
+                            TableName: that.getName(),
+                            Sort: sortData,
+                            Invisible: invisibleData,
+                            NewSystemFlag: that.filtersForm.getNewSystemFlag()
+                        }).done(() => {
+                            const textSaved = Light.isLangRu
+                                ? "Настройки фильтров успешно сохранены"
+                                : "Filters layout saved";
+                            Light.toastSuccess(textSaved);
                         });
                     });
 
@@ -529,16 +532,15 @@ namespace Light {
                         that.filtersForm.setFieldDefaultValue(fieldKey, fieldValue);
                     });
 
-                    $.post(
-                        "?a=Core&ps=SaveFiltersLikeReset",
-                        {
-                            TableName: that.getName(),
-                            FilterValues: filtersData
-                        },
-                        function() {
-                            Light.toastSuccess(`Фильтр успешно сохранен как RESET`);
-                        }
-                    );
+                    $.post("?a=Core&ps=SaveFiltersLikeReset", {
+                        TableName: that.getName(),
+                        FilterValues: filtersData
+                    }).done(() => {
+                        const textSaved = Light.isLangRu
+                            ? "Текущие значения фильтров установлены как RESET"
+                            : "Default filter valules changed";
+                        Light.toastSuccess(textSaved);
+                    });
 
                     that.hideFiltersWidget();
                 });
@@ -588,7 +590,7 @@ namespace Light {
                     const $input = $(this)
                         .closest(".save-filter")
                         .find("input");
-                    const nameValue = $input.val();
+                    const nameValue = <string>$input.val();
                     if (nameValue == "") {
                         Light.toastError("Введите название для фильтра");
                         $button.prop("disabled", false);
@@ -618,7 +620,9 @@ namespace Light {
                     });
 
                     if (duplicate) {
-                        Light.toastError("Такой фильтр уже существует: " + duplicate);
+                        const textExists = Light.isLangRu ? "Такой фильтр уже сохранён под именем" : "Already saved as";
+                        const duplicateHtml = Light.htmlspecialchars(duplicate);
+                        Light.toastError(`${textExists} <strong>${duplicateHtml}</strong>`);
                         $button.prop("disabled", false);
                         return;
                     }
@@ -633,7 +637,11 @@ namespace Light {
                             flagNew = false;
                             savedFilter.FilterValues = filtersData;
                             that.saveFilters(nameValue, filtersData, () => {
-                                Light.toastSuccess(`Фильтр "${nameValue}" успешно обновлен`);
+                                const nameHtml = Light.htmlspecialchars(nameValue);
+                                const textUpdated = Light.isLangRu
+                                    ? `Фильтр "${nameHtml}" успешно обновлен`
+                                    : `Filter values "${nameHtml}" updaed`;
+                                Light.toastSuccess(textUpdated);
                                 that.currentSavedFilterName = nameValue;
                                 that.initBodySavedFilterWidget();
                             });
@@ -643,7 +651,11 @@ namespace Light {
                     if (flagNew) {
                         that.savedFilters.push({ Name: nameValue, FilterValues: filtersData });
                         that.saveFilters(nameValue, filtersData, () => {
-                            Light.toastSuccess(`Фильтр "${nameValue}" успешно добавлен`);
+                            const nameHtml = Light.htmlspecialchars(nameValue);
+                            const textSaved = Light.isLangRu
+                                ? `Фильтр "${nameHtml}" успешно добавлен`
+                                : `Filter values "${nameHtml}" saved`;
+                            Light.toastSuccess(textSaved);
                             that.currentSavedFilterName = nameValue;
                             that.initBodySavedFilterWidget();
                         });
@@ -741,12 +753,17 @@ namespace Light {
                 const $buttons = this.$filtersForm.find(".filters-buttons");
                 $buttons.addClass("display-none");
 
+                const textResetSort = Light.isLangRu ? "Сбросить сортировку фильтров" : "Reset to default layout";
+                const textShowAll = Light.isLangRu ? "Сделать все фильтры видимыми" : "Show all";
+                const textHideAll = Light.isLangRu ? "Сделать все фильтры невидимыми" : "Hide all";
+                const textCancel = Light.isLangRu ? "Отмена" : "Cancel";
+
                 const $settingsBitton = $(`<div class="filters-settings-buttons">
                                              <span class="btn waves-effect waves-light bgcolor-btn-green filters-settings-save"><i class="fa fa-save" aria-hidden="true"></i></span>       
-                                             <span class="btn-flat waves-effect filters-settings-reset-sort toggle-tooltip" title="Сбросить сортировку фильтров"><i class="fa fa-random" aria-hidden="true"></i></span>
-                                             <span class="btn-flat waves-effect filters-settings-all-visible toggle-tooltip" title="Сделать видимыми все фильтры"><i class="fa fa-eye" aria-hidden="true"></i></span>
-                                             <span class="btn-flat waves-effect filters-settings-all-invisible toggle-tooltip" title="Сделать невидимыми все фильтры"><i class="fa fa-eye-slash" aria-hidden="true"></i></span>
-                                             <span class="btn-flat waves-effect filters-settings-cancel toggle-tooltip" title="Cancel"><i class="fa fa-ban" aria-hidden="true"></i></span>
+                                             <span class="btn-flat waves-effect filters-settings-reset-sort toggle-tooltip" title="${textResetSort}"><i class="fa fa-random" aria-hidden="true"></i></span>
+                                             <span class="btn-flat waves-effect filters-settings-all-visible toggle-tooltip" title="${textShowAll}"><i class="fa fa-eye" aria-hidden="true"></i></span>
+                                             <span class="btn-flat waves-effect filters-settings-all-invisible toggle-tooltip" title="${textHideAll}"><i class="fa fa-eye-slash" aria-hidden="true"></i></span>
+                                             <span class="btn-flat waves-effect filters-settings-cancel toggle-tooltip" title="${textCancel}"><i class="fa fa-ban" aria-hidden="true"></i></span>
                                         </div>`);
 
                 Light.initTooltip($settingsBitton);
@@ -773,28 +790,24 @@ namespace Light {
 
                 let html = "";
 
-                let savedFilterValue = "";
-                if (that.currentSavedFilterName) {
-                    savedFilterValue = that.currentSavedFilterName;
-                }
+                const textSetReset = Light.isLangRu ? "Установить как RESET" : "Set current filter values as default";
+                const textSave = Light.isLangRu ? "Сохранить фильтры" : "Save filter values as";
+                const textSavePlaceholder = Light.isLangRu ? "Название" : "...give it a name";
 
-                html +=
-                    `<div class="like-reset">
-                                <span>Установить как RESET</span>
+                html += `<div class="like-reset">
+                                <span>${textSetReset}</span>
                             </div>
                             <div class="save-filter">
-                                <div class="save-filter-text">Сохранить фильтр: </div>
+                                <div class="save-filter-text">${textSave}: </div>
                                 <div class="save-filter-form">
-                                    <input type="text" class="input-default" placeholder="Название" value="` +
-                    savedFilterValue +
-                    `">
+                                    <input type="text" class="input-default" placeholder="${textSavePlaceholder}">
                                     <button>Save</button>
                                 </div>
                              </div>`;
 
-                if (!_.isEmpty(that.savedFilters)) {
+                if (that.savedFilters.length > 0) {
                     html += `<ul>`;
-                    _.each(that.savedFilters, function(savedFiltersData: SavedFilter) {
+                    that.savedFilters.forEach(function(savedFiltersData: SavedFilter) {
                         html += `<li>`;
 
                         let $a = $('<a href="#"></a>');
@@ -814,20 +827,18 @@ namespace Light {
                 }
 
                 that.$filtersWidget.html(html);
+
+                if (that.currentSavedFilterName) {
+                    that.$filtersWidget.find("input.input-default").val(that.currentSavedFilterName);
+                }
             }
 
             saveFilters(name: string, data: Array<SavedFilterField>, callback: () => void) {
-                $.post(
-                    "?a=Core&ps=SaveFilters",
-                    {
-                        TableName: this.getName(),
-                        Name: name,
-                        FilterValues: data
-                    },
-                    function() {
-                        callback();
-                    }
-                );
+                $.post("?a=Core&ps=SaveFilters", {
+                    TableName: this.getName(),
+                    Name: name,
+                    FilterValues: data
+                }).done(callback);
             }
 
             checkOnVoidInvisibleFilters() {
@@ -1092,7 +1103,7 @@ namespace Light {
                 this.currentReloadXhr = $.post(this.reloadUrl, data);
 
                 this.currentReloadXhr
-                    .done((newTableHtml:string) => {
+                    .done((newTableHtml: string) => {
                         this.$div.html(newTableHtml);
                         //Обновим керующие переменные
                         this.$table = this.$div.find("table.table");

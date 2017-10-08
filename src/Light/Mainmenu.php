@@ -65,13 +65,14 @@ class Mainmenu
     public static function getMainmenuHtml()
     {
         $sections = self::getSections();
-        $outHtml = Template::parseTpl(LIGHT_DIR_LIGHT . '/templates/Mainmenu.tpl.php', [
+        $tdata = [
             'sections' => $sections,
             'badges' => self::getBadges($sections),
-            'rates' => self::getCurrencyRates()
-        ]);
-        $outHtml = Misc::minifyHtml($outHtml);
-        return $outHtml;
+        ];
+        if (Config::$showRatesInMenu) {
+            $tdata['rates'] = self::getCurrencyRates();
+        }
+        return Template::parseTpl(LIGHT_DIR_LIGHT . '/templates/Mainmenu.tpl.php', $tdata);
     }
 
     private static function getBadges($sections)

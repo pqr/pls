@@ -1,6 +1,10 @@
 namespace Light {
     const $body = $("body");
 
+    const textFail = Light.isLangRu ? 'Не удалось изменить' : 'Update failed';
+    const textSave = Light.isLangRu ? 'Сохранить' : 'Save';
+    const textCancel = Light.isLangRu ? 'Отмена' : 'Cancel';
+
     $body.on("click", "a.ajax-checkbox", function(this: HTMLAnchorElement, e) {
         e.preventDefault();
         const $link = $(this);
@@ -16,7 +20,7 @@ namespace Light {
         // Оригинальную ссылку удаляем из Dom (но сохраняем в переменной $link на случай ajax fail
         $link.remove();
 
-        const fieldKey = $link.attr("data-fieldkey");
+        const fieldKey = $link.attr("data-fieldkey")!;
         const id = $link.attr("data-id");
         const oldValue = $link.attr("data-value");
         const newValue = oldValue === "1" ? "0" : "1";
@@ -34,12 +38,12 @@ namespace Light {
                 // В случае ошибки ajax запроса возвращаем старое значение
                 $link.insertAfter($img);
                 $img.remove();
-                Light.toastError("Не удалось изменить");
+                Light.toastError(textFail);
             });
 
     });
 
-    $body.on("click", "a.ajax-input", function(this: HTMLAnchorElement, e: JQueryMouseEventObject) {
+    $body.on("click", "a.ajax-input", function(this: HTMLAnchorElement, e: JQuery.Event) {
         e.preventDefault();
         const $link = $(this);
         if ($link.hasClass('disabled')) {
@@ -80,14 +84,14 @@ namespace Light {
                     });
                 } else {
                     // Если же это не поле input-date, то добавим пару ссылок сохранить и отмена
-                    $('<a href="#" style="padding-left: 15px">отмена</a>')
+                    $(`<a href="#" style="padding-left: 15px">${textCancel}</a>`)
                         .on("click", function(e) {
                             e.preventDefault();
                             handleAjaxInputCancel($input, $link);
                         })
                         .insertAfter($input);
 
-                    $('<a href="#">сохранить</a>')
+                    $(`<a href="#">${textSave}</a>`)
                         .on("click", function(e) {
                             e.preventDefault();
                             handleAjaxInputSave($input, url);
@@ -96,7 +100,7 @@ namespace Light {
                 }
 
                 // Навесим обработчики кнопок на поле ввода
-                $input.on("keydown", function(this: HTMLInputElement, e: JQueryKeyEventObject) {
+                $input.on("keydown", function(this: HTMLInputElement, e: JQuery.Event) {
                     if (e.keyCode === 13) {
                         console.log($input.get(0).tagName);
                         if ($input.get(0).tagName.toLowerCase() === 'textarea' && !e.ctrlKey && !e.metaKey) {
@@ -150,7 +154,7 @@ namespace Light {
             .fail(() => {
                 // В случае ошибки ajax запроса возвращаем поле ввода в режим редактирования
                 $input.prop("disabled", false);
-                Light.toastError("Не удалось изменить");
+                Light.toastError(textFail);
             });
     }
 

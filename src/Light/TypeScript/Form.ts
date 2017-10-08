@@ -24,19 +24,19 @@ module Light.forms {
         private $form: JQuery;
         private name: string;
         private fields: Fields;
-        private savedFilters: Array<SavedFilter>;
+        private savedFilters: SavedFilter[];
         private defaultSort = [];
         private noSettings = false;
         private newSystemFlag:boolean = false;
 
         constructor($form: JQuery) {
             this.$form = $form;
-            this.name = $form.attr('name');
-            this.fields = Light.parseJson($form.attr("data-fields"));
-            this.savedFilters = Light.parseJson($form.attr("data-saved"));
-            this.defaultSort = Light.parseJson($form.attr("data-default-sort"));
-            this.noSettings = Light.parseJson($form.attr("data-nosettings"));
-            this.newSystemFlag = Light.parseJson($form.attr("data-newsystemflag"));
+            this.name = $form.attr('name') || '';
+            this.fields = Light.parseJson($form.attr("data-fields")!);
+            this.savedFilters = Light.parseJson($form.attr("data-saved")!, []);
+            this.defaultSort = Light.parseJson($form.attr("data-default-sort")!, []);
+            this.noSettings = Light.parseJson($form.attr("data-nosettings")!);
+            this.newSystemFlag = Light.parseJson($form.attr("data-newsystemflag")!);
 
             //Сохраняем созданный объект внутрь самой ноды с помощью jQuery
             $form.data('formObj', this);

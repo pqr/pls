@@ -9,7 +9,7 @@ class ModuleRegister
 
     private static $coreModules = ['Core' => 'Core', 'Login' => 'Login', 'Logout' => 'Logout'];
 
-    private static $modules = [
+    public static $modules = [
         'Home' => [
             'name' => 'Home',
             'order' => -1,
@@ -73,12 +73,6 @@ class ModuleRegister
         'ColorHint' => [
             'name' => 'Color Hints',
             'order' => 109,
-            'hidden' => false,
-            'section' => 'System'
-        ],
-        'Console' => [
-            'name' => 'Console',
-            'order' => 110,
             'hidden' => false,
             'section' => 'System'
         ],

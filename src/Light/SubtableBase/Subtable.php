@@ -1108,7 +1108,7 @@ abstract class Subtable extends Table
         $fieldKey = $_REQUEST['fieldKey'];
         $field = $this->_obj->getFieldset()->getField($fieldKey);
         if (!$field) {
-            Response::abort(400, 'Field ' . $fieldKey . ' not found');
+            Response::abort(400, "Field $fieldKey not found");
         }
 
         $sudid = $_REQUEST['subid'];

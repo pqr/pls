@@ -44,11 +44,17 @@ $activeModule = \Light\Request::getModule();
     <?php endforeach; ?>
 </div>
 
-<p><strong>CBRF rates:</strong> <a href="http://news.yandex.ru/quotes/1.html" target="_blank" style="font-size: 10px">link</a>
-    <br><span class="note">(<?= $rates['Date'] ?>)</span>
-</p>
-<pre>
+<?php if (isset($rates)): ?>
+
+    <p><strong>CBRF rates:</strong> <a href="http://news.yandex.ru/quotes/1.html" target="_blank"
+                                       style="font-size: 10px">link</a>
+        <br><span class="note">(<?= $rates['Date'] ?>)</span>
+    </p>
+
+    <pre>
 <p>EUR / USD: <?= $rates['CBRFEURUSD'] ?></p>
 <p>USD / RUB: <?= $rates['CBRFUSDRUB'] ?></p>
 <p>EUR / RUB: <?= $rates['CBRFEURRUB'] ?></p>
 </pre>
+
+<?php endif; ?>

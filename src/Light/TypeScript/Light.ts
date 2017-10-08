@@ -29,6 +29,11 @@ namespace Light {
     let img = new Image();
     img.src = "lightpublic/i/circle.gif";
 
+    export function getLang() {
+        return (window as any)._lightLang;
+    }
+
+    export const isLangRu = (window as any)._lightLang === 'ru';
     function initSelectChild($root: JQuery) {
         $root.find("select.select-child").each(function(this: HTMLSelectElement) {
             const $child = $(this);

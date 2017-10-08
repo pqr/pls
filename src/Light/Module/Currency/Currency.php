@@ -13,19 +13,23 @@ class Currency extends ModuleAbstract
 
         $this->_textObjectName = 'Currency';
         $this->_tableDefaultOrderBy = 'OrderID ASC';
-        $this->_tableLayouts['Default'] = 'OrderID|Name|Symbol|Description|DescriptionRu';
+        $this->_tableLayouts['Default'] = 'OrderID|Name|Symbol|Description';
 
         $this->addFields(
 
-            CF::id(),
+            F::createString('Name', [
+                'name' => 'ISO code (3 char)',
+                'editMaxLength' => 3,
+                'editWidth' => 'small',
+                'submitToupper' => true
+            ]),
 
-            F::createString('Name', ['name' => 'ISO code (3 char)']),
-
-            F::createString('Symbol'),
+            F::createString('Symbol', [
+                'editMaxLength' => 3,
+                'editWidth' => 'small',
+            ]),
 
             F::createString('Description'),
-
-            F::createString('DescriptionRu', ['name' => 'Description Ru']),
 
             CF::orderId()
 

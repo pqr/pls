@@ -3,9 +3,10 @@
 namespace Light\ModuleBase;
 
 use Light\ApplicationAbstract;
+use Light\Config;
 use Light\Db;
-use Light\Field\FieldAbstract as F;
 use Light\Field\FieldAbstract;
+use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\FilesFolder;
 use Light\Img;
@@ -614,11 +615,18 @@ abstract class ModuleAbstract extends Table
         // С подтаблицей можно осуществлять несколько действий
         if (isset($_REQUEST['fieldKey'])) {
             //Изменение какого-то поля через ajax
-            if (!$this->_allowEdit || !User::hasWriteAccess() || !$this->hasWriteAccessRightToObj($this->_obj)) {
+            $fieldKey = $_REQUEST['fieldKey'];
+            $field = $subtableObj->getFieldset()->getField($fieldKey);
+            if (!$field) {
+                Response::abort(400, "Field not found");
+            }
+
+            if (!$this->hasWriteAccessAjaxChnageField($field)) {
                 Response::abort(403, 'Edit not allowed');
             }
 
             $subtableObj->proceedChangeField();
+
         } elseif (Request::isAjax()) {
             //Перезагрузка через ajax при изменении Table Layout
             $subtableObj->proceedAjaxReload();
@@ -656,11 +664,12 @@ abstract class ModuleAbstract extends Table
         // sudo service php7.1-fpm restart
 
         if ($_GET['elfinder'] === 'dialog') {
+            $textFolder = Config::$lang === 'ru' ? 'Папка' : 'Folder';
             // Это первичный запрос на рендер каркаса диалога (пока без содержимого с файлами)
             Template::includeTpl(LIGHT_DIR_LIGHT . '/templates/module/elfinderdialog.tpl.php', [
                 'module' => $module,
                 'id' => $id,
-                'title' => 'Файлы: ' . $this->_textObjectName . ' ' . strip_tags($this->_obj->getDescriptionHtml())
+                'title' => $textFolder . ': ' . $this->_textObjectName . ' ' . strip_tags($this->_obj->getDescriptionHtml())
             ]);
             ApplicationAbstract::terminate();
             return;
@@ -1845,16 +1854,24 @@ abstract class ModuleAbstract extends Table
         }
 
         if ($linkedMessagess) {
-            $outHtml = 'Удаляемая запись связана с другими записями в базе:<br>';
+            $textLinked = Config::$lang === 'ru'
+                ? 'Удаляемая запись связана с другими записями в базе'
+                : 'You are triing to delete a record which is linked to anothed records in database';
+            $outHtml = "$textLinked:<br>";
             $outHtml .= '<ul><li>' . implode('</li><li>', $linkedMessagess) . '</li></ul>';
 
             //Далее нужно вывести выпадающий список для выбора элемента на замену
-            $outHtml .= 'Выберите новый элемен на замену удаляемому:<br>';
+            $textChoose = Config::$lang === 'ru'
+                ? 'Выберите новый элемен на замену удаляемому'
+                : 'Choose another record to replace deleted';
+            $outHtml .= "$textChoose:<br>";
             $outHtml .= $this->whileDeleteGetHtmlInputForReplacement($oldId);
             return $outHtml;
         }
 
-        return 'Удалить <strong>' . $this->_obj->getDescriptionHtml() . '</strong>?';
+        $textDelete = Config::$lang === 'ru' ? 'Удалить' : 'Delete';
+
+        return $textDelete . ' <strong>' . $this->_obj->getDescriptionHtml() . '</strong>?';
     }
 
     /**
@@ -1866,7 +1883,8 @@ abstract class ModuleAbstract extends Table
     protected function checkDeleteConfirmResult(): bool
     {
         //Сразу определим вспомагательные значения
-        $dbLogMsg = 'Удаление ' . $this->_obj->getDescriptionHtml();
+        $textDeleting = Config::$lang === 'ru' ? 'Удаление' : 'Deleting';
+        $dbLogMsg = $textDeleting . ' ' . $this->_obj->getDescriptionHtml();
         $oldId = $this->_obj->getId();
         $updateMessagess = [];
 
@@ -1903,7 +1921,8 @@ abstract class ModuleAbstract extends Table
 
         if ($updateMessagess) {
             //В процессе удаления были произведены какие-то обновления в других таблицах, выведем сообщение об этом
-            $msg = 'Было обновлено:<br>';
+            $textUpdated = Config::$lang === 'ru' ? 'Обновлено' : 'Updated';
+            $msg = "$textUpdated:<br>";
             $msg .= '<ul><li>' . implode('</li><li>', $updateMessagess) . '</li></ul>';
             Session::flashSuccess($msg);
         }
@@ -2057,17 +2076,6 @@ abstract class ModuleAbstract extends Table
 
     protected function initListIntro()
     {
-        IntroManager::addIntroWithHash('.filters-history', 'Смотрите и выбирайте историю Ваших поисков',
-            'intro-filters-history');
-        IntroManager::addIntroWithHash('.filters-save',
-            'Сохраните часто используемые фильтры, чтобы получить возможность к ним быстро вернуться',
-            'intro-filters-save');
-        IntroManager::addIntroWithHash(
-            '.filters-settings',
-            '<div style="padding-bottom: 10px;">Настройте фильтры под себя, меняйте местами и скрывайте не используемые фильтры</div>
-                    <img src="Light/i/intro-filters.gif" style="width: 370px;" />',
-            'intro-filters-settings'
-        );
     }
 
     protected function addIntro($selector, $text)
@@ -2378,7 +2386,10 @@ abstract class ModuleAbstract extends Table
                             );
                         }
                         if ($this->_allowDelete) {
-                            $url = Link::url(['delid' => $data['ID'], 'fromList' => 1] + $this->getModuleSessionUrlParams()) . '#ajax';
+                            $url = Link::url([
+                                        'delid' => $data['ID'],
+                                        'fromList' => 1
+                                    ] + $this->getModuleSessionUrlParams()) . '#ajax';
                             $outHtml .= '<a href="' . $url . '" class="del-link" title="Delete">' . Img::iconDelete() . '</a>';
                         }
                     }
@@ -2560,7 +2571,7 @@ abstract class ModuleAbstract extends Table
         return $outHtml;
     }
 
-    protected function hasWriteAccessAjaxChnageField(FieldAbstract $field):bool
+    protected function hasWriteAccessAjaxChnageField(FieldAbstract $field): bool
     {
         return $this->_allowEdit
             && User::hasWriteAccess()

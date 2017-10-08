@@ -20,6 +20,11 @@ var Light;
     // Закешируем изображение для ajax вызовов
     var img = new Image();
     img.src = "lightpublic/i/circle.gif";
+    function getLang() {
+        return window._lightLang;
+    }
+    Light.getLang = getLang;
+    Light.isLangRu = window._lightLang === 'ru';
     function initSelectChild($root) {
         $root.find("select.select-child").each(function () {
             var $child = $(this);
@@ -1232,6 +1237,9 @@ $(function () {
 var Light;
 (function (Light) {
     var $body = $("body");
+    var textFail = Light.isLangRu ? 'Не удалось изменить' : 'Update failed';
+    var textSave = Light.isLangRu ? 'Сохранить' : 'Save';
+    var textCancel = Light.isLangRu ? 'Отмена' : 'Cancel';
     $body.on("click", "a.ajax-checkbox", function (e) {
         e.preventDefault();
         var $link = $(this);
@@ -1261,7 +1269,7 @@ var Light;
             // В случае ошибки ajax запроса возвращаем старое значение
             $link.insertAfter($img);
             $img.remove();
-            Light.toastError("Не удалось изменить");
+            Light.toastError(textFail);
         });
     });
     $body.on("click", "a.ajax-input", function (e) {
@@ -1301,13 +1309,13 @@ var Light;
             }
             else {
                 // Если же это не поле input-date, то добавим пару ссылок сохранить и отмена
-                $('<a href="#" style="padding-left: 15px">отмена</a>')
+                $("<a href=\"#\" style=\"padding-left: 15px\">" + textCancel + "</a>")
                     .on("click", function (e) {
                     e.preventDefault();
                     handleAjaxInputCancel($input, $link);
                 })
                     .insertAfter($input);
-                $('<a href="#">сохранить</a>')
+                $("<a href=\"#\">" + textSave + "</a>")
                     .on("click", function (e) {
                     e.preventDefault();
                     handleAjaxInputSave($input, url);
@@ -1365,7 +1373,7 @@ var Light;
             .fail(function () {
             // В случае ошибки ajax запроса возвращаем поле ввода в режим редактирования
             $input.prop("disabled", false);
-            Light.toastError("Не удалось изменить");
+            Light.toastError(textFail);
         });
     }
     function handleAjaxInputCancel($input, $originalLink) {
@@ -1391,10 +1399,10 @@ var Light;
                 this.noSettings = false;
                 this.newSystemFlag = false;
                 this.$form = $form;
-                this.name = $form.attr('name');
+                this.name = $form.attr('name') || '';
                 this.fields = Light.parseJson($form.attr("data-fields"));
-                this.savedFilters = Light.parseJson($form.attr("data-saved"));
-                this.defaultSort = Light.parseJson($form.attr("data-default-sort"));
+                this.savedFilters = Light.parseJson($form.attr("data-saved"), []);
+                this.defaultSort = Light.parseJson($form.attr("data-default-sort"), []);
                 this.noSettings = Light.parseJson($form.attr("data-nosettings"));
                 this.newSystemFlag = Light.parseJson($form.attr("data-newsystemflag"));
                 //Сохраняем созданный объект внутрь самой ноды с помощью jQuery
@@ -2139,9 +2147,9 @@ var Light;
                 this.$div = $div;
                 this.$table = $div.find("table.table");
                 this.$tbody = this.$table.children("tbody");
-                this.name = $div.attr("data-tablename");
-                this.reloadUrl = $div.attr("data-reloadurl");
-                this.linkModule = $div.attr("data-linkmodule");
+                this.name = $div.attr("data-tablename") || "";
+                this.reloadUrl = $div.attr("data-reloadurl") || "";
+                this.linkModule = $div.attr("data-linkmodule") || "";
                 //Попробуем найти текущую страницу из вёрстки
                 //Необходимо хранить текущую страницу для метода reload() (удобно при смене table layout settings и при удалении в ModuleAbstract)
                 var $strong = $div.find(".table-pages:first").find("strong");
@@ -2315,8 +2323,11 @@ var Light;
                             Sort: sortData,
                             Invisible: invisibleData,
                             NewSystemFlag: that.filtersForm.getNewSystemFlag()
-                        }, function () {
-                            Light.toastSuccess("Настройки фильтров успешно сохранены");
+                        }).done(function () {
+                            var textSaved = Light.isLangRu
+                                ? "Настройки фильтров успешно сохранены"
+                                : "Filters layout saved";
+                            Light.toastSuccess(textSaved);
                         });
                     });
                     this.$filtersForm.on("click", ".filters-settings-reset-sort", function () {
@@ -2527,8 +2538,11 @@ var Light;
                     $.post("?a=Core&ps=SaveFiltersLikeReset", {
                         TableName: that.getName(),
                         FilterValues: filtersData
-                    }, function () {
-                        Light.toastSuccess("\u0424\u0438\u043B\u044C\u0442\u0440 \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D \u043A\u0430\u043A RESET");
+                    }).done(function () {
+                        var textSaved = Light.isLangRu
+                            ? "Текущие значения фильтров установлены как RESET"
+                            : "Default filter valules changed";
+                        Light.toastSuccess(textSaved);
                     });
                     that.hideFiltersWidget();
                 });
@@ -2591,7 +2605,9 @@ var Light;
                         }
                     });
                     if (duplicate) {
-                        Light.toastError("Такой фильтр уже существует: " + duplicate);
+                        var textExists = Light.isLangRu ? "Такой фильтр уже сохранён под именем" : "Already saved as";
+                        var duplicateHtml = Light.htmlspecialchars(duplicate);
+                        Light.toastError(textExists + " <strong>" + duplicateHtml + "</strong>");
                         $button.prop("disabled", false);
                         return;
                     }
@@ -2603,7 +2619,11 @@ var Light;
                             flagNew = false;
                             savedFilter.FilterValues = filtersData;
                             that.saveFilters(nameValue, filtersData, function () {
-                                Light.toastSuccess("\u0424\u0438\u043B\u044C\u0442\u0440 \"" + nameValue + "\" \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D");
+                                var nameHtml = Light.htmlspecialchars(nameValue);
+                                var textUpdated = Light.isLangRu
+                                    ? "\u0424\u0438\u043B\u044C\u0442\u0440 \"" + nameHtml + "\" \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D"
+                                    : "Filter values \"" + nameHtml + "\" updaed";
+                                Light.toastSuccess(textUpdated);
                                 that.currentSavedFilterName = nameValue;
                                 that.initBodySavedFilterWidget();
                             });
@@ -2612,7 +2632,11 @@ var Light;
                     if (flagNew) {
                         that.savedFilters.push({ Name: nameValue, FilterValues: filtersData });
                         that.saveFilters(nameValue, filtersData, function () {
-                            Light.toastSuccess("\u0424\u0438\u043B\u044C\u0442\u0440 \"" + nameValue + "\" \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D");
+                            var nameHtml = Light.htmlspecialchars(nameValue);
+                            var textSaved = Light.isLangRu
+                                ? "\u0424\u0438\u043B\u044C\u0442\u0440 \"" + nameHtml + "\" \u0443\u0441\u043F\u0435\u0448\u043D\u043E \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D"
+                                : "Filter values \"" + nameHtml + "\" saved";
+                            Light.toastSuccess(textSaved);
                             that.currentSavedFilterName = nameValue;
                             that.initBodySavedFilterWidget();
                         });
@@ -2688,7 +2712,11 @@ var Light;
                 $("body").css("overflow", "hidden");
                 var $buttons = this.$filtersForm.find(".filters-buttons");
                 $buttons.addClass("display-none");
-                var $settingsBitton = $("<div class=\"filters-settings-buttons\">\n                                             <span class=\"btn waves-effect waves-light bgcolor-btn-green filters-settings-save\"><i class=\"fa fa-save\" aria-hidden=\"true\"></i></span>       \n                                             <span class=\"btn-flat waves-effect filters-settings-reset-sort toggle-tooltip\" title=\"\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u0441\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u043A\u0443 \u0444\u0438\u043B\u044C\u0442\u0440\u043E\u0432\"><i class=\"fa fa-random\" aria-hidden=\"true\"></i></span>\n                                             <span class=\"btn-flat waves-effect filters-settings-all-visible toggle-tooltip\" title=\"\u0421\u0434\u0435\u043B\u0430\u0442\u044C \u0432\u0438\u0434\u0438\u043C\u044B\u043C\u0438 \u0432\u0441\u0435 \u0444\u0438\u043B\u044C\u0442\u0440\u044B\"><i class=\"fa fa-eye\" aria-hidden=\"true\"></i></span>\n                                             <span class=\"btn-flat waves-effect filters-settings-all-invisible toggle-tooltip\" title=\"\u0421\u0434\u0435\u043B\u0430\u0442\u044C \u043D\u0435\u0432\u0438\u0434\u0438\u043C\u044B\u043C\u0438 \u0432\u0441\u0435 \u0444\u0438\u043B\u044C\u0442\u0440\u044B\"><i class=\"fa fa-eye-slash\" aria-hidden=\"true\"></i></span>\n                                             <span class=\"btn-flat waves-effect filters-settings-cancel toggle-tooltip\" title=\"Cancel\"><i class=\"fa fa-ban\" aria-hidden=\"true\"></i></span>\n                                        </div>");
+                var textResetSort = Light.isLangRu ? "Сбросить сортировку фильтров" : "Reset to default layout";
+                var textShowAll = Light.isLangRu ? "Сделать все фильтры видимыми" : "Show all";
+                var textHideAll = Light.isLangRu ? "Сделать все фильтры невидимыми" : "Hide all";
+                var textCancel = Light.isLangRu ? "Отмена" : "Cancel";
+                var $settingsBitton = $("<div class=\"filters-settings-buttons\">\n                                             <span class=\"btn waves-effect waves-light bgcolor-btn-green filters-settings-save\"><i class=\"fa fa-save\" aria-hidden=\"true\"></i></span>       \n                                             <span class=\"btn-flat waves-effect filters-settings-reset-sort toggle-tooltip\" title=\"" + textResetSort + "\"><i class=\"fa fa-random\" aria-hidden=\"true\"></i></span>\n                                             <span class=\"btn-flat waves-effect filters-settings-all-visible toggle-tooltip\" title=\"" + textShowAll + "\"><i class=\"fa fa-eye\" aria-hidden=\"true\"></i></span>\n                                             <span class=\"btn-flat waves-effect filters-settings-all-invisible toggle-tooltip\" title=\"" + textHideAll + "\"><i class=\"fa fa-eye-slash\" aria-hidden=\"true\"></i></span>\n                                             <span class=\"btn-flat waves-effect filters-settings-cancel toggle-tooltip\" title=\"" + textCancel + "\"><i class=\"fa fa-ban\" aria-hidden=\"true\"></i></span>\n                                        </div>");
                 Light.initTooltip($settingsBitton);
                 $buttons.after($settingsBitton);
             };
@@ -2704,17 +2732,13 @@ var Light;
             Table.prototype.initBodySavedFilterWidget = function () {
                 var that = this;
                 var html = "";
-                var savedFilterValue = "";
-                if (that.currentSavedFilterName) {
-                    savedFilterValue = that.currentSavedFilterName;
-                }
-                html +=
-                    "<div class=\"like-reset\">\n                                <span>\u0423\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u043A\u0430\u043A RESET</span>\n                            </div>\n                            <div class=\"save-filter\">\n                                <div class=\"save-filter-text\">\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0444\u0438\u043B\u044C\u0442\u0440: </div>\n                                <div class=\"save-filter-form\">\n                                    <input type=\"text\" class=\"input-default\" placeholder=\"\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435\" value=\"" +
-                        savedFilterValue +
-                        "\">\n                                    <button>Save</button>\n                                </div>\n                             </div>";
-                if (!_.isEmpty(that.savedFilters)) {
+                var textSetReset = Light.isLangRu ? "Установить как RESET" : "Set current filter values as default";
+                var textSave = Light.isLangRu ? "Сохранить фильтры" : "Save filter values as";
+                var textSavePlaceholder = Light.isLangRu ? "Название" : "...give it a name";
+                html += "<div class=\"like-reset\">\n                                <span>" + textSetReset + "</span>\n                            </div>\n                            <div class=\"save-filter\">\n                                <div class=\"save-filter-text\">" + textSave + ": </div>\n                                <div class=\"save-filter-form\">\n                                    <input type=\"text\" class=\"input-default\" placeholder=\"" + textSavePlaceholder + "\">\n                                    <button>Save</button>\n                                </div>\n                             </div>";
+                if (that.savedFilters.length > 0) {
                     html += "<ul>";
-                    _.each(that.savedFilters, function (savedFiltersData) {
+                    that.savedFilters.forEach(function (savedFiltersData) {
                         html += "<li>";
                         var $a = $('<a href="#"></a>');
                         $a.attr("data-values", JSON.stringify(savedFiltersData.FilterValues));
@@ -2727,15 +2751,16 @@ var Light;
                     html += "</ul>";
                 }
                 that.$filtersWidget.html(html);
+                if (that.currentSavedFilterName) {
+                    that.$filtersWidget.find("input.input-default").val(that.currentSavedFilterName);
+                }
             };
             Table.prototype.saveFilters = function (name, data, callback) {
                 $.post("?a=Core&ps=SaveFilters", {
                     TableName: this.getName(),
                     Name: name,
                     FilterValues: data
-                }, function () {
-                    callback();
-                });
+                }).done(callback);
             };
             Table.prototype.checkOnVoidInvisibleFilters = function () {
                 if (this.filtersForm.getNoSettings()) {
@@ -4169,8 +4194,9 @@ var Light;
                     }
                 });
                 // Сформируем тело для диалога из списка ошибок
+                var textError = Light.isLangRu ? 'Ошибки при сохранении' : 'Error';
                 dialogBodyHtml =
-                    '<h3 class="bad">Ошибки при сохранении</h3>' +
+                    "<h3 class=\"bad\">" + textError + "</h3>" +
                         ("<ol class=\"save-errors\">" + errors.map(function (_a) {
                             var msg = _a.msg;
                             return "<li>" + msg + "</li>";

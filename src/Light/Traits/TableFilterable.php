@@ -570,10 +570,8 @@ trait TableFilterable
             ", $tableId, User::getId());
 
         foreach ($savedFilters as &$filter) {
-            $filter = [
-                'Name' => $filter['Name'],
-                'FilterValues' => json_decode($filter['FilterValues'], true),
-            ];
+            // Декодируем JSON сохранённый в базе
+            $filter['FilterValues'] = json_decode($filter['FilterValues'], true);
         }
 
         $template = $this->filtersGetTemplate();

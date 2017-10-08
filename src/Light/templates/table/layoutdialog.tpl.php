@@ -19,7 +19,7 @@
 
             </td>
             <td>
-                <input type="text" id="tablelayoutdialog__filter" placeholder="Найти поле">
+                <input type="text" id="tablelayoutdialog__filter" placeholder="<?= \Light\Config::$lang === 'ru' ? 'Найти поле...' : 'Search...' ?>">
             </td>
             <td rowspan="2">
 
