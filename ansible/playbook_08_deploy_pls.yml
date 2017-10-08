@@ -15,7 +15,7 @@
   - name: deploy pls 2. Clone git repo
     git:
       repo: git@bitbucket.org:pqr/pls.git
-      dest: "{{ project_dir }}"
+      dest: "{{ project_dir_pls }}"
       clone: yes
       force: yes
       accept_hostkey: true
@@ -25,22 +25,22 @@
   - name: deploy pls 3. Check logs and temp folders and mode
     file: path={{ item }} state=directory mode=0777
     with_items:
-      - "{{ project_dir }}/logs"
-      - "{{ project_dir }}/temp"
+      - "{{ project_dir_pls }}/logs"
+      - "{{ project_dir_pls }}/temp"
     tags: dirs
 
   # Установить файл config.php с переменными
   - name: deploy pls 4. Copy config.php
     template:
-      src: files/config.php
-      dest: "{{ project_dir }}/config/config.php"
+      src: files/config_pls.php
+      dest: "{{ project_dir_pls }}/config/config.php"
       backup: yes
     tags: conf
 
   - name: deploy pls 5. Install composer deps
     composer:
       command: install
-      working_dir: "{{ project_dir }}"
+      working_dir: "{{ project_dir_pls }}"
       no_dev: true
     tags: code
 
@@ -48,8 +48,8 @@
   - name: deploy pls 6. Create lightpublic symlink
     file:
       state: link
-      src: "{{ project_dir }}/src/Light/public"
-      path: "{{ project_dir }}/public/lightpublic"
+      src: "{{ project_dir_pls }}/src/Light/public"
+      path: "{{ project_dir_pls }}/public/lightpublic"
     tags: dirs
 
   - name: deploy pls 7. Cron Light/CurrencyRateCBRF today at 6am
@@ -58,7 +58,7 @@
       name: "pls CurrencyRateCBRF today"
       minute: "0"
       hour: "6"
-      job: "php {{ project_dir }}/public/index.php Light/CurrencyRateCBRF today"
+      job: "php {{ project_dir_pls }}/public/index.php Light/CurrencyRateCBRF today"
     tags: cron
 
   - name: deploy pls 8. Cron Light/CurrencyRateCBRF every 30 min 11-18
@@ -67,7 +67,7 @@
       name: "pls CurrencyRateCBRF"
       minute: "*/30"
       hour: "11-18"
-      job: "php {{ project_dir }}/public/index.php Light/CurrencyRateCBRF"
+      job: "php {{ project_dir_pls }}/public/index.php Light/CurrencyRateCBRF"
     tags: cron
 
   - name: deploy pls 9. Cron CitadeleCurrencyLoader every hour 9-21
@@ -76,7 +76,7 @@
       name: "pls CitadeleCurrencyLoader"
       minute: "0"
       hour: "9-21"
-      job: "php {{ project_dir }}/public/index.php CitadeleCurrencyLoader"
+      job: "php {{ project_dir_pls }}/public/index.php CitadeleCurrencyLoader"
     tags: cron
 
   - name: deploy pls 10. Cron UpdateCustomerOutstandingCache at 8
@@ -85,7 +85,7 @@
       name: "pls UpdateCustomerOutstandingCache"
       minute: "0"
       hour: "8"
-      job: "php {{ project_dir }}/public/index.php UpdateCustomerOutstandingCache"
+      job: "php {{ project_dir_pls }}/public/index.php UpdateCustomerOutstandingCache"
     tags: cron
 
   - name: deploy pls 11. Cron UpdateShipmentCriteria at 0:10
@@ -94,7 +94,7 @@
       name: "pls UpdateShipmentCriteria"
       minute: "10"
       hour: "0"
-      job: "php {{ project_dir }}/public/index.php UpdateShipmentCriteria"
+      job: "php {{ project_dir_pls }}/public/index.php UpdateShipmentCriteria"
     tags: cron
 
   - name: deploy pls 12. Cron Light/Email every minute
@@ -102,7 +102,7 @@
     cron:
       name: "pls Light/Email"
       minute: "*"
-      job: "php {{ project_dir }}/public/index.php Light/Email"
+      job: "php {{ project_dir_pls }}/public/index.php Light/Email"
     tags: cron
 
   - name: deploy pls 13. Cron EmailPendingQuotations14days at 16:30 working days
@@ -112,7 +112,7 @@
       minute: "30"
       hour: "16"
       weekday: "1-5"
-      job: "php {{ project_dir }}/public/index.php EmailPendingQuotations14days"
+      job: "php {{ project_dir_pls }}/public/index.php EmailPendingQuotations14days"
     tags: cron
 
   - name: deploy pls 14. Cron ImportCActFrom1C 8-23 every 5 min
@@ -121,7 +121,7 @@
       name: "pls ImportCActFrom1C"
       minute: "*/5"
       hour: "8-23"
-      job: "php {{ project_dir }}/public/index.php ImportCActFrom1C"
+      job: "php {{ project_dir_pls }}/public/index.php ImportCActFrom1C"
     tags: cron
 
   - name: deploy pls 15. Cron ImportCInvoicesFrom1C 8-23 every 5 min
@@ -130,7 +130,7 @@
       name: "pls ImportCInvoicesFrom1C"
       minute: "*/5"
       hour: "8-23"
-      job: "php {{ project_dir }}/public/index.php ImportCInvoicesFrom1C"
+      job: "php {{ project_dir_pls }}/public/index.php ImportCInvoicesFrom1C"
     tags: cron
 
   - name: deploy pls 16. Cron ImportCPaymentsFrom1C 8-23 every 5 min
@@ -139,6 +139,6 @@
       name: "pls ImportCPaymentsFrom1C"
       minute: "*/5"
       hour: "8-23"
-      job: "php {{ project_dir }}/public/index.php ImportCPaymentsFrom1C"
+      job: "php {{ project_dir_pls }}/public/index.php ImportCPaymentsFrom1C"
     tags: cron
 

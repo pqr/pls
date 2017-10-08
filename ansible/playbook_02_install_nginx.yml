@@ -19,7 +19,7 @@
     tags: nginx
 
   # Установить конфигурацию nginx.conf
-  - name: nginx 3. Copy config for nginx
+  - name: nginx 3. Copy sites-available/default
     template:
       src: files/etc/nginx/sites-available/default
       dest: /etc/nginx/sites-available/default
@@ -27,8 +27,25 @@
     notify: reload nginx
     tags: conf
 
+  # Установить конфигурацию nginx.conf
+  - name: nginx 4. Copy sites-available/flowerbase
+    template:
+      src: files/etc/nginx/sites-available/flowerbase
+      dest: /etc/nginx/sites-available/flowerbase
+      backup: yes
+    notify: reload nginx
+    tags: conf
+
+  - name: nginx 5. Create link for sites-enabled nginx style
+    file: src={{ item.src }} dest={{ item.dest }} state=link
+    with_items:
+      - { src: "/etc/nginx/sites-available/default", dest: "/etc/nginx/sites-enabled/default" }
+      - { src: "/etc/nginx/sites-available/flowerbase", dest: "/etc/nginx/sites-enabled/flowerbase" }
+    notify: reload nginx
+    tags: conf
+
   # Активировать и запустить nginx:
-  - name: nginx 4. Enable nginx
+  - name: nginx 6. Enable nginx
     service: name=nginx state=started enabled=true
     tags: nginx
 

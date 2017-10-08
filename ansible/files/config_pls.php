@@ -4,10 +4,10 @@ use Light\Config;
 Config::$mysqlHost = '{{ mysql_host }}';
 Config::$mysqlUser = '{{ mysql_user }}';
 Config::$mysqlPassword = '{{ mysql_pass }}';
-Config::$mysqlDb = '{{ mysql_db }}';
+Config::$mysqlDb = '{{ mysql_db_pls }}';
 Config::$mysqlPort = '3306';
 Config::$title = 'PLS';
-Config::$filesfolderLocal = '{{ filesfolder }}';
+Config::$filesfolderLocal = '{{ filesfolder_pls }}';
 Config::$lang = 'en';
 
 Config::$sentry = [
@@ -18,7 +18,7 @@ Config::$sentry = [
     ]
 ];
 
-Config::$localUrl = '{{ url }}';
+Config::$localUrl = '{{ url_pls }}';
 
 Config::$debug = false;
 Config::$jslog = false;

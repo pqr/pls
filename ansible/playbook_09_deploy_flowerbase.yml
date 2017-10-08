@@ -1,0 +1,106 @@
+# Example: ansible-playbook playbook_deploy_webserver.yml -i inventory.test --tags=nginx
+- hosts: []
+  become: false
+  vars_files:
+  - vars_decrypted.yml
+  - vars_encrypted.yml
+
+  tasks:
+  # Установить deploy ssh key (если его нет или отличается):
+  - name: deploy flowerbase 1. Copy id_rsa to user folder
+    copy: content={{ id_rsa }} dest=/home/ubuntu/.ssh/id_rsa mode=0600 owner=ubuntu group=ubuntu
+    tags: key
+
+  # Клонировать репозиторий prod website (и затереть изменения если были):
+  - name: deploy flowerbase 2. Clone git repo
+    git:
+      repo: git@bitbucket.org:pqr/pls.git
+      dest: "{{ project_dir_flowerbase }}"
+      clone: yes
+      force: yes
+      accept_hostkey: true
+    tags: code
+
+  # Проверить папки logs и temp и права 777 на них:
+  - name: deploy flowerbase 3. Check logs and temp folders and mode
+    file: path={{ item }} state=directory mode=0777
+    with_items:
+      - "{{ project_dir_flowerbase }}/logs"
+      - "{{ project_dir_flowerbase }}/temp"
+    tags: dirs
+
+  # Установить файл config.php с переменными
+  - name: deploy flowerbase 4. Copy config.php
+    template:
+      src: files/config_flowerbase.php
+      dest: "{{ project_dir_flowerbase }}/config/config.php"
+      backup: yes
+    tags: conf
+
+  - name: deploy flowerbase 5. Install composer deps
+    composer:
+      command: install
+      working_dir: "{{ project_dir_flowerbase }}"
+      no_dev: true
+    tags: code
+
+    # Создать символические ссылки на папки для nginx
+  - name: deploy flowerbase 6. Create lightpublic symlink
+    file:
+      state: link
+      src: "{{ project_dir_flowerbase }}/src/Light/public"
+      path: "{{ project_dir_flowerbase }}/public/lightpublic"
+    tags: dirs
+
+  - name: deploy flowerbase 7. Cron Light/CurrencyRateCBRF today at 6am
+    become: false
+    cron:
+      name: "flowerbase CurrencyRateCBRF today"
+      minute: "0"
+      hour: "6"
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/CurrencyRateCBRF today"
+    tags: cron
+
+  - name: deploy flowerbase 8. Cron Light/CurrencyRateCBRF every 30 min 11-18
+    become: false
+    cron:
+      name: "flowerbase CurrencyRateCBRF"
+      minute: "*/30"
+      hour: "11-18"
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/CurrencyRateCBRF"
+    tags: cron
+
+  - name: deploy flowerbase 9. Cron CitadeleCurrencyLoader every hour 9-21
+    become: false
+    cron:
+      name: "flowerbase CitadeleCurrencyLoader"
+      minute: "0"
+      hour: "9-21"
+      job: "php {{ project_dir_flowerbase }}/public/index.php CitadeleCurrencyLoader"
+    tags: cron
+
+  - name: deploy flowerbase 10. Cron UpdateCustomerOutstandingCache at 8
+    become: false
+    cron:
+      name: "flowerbase UpdateCustomerOutstandingCache"
+      minute: "0"
+      hour: "8"
+      job: "php {{ project_dir_flowerbase }}/public/index.php UpdateCustomerOutstandingCache"
+    tags: cron
+
+  - name: deploy flowerbase 11. Cron UpdateShipmentCriteria at 0:10
+    become: false
+    cron:
+      name: "flowerbase UpdateShipmentCriteria"
+      minute: "10"
+      hour: "0"
+      job: "php {{ project_dir_flowerbase }}/public/index.php UpdateShipmentCriteria"
+    tags: cron
+
+  - name: deploy flowerbase 12. Cron Light/Email every minute
+    become: false
+    cron:
+      name: "flowerbase Light/Email"
+      minute: "*"
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/Email"
+    tags: cron

@@ -2,7 +2,10 @@
 php_version: "7.1"
 php_use_ppa: "ppa:ondrej/php"
 
-url: "https://forwardlog.net"
-project_dir: "/home/ubuntu/pls"
-filesfolder: "/home/ubuntu/files"
+url_pls: "https://forwardlog.net"
+url_flowerbase: "https://2.forwardlog.net"
+project_dir_pls: "/home/ubuntu/pls"
+project_dir_flowerbase: "/home/ubuntu/flowerbase"
+filesfolder_pls: "/home/ubuntu/files"
+filesfolder_flowerbase: "/home/ubuntu/files/_flowerbase"
 ftpfolder: "/home/pls"
