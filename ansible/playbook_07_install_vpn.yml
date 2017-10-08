@@ -1,0 +1,49 @@
+# Example: ansible-playbook playbook_07_install_vpn.yml
+# https://www.sanglyb.ru/ubuntu-server-1604-pptp-klient-s-avtomaticheskim-podklyucheniem
+- hosts: []
+  become: true
+  become_user: root
+  become_method: sudo
+  vars_files:
+  - vars_encrypted.yml
+
+  tasks:
+  # Обновить apt cache:
+  - name: vpn 1. Update cache
+    apt: update_cache=true
+    changed_when: no
+    tags: cache
+
+  - name: vpn 2. Install pptp-linux
+    apt: name=pptp-linux
+    tags: vpn
+
+  - name: vpn 3. Install /etc/ppp/peers/vpnbuh
+    template:
+      src: files/etc/ppp/peers/vpnbuh
+      dest: /etc/ppp/peers/vpnbuh
+      backup: yes
+    tags: conf
+
+  - name: vpn 4. Install /etc/ppp/ip-up
+    template:
+      src: files/etc/ppp/ip-up
+      dest: /etc/ppp/ip-up
+      backup: yes
+    tags: conf
+
+  - name: vpn 5. Copy vpnbuh-connect.sh
+    become: false
+    template:
+      src: files/vpnbuh-connect.sh
+      dest: /home/ubuntu/vpnbuh-connect.sh
+      mode: 0744
+    tags: conf
+
+  - name: vpn 6. Copy vpnbuh-reconnect.sh
+    become: false
+    template:
+      src: files/vpnbuh-reconnect.sh
+      dest: /home/ubuntu/vpnbuh-reconnect.sh
+      mode: 0744
+    tags: conf

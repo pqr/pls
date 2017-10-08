@@ -25,7 +25,7 @@
       dest: /etc/nginx/sites-available/default
       backup: yes
     notify: reload nginx
-    tags: config
+    tags: conf
 
   # Активировать и запустить nginx:
   - name: nginx 4. Enable nginx

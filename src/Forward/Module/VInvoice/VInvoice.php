@@ -644,7 +644,8 @@ class VInvoice extends InvoiceModuleAbstract
             ];
         }
 
-        $ftpFolderpathAbs = ForwardConfig::$onecFtpFolderBase . '/vinvoice/' . Constant::$onecCompany[$vinvObj['CompanyID']]['ftpSubfolder'];
+        $path = Constant::$onecCompany[$vinvObj['CompanyID']];
+        $ftpFolderpathAbs = ForwardConfig::$onecFtpFolderBase . "/vinvoice/$path";
         File::mkdir($ftpFolderpathAbs);
 
         // Сохраним json структуру в FTP папку

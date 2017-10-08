@@ -1,0 +1,13 @@
+pty "pptp {{ vpnbuh_ip }} --nolaunchpppd" #здесь измените адрес сервера, на ваш
+require-mschap-v2
+require-mppe-128
+user {{ vpnbuh_user }} #имя пользователя
+password "{{ vpnbuh_pass }}" #пароль
+nodeflate
+nobsdcomp
+noauth
+nodefaultroute  #отключаем маршрут по умолчанию,
+                #если он вам нужен - замените на defaultroute / nodefaultroute
+persist #пере подключаться при обрыве
+maxfail 10 #количество попыток пере подключения
+holdoff 15 #интервал между подключениями

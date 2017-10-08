@@ -35,7 +35,7 @@
       src: files/config.php
       dest: "{{ project_dir }}/config/config.php"
       backup: yes
-    tags: dirs
+    tags: conf
 
   - name: deploy pls 5. Install composer deps
     composer:

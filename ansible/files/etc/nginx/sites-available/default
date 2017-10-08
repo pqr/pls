@@ -3,6 +3,10 @@ server {
     listen 80;
     listen [::]:80 ipv6only=on;
 
+    if ($http_x_forwarded_proto = "http") {
+       rewrite ^(.*)$ https://$http_host$1;
+    }
+
     sendfile on;
     tcp_nopush on;
     client_max_body_size 0;

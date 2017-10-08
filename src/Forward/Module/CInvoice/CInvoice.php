@@ -11,9 +11,11 @@ use Forward\Classes\InvoicesCommon;
 use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
 use Forward\Field\GeneralFields;
 use Forward\Field\InvoiceFields;
+use Forward\ForwardConfig;
 use Forward\Module\CInvoice\Massactions\CreateCPayments;
 use Forward\Module\CInvoice\PrintForms\CInvoicePrintForm;
 use Forward\ModuleBase\Invoices\InvoiceModuleAbstract;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Light\Currency;
 use Light\Db;
@@ -498,8 +500,6 @@ class CInvoice extends InvoiceModuleAbstract
             return;
         }
 
-        $onecUrl = Constant::$onecCompany[$cinvObj['CompanyID']]['onecUrl'];
-
         // Проверим, есть ли зафиксированная дата OneCDocDate?
         $onecDocDate = Db::getOne("SELECT OneCDocDate FROM cinvoice WHERE ID = @i", $cinvObj->getId());
 
@@ -536,8 +536,9 @@ class CInvoice extends InvoiceModuleAbstract
 
         $dataForOneC = $this->getDataForOneC($cinvObj, $onecDocDate);
 
-        $client = new \GuzzleHttp\Client();
-        $url = $onecUrl . '/hs/CreateCustomerInvoice';
+        $client = new Client();
+        $path = Constant::$onecCompany[$cinvObj['CompanyID']];
+        $url = 'http://' . ForwardConfig::$onecIp . "/$path/hs/CreateCustomerInvoice";
 
         try {
 

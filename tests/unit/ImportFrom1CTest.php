@@ -33,10 +33,10 @@ class ImportFrom1CTest extends TestCase
     private function getFtpFoldersAbs(string $moduleFolder): array
     {
         $foldrsAbs = [];
-        foreach (Constant::$onecCompany as $company) {
+        foreach (Constant::$onecCompany as $path) {
+
             $foldrsAbs[] = ForwardConfig::$onecFtpFolderBase
-                . "/$moduleFolder/"
-                . $company['ftpSubfolder'];
+                . "/$moduleFolder/$path";
         }
 
         return $foldrsAbs;

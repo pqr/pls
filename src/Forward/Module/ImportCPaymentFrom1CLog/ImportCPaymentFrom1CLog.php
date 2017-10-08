@@ -107,8 +107,8 @@ class ImportCPaymentFrom1CLog extends Table
             return;
         }
 
-        $ftpSubfolder = Constant::$onecCompany[$companyId]['ftpSubfolder'];
-        $ftpFolder = ForwardConfig::$onecFtpFolderBase . "/cpayment/$ftpSubfolder/archive";
+        $path = Constant::$onecCompany[$companyId];
+        $ftpFolder = ForwardConfig::$onecFtpFolderBase . "/cpayment/$path/archive";
         if (!is_dir($ftpFolder)) {
             return;
         }
@@ -130,7 +130,7 @@ class ImportCPaymentFrom1CLog extends Table
 
                 $key = "$archiveFolder/$file";
                 $fileLink = Link::module($file,
-                    ['ps' => 'file', 'file' => "$ftpSubfolder/archive/$archiveFolder/$file"], null, null, 'class=note');
+                    ['ps' => 'file', 'file' => "$path/archive/$archiveFolder/$file"], null, null, 'class=note');
                 $data[$key] = [
                     'File' => "$archiveFolder<span class=note>/<br>$fileLink</span>",
                     'CustomerAccountID' => $json['CustomerAccountID'],

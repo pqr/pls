@@ -29,22 +29,10 @@ class Constant
     const BU_LED = '2';
 
     public static $onecCompany = [
-        Constant::OC_PLS_OOO => [
-            'onecUrl' => 'http://192.168.55.2/pls',
-            'ftpSubfolder' => 'pls'
-        ],
-        Constant::OC_PGL_OOO => [
-            'onecUrl' => 'http://192.168.55.2/pgl',
-            'ftpSubfolder' => 'pgl'
-        ],
-        Constant::OC_PLS12_OOO => [
-            'onecUrl' => 'http://192.168.55.2/pls12',
-            'ftpSubfolder' => 'pls12'
-        ],
-        Constant::OC_PGL11_OOO => [
-            'onecUrl' => 'http://192.168.55.2/pgl11',
-            'ftpSubfolder' => 'pgl11'
-        ]
+        Constant::OC_PLS_OOO => 'pls',
+        Constant::OC_PGL_OOO => 'pgl',
+        Constant::OC_PLS12_OOO => 'pls12',
+        Constant::OC_PGL11_OOO => 'pgl11'
     ];
 
     public static $standardFolders = [

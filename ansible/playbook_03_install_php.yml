@@ -49,7 +49,7 @@
       - etc/php/{{ php_version }}/fpm/php-fpm.conf
       - etc/php/{{ php_version }}/fpm/pool.d/www.conf
     notify: reload php-fpm
-    tags: php
+    tags: conf
 
   handlers:
     - name: reload nginx

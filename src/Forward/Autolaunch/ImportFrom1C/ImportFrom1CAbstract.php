@@ -23,8 +23,8 @@ abstract class ImportFrom1CAbstract extends AutolaunchAbstract
     protected function run(array $params)
     {
         $this->_writeTextLog = true;
-        foreach (Constant::$onecCompany as $companyId => $onecCompanyDetails) {
-            $this->importFromFolder($companyId, $onecCompanyDetails['ftpSubfolder']);
+        foreach (Constant::$onecCompany as $companyId => $path) {
+            $this->importFromFolder($companyId, $path);
         }
     }
 

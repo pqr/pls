@@ -1,8 +1,10 @@
 <?php
+
 namespace Forward\Autolaunch;
 
 use Forward\Classes\Constant;
 use Forward\ForwardConfig;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Light\Module\Autolaunch\AutolaunchAbstract;
 
@@ -13,11 +15,10 @@ class PingOneC extends AutolaunchAbstract
 
     protected function run(array $params)
     {
-        $this->_logsInterval = '2 DAY';
-
         $data = ['ID' => 0];
-        $client = new \GuzzleHttp\Client();
-        $url = Constant::$onecCompany[Constant::OC_PLS_OOO]['onecUrl'] . '/hs/CreateCustomerInvoice';
+        $client = new Client();
+        $path = Constant::$onecCompany[Constant::OC_PLS_OOO];
+        $url = 'http://' . ForwardConfig::$onecIp . "/$path/hs/CreateCustomerInvoice";
         try {
 
             $res = $client->post($url, ['json' => $data]);

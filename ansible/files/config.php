@@ -36,3 +36,4 @@ Config::$swiftmailerPassword = '{{ mail_pass }}';
 \Forward\ForwardConfig::$path7z = '7z';
 \Forward\ForwardConfig::$onecFtpFolderBase = '{{ ftpfolder }}';
 \Forward\ForwardConfig::$vinvoiceZipPass = '{{ vinvoice_zip_pass }}';
+\Forward\ForwardConfig::$onecIp = '{{ vpnbuh_onec_ip }}';
