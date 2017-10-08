@@ -2,6 +2,8 @@
 use Light\Template;
 use Light\ApplicationAbstract;
 use Light\FilesFolder;
+use Light\Config;
+use Light\Response;
 
     // Чтобы правильно работала функция basename с файлами на русском языке
     // Перед этим нужно установить локаль в операционную систему:
@@ -27,7 +29,6 @@ if (isset($_GET['elfinder'])) {
     if ($_GET['elfinder'] === 'api') {
         // Пришел API запрос от окна с elfiner (это может быть API запрос на отображение списка файлов
         // или upload нового файла
-        $relativePath = 'Help/0';
         $opts = [
             'locale' => "ru_RU.utf8",
             'roots' => [
@@ -38,8 +39,8 @@ if (isset($_GET['elfinder'])) {
                     'mimeDetect' => 'internal',
                     // если не установить internal, то будет использована функция finfo_file, которая при обнаружении xls файла сбрасывает локаль в default заничеие ('C') и дальше все файлы с русскими буквами не смогут быть обработаны с помощью basename
                     // driver for accessing file system (REQUIRED)
-                    'path' => FilesFolder::getAbsolutePath($relativePath),
-                    'URL' => "?a=Help&id=0&elfinder=download&file=",
+                    'path' => Config::$filesfolderLocal . '/Help',
+                    'URL' => "?a=Help&elfinder=download&file=",
                     // URL to files (REQUIRED)
                     'accessControl' => function ($attr, $path, $data, $volume) {
                         if (strpos(basename($path), '.') === 0) {
@@ -57,7 +58,7 @@ if (isset($_GET['elfinder'])) {
                         */
 
                         // Возвращаем null - elfinder должен решить сам, что делать
-                        return true;
+                        return null;
 
                     }
                 ]
@@ -100,8 +101,8 @@ if (isset($_GET['elfinder'])) {
             throw new \InvalidArgumentException("file contains ..: " . $_GET['file']);
         }
 
-        $relativePath = 'Help/0';
-        FilesFolder::streamFile($relativePath . '/' . $_GET['file']);
+        $filepathAbs = Config::$filesfolderLocal .'/Help/' . $_GET['file'];
+        Response::streamFileFromFilesystem($filepathAbs);
         ApplicationAbstract::terminate();
         return;
     }
