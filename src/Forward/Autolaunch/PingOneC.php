@@ -27,7 +27,7 @@ class PingOneC extends AutolaunchAbstract
                 $this->_msgBuff->addError($msg);
                 $this->_msgBuffShort->addError($msg);
             } else {
-                $this->_msgBuff->addInfo($resBody);
+                $this->_msgBuff->addInfo(nl2br($resBody));
                 $this->_msgBuffShort->addSuccess('От 1С получен ответ длиной ' . strlen($resBody) . ' байт');
             }
 
