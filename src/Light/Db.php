@@ -437,18 +437,18 @@ class Db
     /**
      * @param  array $fieldValues
      * @param  string $table
-     * @param  string $keyField
-     * @param  $keyValue
+     * @param  $id
      * @return int affected rows
      */
-    public static function updateRow(array $fieldValues, string $table, string $keyField, $keyValue)
+    public static function updateRow(array $fieldValues, string $table, $id)
     {
         if (!$fieldValues) {
             return 0;
         }
 
-        $keyCondition = self::quote($keyField) . " = '" . self::$mysqli->real_escape_string($keyValue) . "'";
-        $query = "UPDATE " . self::quote($table) . " SET " . self::createSet($fieldValues) . " WHERE " . $keyCondition;
+        $query = "UPDATE " . self::quote($table)
+            . " SET " . self::createSet($fieldValues)
+            . " WHERE ID = '" . self::$mysqli->real_escape_string($id) . "'";
 
         self::query($query);
 

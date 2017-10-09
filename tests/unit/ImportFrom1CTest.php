@@ -17,8 +17,6 @@ use Symfony\Component\Finder\SplFileInfo;
 
 class ImportFrom1CTest extends TestCase
 {
-    private static $originalOnecFtpFolder;
-
     public static function setUpBeforeClass()
     {
         self::$originalOnecFtpFolder = ForwardConfig::$onecFtpFolderBase;
@@ -91,7 +89,7 @@ class ImportFrom1CTest extends TestCase
                 // Если в json был флаг на удаление, то нужно изменить статус счёта, чтобы он стал open
                 $fakeData['Status'] = Finance::INVOICESTATUS_OPEN;
             }
-            Db::updateRow($fakeData, 'cinvoice', 'ID', $json['ID']);
+            Db::updateRow($fakeData, 'cinvoice', $json['ID']);
 
             // Удалим все строки счёта, чтобы проверим, как при импорте строки загрузятся обратно
             Db::query("DELETE FROM cinvoiceline WHERE CInvoiceID = @i", $json['ID']);

@@ -68,7 +68,7 @@ class ImportCActFrom1C extends ImportFrom1CAbstract
         $actName = $json['DocNumber'];
 
         $cinvoiceLink = Link::moduleViewBlank((string)$cinvoiceObj, $cinvoiceId, null, 'CInvoice');
-        $cinvoiceFolder = "CInvoice/$cinvoiceId";
+        $cinvoiceFolder = "CInvoice/" . floor($cinvoiceId / 1000) . "/$cinvoiceId";
 
         $pdfDataBase64 = $json['Data'];
         $pdfData = base64_decode($pdfDataBase64);

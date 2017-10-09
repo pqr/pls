@@ -256,6 +256,6 @@ class ShipmentGp
             'CacheEGPinUSD' => $egp,
             'CacheGPDeviationinUSD' => $deviation
         ];
-        Db::updateRow($fieldsData, 'shipment', 'ID', $shipmentId);
+        Db::updateRow($fieldsData, 'shipment', $shipmentId);
     }
 }

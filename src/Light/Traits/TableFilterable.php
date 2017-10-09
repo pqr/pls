@@ -620,7 +620,7 @@ trait TableFilterable
                 Db::updateRow([
                     'Sort' => json_encode($settingsSort),
                     'Invisible' => json_encode($settingsInvisible)
-                ], 'user_filter_settings', 'ID', $settings['ID']);
+                ], 'user_filter_settings', $settings['ID']);
             }
         }
 

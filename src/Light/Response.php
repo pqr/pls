@@ -3,15 +3,15 @@ namespace Light;
 
 class Response
 {
-    private static $pageTitle;
-    private static $additionalHtml;
-    private static $masterTemplate;
-    private static $pageHeadHtml;
-    private static $pageHeadRightHtml;
-    private static $jsdata;
-    private static $printMainmenu;
-    private static $isRedirected;
-    private static $headers;
+    private static $pageTitle = '';
+    private static $additionalHtml = '';
+    private static $masterTemplate = 'Master.tpl.php';
+    private static $pageHeadHtml = '';
+    private static $pageHeadRightHtml = '';
+    private static $jsdata = [];
+    private static $printMainmenu = true;
+    private static $isRedirected = false;
+    private static $headers = [];
 
     public static function reset()
     {
@@ -360,7 +360,7 @@ class Response
 //        while (ob_get_level()) {
 //            ob_end_clean();
 //        }
-        
+
         $filepathAbsEnc = File::encode($filepathAbs);
 
         if (!$downloadFilename) {

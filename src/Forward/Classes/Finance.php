@@ -298,7 +298,7 @@ class Finance
                 'CachePaymentsTotalAmount' => $paymentsClearingAmountInInvoiceCurrency,
                 'CacheOutstandingAmount' => $outstandingAmount
             ];
-            Db::updateRow($fieldsData, $dbTable, 'ID', $invInfo['ID']);
+            Db::updateRow($fieldsData, $dbTable, $invInfo['ID']);
         }
     }
 

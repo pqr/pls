@@ -256,7 +256,7 @@ class Core
         }
 
         if ($id = Db::getOne("SELECT ID FROM user_filter_settings WHERE CreatedBy = @i AND TableID = @i", User::getId(), $tableId)) {
-            Db::updateRow(['Defaults' => json_encode($filterValues)], 'user_filter_settings', 'ID', $id);
+            Db::updateRow(['Defaults' => json_encode($filterValues)], 'user_filter_settings', $id);
         } else {
             Db::insertRow([
                 'CreatedBy' => User::getId(),
@@ -319,7 +319,7 @@ class Core
         }
 
         if ($id = Db::getOne("SELECT ID FROM user_filter_settings WHERE CreatedBy = @i AND TableID = @i", User::getId(), $tableId)) {
-            Db::updateRow($data, 'user_filter_settings', 'ID', $id);
+            Db::updateRow($data, 'user_filter_settings', $id);
         } else {
             Db::insertRow(array_merge($data, [
                 'CreatedBy' => User::getId(),

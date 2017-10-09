@@ -66,7 +66,7 @@ class ImportCInvoicesFrom1C extends ImportFrom1CAbstract
         $link = Link::moduleViewBlank($cinvObj->getDescriptionHtml(), $cinvObj->getId(), null, 'CInvoice');
 
         // Запишем файл PDF файл и Excel файл в папку
-        $folderpath = 'CInvoice/' . $cinvObj->getId();
+        $folderpath = 'CInvoice/' . (floor($cinvObj->getId() / 1000)) . '/' . $cinvObj->getId();
         FilesFolder::mkdir($folderpath);
         $folderpathAbs = FilesFolder::getAbsolutePath($folderpath);
 

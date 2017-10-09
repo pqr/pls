@@ -263,7 +263,7 @@ abstract class ObjAbstract implements \ArrayAccess
         $fieldsData = $this->prepareFieldsDataForDb($fieldsData);
 
         $this->_lastChangedData = [];
-        if ($affectedRows = Db::updateRow($fieldsData, $this->getDbTable(), 'ID', $this->_id)) {
+        if ($affectedRows = Db::updateRow($fieldsData, $this->getDbTable(), $this->_id)) {
             //Если обновление реально произошло (что-то изменилось), запишем логи
             $this->loadData();
             $newData = $this->_data;
@@ -281,7 +281,7 @@ abstract class ObjAbstract implements \ArrayAccess
             }
 
             if ($sqlUpdatedBy) {
-                Db::updateRow($sqlUpdatedBy, $this->getDbTable(), 'ID', $this->_id);
+                Db::updateRow($sqlUpdatedBy, $this->getDbTable(), $this->_id);
             }
         }
 

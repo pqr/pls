@@ -75,7 +75,7 @@ abstract class AutolaunchAbstract
             'WorkTime' => $workTime
         ];
 
-        Db::updateRow($fieldsData, 'autolaunchlog', 'ID', $this->_logId);
+        Db::updateRow($fieldsData, 'autolaunchlog', $this->_logId);
     }
 
     private function saveLogToFile($workTime)

@@ -444,10 +444,7 @@ final class ShipmentObj extends ObjAbstract
         $usedFileNumbersJson[$shInfo['TrafficID']] = $shInfo['Name'];
 
         Db::updateRow(
-            ['CacheUsedFileNumbersJSON' => json_encode($usedFileNumbersJson)],
-            'shipment',
-            'ID',
-            $this->_id
+            ['CacheUsedFileNumbersJSON' => json_encode($usedFileNumbersJson)], 'shipment', $this->_id
         );
     }
 
@@ -490,7 +487,7 @@ final class ShipmentObj extends ObjAbstract
                     "UPDATE cinvoice_file_amount SET FileNumber = '" . $fieldsData['Name'] . "' WHERE FileNumber = " .
                     $shInfo['Name']
                 );
-                
+
             }
         }
 
