@@ -6,6 +6,8 @@ use Forward\Classes\ImportFromOneC\Importers\ImportCAct;
 use Forward\Classes\ImportFromOneC\Importers\ImportCInvoice;
 use Forward\Classes\ImportFromOneC\Importers\ImportCPayment;
 use Forward\Classes\ImportFromOneC\Importers\ImporterAbstract;
+use Forward\Classes\ImportFromOneC\Importers\ImportVInvoice;
+use Forward\Classes\ImportFromOneC\Importers\ImportVPayment;
 use Forward\ForwardConfig;
 use Light\Db;
 use Light\Field\FieldDate;
@@ -65,8 +67,10 @@ class ImportFromOneC
         ];
         Db::updateRow($logData, 'importoneclog', $this->importId);
 
+        $knownTypes = '"cinvoice", "cact", "cpayment", "vinvoice", "vpayment"';
+
         if (!isset($data['type'])) {
-            $this->msgBuff->addError('Отсутствует обязательное поле type ("cinvoice","cact","cpayment")');
+            $this->msgBuff->addError("Отсутствует обязательное поле type ($knownTypes)");
             $log = $this->msgBuff->getText();
             Db::updateRow(['Log' => $log], 'importoneclog', $this->importId);
             Response::abort(400, $log);
@@ -87,10 +91,18 @@ class ImportFromOneC
                 $importer = new ImportCPayment($this->importId, $this->msgBuff);
                 break;
 
+            case 'vpayment':
+                $importer = new ImportVPayment($this->importId, $this->msgBuff);
+                break;
+
+            case 'vinvoice':
+                $importer = new ImportVInvoice($this->importId, $this->msgBuff);
+                break;
+
         }
 
         if (!$importer) {
-            $this->msgBuff->addError('Неизвестный тип документа ' . ($data['type'] ?? ''));
+            $this->msgBuff->addError('Неизвестный тип документа ' . ($data['type'] ?? '') . ', должно быть ' . $knownTypes);
             $log = $this->msgBuff->getText();
             Db::updateRow(['Log' => $log], 'importoneclog', $this->importId);
             Response::abort(400, $log);
