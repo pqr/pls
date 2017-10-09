@@ -61,12 +61,23 @@
     apt: name=mysql-client install_recommends=no
     tags: mysql
 
-  # Установить конфигурацию my.cnf
-  - name: toolkit 8. Copy my.cnf
+  - name: toolkit 8. Copy .my.cnf
     become: false
     template:
-      src: files/my.cnf
+      src: files/.my.cnf
       dest: /home/ubuntu/.my.cnf
       backup: yes
       mode: 0600
     tags: mysql
+
+  - name: toolkit 9. Sentry-cli
+    shell: "curl -sL https://sentry.io/get-cli/ | bash"
+    tags: sentry
+
+  - name: toolkit 9. Copy .sentryclirc
+    become: false
+    template:
+      src: files/.sentryclirc
+      dest: /home/ubuntu/.sentryclirc
+      mode: 0600
+    tags: sentry

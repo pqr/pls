@@ -1,0 +1,6 @@
+[defaults]
+org=petr
+project=pls
+
+[auth]
+token={{ sentry_cli_auth_token }}
