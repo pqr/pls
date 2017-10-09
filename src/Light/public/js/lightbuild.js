@@ -2876,7 +2876,7 @@ var Light;
             };
             Table.prototype._blockFitlerButton = function (block) {
                 //Заблокируем кнопку Filter
-                this.$filtersForm.find(".btn-filter").toggleClass("disabled", block);
+                this.$filtersForm.find(".btn-filter").prop("disabled", block);
             };
             Table.prototype._filtersUpdateActive = function () {
                 //Сначала уберём подсветку со всех полей

@@ -964,7 +964,7 @@ namespace Light {
                     this._blockFitlerButton(false);
                     const hiddenInput = this.$div.find("input[name=filterValues]");
                     if (hiddenInput.length > 0) {
-                        const newValues = Light.parseJson(hiddenInput.val());
+                        const newValues = Light.parseJson(<string>hiddenInput.val());
                         _.forEach(newValues, (newValue: string, fieldKey: string) => {
                             this.setFilterValue(fieldKey, newValue);
                         });
@@ -979,7 +979,7 @@ namespace Light {
 
             _blockFitlerButton(block: boolean): void {
                 //Заблокируем кнопку Filter
-                this.$filtersForm.find(".btn-filter").toggleClass("disabled", block);
+                this.$filtersForm.find(".btn-filter").prop("disabled", block);
             }
 
             _filtersUpdateActive(): void {
