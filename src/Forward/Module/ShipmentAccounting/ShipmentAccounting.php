@@ -193,6 +193,7 @@ class ShipmentAccounting extends ModuleAbstract
     protected function initMassactions()
     {
         $this->addMassaction('DownloadDocs', 'Собрать полный комплект документов', '', '', null, true);
+        $this->addMassaction('DownloadShipmentRequestsXlsx', 'Скачать заявки в Excel', '', '', null, true);
 
         foreach (Constant::$standardFolders as $i => $standardFolder) {
             $this->addMassaction("DownloadDocs$i", $standardFolder, '', '', null, true);
@@ -202,6 +203,11 @@ class ShipmentAccounting extends ModuleAbstract
     protected function massactionDownloadDocs($ids)
     {
         ShipmentDownloadDocs::download($ids, true);
+    }
+
+    protected function massactionDownloadShipmentRequestsXlsx($ids)
+    {
+        ShipmentDownloadDocs::download($ids, true, ShipmentDownloadDocs::ONLY_SHIPMENT_REQUESTS_XLSX);
     }
 
     protected function massactionDownloadDocs0($ids)

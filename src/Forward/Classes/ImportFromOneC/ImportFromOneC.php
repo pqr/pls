@@ -160,6 +160,4 @@ class ImportFromOneC
 
         return $json;
     }
-
-
 }

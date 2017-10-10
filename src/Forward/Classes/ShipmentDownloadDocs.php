@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Classes;
 
 
@@ -12,6 +13,8 @@ use Light\User;
 
 class ShipmentDownloadDocs
 {
+    const ONLY_SHIPMENT_REQUESTS_XLSX = -1;
+
     public static function download(array $shipmentIds, bool $withPassword, $onlyFolderKey = null)
     {
         $shipments = Db::getAll("SELECT ID, Name, MAWBNumber FROM shipment WHERE ID IN (@a)", $shipmentIds);
@@ -30,7 +33,23 @@ class ShipmentDownloadDocs
             $shipmentHasSomeFile = false;
             $mawbNumber = $shipment['MAWBNumber'] ?: $shipment['ID'];
             $relativeFolder = 'Shipment/' . (floor($shipment['ID'] / 1000)) . '/' . $shipment['ID'];
-            foreach(Constant::$standardFolders as $folderKey => $standardFolder) {
+            if ($onlyFolderKey === null || $onlyFolderKey === self::ONLY_SHIPMENT_REQUESTS_XLSX) {
+                // Запрос на скачивание всех документов либо только заявок в формате Excel
+                // которые находятся в корневой папке перевозки. Добавим Excel заявку в папку $tmpdir
+                foreach (FilesFolder::scandir($relativeFolder) as $file) {
+                    if (mb_stripos($file, 'Заявка') === 0
+                        && strtolower(pathinfo(File::encode($file), PATHINFO_EXTENSION)) === 'xlsx') {
+                        // Нашли файл, который начинается со слова "Заявка" и имеет расширение xlsx
+                        // это нужный файл, копируем его в $tmpdir
+                        $srcFilepath = FilesFolder::getAbsolutePath($relativeFolder) . "/$file";
+                        $destFilepath = "$tmpdir/$file";
+                        copy(File::encode($srcFilepath), File::encode($destFilepath));
+                        $shipmentHasSomeFile = true;
+                    }
+                }
+            }
+
+            foreach (Constant::$standardFolders as $folderKey => $standardFolder) {
                 if ($onlyFolderKey !== null && $onlyFolderKey !== $folderKey) {
                     continue;
                 }
@@ -76,7 +95,7 @@ class ShipmentDownloadDocs
         $cmd .= ' a';
         //Укажем пароль
         if ($withPassword) {
-            $cmd .= ' -pvipls2016';
+            $cmd .= ' -p' . ForwardConfig::$vinvoiceZipPass;
         }
         //Укажем тип архива zip
         $cmd .= ' -tzip';
@@ -114,4 +133,5 @@ class ShipmentDownloadDocs
 
         ApplicationAbstract::terminate();
     }
+
 }
