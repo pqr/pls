@@ -36,13 +36,20 @@ class ShipmentDownloadDocs
             if ($onlyFolderKey === null || $onlyFolderKey === self::ONLY_SHIPMENT_REQUESTS_XLSX) {
                 // Запрос на скачивание всех документов либо только заявок в формате Excel
                 // которые находятся в корневой папке перевозки. Добавим Excel заявку в папку $tmpdir
+                $i = 0;
                 foreach (FilesFolder::scandir($relativeFolder) as $file) {
                     if (mb_stripos($file, 'Заявка') === 0
                         && strtolower(pathinfo(File::encode($file), PATHINFO_EXTENSION)) === 'xlsx') {
                         // Нашли файл, который начинается со слова "Заявка" и имеет расширение xlsx
                         // это нужный файл, копируем его в $tmpdir
                         $srcFilepath = FilesFolder::getAbsolutePath($relativeFolder) . "/$file";
-                        $destFilepath = "$tmpdir/$file";
+                        $destFilename = "$mawbNumber 0 Заявка";
+                        if ($i > 0) {
+                            $destFilename .= " ($i)";
+                        }
+                        $destFilename .= '.xlsx';
+                        $destFilename = File::getValidFilename($destFilename);
+                        $destFilepath = "$tmpdir/$destFilename";
                         copy(File::encode($srcFilepath), File::encode($destFilepath));
                         $shipmentHasSomeFile = true;
                     }
