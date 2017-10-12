@@ -84,6 +84,7 @@ class Application extends ApplicationAbstract
         ModuleRegister::addModule('Port', 'Ocean Ports', 'Lists');
         ModuleRegister::addModule('EmailNoticeSettings', 'E-mail Notice Settings', 'Lists');
         ModuleRegister::addModule('CurrencyRateCitadele', 'Curr. Rates Citadele', 'Currency');
+        ModuleRegister::addModule('Block', 'Hide/Show Offshore', 'System');
     }
 
     public function getHomeBlocks()
