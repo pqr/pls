@@ -74,6 +74,12 @@ class ShipmentAccounting extends ModuleAbstract
                 'tableWidthExcel' => 30,
             ]),
 
+            F::createSelect('CustomerAccountID', [
+                'name' => 'Плательщик',
+                'options' => 'customer',
+                'tableWidthExcel' => 30,
+            ]),
+
             F::createString('CustomerInvoices', [
                 'name' => 'Исходящий счёт',
                 'tableWidthExcel' => 35,
@@ -140,10 +146,10 @@ class ShipmentAccounting extends ModuleAbstract
     protected function initFilters()
     {
         $compnayIdsSql = implode(',', array_keys(Constant::$onecCompany));
-        $customerIds = Db::getCol("SELECT DISTINCT CustomerID FROM shipment WHERE CompanyID IN ($compnayIdsSql)");
-        $customerIdsSql = implode(',', $customerIds);
-        $vendorIds = Db::getCol("SELECT DISTINCT VendorID FROM shipment WHERE CompanyID IN ($compnayIdsSql)");
-        $vendorIdsSql = implode(',', $vendorIds);
+        $customerIdsSql = Db::getOne("SELECT GROUP_CONCAT(DISTINCT CustomerID) FROM shipment WHERE CompanyID IN ($compnayIdsSql)");
+        $customerAccountIdsSql = Db::getOne("SELECT GROUP_CONCAT(DISTINCT CustomerAccountID) FROM shipment WHERE CompanyID IN ($compnayIdsSql)");
+        $consigneeIdsSql = Db::getOne("SELECT GROUP_CONCAT(DISTINCT ConsigneeID) FROM shipment WHERE CompanyID IN ($compnayIdsSql)");
+        $vendorIdsSql = Db::getOne("SELECT GROUP_CONCAT(DISTINCT VendorID) FROM shipment WHERE CompanyID IN ($compnayIdsSql)");
 
         $this->addFilters(
 
@@ -152,12 +158,21 @@ class ShipmentAccounting extends ModuleAbstract
             ShipmentFields::filterMawbs()->setName('Накладные'),
 
             GeneralFields::companyId()
+                ->setName('Наша компания')
                 ->setOptions("SELECT ID, Name FROM ourcompany WHERE ID IN ($compnayIdsSql) ORDER BY OrderID, ID"),
-
             GeneralFields::customerId()
+                ->setName('Клиент')
                 ->setOptions("SELECT ID, Name FROM customer WHERE ID IN ($customerIdsSql) ORDER BY Name"),
 
+            GeneralFields::customerAccountId()
+                ->setName('Плательщик')
+                ->setOptions("SELECT ID, Name FROM customeraccount WHERE ID IN ($customerAccountIdsSql) ORDER BY Name"),
+            GeneralFields::consigneeId()
+                ->setName('Получатель')
+                ->setOptions("SELECT ID, Name FROM customerconsignee WHERE ID IN ($consigneeIdsSql) ORDER BY Name"),
+
             GeneralFields::vendorId()
+                ->setName('Субподрядчик')
                 ->setOptions("SELECT ID, Name FROM vendor WHERE ID IN ($vendorIdsSql) ORDER BY Name")
 
         );
@@ -178,6 +193,8 @@ class ShipmentAccounting extends ModuleAbstract
                 'MAWBNumbers',
                 'CompanyID',
                 'CustomerID',
+                'CustomerAccountID',
+                'ConsigneeID',
                 'VendorID',
             ],
             [
