@@ -302,6 +302,7 @@ class Shipment extends ModuleAbstract
             GeneralFields::companyId(),
             GeneralFields::customerId(),
             GeneralFields::customerAccountId(),
+            GeneralFields::consigneeId(),
             F::createSelect(
                 'Responsible',
                 [
@@ -459,6 +460,7 @@ class Shipment extends ModuleAbstract
                 'CompanyID',
                 'CustomerID',
                 'CustomerAccountID',
+                'ConsigneeID',
                 'Responsible',
             ],
             [

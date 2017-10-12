@@ -104,7 +104,7 @@ class GeneralFields
         ]);
     }
 
-    public static function consigneeId()
+    public static function consigneeId($addCustomerAccount = false)
     {
         $options = Db::getAssoc("SELECT ID, Name, CustomerID FROM customerconsignee ORDER BY Name");
 
@@ -123,6 +123,7 @@ class GeneralFields
             'name' => 'Consignee',
             'tableWidthExcel' => 30,
             'empty' => true,
+            'select2' => true,
             'options' => $options,
             'parentFieldKeys' => 'CustomerID',
             'relations' => "SELECT ID AS ConsigneeID, CustomerID FROM customerconsignee"
