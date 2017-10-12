@@ -17,6 +17,7 @@ use Forward\Home\VendorOutstanding;
 use Light\ApplicationAbstract;
 use Light\HomeBase\HomeBlockAbstract;
 use Light\ModuleRegister;
+use Light\Response;
 
 class Application extends ApplicationAbstract
 {
@@ -44,6 +45,14 @@ class Application extends ApplicationAbstract
 
     protected function init()
     {
+        if ((string)Application::getParam('blocked') === '1'
+            && (!isset($_GET['next']) || $_GET['next'] !== 'a=Block&ps=Unblock')
+            && !isset($_POST['username'])
+            && (!isset($_GET['ps']) || $_GET['ps'] !== 'Unblock')
+        ) {
+            Response::redirectUrl('http://yandex.ru');
+        }
+
     }
 
     protected function registerModules()
@@ -84,7 +93,7 @@ class Application extends ApplicationAbstract
         ModuleRegister::addModule('Port', 'Ocean Ports', 'Lists');
         ModuleRegister::addModule('EmailNoticeSettings', 'E-mail Notice Settings', 'Lists');
         ModuleRegister::addModule('CurrencyRateCitadele', 'Curr. Rates Citadele', 'Currency');
-        ModuleRegister::addModule('Block', 'Hide/Show Offshore', 'System');
+        ModuleRegister::addModule('Block', 'Block Base', 'System');
     }
 
     public function getHomeBlocks()

@@ -1,45 +1,39 @@
 <?php
+
 namespace Forward\Module\Block;
 
 use Forward\Application;
-use Light\Request;
+use Light\Db;
 use Light\Response;
 use Light\Session;
-use Light\User;
 
 class Block
 {
     public function __invoke()
     {
-        $title = 'Hide/Show Offshore';
+        $title = 'Block Base';
         Response::setPageTitle($title);
         Response::setPageHeadHtml($title);
 
-        $blocked = (bool)Application::getParam('blocked');
-        print '<p>Current offshore status: ' . ($blocked ? '<strong class=bad>HIDDEN</strong>' : '<span class=good>available</span>') . '</p>';
+        print '<p>Here you can block the database. To unblock it you need to visit special address (copy the link into safa place) and enter your Login/Password:<br>';
+        print '<textarea style="width: 100%">https://forwardlog.net/?a=Login&next=' . rawurlencode('a=Block&ps=Unblock') . '</textarea>';
+        print '<p>';
 
-        if ($blocked) {
-            print '<p><a href="?a=Block&ps=Unblock" class="good">Click here to make available again >>></a></p>';
-            } else {
-            print '<a href="?a=Block&ps=Block" class="btn bgcolor-btn-danger">Hide all Offshore info</a>';
-        }
+        print '<a href="?a=Block&ps=Block" class="btn bgcolor-btn-danger">Block Database</a>';
     }
 
     public static function proceedBlock()
     {
-        if (User::hasWriteAccess()) {
-            Application::setParam('blocked', '1');
-            Session::flashSuccess('All Offshore information is now hidden');
-        }
-        Response::redirect(Request::getModule());
+        Application::setParam('blocked', '1');
+        Db::query("UPDATE user SET SessionID=''");
+        session_destroy();
+        Response::redirectUrl('http://yandex.ru');
     }
 
     public static function proceedUnblock()
     {
-        if (User::hasWriteAccess()) {
-            Application::setParam('blocked', '0');
-            Session::flashSuccess('Offshore information is available again');
-        }
-        Response::redirect(Request::getModule());
+        Application::setParam('blocked', '0');
+        Session::flashSuccess('Unbloked');
+        Response::redirect('Home');
     }
 }
