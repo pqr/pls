@@ -582,7 +582,7 @@ var Light;
         $form.appendTo("body").submit();
     });
     //Новый подход к Autocomplete: любое поле может быть Autocomplete, если у него поередлён атрибут data-ac
-    $body.on("focus", "input[data-ac]", function () {
+    $body.on("focus", "input[data-ac], textarea[data-ac]", function () {
         var $input = $(this);
         //Проверим, что у этого элемента ещё нет дата-атрибута ui-autocomplete
         if ($input.data("ui-autocomplete")) {
@@ -4194,13 +4194,15 @@ var Light;
                     }
                 });
                 // Сформируем тело для диалога из списка ошибок
-                var textError = Light.isLangRu ? 'Ошибки при сохранении' : 'Error';
-                dialogBodyHtml =
-                    "<h3 class=\"bad\">" + textError + "</h3>" +
-                        ("<ol class=\"save-errors\">" + errors.map(function (_a) {
-                            var msg = _a.msg;
-                            return "<li>" + msg + "</li>";
-                        }).join("") + "</ol>");
+                if (errors.length > 1) {
+                    dialogBodyHtml = "<ol class=\"save-errors\">" + errors.map(function (_a) {
+                        var msg = _a.msg;
+                        return "<li>" + msg + "</li>";
+                    }).join("") + "</ol>";
+                }
+                else {
+                    dialogBodyHtml = errors[0].msg;
+                }
                 // Проверим, были ли среди ошибок критчные? (хотя бы одна)
                 hasCriticalError = errors.some(function (_a) {
                     var critical = _a.critical;

@@ -354,7 +354,7 @@ declare module Light {
             eachRow(callback: (this: Subtable, rowNum: RowNum) => boolean | void): void;
             addRow(data?: RowData): {
                 newRowNum: number;
-                newRowNode: JQuery<HTMLElement>;
+                newRowNode: JQuery;
             };
             setRowData(rowNum: RowNum, data: RowData): void;
             addRows(rowsData: Array<RowData>): void;

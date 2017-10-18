@@ -32,6 +32,8 @@ class Application extends ApplicationAbstract
     const SA_HOME_CHECKATD = 'SA_HOME_CHECKATD';
     const SA_HOME_CHECKATA = 'SA_HOME_CHECKATA';
 
+    const SA_UNBLOCK = 'SA_UNBLOCK';
+
     const ROLE_CS = 'CS';
     const ROLE_SALES = 'Sales';
     const ROLE_ACCOUNTING = 'Accounting';
@@ -137,6 +139,7 @@ class Application extends ApplicationAbstract
             ['VInvoice', self::SA_VINVOICE_ALLOW_STATUS_ACCEPT, 'Allow status Acceepted'],
             ['VInvoice', self::SA_VINVOICE_ALLOW_STATUS_CLEAR, 'Allow status Cleared'],
             ['VInvoice', self::SA_VINVOICE_ALLOW_ALL_COMPANYID, 'Any company - Yes; Only PLS - No.'],
+            ['Block', self::SA_UNBLOCK, 'Allow Unblock'],
         ];
     }
 

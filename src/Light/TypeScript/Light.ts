@@ -687,7 +687,7 @@ namespace Light {
     }
 
     //Новый подход к Autocomplete: любое поле может быть Autocomplete, если у него поередлён атрибут data-ac
-    $body.on("focus", "input[data-ac]", function(this: HTMLInputElement) {
+    $body.on("focus", "input[data-ac], textarea[data-ac]", function(this: HTMLInputElement) {
         const $input = $(this);
         //Проверим, что у этого элемента ещё нет дата-атрибута ui-autocomplete
         if ($input.data("ui-autocomplete")) {

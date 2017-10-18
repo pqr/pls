@@ -6,6 +6,7 @@ use Forward\Application;
 use Light\Db;
 use Light\Response;
 use Light\Session;
+use Light\User;
 
 class Block
 {
@@ -15,9 +16,13 @@ class Block
         Response::setPageTitle($title);
         Response::setPageHeadHtml($title);
 
-        print '<p>Here you can block the database. To unblock it you need to visit special address (copy the link into safa place) and enter your Login/Password:<br>';
-        print '<textarea style="width: 100%">https://forwardlog.net/?a=Login&next=' . rawurlencode('a=Block&ps=Unblock') . '</textarea>';
-        print '<p>';
+        print '<p>Here you can block the database.</p>';
+
+        if (User::hasSpecialAccess(Application::SA_UNBLOCK)) {
+            print '<p>To unblock it you need to visit special address (copy the link into safa place) and enter your Login/Password:<br>';
+            print '<textarea style="width: 100%">https://forwardlog.net/?a=Login&next=' . rawurlencode('a=Block&ps=Unblock') . '</textarea>';
+            print '<p>';
+        }
 
         print '<a href="?a=Block&ps=Block" class="btn bgcolor-btn-danger">Block Database</a>';
     }
@@ -32,8 +37,18 @@ class Block
 
     public static function proceedUnblock()
     {
-        Application::setParam('blocked', '0');
-        Session::flashSuccess('Unbloked');
-        Response::redirect('Home');
+        if (User::hasSpecialAccess(Application::SA_UNBLOCK)) {
+
+            Application::setParam('blocked', '0');
+            Session::flashSuccess('Unbloked');
+            Response::redirect('Home');
+
+        } else {
+
+            if (Application::getParam('blocked') === '1') {
+                Response::redirectUrl('http://yandex.ru');
+            }
+
+        }
     }
 }

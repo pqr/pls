@@ -174,10 +174,11 @@ namespace Light {
                 });
 
                 // Сформируем тело для диалога из списка ошибок
-                const textError = Light.isLangRu ? 'Ошибки при сохранении' : 'Error';
-                dialogBodyHtml =
-                    `<h3 class="bad">${textError}</h3>` +
-                    `<ol class="save-errors">${errors.map(({ msg }) => `<li>${msg}</li>`).join("")}</ol>`;
+                if (errors.length > 1) {
+                    dialogBodyHtml = `<ol class="save-errors">${errors.map(({msg}) => `<li>${msg}</li>`).join("")}</ol>`;
+                } else {
+                    dialogBodyHtml = errors[0].msg;
+                }
 
                 // Проверим, были ли среди ошибок критчные? (хотя бы одна)
                 hasCriticalError = errors.some(({ critical }) => critical !== undefined && critical);
