@@ -614,7 +614,12 @@ abstract class ModuleAbstract extends Table
 
         // С подтаблицей можно осуществлять несколько действий
         if (isset($_REQUEST['fieldKey'])) {
-            //Изменение какого-то поля через ajax
+
+            if (!Request::isAjax()) {
+                // Изменение поля возможно только через ajax запросы
+                $this->redirectToView();
+            }
+            // Изменение какого-то поля через ajax
             $fieldKey = $_REQUEST['fieldKey'];
             $field = $subtableObj->getFieldset()->getField($fieldKey);
             if (!$field) {
@@ -627,8 +632,13 @@ abstract class ModuleAbstract extends Table
 
             $subtableObj->proceedChangeField();
 
+            if (Request::isPost()) {
+                $this->afterChangeFieldSubtable($fieldKey);
+            }
+
+
         } elseif (Request::isAjax()) {
-            //Перезагрузка через ajax при изменении Table Layout
+            // Перезагрузка через ajax при изменении Table Layout
             $subtableObj->proceedAjaxReload();
         } elseif (Request::isXls()) {
             //Отправка Excel файла
@@ -2655,6 +2665,13 @@ abstract class ModuleAbstract extends Table
      * @param array $oldData
      */
     protected function afterChangeField($fieldKey, array $oldData)
+    {
+    }
+
+    /**
+     * @param string $fieldKey
+     */
+    protected function afterChangeFieldSubtable(string $fieldKey)
     {
     }
 

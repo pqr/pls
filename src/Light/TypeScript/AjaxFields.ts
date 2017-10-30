@@ -64,7 +64,7 @@ namespace Light {
         let url: string = $container.attr("data-ajaxchangefieldurl")!;
         url += `${id}&fieldKey=${encodeURIComponent(fieldKey)}`;
         $.ajax(url)
-            .done(inputHtml => {
+            .done((inputHtml:string) => {
 
                 // Полученный html код поля для ввода вставляем после ссылки на редактирование
                 const $input = $(inputHtml);

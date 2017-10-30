@@ -98,6 +98,9 @@ class DailyMaintainance extends AutolaunchAbstract
 
         $compressed = 0;
         $errors = 0;
+
+        $currentLogFile = date('Y-m') . ".csv";
+
         foreach (scandir(LIGHT_DIR_LOGS) as $dir) {
             $dirpath = LIGHT_DIR_LOGS . "/$dir";
             if ($dir[0] === '.' || !is_dir($dirpath)) {
@@ -114,17 +117,17 @@ class DailyMaintainance extends AutolaunchAbstract
                     continue;
                 }
 
-                $currentLogFile = date('Y-m') . ".csv";
                 if ($file === $currentLogFile) {
                     continue;
                 }
 
                 $destFilepath = "$srcFilepath.zip";
-                $cmd = '7z a -sdel "' . $destFilepath . '" "' . $srcFilepath . '"';
+                $cmd = '7z a "' . $destFilepath . '" "' . $srcFilepath . '"';
                 exec($cmd, $out, $retur);
                 if ($return === 0) {
                     $this->_msgBuff->addInfo("File compressed: " . htmlspecialchars($destFilepath));
                     $compressed++;
+                    unlink($srcFilepath);
                 } else {
                     $this->_msgBuff->addError("Error compressing " . htmlspecialchars($srcFilepath) . ":<br>" . nl2br(htmlspecialchars(implode("\n",
                             $out))));

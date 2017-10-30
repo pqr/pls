@@ -73,7 +73,7 @@ module Light {
 
                 this.$div = $div;
                 this.fields = Light.parseJson($div.attr("data-fields"));
-                this.name = $div.attr("data-subtablename");
+                this.name = $div.attr("data-subtablename")!;
                 this.$table = $div.find("table.table").first();
                 this.$thead = this.$table.children("thead").first();
                 this.$tbody = this.$table.children("tbody").first();
@@ -777,15 +777,6 @@ module Light {
             }
 
             /**
-             * @deprecated
-             * @param $node
-             * @returns {number}
-             */
-            static getRowNum($node: JQuery): number {
-                return Light.parseInt($node.closest("tr").attr("id").split("-")[3]);
-            }
-
-            /**
              * Если это поле в режиме view, то метод возвразает td ячейку
              * Если же поле в режиме редактирования, то возвращается input/select элемент
              */
@@ -954,7 +945,7 @@ module Light {
                     throw new Error(`Unknown field ${fieldKey} in subtable ${this.name}`);
                 }
 
-                const changeHandler = (e: Event) => {
+                const changeHandler = (e: JQuery.Event) => {
                     const rowNum = getRowNum($(e.currentTarget));
                     const newValue = this.getFieldValue(rowNum, fieldKey);
                     const $node = this.getFieldNode(rowNum, fieldKey);
@@ -988,7 +979,11 @@ module Light {
         }
 
         export function getByNode($node: JQuery): Subtable {
-            return get($node.closest("div.subtable-div").attr('data-subtablename'));
+            const subtableName = $node.closest("div.subtable-div").attr('data-subtablename');
+            if (!subtableName) {
+                throw new Error('Subtable not found by node: ' + $node);
+            }
+            return get(subtableName);
         }
 
         export function get(name: string): Subtable {

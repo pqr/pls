@@ -362,12 +362,6 @@ declare module Light {
             empty(): void;
             getRowNode(rowNum: RowNum): JQuery;
             /**
-             * @deprecated
-             * @param $node
-             * @returns {number}
-             */
-            static getRowNum($node: JQuery): number;
-            /**
              * Если это поле в режиме view, то метод возвразает td ячейку
              * Если же поле в режиме редактирования, то возвращается input/select элемент
              */

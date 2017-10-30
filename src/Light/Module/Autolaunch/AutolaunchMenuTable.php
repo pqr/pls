@@ -34,7 +34,6 @@ class AutolaunchMenuTable extends Table
 
             F::createHtml('Description', [
                 'name' => 'Описание',
-                'tableWidthHtml' => 500,
                 'getHtmlFunction' => function ($value, array $data) {
                     $className = $data['ClassName'];
                     /** @var AutolaunchAbstract $className */
@@ -43,40 +42,6 @@ class AutolaunchMenuTable extends Table
                     if ($desc) {
                         $outHtml .= '<br><span class="note">' . $desc . '</span>';
                     }
-
-                    return $outHtml;
-                }
-            ]),
-
-            F::createHtml('LastRunResult', [
-                'name' => 'Последний запуск',
-                'getHtmlFunction' => function ($value, array $data) {
-                    $row = Db::getRow(
-                        "SELECT user.Name AS CreatedByName
-                            , al.CreatedDateTime
-                            , al.ShortMessage
-                            , al.WorkTime
-                         FROM autolaunchlog al
-                            LEFT JOIN user ON user.ID = al.CreatedBy
-                         WHERE al.ClassName = @s
-                         ORDER BY al.ID DESC
-                         LIMIT 1
-                        ", $data['ClassName']);
-
-                    if (!$row) {
-                        return '';
-                    }
-
-                    $carbon = new Carbon($row['CreatedDateTime']);
-
-                    $outHtml = '<span class="note">' . $carbon->diffForHumans();
-                    if ($row['CreatedByName']) {
-                        $outHtml .= ', ' . htmlspecialchars($row['CreatedByName']);
-                    }
-                    $outHtml .= ', время выполнения: ' . $row['WorkTime'] . ' сек'
-                        . '</span>'
-                        . '<br>'
-                        . $row['ShortMessage'];
 
                     return $outHtml;
                 }

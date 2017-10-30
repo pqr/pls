@@ -519,6 +519,14 @@ var Light;
         }
     });
     $body.on("click", 'a[href$="#ajax"], a[href$="#ajax-post"]', function (e) {
+        if (this.hash !== "#ajax-post" && (e.ctrlKey || e.shiftKey || e.metaKey)) {
+            // Если это не POST ссылка (т.е. ссылка для обычного GET запроса)
+            // и пользователь зажал Ctrl или Shift - значит пользователь хочет открыть ссылку в новом окне
+            // в этом случае не будем делать e.preventDefault(); чтобы позволить браузеру открыть новое окно по ссылке
+            // Естественно на сервер придёт не ajax запрос, а обычный GET запрос и этот момент нужно учесть
+            // при разработке функции на серверной стороне
+            return;
+        }
         e.preventDefault();
         var $link = $(this);
         // Проверим, возможно ajax запрос от этой ссылки сейчас в процессе? Тогда второй запрос отравлять не нужно!
@@ -3833,14 +3841,6 @@ var Light;
                 return this.$tbody.find("#" + this.name + "-subtable-tr-" + rowNum);
             };
             /**
-             * @deprecated
-             * @param $node
-             * @returns {number}
-             */
-            Subtable.getRowNum = function ($node) {
-                return Light.parseInt($node.closest("tr").attr("id").split("-")[3]);
-            };
-            /**
              * Если это поле в режиме view, то метод возвразает td ячейку
              * Если же поле в режиме редактирования, то возвращается input/select элемент
              */
@@ -4008,7 +4008,11 @@ var Light;
         }
         subtables.init = init;
         function getByNode($node) {
-            return get($node.closest("div.subtable-div").attr('data-subtablename'));
+            var subtableName = $node.closest("div.subtable-div").attr('data-subtablename');
+            if (!subtableName) {
+                throw new Error('Subtable not found by node: ' + $node);
+            }
+            return get(subtableName);
         }
         subtables.getByNode = getByNode;
         function get(name) {
@@ -4332,7 +4336,13 @@ var Light;
             var select = this;
             var action = select.value;
             //Соберём значения чекбоксов в таблице и отправим их ajax POST запросом
-            var ids = Light.tables.get(_lightModule).getSelectedValues();
+            try {
+                var ids = Light.tables.get(_lightModule).getSelectedValues();
+            }
+            catch (e) {
+                // Почему-то на экране на нашлась таблица с именем _lightModule - ничего не делаем
+                return;
+            }
             if (ids.length === 0) {
                 Light.toastError("Select rows with checkboxes");
                 $(this).val("");

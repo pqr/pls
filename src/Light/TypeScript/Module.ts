@@ -319,7 +319,12 @@ namespace Light {
             const action = select.value;
 
             //Соберём значения чекбоксов в таблице и отправим их ajax POST запросом
-            const ids = Light.tables.get(_lightModule).getSelectedValues();
+            try {
+                const ids = Light.tables.get(_lightModule).getSelectedValues();
+            } catch (e) {
+                // Почему-то на экране на нашлась таблица с именем _lightModule - ничего не делаем
+                return;
+            }
             if (ids.length === 0) {
                 Light.toastError("Select rows with checkboxes");
                 $(this).val("");

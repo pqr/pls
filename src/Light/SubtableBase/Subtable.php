@@ -1124,7 +1124,6 @@ abstract class Subtable extends Table
             $data = $this->_obj->getData();
             // Выводим в ajax ответ HTML код для поля ввода
             print $this->_obj->getField($fieldKey)->getHtmlInput($value, $data);
-            ApplicationAbstract::terminate();
 
         } else {
 
@@ -1150,7 +1149,6 @@ abstract class Subtable extends Table
 
 // Возвращаем новое HTML значение для вставки в вёрстку
             print $this->_obj->getFieldHtml($fieldKey);
-            ApplicationAbstract::terminate();
         }
     }
 
