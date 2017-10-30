@@ -25,6 +25,7 @@ use Light\Field\FieldDate;
 use Light\File;
 use Light\FilesFolder;
 use Light\Img;
+use Light\ModuleBase\MassactionAbstract;
 use Light\Msg;
 use Light\ObjAbstract;
 use Light\PrintForm;
@@ -295,53 +296,11 @@ class CInvoice extends InvoiceModuleAbstract
         $errors = CreateCPayments::check($ids);
 
         if ($errors) {
-            $msg = '<p class="bad">Ошибки</p>'
-                . $this->getHtmlMassactionErrorsList($errors);
-            $this->sendMassactionErrorDialog($msg);
-            // Внутри метода sendMassactionErrorDialog выполнение прерывается, весь код ниже не будет исполнен
+            MassactionAbstract::sendErrorDialog($errors);
+            return;
         }
 
         CreateCPayments::showPaymentDateDialog($ids);
-
-        /*
-        $query = "SELECT CustomerID
-                        , CustomerAccountID
-                        , CompanyID
-                        , CurrencyISO
-                        , sum(CacheOutstandingAmount) AS Amount
-                      FROM cinvoice
-                      WHERE ID IN (@a_ids)
-                      GROUP BY CustomerID, CustomerAccountID";
-
-        $customerInfo = Db::getAll($query, $ids);
-
-        if (count($customerInfo) === 0) {
-
-            $this->sendMassactionErrorDialog('Отмеченные счета не найдены в базе.');
-
-        } elseif (count($customerInfo) !== 1) {
-
-            $this->sendMassactionErrorDialog(
-                'Выбранные счета относятся к несольким Customer или Customer Account.<br>
-                 Чтобы создать Customer Payment, счета должны относится к одному Customer и Customer Account.'
-            );
-
-        } else {
-
-            //Всё отлично, необходимо перенаправить пользователя в модуль оплаты
-            //Для этого сформируем url
-            $urlParams = [
-                'addnew' => 1,
-                'CustomerID' => $customerInfo[0]['CustomerID'],
-                'CustomerAccountID' => $customerInfo[0]['CustomerAccountID'],
-                'CompanyID' => $customerInfo[0]['CompanyID'],
-                'CurrencyISO' => $customerInfo[0]['CurrencyISO'],
-                'Amount' => $customerInfo[0]['Amount'],
-            ];
-            $postData = ['invoices' => implode(',', $ids)];
-            Response::redirectWithPost('CPayment', $urlParams, $postData);
-        }
-        */
 
     }
 

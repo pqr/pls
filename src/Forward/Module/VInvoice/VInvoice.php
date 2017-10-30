@@ -19,6 +19,7 @@ use Light\File;
 use Light\FilesFolder;
 use Light\Link;
 use Light\Misc;
+use Light\ModuleBase\MassactionAbstract;
 use Light\Msg;
 use Light\ObjAbstract;
 use Light\Response;
@@ -65,7 +66,7 @@ class VInvoice extends InvoiceModuleAbstract
             $this->addMassaction('CreateVendorPayment', 'Create Vendor Payment', 'invcleared');
         }
 
-        $this->addMassaction('Download', 'Скачать файлы единым zip архивом', '', '', null,true);
+        $this->addMassaction('Download', 'Скачать файлы единым zip архивом', '', '', null, true);
     }
 
     protected function initCssJs()
@@ -97,7 +98,8 @@ class VInvoice extends InvoiceModuleAbstract
             F::createText('Reference', [
                     'sqlWhere' => function ($value) {
                         return Db::getSqlWhereSeparatedByComa($value, 'Name', 0, true, false);
-                    }]
+                    }
+                ]
             ),
             F::createText(
                 'FileNumbers',
@@ -182,20 +184,20 @@ class VInvoice extends InvoiceModuleAbstract
             [
 
                 'CompanyID',
-'VendorID',
-'VendorAccountID',
-'Reference',
-'FileNumbers',
-'MAWBNumbers',
+                'VendorID',
+                'VendorAccountID',
+                'Reference',
+                'FileNumbers',
+                'MAWBNumbers',
             ],
             [
 
                 'CurrencyISO',
-'HasVAT',
-'ReceivedDate',
-'DocDate',
-'Overdue',
-'Responsible',
+                'HasVAT',
+                'ReceivedDate',
+                'DocDate',
+                'Overdue',
+                'Responsible',
                 'Status' => function () {
                     return Template::html('Status')
                         . '<div><table id="statuses-checkboxes-table"'
@@ -313,7 +315,7 @@ class VInvoice extends InvoiceModuleAbstract
             }
         }
 
-        $this->sendMassactionSuccessDialog(
+        MassactionAbstract::sendSuccessDialog(
             $updated . ' Vendor Invoice' . Misc::getSSuffix($updated)
             . ' ' . Misc::getWasWereVerb($updated) . ' updated'
         );
@@ -334,38 +336,41 @@ class VInvoice extends InvoiceModuleAbstract
 
         if (count($vendorInfo) === 0) {
 
-            $this->sendMassactionErrorDialog('Отмеченные счета не найдены в базе.');
+            MassactionAbstract::sendErrorDialog('Отмеченные счета не найдены в базе.');
+            return;
 
-        } elseif (count($vendorInfo) !== 1) {
+        }
+
+        if (count($vendorInfo) !== 1) {
 
             //Если кол-во комбинаций вендоров и аккаунтов больше 1, значит пользователь неверно выбрал входящие счета
-            $this->sendMassactionErrorDialog(
+            MassactionAbstract::sendErrorDialog(
                 'Выбранные счета относятся к несольким Vendor или Vendor Account.<br>
                  Чтобы создать Vendor Payment, счета должны относится к одному Vendor и Vendor Account.'
             );
+            return;
 
-        } else {
-
-            //Всё отлично, необходимо перенаправить пользователя в модуль оплаты
-            //Для этого сформируем url
-            $urlParams = [
-                'addnew' => 1,
-                'VendorID' => $vendorInfo[0]['VendorID'],
-                'VendorAccountID' => $vendorInfo[0]['VendorAccountID'],
-                'CompanyID' => $vendorInfo[0]['CompanyID'],
-                'CurrencyISO' => $vendorInfo[0]['CurrencyISO'],
-                'Amount' => $vendorInfo[0]['SumAmount'],
-            ];
-            $postData = ['invoices' => implode(',', $ids)];
-            Response::redirectWithPost('VPayment', $urlParams, $postData);
         }
+
+        //Всё отлично, необходимо перенаправить пользователя в модуль оплаты
+        //Для этого сформируем url
+        $urlParams = [
+            'addnew' => 1,
+            'VendorID' => $vendorInfo[0]['VendorID'],
+            'VendorAccountID' => $vendorInfo[0]['VendorAccountID'],
+            'CompanyID' => $vendorInfo[0]['CompanyID'],
+            'CurrencyISO' => $vendorInfo[0]['CurrencyISO'],
+            'Amount' => $vendorInfo[0]['SumAmount'],
+        ];
+        $postData = ['invoices' => implode(',', $ids)];
+        Response::redirectWithPost('VPayment', $urlParams, $postData);
     }
 
     protected function massactionDownload(array $ids)
     {
         $vinvoices = Db::getAll("SELECT ID, CacheLinesMAWBNumber FROM vinvoice WHERE ID IN (@a)", $ids);
         if (!$vinvoices) {
-            $this->sendMassactionErrorDialog('Указанные счета не найдены');
+            MassactionAbstract::sendErrorDialog('Указанные счета не найдены');
         }
 
         // Создадим временную локальную папку, куда скопируем все файлы
@@ -459,8 +464,7 @@ class VInvoice extends InvoiceModuleAbstract
         array $oldData,
         Msg $msgBuff,
         $fromMultipleUpdat
-    )
-    {
+    ) {
         //Если номер счёта пуст, то его нужно сгенерировать автоматически
         if (isset($oldData['Name']) && (string)$oldData['Name'] !== (string)$obj['Name']) {
             //Если пользователь в процессе редактирования счёта изменил поле Reference, то нужно изменить его и во многих других местах
@@ -630,7 +634,8 @@ class VInvoice extends InvoiceModuleAbstract
             'Name' => $vinvObj['Name'],
             'Amount' => (float)$vinvObj['Amount'],
             'CurrencyISO' => $vinvObj['CurrencyISO'],
-            'MAWB' => Db::getCol("SELECT DISTINCT MAWBNumber FROM vinvoiceline WHERE MAWBNumber != '' AND VInvoiceID = @i", $vinvObj->getId()),
+            'MAWB' => Db::getCol("SELECT DISTINCT MAWBNumber FROM vinvoiceline WHERE MAWBNumber != '' AND VInvoiceID = @i",
+                $vinvObj->getId()),
             'Files' => []
         ];
 
