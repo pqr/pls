@@ -11,128 +11,121 @@ namespace Light {
         const objectId: number = Light.parseInt(Light.getPageParam("id"));
         let validationHandler: () => boolean;
 
+        /**
+         * Обновляет div в котором находятся выпадающий список с massaction
+         * Обновление происходит во время прокрутки таблицы или при выделении строк таблицы
+         */
+        function updateMassactionDiv() {
+            const listTable = Light.tables.get(_lightModule);
+            const $massactionDiv = $(".listmassaction");
+            if ($massactionDiv.length === 0) {
+                // В этом модуле вообще нет div отвечающего за massaction
+                return;
+            }
+
+            // Сразу удаляем все total-span, которые могли быть в этом div -
+            // в них отображались старые знаения total по полям
+            // (ниже будет пересчёт этих total и повторный вывод)
+            $massactionDiv.find(".total-span").remove();
+
+            const selectedCount = listTable.getSelectedCount();
+            if (selectedCount === 0) {
+                // Если ничего не выделено, больше ничего и не делаем
+                $massactionDiv.removeClass('sticky');
+                return;
+            }
+
+            // Если что-то выделено галочками, обязательно добавляем класс sticky, который выставит position: sticky; bottom: 0;
+            $massactionDiv.addClass('sticky');
+
+            const tableTotalRowCalcFieldsKeys = Light.getPageParam("tableTotalRowCalcFieldsKeys");
+            if (tableTotalRowCalcFieldsKeys && tableTotalRowCalcFieldsKeys.length) {
+                // Для этой таблицы заданы какие-то колонки по которым считается total
+                // в случае выделения строк галочками нужно пересчитать total и вывести его в massaction div
+                const $thead = listTable.getTableNode().find("thead");
+                tableTotalRowCalcFieldsKeys.forEach(fieldKey => {
+                    const $th = $thead.find("th[data-fieldkey='" + fieldKey + "']");
+                    if ($th.length) {
+                        // Узнаем порядковый номер колонки, чтобы далее прочитать все значения
+                        // в выделенных строках
+                        const colIndex = $thead.find("th").index($th);
+
+                        // Обычно для подсчёта используются колонки типа суммы
+                        // Иногда это сумма с валютой
+                        // Сразу заготовим Map с разбивкой по валютам. Если в данной колонке нет валют
+                        // то в итоге получим Map из одного элемента (ключём будет пустая валюта - пустая строка)
+                        const totalPerCurrency = new Map<string, number>();
+
+                        // Пройдём по всем выделенным строкам
+                        listTable.getSelectedRows().each((_, tr) => {
+                            const tdHtml = $(tr)
+                                .find("td")
+                                .eq(colIndex)
+                                .html();
+
+                            // HTML код внутри ячейки может содержать <br>
+                            // это значит несколько сумм в режиме groupconcat
+                            // разобьём на элементарные строки
+                            tdHtml.split("<br>").forEach((oneLineHtml: string) => {
+                                // Вырежем все теги (которые обычно оформляют суммы)
+                                const text = $(oneLineHtml).text();
+
+                                // Попробуем распарсить текст, возможно там какие суммы с валютами?
+                                // Например "123 456.78 USD" или "1 234.00 $"
+                                // По умолчанию примим валюту пустой
+                                let currencyIso = "";
+                                const parts = text.split(" ");
+                                // Прововерим последнюю часть массива после разбивки по пробелам - там может быть реальная валюта
+                                if (!$.isNumeric(parts[parts.length - 1])) {
+                                    // Нашли валюту в конце числа, вынимаем валюту из массива частей
+                                    currencyIso = parts.pop();
+                                }
+                                // Оставшиеся части после изъятия валюты склеиваем обратно
+                                const amount = Light.parseFloat(parts.join(""));
+                                if (!totalPerCurrency.has(currencyIso)) {
+                                    // Нашли какую-то новую валюту, которая не встречалась ранее
+                                    totalPerCurrency.set(currencyIso, amount);
+                                } else {
+                                    // Эта валюта уже есть в Map totalPerCurrency, прибавляем текующую сумму amount
+                                    totalPerCurrency.set(currencyIso, totalPerCurrency.get(currencyIso) + amount);
+                                }
+                            });
+                        });
+
+                        // После того как прошлись по всем строкам и собрали результат в totalPerCurrency
+                        // выведем этот результат в massaction div
+
+                        let perCurrencyBeautyAmounts = [];
+                        totalPerCurrency.forEach((total: number, currencyIso: string) => {
+                            if (total != 0) {
+                                perCurrencyBeautyAmounts.push(Light.getBeautyMoney(total, true, currencyIso));
+                            }
+                        });
+                        if (perCurrencyBeautyAmounts.length > 0) {
+                            // Имя поля возьмём из th, чтобы вывести внизу в massaction div
+                            const fieldName = $th
+                                .html()
+                                .replace(/<br>/g, " ")
+                                .replace(/<\/?[^>]+>/gi, "");
+
+                            const $totalSpan = $(`<span class="total-span nobr"></span>`)
+                                .append(`<strong>${fieldName}:&nbsp;</strong>`);
+                            // Склеиваем все суммы по валютам через запятую и доавляем в текущий $totalSpan
+                            $totalSpan.append(perCurrencyBeautyAmounts.join(', '))
+
+                            // Итоговый результат вставляем в $massactionDiv
+                            $massactionDiv.append($totalSpan);
+                        }
+                    }
+                });
+            }
+        }
+
         function initListListeners() {
             try {
                 const listTable = Light.tables.get(_lightModule);
-                const $divNode = listTable.getDivNode();
-
-                $divNode.on("click", "span.table-excel a", function(this: HTMLAnchorElement, e) {
-                    const ids = listTable.getSelectedValues();
-                    if (ids.length !== 0) {
-                        e.preventDefault();
-                        document.location.href = this.href + "&excelIds=" + ids.join(",");
-                    }
-                });
-
-                function updateExcelSelectedCountSpan() {
-                    const $a = $divNode.find("span.table-excel a");
-                    const ids = listTable.getSelectedValues();
-                    let $selectedCountSpan = $a.find(".table-excel-selected-count-span");
-                    if (ids.length === 0 && $selectedCountSpan.length > 0) {
-                        $selectedCountSpan.remove();
-                    } else if (ids.length > 0) {
-                        if ($selectedCountSpan.length === 0) {
-                            $selectedCountSpan = $('<span class="table-excel-selected-count-span"></span>');
-                            $selectedCountSpan = $selectedCountSpan.appendTo($a);
-                        }
-                        $selectedCountSpan.html("&nbsp;(" + ids.length + ")");
-                    }
-                }
-
-                /**
-                 * Фиксирует div в котором находятся выпадающий список с massaction во время прокрутки таблицы>
-                 */
-                function fixMassactionDiv() {
-                    const $listMassActionIndicator = $(".listmassactionIndicator");
-                    const $listMassAction = $(".listmassaction");
-                    const $selectedCount = $listMassAction.find(".selected-count");
-                    const $selectedCountColumns = $listMassAction.find(".selected-count-column");
-
-                    const countSelected = listTable.getSelectedValues().length;
-                    const nodeSelectedCountValue = $selectedCount.find("strong");
-                    if (countSelected > 0) {
-                        nodeSelectedCountValue.text(countSelected);
-                        if (!$listMassActionIndicator.is(":appeared")) {
-                            $listMassAction.addClass("listmassaction-fixed");
-                        }
-                        $selectedCount.removeClass("display-none");
-                        if ($selectedCountColumns.length) {
-                            const columns: { [key: number]: string } = {};
-                            const columKeys = $selectedCountColumns.data("keys").split("|");
-                            const $thead = listTable.getTableNode().find("thead");
-                            columKeys.forEach(function(key: string) {
-                                const $th = $thead.find("th[data-fieldkey='" + key + "']");
-                                if ($th.length) {
-                                    columns[$thead.find("th").index($th)] = $th
-                                        .html()
-                                        .replace(/<br>/g, " ")
-                                        .replace(/<\/?[^>]+>/gi, "");
-                                }
-                            });
-                            const $tr = listTable.getSelectedRows();
-                            let sums: Array<number> = [];
-                            $tr.each(function(_i, elem) {
-                                const $tr = $(elem);
-                                const $td = $tr.find("td");
-                                let columnIndex: any;
-                                for (columnIndex in columns) {
-                                    let value: any = $td.eq(columnIndex).text();
-                                    try {
-                                        value = parseFloat(value);
-                                        if (!sums[columnIndex]) {
-                                            sums[columnIndex] = 0;
-                                        }
-                                        sums[columnIndex] += value;
-                                    } catch (e) {}
-                                }
-                            });
-                            let html: string = "";
-                            for (let columnIndex in columns) {
-                                html +=
-                                    "<span class='selected-count-column-span'><strong>" +
-                                    columns[columnIndex] +
-                                    "</strong>: " +
-                                    getBeautyMoney(sums[columnIndex]) +
-                                    "</span>";
-                            }
-                            $selectedCountColumns.html(html);
-                        }
-                    } else {
-                        $listMassAction.removeClass("listmassaction-fixed");
-                        $selectedCount.addClass("display-none");
-                        if ($selectedCountColumns.length) {
-                            $selectedCountColumns.html("");
-                        }
-                    }
-                }
-
-                function initListMassactionAppear() {
-                    const $listMassActionIndicator = $(".listmassactionIndicator");
-                    const $listMassAction = $(".listmassaction");
-                    // const $selectedCount = $listMassAction.find(".selected-count");
-                    $listMassActionIndicator.appear();
-
-                    $listMassActionIndicator.on("appear", () => {
-                        // this element is now inside browser viewport
-                        $listMassAction.removeClass("listmassaction-fixed");
-                        // $selectedCount.addClass("display-none")
-                    });
-
-                    $listMassActionIndicator.on("disappear", () => {
-                        // this element is now outside browser viewport
-                        fixMassactionDiv();
-                    });
-                }
-
-                listTable.onReload(initListMassactionAppear);
-
-                listTable.onSelectRow(updateExcelSelectedCountSpan);
-                listTable.onSelectAll(updateExcelSelectedCountSpan);
-
-                listTable.onSelectRow(fixMassactionDiv);
-                listTable.onSelectAll(fixMassactionDiv);
-
-                initListMassactionAppear();
+                listTable.onSelectRow(updateMassactionDiv);
+                listTable.onSelectAll(updateMassactionDiv);
             } catch (e) {
                 console.log(e);
             }
@@ -175,13 +168,15 @@ namespace Light {
 
                 // Сформируем тело для диалога из списка ошибок
                 if (errors.length > 1) {
-                    dialogBodyHtml = `<ol class="save-errors">${errors.map(({msg}) => `<li>${msg}</li>`).join("")}</ol>`;
+                    dialogBodyHtml = `<ol class="save-errors">${errors
+                        .map(({msg}) => `<li>${msg}</li>`)
+                        .join("")}</ol>`;
                 } else {
                     dialogBodyHtml = errors[0].msg;
                 }
 
                 // Проверим, были ли среди ошибок критчные? (хотя бы одна)
-                hasCriticalError = errors.some(({ critical }) => critical !== undefined && critical);
+                hasCriticalError = errors.some(({critical}) => critical !== undefined && critical);
             }
 
             const options: DialogOptions = {
@@ -212,11 +207,10 @@ namespace Light {
             blockSaveButtons(true);
             const $editForm = editForm.getFormNode();
 
-            const $progress = $editForm.find(".progress");
-            $progress.removeClass("visibility-hidden");
+            Light.showProgress($editForm);
 
             let postData = $editForm.serialize();
-            let url = $editForm.attr("action");
+            let url = <string>$editForm.attr("action")!;
             if (saveanyway) {
                 url += "&saveanyway=1";
             }
@@ -228,10 +222,11 @@ namespace Light {
             }
 
             $.post(url, postData)
-                .done((_, __, jqXHR) => {
+                .done((_, __, jqXHR:any) => {
                     //В заголовках ответа должен прийти Location куда перенаправить пользователя после сохранения
                     if (!jqXHR.getResponseHeader("x-light-redirect")) {
                         //Если же нет этого заголовка для перенаправления, то разблокируем кнопки Save и выведем диалог с ошибками
+                        Light.hideProgress($editForm);
                         blockSaveButtons(false);
                         //Если в пришедшем ajax ответе от сервера есть Header заголовок указывающий на то, что ответ содержит в себе
                         //какое-то диалоговое окно, то в этом методе ничего делать не будем. Диалог отрисуется средствами Light.js
@@ -241,9 +236,9 @@ namespace Light {
                         }
                     }
                 })
-                .fail(jqXHR => {
+                .fail((jqXHR) => {
                     blockSaveButtons(false);
-                    $progress.addClass("visibility-hidden");
+                    Light.hideProgress($editForm);
 
                     //Если в пришедшем ajax ответе от срвера есть Header заголовок указывающий на то, что ответ содержит в себе
                     //какое-то диалоговое окно, то в этом методе ничего делать не будем. Диалог отрисуется средствами Light.js
@@ -318,9 +313,11 @@ namespace Light {
             const select = this;
             const action = select.value;
 
+            let ids;
+
             //Соберём значения чекбоксов в таблице и отправим их ajax POST запросом
             try {
-                const ids = Light.tables.get(_lightModule).getSelectedValues();
+                ids = Light.tables.get(_lightModule).getSelectedValues();
             } catch (e) {
                 // Почему-то на экране на нашлась таблица с именем _lightModule - ничего не делаем
                 return;
@@ -332,11 +329,9 @@ namespace Light {
             }
 
             //Проверим, если была попытка отправить запрос на массовое удаление, нужно переспросить пользователя
-            if (action === "delete") {
-                if (!confirm("Delete selected records?")) {
-                    select.value = "";
-                    return;
-                }
+            if (action === "delete" && !confirm("Delete selected records?")) {
+                select.value = "";
+                return;
             }
 
             const url = `?a=${_lightModule}&p=massaction&action=${action}`;
@@ -350,7 +345,7 @@ namespace Light {
                 // Нужно открывать в новом окне, т.к. в выбранном option есть специальный css class
                 // Чтобы открыть в новом окне и при этом сделать POST запрос - создадим временную форму и засабмитем её!
                 $("<form></form>")
-                    .attr({ action: url, method: "post", target: "_blank" })
+                    .attr({action: url, method: "post", target: "_blank"})
                     .append(`<input type="text" name="CheckedIds" value="${ids.join(",")}">`)
                     .append(`<input type="hidden" name="csrf_token" value="${_lightCsrfToken}">`)
                     .appendTo("body")
@@ -363,7 +358,7 @@ namespace Light {
                 // У этого option не было пометки откывать в новом окне - просто делаем AJAX POST запрос
                 // Заблокируем выпадающий список
                 select.disabled = true;
-                $.post(url, { CheckedIds: ids.join(",") }).always(() => {
+                $.post(url, {CheckedIds: ids.join(",")}).always(() => {
                     select.disabled = false;
                     // Сбрасываем выбор в выпадающем списке
                     select.value = "";

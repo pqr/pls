@@ -1,11 +1,11 @@
 <?php
+
 namespace Light\Field;
 
 use Light\Db;
 use Light\Link;
 
 /**
- * @method $this setOptions($options)
  * @method $this setLinkModule(string $module)
  *
  * @method string|array|callable getOptions() //возвращает значение параметра options, не путать с методом getEvaluatedOptions()
@@ -21,6 +21,20 @@ abstract class FieldOptionsAbstract extends FieldAbstract
 
     public $options;
     public $linkModule;
+
+    /**
+     * @param string|array $options
+     * @return $this
+     */
+    public function setOptions($options)
+    {
+        $this->options = $options;
+
+        // При установке новых опций сбрасываем вычеселенный ранее кеширующий массив (если он, конечно, вычислялся)
+        $this->_cacheEvaluatedOptions = null;
+
+        return $this;
+    }
 
     public function getEvaluatedOptions()
     {

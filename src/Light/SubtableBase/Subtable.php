@@ -1186,7 +1186,7 @@ abstract class Subtable extends Table
         $html = $this->getHtmlTableTheadThContentAlias($field);
 
         if ($this->_state === self::STATE_EDIT && $field->getChangeAll()) {
-            if ($field->getType() == F::TYPE_STRING) {
+            if ($field->getType() == F::TYPE_STRING || $field->getType() == F::TYPE_TEXT) {
                 $html .= '<br><a href="#" class="small inner change-all-string" data-fieldkey="' . $field->key . '">Изменить все</a>';
             } else {
                 $html .= '<br><a href="#" class="small inner change-all" data-fieldkey="' . $field->key . '">Изменить все</a>';

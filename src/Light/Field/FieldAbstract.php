@@ -22,6 +22,7 @@ use Light\Html;
  * @method $this setViewCssClass($stringOrCallable)
  * @method $this setViewTitle($stringOrCallable)
  * @method $this setViewTagParams($stringOrCallable)
+ * @method $this setViewMaxWidth300(bool $value)
  * @method $this setEditId(string $value)
  * @method $this setEditName(string $value)
  * @method $this setEditWidth(string $miniSmallMediumDefaultFull)
@@ -149,6 +150,7 @@ abstract class FieldAbstract
     const TEXTTRUNCATE_FULL = 'full';
     const TEXTTRUNCATE_PART = 'part';
     const TEXTTRUNCATE_LIST = 'list';
+    const PARAM_VIEWMAXWIDTH300 = 'viewMaxWidth300';
 
     public $key;
 
@@ -240,6 +242,14 @@ abstract class FieldAbstract
      * @var string|callable
      */
     public $viewTagParams;
+
+
+    /**
+     * Ограничить ли ширину текста с помощью css класса overflow300?
+     * Если да, то в title автоматически будет добавлено полное значение текущей ячейки {value}
+     * @var bool
+     */
+    public $viewMaxWidth300 = false;
 
     /**
      * @var string атрибут id для html тега в режиме редактирования (если не задано, используется key)
@@ -1028,6 +1038,10 @@ abstract class FieldAbstract
             $viewCssClass .= ' nobr';
         }
 
+        if ($this->viewMaxWidth300) {
+            $viewCssClass .= ' overflow300';
+        }
+
         return $viewCssClass;
     }
 
@@ -1035,10 +1049,15 @@ abstract class FieldAbstract
     {
         $viewTitle = $this->viewTitle;
         if ($viewTitle && is_callable($viewTitle)) {
-            return $viewTitle($value, $data, $forTable, $this);
+            $viewTitleText = (string)$viewTitle($value, $data, $forTable, $this);
+        } else {
+            $viewTitleText = (string)$viewTitle;
+        }
+        if ($viewTitleText === '' && $this->viewMaxWidth300) {
+            $viewTitleText = $value;
         }
 
-        return $viewTitle;
+        return $viewTitleText;
     }
 
     public function getViewTagParams($value, array $data = [], $forTable = false)

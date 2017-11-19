@@ -40,7 +40,6 @@ abstract class InvoicesAbstract extends Subtable
         $this->_textAddLink = 'Add Invoice';
 
         $this->_folders = true;
-        $this->_foldersNested = true;
         $this->_folderBaseDir = strtolower($firstLetter) . 'Invoice';
         $this->_folderNameFieldKey = 'RealInvoiceID';
 

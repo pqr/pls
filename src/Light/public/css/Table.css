@@ -1,3 +1,10 @@
+.table-div {
+    /* хитрый трюк, чтобы все div элементы внутри .table-div по ширине были как таблица, а не как окно браузера */
+    /* https://stackoverflow.com/questions/33904792/cannot-make-div-width-100-with-scrollbar */
+    display: inline-block;
+
+}
+
 table.table {
     border-collapse: collapse;
     border-spacing: 1px;

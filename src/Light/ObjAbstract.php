@@ -99,9 +99,9 @@ abstract class ObjAbstract implements \ArrayAccess
             $fieldKeys = $fieldset->getKeys();
         }
 
-        //Соберём массив только тех полей, которые реально нужно загружать - это поля с режимами VIEW и EDIT
+        // Соберём массив только тех полей, которые реально нужно загружать - это поля с режимами VIEW и EDIT и LOG (изменения в которых проверяются при записи в лог)
         $correctKeys = [];
-        $correctMode = F::MODE_VIEW | F::MODE_EDIT;
+        $correctMode = F::MODE_VIEW | F::MODE_EDIT | F::MODE_LOG;
         foreach ($fieldKeys as $fieldKey) {
             $field = $fieldset->getField($fieldKey);
             if ($field && $field->hasMode($correctMode)) {

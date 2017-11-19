@@ -166,4 +166,9 @@ class Html
         return $text;
     }
 
+    public static function progress()
+    {
+        return '<div class="progress visibility-hidden"></div>';
+    }
+
 }

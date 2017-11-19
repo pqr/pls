@@ -30,7 +30,6 @@ class ShipmentAccounting extends ModuleAbstract
         $this->setDbTable('shipment');
 
         $this->_folders = true;
-        $this->_foldersNested = true;
 
         $this->_allowAdd = false;
         $this->_allowEdit = false;

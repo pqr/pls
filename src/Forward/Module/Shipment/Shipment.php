@@ -54,7 +54,6 @@ class Shipment extends ModuleAbstract
         parent::__construct();
 
         $this->_folders = true;
-        $this->_foldersNested = true;
 
         $this->_textObjectName = 'Shipment';
         $this->_tableDefaultOrderBy = 'shipment.ID DESC';

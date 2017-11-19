@@ -324,11 +324,6 @@ class Table
         return $allFields;
     }
 
-    private function getHtmlProgressbar()
-    {
-        return '<div class="table-progressbar" style="visibility: hidden;"><div class="progress"><div class="indeterminate"></div></div></div>';
-    }
-
     public function getHtmlTableForAjax($printHeadBlock = true, $printIfEmpty = false)
     {
         //Если таблица пуста, возвращаем сообщение No data available
@@ -337,7 +332,7 @@ class Table
             $outHtml = '';
             if ($printHeadBlock) {
                 $outHtml .= '<div style="display: inline-block;">';
-                $outHtml .= $this->getHtmlProgressbar();
+                $outHtml .= Html::progress();
             }
 
             $outHtml .= $this->_tableMsgIfEmpty ?? 'No data available';
@@ -359,7 +354,7 @@ class Table
 
         if ($printHeadBlock) {
             $outHtml .= '<div style="display: inline-block;">';
-            $outHtml .= $this->getHtmlProgressbar();
+            $outHtml .= Html::progress();
         }
 
         //Отркоем тег <table>, внутри будет много data-* атрибутов
@@ -422,7 +417,8 @@ class Table
             $outHtml .= $layoutsLinkHtml;
         }
 
-        if (method_exists($this, 'getAdditionalHtmlTableHeadBlock') && $additionalHtml = $this->getAdditionalHtmlTableHeadBlock()) {
+        if (method_exists($this,
+                'getAdditionalHtmlTableHeadBlock') && $additionalHtml = $this->getAdditionalHtmlTableHeadBlock()) {
             $outHtml .= $additionalHtml;
         }
 
@@ -563,7 +559,7 @@ class Table
      * @param int $rowNum
      * @return array
      */
-    protected function getTableRowLinkUrlParams(array $rowData, int $rowNum):array
+    protected function getTableRowLinkUrlParams(array $rowData, int $rowNum): array
     {
         return [];
     }
@@ -691,7 +687,8 @@ class Table
         if ($calculatedDataCache && is_array($this->_tableTotalRowCalcFieldsKeys)) {
             foreach ($this->_tableTotalRowCalcFieldsKeys as $fieldKey) {
                 //Посчитаем эту total ячейку только в том случае, если пользователь не определил её сам ранее
-                if (array_key_exists($fieldKey, $calculatedDataCache[0]) && !array_key_exists($fieldKey, $totalRowData)) {
+                if (array_key_exists($fieldKey, $calculatedDataCache[0]) && !array_key_exists($fieldKey,
+                        $totalRowData)) {
                     $totalRowData[$fieldKey] = $this->tableCalcFieldTotal($fieldKey, $calculatedDataCache);
                 }
             }
@@ -704,9 +701,13 @@ class Table
             /** @var \Light\Field\FieldAbstract $field */
             $fieldKey = $field->key;
 
-            $tdCssClass = '';
-            if ($field->nobr) {
-                $tdCssClass .= ' nobr';
+            $totalValue = $totalRowData[$fieldKey] ?? null;
+            if ($field->groupconcat && strpos($totalValue, "\n") !== false) {
+                //Если было объединение нескольких значений, то накладывать css class на всю ячейку TD не стоит
+                //В этом случае каждое значение должно быть подсвечено отдельно
+                $tdCssClass = '';
+            } else {
+                $tdCssClass = $field->getViewCssClass($totalValue, $totalRowData, 'total');
             }
             if ($field->tableAlign) {
                 $tdCssClass .= ' ta' . $field->tableAlign[0]; //получается 'tac' (если center) или 'tar' (если right)
@@ -719,7 +720,16 @@ class Table
             // Формируем html представление только для тех ячеек, у которых реально определено значнеие в массиве $totalRowData
             // иначе можем получить total строку из большого кол-ва значений по умолчанию (нули, No, и т.п)
             if (array_key_exists($fieldKey, $totalRowData)) {
-                $tdHtml = $field->getHtml($totalRowData[$fieldKey], $totalRowData, 'total');
+                $totalValue = $totalRowData[$fieldKey];
+                if ($field->getType() === F::TYPE_MONEY_WITH_CURRENCY && strpos($totalValue, "\n") !== false) {
+                    // Текущая колонка имеет тип TYPE_MONEY_WITH_CURRENCY, а total значение содержит перевод строки
+                    // значит в таблице были разные валюты и мы в итоге получаем разбивку по валютам
+                    // нужно применить groupconcat подход
+                    $fieldWithGroupconcat = $field->getClone($field->key, ['groupconcat' => true]);
+                    $tdHtml = $fieldWithGroupconcat->getHtml($totalValue, $totalRowData, 'total');
+                } else {
+                    $tdHtml = $field->getHtml($totalValue, $totalRowData, 'total');
+                }
             } else {
                 $tdHtml = '';
             }
@@ -789,22 +799,25 @@ class Table
 
         $isMoneyWithCurrency = $this->getField($fieldKey)->getType() == F::TYPE_MONEY_WITH_CURRENCY;
         if ($isMoneyWithCurrency) {
-            //Сразу проверим, что все строки имеют одинаковую валюту
-            //Для этого каждый элемент из массива $amounts нужно разбить на сумму и валюту
-            $currncyAndAmountArray = array_map([FieldMoneyWithCurrency::class, 'getAsTouple'], $amounts);
-            //Затем посмотреть сколько уникальных валют получилось
-            $currencies = array_unique(array_column($currncyAndAmountArray, 0));
-            if (count($currencies) > 1) {
-                //нашлось более одной уникальной влаюты - невозможно посчитать total
-                return false;
+            $amountPerCurrency = [];
+            foreach ($amounts as $amountWithCurrency) {
+                [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($amountWithCurrency);
+                if ($amount && $currencyIso) {
+                    if (!isset($amountPerCurrency[$currencyIso])) {
+                        $amountPerCurrency[$currencyIso] = 0;
+                    }
+                    $amountPerCurrency[$currencyIso] += $amount;
+                }
             }
 
-            //Вычленим только суммы из кортежей
-            $amounts = array_column($currncyAndAmountArray, 1);
-            $totalAmount = array_sum($amounts);
-            //Вернуть надо вместе с валютой
-            return reset($currencies) . ' ' . $totalAmount;
+            ksort($amountPerCurrency);
 
+            $resultAmountsWithCurrency = [];
+            foreach ($amountPerCurrency as $currencyIso => $totalAmount) {
+                $resultAmountsWithCurrency[] = "$currencyIso $totalAmount";
+            }
+            // Возвращаем как groupconcat поле
+            return implode("\n", $resultAmountsWithCurrency);
         }
 
         return array_sum($amounts);

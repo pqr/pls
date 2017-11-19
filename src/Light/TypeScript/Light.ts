@@ -306,7 +306,7 @@ namespace Light {
                     .appendTo($ul)
                     .css(<JQuery.PlainObject>calcTabsIndicatorCss($ul.find(`a[href="${activeHash}"]`)));
 
-                $ul.on("click", "a", function(this: HTMLAnchorElement, e: JQuery.Event) {
+                $ul.on("click", "a", function(this: HTMLAnchorElement, e: any) {
                     e.preventDefault();
                     const $a = $(this);
 
@@ -761,6 +761,19 @@ namespace Light {
         }
     });
 
+    export function showProgress($parent:JQuery) {
+        $parent.find(".progress")
+            .removeClass("visibility-hidden")
+            .append('<div class="indeterminate"></div>');
+    }
+
+    export function hideProgress($parent:JQuery) {
+        $parent.find(".progress")
+            .addClass("visibility-hidden")
+            .find('indeterminate')
+            .remove();
+    }
+
     $body.on("submit", "form", function(this: HTMLFormElement, e: JQuery.Event) {
         if (!this.action) {
             // Если у этой формы нет атрибута action, занчит это какая-то хитрая форма, которая обратабывается
@@ -773,8 +786,7 @@ namespace Light {
         $formSaveButtons.prop("disabled", true);
 
         // Отобразим спциальный прогрессбар (если он есть в вёрстке)
-        const $progress = $form.find(".progress");
-        $progress.removeClass("visibility-hidden");
+        showProgress($form);
 
         if (this.action.substr(-5, 5) === "#ajax" && $form.closest(".lightdialog__content").length === 0) {
             // action этой формы оканчивается на #ajax - это признак того, что форму нужно отрпавить ajax запросом
@@ -788,7 +800,7 @@ namespace Light {
             const postData = $form.serialize();
             $.post(url, postData).fail(() => {
                 $formSaveButtons.prop("disabled", false);
-                $progress.addClass("visibility-hidden");
+                hideProgress($form);
             });
         }
     });
@@ -1426,11 +1438,13 @@ namespace Light {
     }
 
     // Добавим плавающие шапки таблиц в момент загрузки страницы
-    $body.find("table.table:not(.nosticky)").each(function(this: HTMLTableElement) {
-        const $table = $(this);
-        const offset = Light.parseInt($table.attr("data-stickyoffset"));
-        $table.stickyTableHeaders({ fixedOffset: offset });
-    });
+    if (!Light.getPageParam('disableTableSticky')) {
+        $body.find("table.table:not(.nosticky)").each(function(this: HTMLTableElement) {
+            const $table = $(this);
+            const offset = Light.parseInt($table.attr("data-stickyoffset"));
+            $table.stickyTableHeaders({fixedOffset: offset});
+        });
+    }
 }
 
 //На событие dom ready навешиваем эти стандратные обработчики

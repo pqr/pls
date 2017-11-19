@@ -1,8 +1,9 @@
 <?php
+
 namespace Light\Field;
 
-use Light\Db;
 use Light\Config;
+use Light\Db;
 use Light\Request;
 
 class FieldDate extends FieldInputAbstract
@@ -68,7 +69,9 @@ class FieldDate extends FieldInputAbstract
 
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
-        $value = FieldDate::beautify($value);
+        if ($this->inputType !== 'date') {
+            $value = FieldDate::beautify($value);
+        }
         return parent::getHtmlInputInner($value, $data, $idPrefix);
     }
 

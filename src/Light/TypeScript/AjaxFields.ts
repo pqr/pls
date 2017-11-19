@@ -73,7 +73,7 @@ namespace Light {
                 $link.remove();
 
                 // Если пришеднее input поле - это поле для ввода даты, то добавим datepicker виджет
-                if ($input.hasClass("input-date")) {
+                if ($input.hasClass("input-date") && $input.attr('type') === 'text') {
                     // Добавим специальный класс, чтобы поле выглядело поменьше и не дёргался экран в таблице
                     $input.addClass('input-date-ajax');
                     // Добавим к нему виджет выбора даты
@@ -141,11 +141,8 @@ namespace Light {
         const postData = { newValue: $input.val() };
         $.post(url, postData)
             .done(newHtml => {
-                // удаляем те две кнопки (сохранить  и отмена), если только это не было поле даты (у даты нет этих кнопок)
-                if (!$input.hasClass("input-date")) {
-                    $input.next("a").remove();
-                    $input.next("a").remove();
-                }
+                // удаляем те две кнопки (сохранить  и отмена)
+                removeSaveCancelButtons($input);
                 // вставляем новый html код поля в режиме view после поля для ввода
                 $(newHtml).insertAfter($input);
                 // удаляем само поле для ввода
@@ -159,15 +156,20 @@ namespace Light {
     }
 
     function handleAjaxInputCancel($input: JQuery, $originalLink: JQuery) {
-        // удаляем те две кнопки (сохранить  и отмена), если только это не было поле даты (у даты нет этих кнопок)
-        if (!$input.hasClass("input-date")) {
-            $input.next("a").remove();
-            $input.next("a").remove();
-        }
+        // удаляем те две кнопки (сохранить  и отмена)
+        removeSaveCancelButtons($input);
         // возвращаем на место старую ссылку
         $originalLink.insertAfter($input);
         $originalLink.removeClass('disabled');
         // удаляем само поле для ввода
         $input.remove();
+    }
+
+    function removeSaveCancelButtons($input: JQuery) {
+        // удаляем те две кнопки (сохранить  и отмена), если только это не было поле даты (у даты нет этих кнопок)
+        if (!($input.hasClass("input-date") && $input.attr('type') === 'text')) {
+            $input.next("a").remove();
+            $input.next("a").remove();
+        }
     }
 }

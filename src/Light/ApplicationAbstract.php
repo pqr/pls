@@ -122,7 +122,19 @@ abstract class ApplicationAbstract
         }
 
         if (!User::hasReadAccess($module) && !ModuleRegister::isModuleCore($module)) {
-            Session::flashError('No access to module ' . ModuleRegister::getModuleName($module));
+
+            $moduleName = ModuleRegister::getModuleName($module);
+            $msg = Config::$lang === 'ru' ? "Нет доступа к модулю $moduleName" : "No access to module $moduleName";
+
+            if (Request::isAjax()) {
+
+                Response::sendToast('error', $msg);
+                Response::abort(403);
+                return;
+
+            }
+
+            Session::flashError($msg);
             $redirectToModule = ModuleRegister::getDefaultModule();
             //Если к defaultModule нет доступа, то переберём все модули подряд и редиректим на первый,
             //к которому есть доступ
@@ -473,7 +485,7 @@ abstract class ApplicationAbstract
         }
     }
 
-    public static function getVersion():string
+    public static function getVersion(): string
     {
         static $version;
         if ($version === null) {

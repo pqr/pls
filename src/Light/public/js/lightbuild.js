@@ -641,6 +641,19 @@ var Light;
             };
         }
     });
+    function showProgress($parent) {
+        $parent.find(".progress")
+            .removeClass("visibility-hidden")
+            .append('<div class="indeterminate"></div>');
+    }
+    Light.showProgress = showProgress;
+    function hideProgress($parent) {
+        $parent.find(".progress")
+            .addClass("visibility-hidden")
+            .find('indeterminate')
+            .remove();
+    }
+    Light.hideProgress = hideProgress;
     $body.on("submit", "form", function (e) {
         if (!this.action) {
             // Если у этой формы нет атрибута action, занчит это какая-то хитрая форма, которая обратабывается
@@ -651,8 +664,7 @@ var Light;
         var $formSaveButtons = $form.find(".btn-save, button[type=submit]");
         $formSaveButtons.prop("disabled", true);
         // Отобразим спциальный прогрессбар (если он есть в вёрстке)
-        var $progress = $form.find(".progress");
-        $progress.removeClass("visibility-hidden");
+        showProgress($form);
         if (this.action.substr(-5, 5) === "#ajax" && $form.closest(".lightdialog__content").length === 0) {
             // action этой формы оканчивается на #ajax - это признак того, что форму нужно отрпавить ajax запросом
             // и форма не находится внутри какого либо диалогового окна
@@ -664,7 +676,7 @@ var Light;
             var postData = $form.serialize();
             $.post(url, postData).fail(function () {
                 $formSaveButtons.prop("disabled", false);
-                $progress.addClass("visibility-hidden");
+                hideProgress($form);
             });
         }
     });
@@ -1230,11 +1242,13 @@ var Light;
     }
     Light.addStandardListeners = addStandardListeners;
     // Добавим плавающие шапки таблиц в момент загрузки страницы
-    $body.find("table.table:not(.nosticky)").each(function () {
-        var $table = $(this);
-        var offset = Light.parseInt($table.attr("data-stickyoffset"));
-        $table.stickyTableHeaders({ fixedOffset: offset });
-    });
+    if (!Light.getPageParam('disableTableSticky')) {
+        $body.find("table.table:not(.nosticky)").each(function () {
+            var $table = $(this);
+            var offset = Light.parseInt($table.attr("data-stickyoffset"));
+            $table.stickyTableHeaders({ fixedOffset: offset });
+        });
+    }
 })(Light || (Light = {}));
 //На событие dom ready навешиваем эти стандратные обработчики
 $(function () {
@@ -1305,7 +1319,7 @@ var Light;
             // Саму ссылку удаляем из DOM (при этом она сохраняется в переменной $link на случай cancel)
             $link.remove();
             // Если пришеднее input поле - это поле для ввода даты, то добавим datepicker виджет
-            if ($input.hasClass("input-date")) {
+            if ($input.hasClass("input-date") && $input.attr('type') === 'text') {
                 // Добавим специальный класс, чтобы поле выглядело поменьше и не дёргался экран в таблице
                 $input.addClass('input-date-ajax');
                 // Добавим к нему виджет выбора даты
@@ -1368,11 +1382,8 @@ var Light;
         var postData = { newValue: $input.val() };
         $.post(url, postData)
             .done(function (newHtml) {
-            // удаляем те две кнопки (сохранить  и отмена), если только это не было поле даты (у даты нет этих кнопок)
-            if (!$input.hasClass("input-date")) {
-                $input.next("a").remove();
-                $input.next("a").remove();
-            }
+            // удаляем те две кнопки (сохранить  и отмена)
+            removeSaveCancelButtons($input);
             // вставляем новый html код поля в режиме view после поля для ввода
             $(newHtml).insertAfter($input);
             // удаляем само поле для ввода
@@ -1385,16 +1396,20 @@ var Light;
         });
     }
     function handleAjaxInputCancel($input, $originalLink) {
-        // удаляем те две кнопки (сохранить  и отмена), если только это не было поле даты (у даты нет этих кнопок)
-        if (!$input.hasClass("input-date")) {
-            $input.next("a").remove();
-            $input.next("a").remove();
-        }
+        // удаляем те две кнопки (сохранить  и отмена)
+        removeSaveCancelButtons($input);
         // возвращаем на место старую ссылку
         $originalLink.insertAfter($input);
         $originalLink.removeClass('disabled');
         // удаляем само поле для ввода
         $input.remove();
+    }
+    function removeSaveCancelButtons($input) {
+        // удаляем те две кнопки (сохранить  и отмена), если только это не было поле даты (у даты нет этих кнопок)
+        if (!($input.hasClass("input-date") && $input.attr('type') === 'text')) {
+            $input.next("a").remove();
+            $input.next("a").remove();
+        }
     }
 })(Light || (Light = {}));
 var Light;
@@ -2158,6 +2173,13 @@ var Light;
                 this.name = $div.attr("data-tablename") || "";
                 this.reloadUrl = $div.attr("data-reloadurl") || "";
                 this.linkModule = $div.attr("data-linkmodule") || "";
+                $div.on("click", "span.table-excel a", function (e) {
+                    var ids = _this.getSelectedValues();
+                    if (ids.length !== 0) {
+                        e.preventDefault();
+                        document.location.href = e.currentTarget.href + "&excelIds=" + ids.join(",");
+                    }
+                });
                 //Попробуем найти текущую страницу из вёрстки
                 //Необходимо хранить текущую страницу для метода reload() (удобно при смене table layout settings и при удалении в ModuleAbstract)
                 var $strong = $div.find(".table-pages:first").find("strong");
@@ -2501,11 +2523,6 @@ var Light;
                 $div.on("click", "table.table > thead .cb-all", function () {
                     //Найдём все строки в таблице и пройдём их в цикле
                     that.selectAll(this.checked);
-                });
-                $div.on("click", ".table-select-all-link, .table-unselect-all-link", function (e) {
-                    e.preventDefault();
-                    var allSelected = $(this).hasClass("table-select-all-link");
-                    that.selectAll(allSelected);
                 });
                 $("a.check-all-link[data-tablename=\"" + this.name + "\"]").on("click", function (e) {
                     e.preventDefault();
@@ -2937,9 +2954,6 @@ var Light;
                 $tr.toggleClass("selected", selected);
                 //Отмечаем чекбокс или радио-кнопку
                 $tr.find("input[type=checkbox].cb, input[type=radio].rb").prop("checked", selected);
-                this.selectRowHandlers.forEach(function (handler) {
-                    handler(selected, $tr);
-                });
                 //После выделения текущей строки, проверим, есть ли чекбокс в заголовке таблицы, нужно ли его переключить?
                 var $headCb = this._getHeadCb();
                 if ($headCb.length > 0) {
@@ -2947,6 +2961,10 @@ var Light;
                     var allSelected = this.$tbody.find("input[type=checkbox].cb:not(:checked)").length === 0;
                     $headCb.prop("checked", allSelected);
                 }
+                this.updateExcelSelectedCountSpan();
+                this.selectRowHandlers.forEach(function (handler) {
+                    handler(selected, $tr);
+                });
             };
             Table.prototype._getHeadCb = function () {
                 return this.$table.children("thead").find(".cb-all");
@@ -2967,6 +2985,7 @@ var Light;
                     }
                 });
                 this._getHeadCb().prop("checked", allSelected);
+                this.updateExcelSelectedCountSpan();
                 this.selectAllHandlers.forEach(function (handler) {
                     handler(allSelected);
                 });
@@ -2974,7 +2993,7 @@ var Light;
             Table.prototype.reload = function (data, callback) {
                 var _this = this;
                 if (data === void 0) { data = {}; }
-                this._showProgressbar();
+                Light.showProgress(this.$div);
                 var newPage = Light.parseInt(data.page);
                 if (newPage > 0) {
                     //При данном вызове метода realod меняется страница - сохраним в currentPage
@@ -2984,8 +3003,6 @@ var Light;
                     //Если же страница не была передана, то нужно взять из currentPage
                     data.page = this.currentPage;
                 }
-                //Сделаем затемнение таблицы
-                this.$div.addClass("loading-opacity");
                 // Выполним ajax запрос к серверу, чтобы обновить таблицу
                 // Если уже есть какой-то запрос на обновление этой таблицы, то его нужно прервать
                 if (this.currentReloadXhr) {
@@ -3008,7 +3025,6 @@ var Light;
                 })
                     .always(function () {
                     _this.currentReloadXhr = null;
-                    _this.$div.removeClass("loading-opacity");
                     if (callback) {
                         callback();
                     }
@@ -3019,9 +3035,6 @@ var Light;
                 // Возвращаем JQueryXHR
                 return this.currentReloadXhr;
             };
-            Table.prototype._showProgressbar = function () {
-                this.$div.find(".table-progressbar").css("visibility", "visible");
-            };
             /**
              * Возвращает массив из значений заключённых внутри чекбоксов в таблице table-tableName-table
              */
@@ -3030,6 +3043,11 @@ var Light;
                     .find("input[type=checkbox].cb:checked")
                     .toArray()
                     .map(function (el) { return el.value; });
+            };
+            Table.prototype.getSelectedCount = function () {
+                return this.$tbody
+                    .find("input[type=checkbox].cb:checked")
+                    .length;
             };
             /**
              * Возвращает массив из значений заключённых внутри чекбоксов в таблице table-tableName-table
@@ -3041,7 +3059,25 @@ var Light;
              * Возвращает значение первой отмеченной радио-точки
              */
             Table.prototype.getSelectedRadio = function () {
-                return this.$tbody.find("input[type=radio].rb:checked").val();
+                return this.$tbody.find("input[type=radio].rb:checked").first().val() || '';
+            };
+            Table.prototype.updateExcelSelectedCountSpan = function () {
+                var selectedCount = this.getSelectedCount();
+                var $a = this.$div.find("span.table-excel a");
+                var $span = $a.find(".table-excel-selected-count-span");
+                if (selectedCount === 0) {
+                    // Если не выделено ничего, удаляем специальный span в котором отображено число выделенных строк
+                    // (возможно, этого span и не было в вёрстке, в этом случае jQuery ничего не сделает)
+                    $span.remove();
+                }
+                else {
+                    // Если же что-то было выделено, нужно вывести кол-во выделенных строк
+                    if (!$span.length) {
+                        // Специальный span пока не существует в вёрстке, быстренько создадим его
+                        $span = $('<span class="table-excel-selected-count-span"></span>').appendTo($a);
+                    }
+                    $span.html("&nbsp;(" + selectedCount + ")");
+                }
             };
             return Table;
         }());
@@ -4052,120 +4088,109 @@ var Light;
         var editForm;
         var objectId = Light.parseInt(Light.getPageParam("id"));
         var validationHandler;
-        function initListListeners() {
-            try {
-                var listTable_1 = Light.tables.get(_lightModule);
-                var $divNode_1 = listTable_1.getDivNode();
-                $divNode_1.on("click", "span.table-excel a", function (e) {
-                    var ids = listTable_1.getSelectedValues();
-                    if (ids.length !== 0) {
-                        e.preventDefault();
-                        document.location.href = this.href + "&excelIds=" + ids.join(",");
+        /**
+         * Обновляет div в котором находятся выпадающий список с massaction
+         * Обновление происходит во время прокрутки таблицы или при выделении строк таблицы
+         */
+        function updateMassactionDiv() {
+            var listTable = Light.tables.get(_lightModule);
+            var $massactionDiv = $(".listmassaction");
+            if ($massactionDiv.length === 0) {
+                // В этом модуле вообще нет div отвечающего за massaction
+                return;
+            }
+            // Сразу удаляем все total-span, которые могли быть в этом div -
+            // в них отображались старые знаения total по полям
+            // (ниже будет пересчёт этих total и повторный вывод)
+            $massactionDiv.find(".total-span").remove();
+            var selectedCount = listTable.getSelectedCount();
+            if (selectedCount === 0) {
+                // Если ничего не выделено, больше ничего и не делаем
+                $massactionDiv.removeClass('sticky');
+                return;
+            }
+            // Если что-то выделено галочками, обязательно добавляем класс sticky, который выставит position: sticky; bottom: 0;
+            $massactionDiv.addClass('sticky');
+            var tableTotalRowCalcFieldsKeys = Light.getPageParam("tableTotalRowCalcFieldsKeys");
+            if (tableTotalRowCalcFieldsKeys && tableTotalRowCalcFieldsKeys.length) {
+                // Для этой таблицы заданы какие-то колонки по которым считается total
+                // в случае выделения строк галочками нужно пересчитать total и вывести его в massaction div
+                var $thead_1 = listTable.getTableNode().find("thead");
+                tableTotalRowCalcFieldsKeys.forEach(function (fieldKey) {
+                    var $th = $thead_1.find("th[data-fieldkey='" + fieldKey + "']");
+                    if ($th.length) {
+                        // Узнаем порядковый номер колонки, чтобы далее прочитать все значения
+                        // в выделенных строках
+                        var colIndex_1 = $thead_1.find("th").index($th);
+                        // Обычно для подсчёта используются колонки типа суммы
+                        // Иногда это сумма с валютой
+                        // Сразу заготовим Map с разбивкой по валютам. Если в данной колонке нет валют
+                        // то в итоге получим Map из одного элемента (ключём будет пустая валюта - пустая строка)
+                        var totalPerCurrency_1 = new Map();
+                        // Пройдём по всем выделенным строкам
+                        listTable.getSelectedRows().each(function (_, tr) {
+                            var tdHtml = $(tr)
+                                .find("td")
+                                .eq(colIndex_1)
+                                .html();
+                            // HTML код внутри ячейки может содержать <br>
+                            // это значит несколько сумм в режиме groupconcat
+                            // разобьём на элементарные строки
+                            tdHtml.split("<br>").forEach(function (oneLineHtml) {
+                                // Вырежем все теги (которые обычно оформляют суммы)
+                                var text = $(oneLineHtml).text();
+                                // Попробуем распарсить текст, возможно там какие суммы с валютами?
+                                // Например "123 456.78 USD" или "1 234.00 $"
+                                // По умолчанию примим валюту пустой
+                                var currencyIso = "";
+                                var parts = text.split(" ");
+                                // Прововерим последнюю часть массива после разбивки по пробелам - там может быть реальная валюта
+                                if (!$.isNumeric(parts[parts.length - 1])) {
+                                    // Нашли валюту в конце числа, вынимаем валюту из массива частей
+                                    currencyIso = parts.pop();
+                                }
+                                // Оставшиеся части после изъятия валюты склеиваем обратно
+                                var amount = Light.parseFloat(parts.join(""));
+                                if (!totalPerCurrency_1.has(currencyIso)) {
+                                    // Нашли какую-то новую валюту, которая не встречалась ранее
+                                    totalPerCurrency_1.set(currencyIso, amount);
+                                }
+                                else {
+                                    // Эта валюта уже есть в Map totalPerCurrency, прибавляем текующую сумму amount
+                                    totalPerCurrency_1.set(currencyIso, totalPerCurrency_1.get(currencyIso) + amount);
+                                }
+                            });
+                        });
+                        // После того как прошлись по всем строкам и собрали результат в totalPerCurrency
+                        // выведем этот результат в massaction div
+                        var perCurrencyBeautyAmounts_1 = [];
+                        totalPerCurrency_1.forEach(function (total, currencyIso) {
+                            if (total != 0) {
+                                perCurrencyBeautyAmounts_1.push(Light.getBeautyMoney(total, true, currencyIso));
+                            }
+                        });
+                        if (perCurrencyBeautyAmounts_1.length > 0) {
+                            // Имя поля возьмём из th, чтобы вывести внизу в massaction div
+                            var fieldName = $th
+                                .html()
+                                .replace(/<br>/g, " ")
+                                .replace(/<\/?[^>]+>/gi, "");
+                            var $totalSpan = $("<span class=\"total-span nobr\"></span>")
+                                .append("<strong>" + fieldName + ":&nbsp;</strong>");
+                            // Склеиваем все суммы по валютам через запятую и доавляем в текущий $totalSpan
+                            $totalSpan.append(perCurrencyBeautyAmounts_1.join(', '));
+                            // Итоговый результат вставляем в $massactionDiv
+                            $massactionDiv.append($totalSpan);
+                        }
                     }
                 });
-                function updateExcelSelectedCountSpan() {
-                    var $a = $divNode_1.find("span.table-excel a");
-                    var ids = listTable_1.getSelectedValues();
-                    var $selectedCountSpan = $a.find(".table-excel-selected-count-span");
-                    if (ids.length === 0 && $selectedCountSpan.length > 0) {
-                        $selectedCountSpan.remove();
-                    }
-                    else if (ids.length > 0) {
-                        if ($selectedCountSpan.length === 0) {
-                            $selectedCountSpan = $('<span class="table-excel-selected-count-span"></span>');
-                            $selectedCountSpan = $selectedCountSpan.appendTo($a);
-                        }
-                        $selectedCountSpan.html("&nbsp;(" + ids.length + ")");
-                    }
-                }
-                /**
-                 * Фиксирует div в котором находятся выпадающий список с massaction во время прокрутки таблицы>
-                 */
-                function fixMassactionDiv() {
-                    var $listMassActionIndicator = $(".listmassactionIndicator");
-                    var $listMassAction = $(".listmassaction");
-                    var $selectedCount = $listMassAction.find(".selected-count");
-                    var $selectedCountColumns = $listMassAction.find(".selected-count-column");
-                    var countSelected = listTable_1.getSelectedValues().length;
-                    var nodeSelectedCountValue = $selectedCount.find("strong");
-                    if (countSelected > 0) {
-                        nodeSelectedCountValue.text(countSelected);
-                        if (!$listMassActionIndicator.is(":appeared")) {
-                            $listMassAction.addClass("listmassaction-fixed");
-                        }
-                        $selectedCount.removeClass("display-none");
-                        if ($selectedCountColumns.length) {
-                            var columns_1 = {};
-                            var columKeys = $selectedCountColumns.data("keys").split("|");
-                            var $thead_1 = listTable_1.getTableNode().find("thead");
-                            columKeys.forEach(function (key) {
-                                var $th = $thead_1.find("th[data-fieldkey='" + key + "']");
-                                if ($th.length) {
-                                    columns_1[$thead_1.find("th").index($th)] = $th
-                                        .html()
-                                        .replace(/<br>/g, " ")
-                                        .replace(/<\/?[^>]+>/gi, "");
-                                }
-                            });
-                            var $tr = listTable_1.getSelectedRows();
-                            var sums_1 = [];
-                            $tr.each(function (_i, elem) {
-                                var $tr = $(elem);
-                                var $td = $tr.find("td");
-                                var columnIndex;
-                                for (columnIndex in columns_1) {
-                                    var value = $td.eq(columnIndex).text();
-                                    try {
-                                        value = Light.parseFloat(value);
-                                        if (!sums_1[columnIndex]) {
-                                            sums_1[columnIndex] = 0;
-                                        }
-                                        sums_1[columnIndex] += value;
-                                    }
-                                    catch (e) { }
-                                }
-                            });
-                            var html = "";
-                            for (var columnIndex in columns_1) {
-                                html +=
-                                    "<span class='selected-count-column-span'><strong>" +
-                                        columns_1[columnIndex] +
-                                        "</strong>: " +
-                                        Light.getBeautyMoney(sums_1[columnIndex]) +
-                                        "</span>";
-                            }
-                            $selectedCountColumns.html(html);
-                        }
-                    }
-                    else {
-                        $listMassAction.removeClass("listmassaction-fixed");
-                        $selectedCount.addClass("display-none");
-                        if ($selectedCountColumns.length) {
-                            $selectedCountColumns.html("");
-                        }
-                    }
-                }
-                function initListMassactionAppear() {
-                    var $listMassActionIndicator = $(".listmassactionIndicator");
-                    var $listMassAction = $(".listmassaction");
-                    // const $selectedCount = $listMassAction.find(".selected-count");
-                    $listMassActionIndicator.appear();
-                    $listMassActionIndicator.on("appear", function () {
-                        // this element is now inside browser viewport
-                        $listMassAction.removeClass("listmassaction-fixed");
-                        // $selectedCount.addClass("display-none")
-                    });
-                    $listMassActionIndicator.on("disappear", function () {
-                        // this element is now outside browser viewport
-                        fixMassactionDiv();
-                    });
-                }
-                listTable_1.onReload(initListMassactionAppear);
-                listTable_1.onSelectRow(updateExcelSelectedCountSpan);
-                listTable_1.onSelectAll(updateExcelSelectedCountSpan);
-                listTable_1.onSelectRow(fixMassactionDiv);
-                listTable_1.onSelectAll(fixMassactionDiv);
-                initListMassactionAppear();
+            }
+        }
+        function initListListeners() {
+            try {
+                var listTable = Light.tables.get(_lightModule);
+                listTable.onSelectRow(updateMassactionDiv);
+                listTable.onSelectAll(updateMassactionDiv);
             }
             catch (e) {
                 console.log(e);
@@ -4199,10 +4224,12 @@ var Light;
                 });
                 // Сформируем тело для диалога из списка ошибок
                 if (errors.length > 1) {
-                    dialogBodyHtml = "<ol class=\"save-errors\">" + errors.map(function (_a) {
+                    dialogBodyHtml = "<ol class=\"save-errors\">" + errors
+                        .map(function (_a) {
                         var msg = _a.msg;
                         return "<li>" + msg + "</li>";
-                    }).join("") + "</ol>";
+                    })
+                        .join("") + "</ol>";
                 }
                 else {
                     dialogBodyHtml = errors[0].msg;
@@ -4237,8 +4264,7 @@ var Light;
         function save(saveanyway, additionalData) {
             blockSaveButtons(true);
             var $editForm = editForm.getFormNode();
-            var $progress = $editForm.find(".progress");
-            $progress.removeClass("visibility-hidden");
+            Light.showProgress($editForm);
             var postData = $editForm.serialize();
             var url = $editForm.attr("action");
             if (saveanyway) {
@@ -4254,6 +4280,7 @@ var Light;
                 //В заголовках ответа должен прийти Location куда перенаправить пользователя после сохранения
                 if (!jqXHR.getResponseHeader("x-light-redirect")) {
                     //Если же нет этого заголовка для перенаправления, то разблокируем кнопки Save и выведем диалог с ошибками
+                    Light.hideProgress($editForm);
                     blockSaveButtons(false);
                     //Если в пришедшем ajax ответе от сервера есть Header заголовок указывающий на то, что ответ содержит в себе
                     //какое-то диалоговое окно, то в этом методе ничего делать не будем. Диалог отрисуется средствами Light.js
@@ -4265,7 +4292,7 @@ var Light;
             })
                 .fail(function (jqXHR) {
                 blockSaveButtons(false);
-                $progress.addClass("visibility-hidden");
+                Light.hideProgress($editForm);
                 //Если в пришедшем ajax ответе от срвера есть Header заголовок указывающий на то, что ответ содержит в себе
                 //какое-то диалоговое окно, то в этом методе ничего делать не будем. Диалог отрисуется средствами Light.js
                 if (!jqXHR.getResponseHeader("x-light-showdialog")) {
@@ -4335,9 +4362,10 @@ var Light;
             // Узнаем значение в выпадающем списке - именно он будет именем того massaction, который нужно выполнить
             var select = this;
             var action = select.value;
+            var ids;
             //Соберём значения чекбоксов в таблице и отправим их ajax POST запросом
             try {
-                var ids = Light.tables.get(_lightModule).getSelectedValues();
+                ids = Light.tables.get(_lightModule).getSelectedValues();
             }
             catch (e) {
                 // Почему-то на экране на нашлась таблица с именем _lightModule - ничего не делаем
@@ -4349,11 +4377,9 @@ var Light;
                 return;
             }
             //Проверим, если была попытка отправить запрос на массовое удаление, нужно переспросить пользователя
-            if (action === "delete") {
-                if (!confirm("Delete selected records?")) {
-                    select.value = "";
-                    return;
-                }
+            if (action === "delete" && !confirm("Delete selected records?")) {
+                select.value = "";
+                return;
             }
             var url = "?a=" + _lightModule + "&p=massaction&action=" + action;
             // Узнаем, следует ли открывать новое окно при сабмите?

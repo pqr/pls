@@ -20,7 +20,6 @@ abstract class InvoiceModuleAbstract extends ModuleAbstract
         parent::__construct();
 
         $this->_folders = true;
-        $this->_foldersNested = true;
         $this->_tableDefaultOrderBy = 'ID DESC';
     }
 

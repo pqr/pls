@@ -24,6 +24,8 @@ declare namespace Light {
     function toastSuccess(msg: string): void;
     function toastWarning(msg: string): void;
     function toastError(msg: string): void;
+    function showProgress($parent: JQuery): void;
+    function hideProgress($parent: JQuery): void;
     function setUserParam(name: string, value: string, successCallback?: (confirmedValue: string) => void): void;
     function getUserParam(name: string, successCallback: (value: string) => void): void;
     function getModule(): string;
@@ -239,11 +241,11 @@ declare namespace Light {
              */
             selectAll(allSelected: boolean): void;
             reload(data?: ReloadParams, callback?: () => void): JQueryXHR;
-            _showProgressbar(): void;
             /**
              * Возвращает массив из значений заключённых внутри чекбоксов в таблице table-tableName-table
              */
             getSelectedValues(): string[];
+            getSelectedCount(): number;
             /**
              * Возвращает массив из значений заключённых внутри чекбоксов в таблице table-tableName-table
              */
@@ -252,6 +254,7 @@ declare namespace Light {
              * Возвращает значение первой отмеченной радио-точки
              */
             getSelectedRadio(): string;
+            updateExcelSelectedCountSpan(): void;
         }
         function init($root: JQuery): void;
         function get(name: string): Table;
@@ -354,7 +357,7 @@ declare module Light {
             eachRow(callback: (this: Subtable, rowNum: RowNum) => boolean | void): void;
             addRow(data?: RowData): {
                 newRowNum: number;
-                newRowNode: JQuery;
+                newRowNode: JQuery<HTMLElement>;
             };
             setRowData(rowNum: RowNum, data: RowData): void;
             addRows(rowsData: Array<RowData>): void;

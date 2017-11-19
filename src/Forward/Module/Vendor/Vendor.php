@@ -11,7 +11,6 @@ class Vendor extends ModuleAbstract
         parent::__construct();
 
         $this->_folders = true;
-        $this->_foldersNested = true;
         $this->_textObjectName = 'Vendor';
         $this->_tableLayouts['Default'] = 'Name|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
 

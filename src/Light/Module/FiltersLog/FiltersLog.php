@@ -29,7 +29,9 @@ class FiltersLog extends Table
         $this->addFields(
 
             F::createSelect('TableID', [
-                'name' => 'Table', 'tableWidthExcel' => 15, 'options' => "SELECT ID, TableName FROM dblog_table"
+                'name' => 'Table',
+                'tableWidthExcel' => 15,
+                'options' => "SELECT ID, TableName FROM dblog_table"
             ]),
 
             F::createSelect('FieldID', [
@@ -62,6 +64,7 @@ class FiltersLog extends Table
             F::createSelect('CreatedBy', [
                 'name' => 'User',
                 'editWidth' => 'medium',
+                'select2' => true,
                 'options' => 'user',
                 'empty' => false
             ]),
@@ -69,6 +72,7 @@ class FiltersLog extends Table
             F::createSelect('TableID', [
                 'name' => 'Table',
                 'editWidth' => 'medium',
+                'select2' => true,
                 'options' => "SELECT ID, TableName FROM dblog_table ORDER BY TableName",
                 'empty' => true
             ]),
@@ -76,10 +80,11 @@ class FiltersLog extends Table
             F::createSelect('FieldID', [
                 'name' => 'Field',
                 'editWidth' => 'default',
+                'select2' => true,
                 'options' => "SELECT f.ID AS value, IF(f.FieldDescription = '', f.FieldKey, f.FieldDescription) AS text, t.TableName AS optgroup
                               FROM dblog_field f, dblog_table t
                               WHERE f.TableID = t.ID
-                              ORDER BY t.TableName, f.FieldDescription"
+                              ORDER BY t.TableName, f.FieldDescription, f.FieldKey"
             ])
         );
 

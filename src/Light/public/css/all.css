@@ -447,11 +447,11 @@ input.input-default {
 
 textarea,
 textarea.input-default {
-    width: 302px;
+    width: 300px;
 }
 
 select.input-default {
-    width: 306px;
+    width: 300px;
 }
 
 input.input-full,
@@ -503,6 +503,10 @@ textarea.input-medium {
 
 input.input-date {
     width: 80px;
+}
+
+input[type=date].input-date {
+    width: 120px;
 }
 
 input.input-datetime {
@@ -585,6 +589,7 @@ select {
 }
 
 input[type=text],
+input[type=date],
 input[type=number],
 input[type=password],
 textarea,
@@ -593,6 +598,7 @@ select,
     border: 1px solid #abc1de;
 }
 
+input[type=text]:focus,
 input[type=text]:focus,
 input[type=password]:focus,
 textarea:focus,
@@ -1038,10 +1044,6 @@ ol.save-errors {
     padding-left: 20px;
 }
 
-label[for="massaction-select"] {
-    margin-left: 20px;
-}
-
 .btn-massaction {
     margin-left: 5px;
 }
@@ -1051,23 +1053,19 @@ form.multipleupdate table.form > tbody > tr {
     height: 29px;
 }
 
-.listmassaction .selected-count {
-    margin-right: 20px;
+.listmassaction {
+    background-color: white;
+    padding: 15px 20px 15px 0px;
 }
 
-.listmassaction-fixed {
-    background-color: #f5f5f5;
-    padding: 15px 20px 15px 15px;
-    width: 100%;
-    position: fixed;
-    right: 0;
-    left: 179px;
+.listmassaction.sticky {
+    position: -webkit-sticky;
+    position: sticky;
     bottom: 0;
 }
 
-.listmassaction .selected-count-column-span {
-    display: inline-block;
-    margin-left: 1.5em;
+.listmassaction .total-span {
+    margin-left: 20px;
 }
 
 @media print {
@@ -1723,36 +1721,6 @@ i.left {
     animation-delay: 1.15s;
 }
 
-@-webkit-keyframes indeterminate {
-    0% {
-        left: -35%;
-        right: 100%;
-    }
-    60% {
-        left: 100%;
-        right: -90%;
-    }
-    100% {
-        left: 100%;
-        right: -90%;
-    }
-}
-
-@-moz-keyframes indeterminate {
-    0% {
-        left: -35%;
-        right: 100%;
-    }
-    60% {
-        left: 100%;
-        right: -90%;
-    }
-    100% {
-        left: 100%;
-        right: -90%;
-    }
-}
-
 @keyframes indeterminate {
     0% {
         left: -35%;
@@ -1765,36 +1733,6 @@ i.left {
     100% {
         left: 100%;
         right: -90%;
-    }
-}
-
-@-webkit-keyframes indeterminate-short {
-    0% {
-        left: -200%;
-        right: 100%;
-    }
-    60% {
-        left: 107%;
-        right: -8%;
-    }
-    100% {
-        left: 107%;
-        right: -8%;
-    }
-}
-
-@-moz-keyframes indeterminate-short {
-    0% {
-        left: -200%;
-        right: 100%;
-    }
-    60% {
-        left: 107%;
-        right: -8%;
-    }
-    100% {
-        left: 107%;
-        right: -8%;
     }
 }
 
@@ -2024,6 +1962,20 @@ button.btn-floating {
     transform: scale(0, 0);
     opacity: .2;
     transition: 0s;
+}
+
+.overflow300 {
+    display: inline-block;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.table-div {
+    /* хитрый трюк, чтобы все div элементы внутри .table-div по ширине были как таблица, а не как окно браузера */
+    /* https://stackoverflow.com/questions/33904792/cannot-make-div-width-100-with-scrollbar */
+    display: inline-block;
+
 }
 
 table.table {

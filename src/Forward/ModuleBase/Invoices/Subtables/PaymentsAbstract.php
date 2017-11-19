@@ -31,7 +31,6 @@ abstract class PaymentsAbstract extends Subtable
         $this->_tableLinkIdFieldKey = 'RealPaymentID'; //ключ в массиве $rowData по которому взять значение id=... для ссылки на CPayment или VPayment
 
         $this->_folders = true;
-        $this->_foldersNested = true;
         $this->_folderBaseDir = $firstLetter . 'Payment';
         $this->_folderNameFieldKey = 'RealPaymentID';
 

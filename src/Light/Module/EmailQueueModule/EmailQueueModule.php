@@ -29,9 +29,11 @@ class EmailQueueModule extends ModuleAbstract
 
             CF::id(),
 
-            F::createString('PID', ['viewCssClass' => function($value) {
-                return $value ? 'bad' : '';
-            }]),
+            F::createString('PID', [
+                'viewCssClass' => function ($value) {
+                    return $value ? 'bad' : '';
+                }
+            ]),
             F::createString('From'),
             F::createText('To', ['sqlSelect' => "REPLACE(`To`, ',', '\\n')"]),
             F::createText('Cc', ['sqlSelect' => "REPLACE(`Cc`, ',', '\\n')"]),
@@ -46,8 +48,9 @@ class EmailQueueModule extends ModuleAbstract
 
     }
 
-    protected function viewGetShowBody() {
-        $body =  $this->_obj['Body'];
+    protected function viewGetShowBody()
+    {
+        $body = $this->_obj['Body'];
         if ($this->_obj['ContentType'] !== 'text/html') {
             $body = nl2br($body);
         }

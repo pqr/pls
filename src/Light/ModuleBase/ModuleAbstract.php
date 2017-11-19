@@ -9,6 +9,7 @@ use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\FilesFolder;
+use Light\Html;
 use Light\Img;
 use Light\Intro\IntroManager;
 use Light\Js;
@@ -504,12 +505,16 @@ abstract class ModuleAbstract extends Table
     {
         // Кнопку "Save" специально делаем button type="button"
         // чтобы форма не отрпавлялась случайно при нажатии enter на лубом из полей
+        $textSave = Config::$lang === 'ru' ? 'Сохранить' : 'Save';
+        $textCancel = Config::$lang === 'ru' ? 'Отмена' : 'Cancel';
         $contentHtml = '<div class="formactions_fixed">'
-            . '<div class="progress visibility-hidden"><div class="determinate"></div></div>'
+            . Html::progress()
             . '<button type="button" class="waves-effect waves-light btn btn-save bgcolor-btn-primary" title="Ctrl + S">'
-            . 'Save ' . $this->_textObjectName
+            . "$textSave $this->_textObjectName"
             . '</button>'
-            . '<a href="javascript: history.back()" class="btn-flat waves-effect cancel-link">Cancel</a>';
+            . '<a href="javascript: history.back()" class="btn-flat waves-effect cancel-link">'
+            . $textCancel
+            . '</a>';
 
         if ($this->continmethod) {
 
@@ -574,28 +579,31 @@ abstract class ModuleAbstract extends Table
         $id = (int)$id;
         if ($id <= 0) {
             //Если id был не числовой (приведён к 0) или отрицательный - перенаправляем в режим List
-            $this->loadObjAndCheckErrorReuslt(400, 'Invalid object id');
+            $msg = Config::$lang === 'ru' ? "Не корректный ID=$id" : "Invalid ID=$id";
+            $this->loadObjAndCheckErrorReuslt(400, $msg);
         }
 
         //Проверим существование объекта в базе, попробовав его загрузить
         $this->_obj->setId($id);
         if (!$this->_obj->loadData()) {
-            $this->loadObjAndCheckErrorReuslt(404, 'Object ' . $id . ' not found');
+            $msg = Config::$lang === 'ru' ? "Запись с ID=$id не найдена" : "Record with ID=$id not found";
+            $this->loadObjAndCheckErrorReuslt(404, $msg);
         }
 
         //Проверим, что у пользователя есть права доступа к этому объекту
         if (!$this->hasAccessRightToObj($this->_obj)) {
-            $this->loadObjAndCheckErrorReuslt(403, 'No access to object');
+            $msg = Config::$lang === 'ru' ? "Нет доступа к записи ID=$id" : "No access to record ID=$id";
+            $this->loadObjAndCheckErrorReuslt(403, $msg);
         }
     }
 
     private function loadObjAndCheckErrorReuslt($status, $text)
     {
-        Session::flashError($text);
         if (Request::isAjax()) {
-            Session::$showAsToast = true;
+            Response::sendToast('error', $text);
             Response::abort($status);
         } else {
+            Session::flashError($text);
             $this->redirectToList();
         }
     }
@@ -976,7 +984,7 @@ abstract class ModuleAbstract extends Table
             ];
         }
 
-        if ($this->_allowLog && User::hasLogInPlaceAccess()) {
+        if ($this->_allowLog && User::hasLogInPlaceAccess() && $this->hasLogAccessRightToObj($this->_obj)) {
             $out[] = [
                 'text' => 'Log ',
                 'url' => Link::url(['logid' => $id] + $msUrlParams + $subtablesFindidUrlParams),
@@ -1146,7 +1154,7 @@ abstract class ModuleAbstract extends Table
         //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
         $this->loadObjAndCheck($_GET['logid']);
 
-        if (!User::hasLogInPlaceAccess()) {
+        if (!$this->_allowLog || !User::hasLogInPlaceAccess() || !$this->hasLogAccessRightToObj($this->_obj)) {
             Session::flashError('No access to log');
             $this->redirectToView();
         }
@@ -1987,6 +1995,7 @@ abstract class ModuleAbstract extends Table
             $this->initLayoutable();
             $this->initList();
             $this->sendAjaxTableLayoutSettings();
+            return;
         }
 
         $this->proceedFilters();
@@ -2067,6 +2076,7 @@ abstract class ModuleAbstract extends Table
             Response::setPageTitle($moduleName);
             $this->initListJsData();
             $this->initListIntro();
+            $this->initListFlashMessagess();
 
             //Это обычный запрос на рендринг таблицы в режиме List
             $tdata = [
@@ -2081,10 +2091,25 @@ abstract class ModuleAbstract extends Table
 
     protected function initListJsData()
     {
-        Response::addJsData(['state' => 'list']);
+        Response::addJsData([
+            'state' => 'list',
+            'tableTotalRowCalcFieldsKeys' => $this->_tableTotalRowCalcFieldsKeys
+        ]);
     }
 
     protected function initListIntro()
+    {
+    }
+
+    /**
+     * Метод для переопределения в классах потомках для вывода Flash уведомлений над списком.
+     * Удобно, когда нужно вывести какие-то сообщения о счетах ожидающих выгрузки или проверки.
+     * Особенность этого метода в том, что он запускается только при рендеринге HTML страницы List
+     * (и не запускается при различных ajax запросах в режиме лист,
+     * не запускается при ajax обновлении таблицы, не запускается при экспорте в Excel)
+     * Внутри нужно вызывать Session::flashSuccess(...)
+     */
+    protected function initListFlashMessagess()
     {
     }
 
@@ -2317,6 +2342,27 @@ abstract class ModuleAbstract extends Table
      */
     protected function initList()
     {
+    }
+
+    /**
+     * В режиме List иногда удобно превратить обычное поле типа Money в поле типа MoneyWithCurrency
+     * чтобы внизу total считался с учётом валюты
+     * @param string $moneyFieldKey
+     * @param string $currencyFieldKey
+     */
+    protected function addListFieldMoneyWithCurrency(string $moneyFieldKey, string $currencyFieldKey = 'CurrencyISO')
+    {
+        // Создаём новое поле типа MoneyWithCurrency на основе старого поля с ключём $moneyFieldKey
+        $params = [
+                'sqlSelect' => "CONCAT(`$currencyFieldKey`, ' ', `$moneyFieldKey`)",
+                'modes' => F::MODE_READONLY
+            ]
+            + $this->getField($moneyFieldKey)->initialParams;
+
+        // При добавлении поля с ключём $moneyFieldKey старое поле будет заменено новым
+        $this->addField(
+            F::createMoneyWithCurrency($moneyFieldKey, $params)
+        );
     }
 
     /**
@@ -2676,6 +2722,16 @@ abstract class ModuleAbstract extends Table
     }
 
     /**
+     * Метод для переопределения в классах потоках - здесь проверяются права доступа к объекту в режиме Log
+     * @param ObjAbstract $obj
+     * @return bool
+     */
+    protected function hasLogAccessRightToObj(ObjAbstract $obj)
+    {
+        return true;
+    }
+
+    /**
      * Метод для переопределения в классах потоках - здесь проверяются права доступа к объекту в режиме Edit
      * @param ObjAbstract $obj
      * @return bool
@@ -2989,21 +3045,13 @@ abstract class ModuleAbstract extends Table
 
     protected function getHtmlMassactionsSelectBlock()
     {
-        if ($this->massactions && $this->getTableDataCount()) {
-            $html = '<div class="listmassaction">'
-                . '<span class="selected-count display-none">Selected: <strong>0</strong></span>'
-                . '<a href="#" class="inner table-select-all-link">Select all</a>'
-                . '<a href="#" class="inner table-unselect-all-link">Unselect all</a>'
-                . '<label for="massaction-select">With selected:</label>'
-                . F::createSelect('massaction-select', ['options' => $this->massactions])->getHtmlInput('');
-            if ($this->_tableTotalRowCalcFieldsKeys && is_array($this->_tableTotalRowCalcFieldsKeys)) {
-                $html .= '<span class="selected-count-column" data-keys="' . implode("|",
-                        $this->_tableTotalRowCalcFieldsKeys) . '"></span>';
-            }
-            $html .= '</div><div class="listmassactionIndicator"></div>';
-            return $html;
+        if (!$this->massactions || !$this->getTableDataCount()) {
+            return '';
         }
-
-        return '';
+        $textWithSelected = Config::$lang === 'ru' ? 'С выделенными' : 'With selected';
+        return '<div class="listmassaction">'
+            . '<label for="massaction-select">' . $textWithSelected . ':</label>&nbsp;'
+            . F::createSelect('massaction-select', ['options' => $this->massactions])->getHtmlInput('')
+            . '</div>';
     }
 }

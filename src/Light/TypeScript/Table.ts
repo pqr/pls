@@ -54,6 +54,14 @@ namespace Light {
                 this.reloadUrl = $div.attr("data-reloadurl") || "";
                 this.linkModule = $div.attr("data-linkmodule") || "";
 
+                $div.on("click", "span.table-excel a", (e:any) => {
+                    const ids = this.getSelectedValues();
+                    if (ids.length !== 0) {
+                        e.preventDefault();
+                        document.location.href = e.currentTarget.href + "&excelIds=" + ids.join(",");
+                    }
+                });
+
                 //Попробуем найти текущую страницу из вёрстки
                 //Необходимо хранить текущую страницу для метода reload() (удобно при смене table layout settings и при удалении в ModuleAbstract)
                 const $strong = $div.find(".table-pages:first").find("strong");
@@ -474,15 +482,6 @@ namespace Light {
                 $div.on("click", "table.table > thead .cb-all", function(this: HTMLInputElement) {
                     //Найдём все строки в таблице и пройдём их в цикле
                     that.selectAll(this.checked);
-                });
-
-                $div.on("click", ".table-select-all-link, .table-unselect-all-link", function(
-                    this: HTMLAnchorElement,
-                    e
-                ) {
-                    e.preventDefault();
-                    const allSelected = $(this).hasClass("table-select-all-link");
-                    that.selectAll(allSelected);
                 });
 
                 $(`a.check-all-link[data-tablename="${this.name}"]`).on("click", function(e) {
@@ -1039,10 +1038,6 @@ namespace Light {
                 //Отмечаем чекбокс или радио-кнопку
                 $tr.find("input[type=checkbox].cb, input[type=radio].rb").prop("checked", selected);
 
-                this.selectRowHandlers.forEach((handler: (selected: boolean, $tr: JQuery) => void) => {
-                    handler(selected, $tr);
-                });
-
                 //После выделения текущей строки, проверим, есть ли чекбокс в заголовке таблицы, нужно ли его переключить?
                 const $headCb = this._getHeadCb();
                 if ($headCb.length > 0) {
@@ -1050,6 +1045,12 @@ namespace Light {
                     const allSelected = this.$tbody.find("input[type=checkbox].cb:not(:checked)").length === 0;
                     $headCb.prop("checked", allSelected);
                 }
+
+                this.updateExcelSelectedCountSpan();
+
+                this.selectRowHandlers.forEach((handler: SelectRowHandler) => {
+                    handler(selected, $tr);
+                });
             }
 
             _getHeadCb(): JQuery {
@@ -1073,13 +1074,16 @@ namespace Light {
                 });
 
                 this._getHeadCb().prop("checked", allSelected);
+                this.updateExcelSelectedCountSpan();
                 this.selectAllHandlers.forEach((handler: SelectAllHandler) => {
                     handler(allSelected);
                 });
+
+
             }
 
             reload(data: ReloadParams = {}, callback?: () => void): JQueryXHR {
-                this._showProgressbar();
+                Light.showProgress(this.$div);
                 const newPage = Light.parseInt(data.page);
                 if (newPage > 0) {
                     //При данном вызове метода realod меняется страница - сохраним в currentPage
@@ -1088,9 +1092,6 @@ namespace Light {
                     //Если же страница не была передана, то нужно взять из currentPage
                     data.page = this.currentPage;
                 }
-
-                //Сделаем затемнение таблицы
-                this.$div.addClass("loading-opacity");
 
                 // Выполним ajax запрос к серверу, чтобы обновить таблицу
                 // Если уже есть какой-то запрос на обновление этой таблицы, то его нужно прервать
@@ -1117,8 +1118,6 @@ namespace Light {
                     .always(() => {
                         this.currentReloadXhr = null;
 
-                        this.$div.removeClass("loading-opacity");
-
                         if (callback) {
                             callback();
                         }
@@ -1132,10 +1131,6 @@ namespace Light {
                 return this.currentReloadXhr;
             }
 
-            _showProgressbar() {
-                this.$div.find(".table-progressbar").css("visibility", "visible");
-            }
-
             /**
              * Возвращает массив из значений заключённых внутри чекбоксов в таблице table-tableName-table
              */
@@ -1144,6 +1139,12 @@ namespace Light {
                     .find("input[type=checkbox].cb:checked")
                     .toArray()
                     .map((el: HTMLInputElement) => el.value);
+            }
+
+            getSelectedCount(): number {
+                return this.$tbody
+                    .find("input[type=checkbox].cb:checked")
+                    .length
             }
 
             /**
@@ -1157,7 +1158,25 @@ namespace Light {
              * Возвращает значение первой отмеченной радио-точки
              */
             getSelectedRadio(): string {
-                return this.$tbody.find("input[type=radio].rb:checked").val();
+                return this.$tbody.find("input[type=radio].rb:checked").first().val() || '';
+            }
+
+            updateExcelSelectedCountSpan() {
+                const selectedCount = this.getSelectedCount();
+                const $a = this.$div.find("span.table-excel a");
+                const $span = $a.find(".table-excel-selected-count-span");
+                if (selectedCount === 0) {
+                    // Если не выделено ничего, удаляем специальный span в котором отображено число выделенных строк
+                    // (возможно, этого span и не было в вёрстке, в этом случае jQuery ничего не сделает)
+                    $span.remove();
+                } else {
+                    // Если же что-то было выделено, нужно вывести кол-во выделенных строк
+                    if (!$span.length) {
+                        // Специальный span пока не существует в вёрстке, быстренько создадим его
+                        $span = $('<span class="table-excel-selected-count-span"></span>').appendTo($a);
+                    }
+                    $span.html(`&nbsp;(${selectedCount})`);
+                }
             }
         }
 

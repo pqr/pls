@@ -40,13 +40,8 @@ trait TableWithFoldersTrait
             return null;
         }
 
-        //Но если установлен спец флаг $this->_foldersNested, то используем вложенные папки с разбивкой по 1000шт
-        if ($this->_foldersNested) {
-            $subFolder = floor($data[$this->_folderNameFieldKey] / 1000);
-            return $subFolder . '/' . $data[$this->_folderNameFieldKey];
-        }
-
-        return (string)$data[$this->_folderNameFieldKey];
+        $sub = floor($data[$this->_folderNameFieldKey] / 1000);
+        return  "$sub/" . $data[$this->_folderNameFieldKey];
     }
 
     protected function getFolderRelativePath(array $data)

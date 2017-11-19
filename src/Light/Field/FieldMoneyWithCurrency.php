@@ -91,7 +91,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         $currencyIso = '';
 
         if ($value != '' && strpos($value, ' ') !== false) {
-            list($currencyIso, $amount) = explode(' ', $value);
+            [$currencyIso, $amount] = explode(' ', $value);
             $amount = (double)$amount;
         }
 

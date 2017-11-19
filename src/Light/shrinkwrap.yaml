@@ -1,24 +1,24 @@
 dependencies:
-  '@types/jquery': 3.2.13
+  '@types/jquery': 3.2.16
   '@types/jqueryui': 1.11.37
-  '@types/keypress.js': 2.0.0
-  '@types/lodash': 4.14.77
-  '@types/react': 16.0.9
+  '@types/keypress.js': 2.0.1
+  '@types/lodash': 4.14.85
+  '@types/react': 16.0.23
   '@types/select2': 4.0.41
   blueimp-file-upload: 9.19.1
   font-awesome: 4.7.0
   jquery: 3.2.1
   keypress.js: 2.1.4
-  mobx: 3.3.0
-  mobx-react: 4.3.3
-  preact: 8.2.5
+  mobx: 3.3.1
+  mobx-react: 4.3.4
+  preact: 8.2.6
   preact-compat: 3.17.0
-  raven-js: 3.18.1
-  react: 16.0.0
-  react-dom: 16.0.0
-  rollbar: 2.2.9
-  select2: 4.0.4
-  serializr: 1.1.13
+  raven-js: 3.20.0
+  react: 16.1.1
+  react-dom: 16.1.1
+  rollbar: 2.3.1
+  select2: 4.0.6-rc.0
+  serializr: 1.1.14
   sticky-table-headers: 0.1.19
 devDependencies:
   gulp: 3.9.1
@@ -28,29 +28,26 @@ devDependencies:
   gulp-rename: 1.2.2
   gulp-uglify: 2.1.2
 packages:
-  /@types/jquery/3.2.12:
+  /@types/jquery/3.2.16:
     resolution:
-      integrity: sha512-xZzTbUju6AYFE/088UcH2+dB7yTLHlujDju9pfncD1WLl2LWa6Mn+WzKjFfhn8YA+he53j5K0Rfdw89BN0kDug==
-  /@types/jquery/3.2.13:
-    resolution:
-      integrity: sha512-T1rbXqLSQb4wDJClzfEgJ2kcjHrZXw+TcVzxhZCpnkv80FPj9bxGBatkUpd5flReysCBF9f+GR6bnzanoO5Cvw==
+      integrity: sha512-q2WC02YxQoX2nY1HRKlYGHpGP1saPmD7GN0pwCDlTz35a4eOtJG+aHRlXyjCuXokUukSrR2aXyBhSW3j+jPc0A==
   /@types/jqueryui/1.11.37:
     dependencies:
-      '@types/jquery': 3.2.12
+      '@types/jquery': 3.2.16
     resolution:
       integrity: sha512-aKT7dOhxYTTkLS43q5miBeuRpfyh916sgI7m/6EJJvJR6j36e5eRORONZyzD5twTLMdMw6uYR7vqhreIHps9tw==
-  /@types/keypress.js/2.0.0:
+  /@types/keypress.js/2.0.1:
     resolution:
-      integrity: sha512-Vmb21b9ennmYM3woYnseNc1eYIF+0+DPeL9QsXGSdLB7M45zCDFzmBaJmFGbYtWvEMZ60gE754v3KEhOm6CmAg==
-  /@types/lodash/4.14.77:
+      integrity: sha512-e6zm35sIHfzvOcV+so5kRtcbLVtS7HUdiKg5XzCKO8gT6Kq8m7WtCf4nYQopO4bIvtQv0MRpGpTzRq5b8LN6Cw==
+  /@types/lodash/4.14.85:
     resolution:
-      integrity: sha512-sRCTcVQkIiQqRoQcazgN2PvRLS7d9BnSl8elRZR5UYlpm6XgU8F4j/0csz8WoaKKTUqa6rSuOy3Vph7AHfX7KQ==
-  /@types/react/16.0.9:
+      integrity: sha512-HrZiwDl62if0z31+rB99CLlg7WzS7b+KmyW75XAHEl/ZG0De2ACo6skZ89Zh3jOWkjKObN0Apq3MUezg7u9NKQ==
+  /@types/react/16.0.23:
     resolution:
-      integrity: sha512-PoSZuMx2Ac6vHAfbeWWsFh4C2pKFUFATfOAojXoUsGfyRkMZh5w3kac3RkM965cIL+BGcickxqFxAHN5lVyWDg==
+      integrity: sha512-iWplruxO5ENh7XMEBV6XtL54nrMgM8CrfIJ7+THvnUaddICEssH+EPo1MJoQU209Tz5/rVWTOCvQS8/kRR7zcA==
   /@types/select2/4.0.41:
     dependencies:
-      '@types/jquery': 3.2.12
+      '@types/jquery': 3.2.16
     resolution:
       integrity: sha512-3/91X/6jP7eW8Qx1Gjs5W7kdF+5C4XWZJRaDeFCKjpqCvCDI5QkB288OK+JXvWnQtqVYF+WNUshPIyvbMpQMrQ==
   /align-text/0.1.4:
@@ -209,10 +206,10 @@ packages:
     dev: true
     resolution:
       integrity: sha1-xhJqkK1Pctv1rNskPMN3JP6T/B8=
-  /clone/1.0.2:
+  /clone/1.0.3:
     dev: true
     resolution:
-      integrity: sha1-Jgt6meux7f4kdTgXX3gyQ8sZ0Uk=
+      integrity: sha1-KY1+IjFmD0DAA8LtMUDezz9TCF8=
   /clone/2.1.1:
     dev: true
     resolution:
@@ -266,7 +263,7 @@ packages:
       integrity: sha1-9lNNFRSCabIDUue+4m9QH5oZEpA=
   /defaults/1.0.3:
     dependencies:
-      clone: 1.0.2
+      clone: 1.0.3
     dev: true
     resolution:
       integrity: sha1-xlYFHpgX2f8I7YgUd/P+QBnz730=
@@ -358,7 +355,7 @@ packages:
       object-assign: 4.1.1
       promise: 7.3.1
       setimmediate: 1.0.5
-      ua-parser-js: 0.7.14
+      ua-parser-js: 0.7.17
     resolution:
       integrity: sha1-XmdDL1UNxBtXK/VYR7ispk5TN9s=
   /filename-regex/2.0.1:
@@ -645,11 +642,11 @@ packages:
   /iconv-lite/0.4.19:
     resolution:
       integrity: sha512-oTZqweIP51xaGPI4uPa56/Pri/480R+mo7SeU+YETByQNhDG55ycFyNLIgta9vXhILrxXDmF7ZGhqZIcuN0gJQ==
-  /immutability-helper/2.4.0:
+  /immutability-helper/2.5.0:
     dependencies:
       invariant: 2.2.2
     resolution:
-      integrity: sha512-rW/L/56ZMo9NStMK85kFrUFFGy4NeJbCdhfrDHIZrFfxYtuwuxD+dT3mWMcdmrNO61hllc60AeGglCRhfZ1dZw==
+      integrity: sha512-hbOOUruoaBQ04LH1QvUcycfM36y7xlmCKlIQXXyEiry/KeqBUNqq5BsV+KVzhYfgxk4RdFkDuhKaqhHKpjs7XA==
   /inflight/1.0.6:
     dependencies:
       once: 1.4.0
@@ -685,10 +682,10 @@ packages:
     dev: true
     resolution:
       integrity: sha1-IN5p89uULvLYe5wto28XIjWxtes=
-  /is-buffer/1.1.5:
+  /is-buffer/1.1.6:
     dev: true
     resolution:
-      integrity: sha1-Hzsm72E7IUuIy8ojzGwB2Hlh7sw=
+      integrity: sha512-NcdALwpXkTm5Zvvbk7owOUSvVvBKDgKP5/ewfXEznmQFfs4ZRmanOeKBTjRVjka3QFoN6XJ+9F3USqfHqTaU5w==
   /is-dotfile/1.0.3:
     dev: true
     resolution:
@@ -810,13 +807,13 @@ packages:
       integrity: sha1-Vx6lcKrstUtjPsA3VH1tUdUqdwg=
   /kind-of/3.2.2:
     dependencies:
-      is-buffer: 1.1.5
+      is-buffer: 1.1.6
     dev: true
     resolution:
       integrity: sha1-MeohpzS6ubuw8yRm2JOupR5KPGQ=
   /kind-of/4.0.0:
     dependencies:
-      is-buffer: 1.1.5
+      is-buffer: 1.1.6
     dev: true
     resolution:
       integrity: sha1-IIE989cSkosgc3hpGkUGb65y3Vc=
@@ -834,7 +831,7 @@ packages:
       lodash.isstring: 4.0.1
       lodash.mapvalues: 4.6.0
       rechoir: 0.6.2
-      resolve: 1.4.0
+      resolve: 1.5.0
     dev: true
     resolution:
       integrity: sha1-qY8v9nGD2Lp8+soQVIvX/wVQs4U=
@@ -1022,14 +1019,14 @@ packages:
     dev: true
     resolution:
       integrity: sha1-MAV0OOrGz3+MR2fzhkjWaX11yQM=
-  /mobx-react/4.3.3:
+  /mobx-react/4.3.4:
     dependencies:
       hoist-non-react-statics: 2.3.1
     resolution:
-      integrity: sha1-StdsA9HpQrQx6UL56hjfB1Z3FlU=
-  /mobx/3.3.0:
+      integrity: sha1-WM2hBbgBj5v4e9beMzrF6w1cnf4=
+  /mobx/3.3.1:
     resolution:
-      integrity: sha1-G8HdfnhUcGWvBLSb238gmMraR6o=
+      integrity: sha1-w4/Booeg3aP11Lhe/hE3/t2dzfA=
   /ms/2.0.0:
     resolution:
       integrity: sha1-VgiurfwAvmwpAd9fmGF4jeDVl8g=
@@ -1158,24 +1155,24 @@ packages:
       integrity: sha1-mkpoFMrBwM1zNgqV8yCDyOpHRbc=
   /preact-compat/3.17.0:
     dependencies:
-      immutability-helper: 2.4.0
-      preact-render-to-string: 3.6.3
+      immutability-helper: 2.5.0
+      preact-render-to-string: 3.7.0
       preact-transition-group: 1.1.1
       prop-types: 15.6.0
       standalone-react-addons-pure-render-mixin: 0.1.1
     resolution:
       integrity: sha1-Uoz9/DARkMGg9HVnM2vh9L4CZrM=
-  /preact-render-to-string/3.6.3:
+  /preact-render-to-string/3.7.0:
     dependencies:
       pretty-format: 3.8.0
     resolution:
-      integrity: sha1-SB0NW9rJGS0zR1V0N9XNAKoxIEM=
+      integrity: sha1-fbQXdFS8ATleDQHWrAe8XoOOMe4=
   /preact-transition-group/1.1.1:
     resolution:
       integrity: sha1-8KSTJ+pRXs406ivoZMSn0p5dbhA=
-  /preact/8.2.5:
+  /preact/8.2.6:
     resolution:
-      integrity: sha1-y/o5YqgBJ2gVn20B1G+cHrMhPAo=
+      integrity: sha1-ACi0Ju+Y/Mp0Gjxhf/W4E7mpR8c=
   /preserve/0.2.0:
     dev: true
     resolution:
@@ -1210,25 +1207,25 @@ packages:
     dev: true
     resolution:
       integrity: sha512-D5JUjPyJbaJDkuAazpVnSfVkLlpeO3wDlPROTMLGKG1zMFNFRgrciKo1ltz/AzNTkqE0HzDx655QOL51N06how==
-  /raven-js/3.18.1:
+  /raven-js/3.20.0:
     resolution:
-      integrity: sha1-dGM5wI/KdcP0AtfmtjNofD/8bug=
-  /react-dom/16.0.0:
+      integrity: sha512-pEQZ5R6A1BLCwmIgHvfZfLgsrQPT15bF0BQlohQ5ntxkj/xdaFhLqWvyei7Q2uvVQ7vss2HbWM1C1t1ZjHu/Eg==
+  /react-dom/16.1.1:
     dependencies:
       fbjs: 0.8.16
       loose-envify: 1.3.1
       object-assign: 4.1.1
       prop-types: 15.6.0
     resolution:
-      integrity: sha1-nMMHnD3NcNTG4BuEqrKn40wwP1g=
-  /react/16.0.0:
+      integrity: sha512-q06jiwST8SEPAMIEkAsu7BgynEZtqF87VrTc70XsW7nxVhWEu2Y4MF5UfxxHQO/mNtQHQWP0YcFxmwm9oMrMaQ==
+  /react/16.1.1:
     dependencies:
       fbjs: 0.8.16
       loose-envify: 1.3.1
       object-assign: 4.1.1
       prop-types: 15.6.0
     resolution:
-      integrity: sha1-zn348ZQbA28Cssyp29DLHw6FXi0=
+      integrity: sha512-FQfiFfk2z2Fk87OngNJHT05KyC9DOVn8LPeB7ZX+9u5+yU1JK6o5ozRlU3PeOMr0IFkWNvgn9jU8/IhRxR1F0g==
   /readable-stream/1.0.34:
     dependencies:
       core-util-is: 1.0.2
@@ -1261,7 +1258,7 @@ packages:
       integrity: sha512-m+qzzcn7KUxEmd1gMbchF+Y2eIUbieUaxkWtptyHywrX0rE8QEYqPC07Vuy4Wm32/xE16NcdBctb8S0Xe/5IeQ==
   /rechoir/0.6.2:
     dependencies:
-      resolve: 1.4.0
+      resolve: 1.5.0
     dev: true
     resolution:
       integrity: sha1-hSBLVNuoLVdC4oyWdW70OvUOM4Q=
@@ -1303,19 +1300,19 @@ packages:
     dev: true
     resolution:
       integrity: sha1-shklmlYC+sXFxJatiUpujMQwJh4=
-  /resolve/1.4.0:
+  /resolve/1.5.0:
     dependencies:
       path-parse: 1.0.5
     dev: true
     resolution:
-      integrity: sha512-aW7sVKPufyHqOmyyLzg/J+8606v5nevBgaliIlV7nUpVMsDnoBGV/cbSLNjZAg9q0Cfd/+easKVKQ8vOu8fn1Q==
+      integrity: sha512-hgoSGrc3pjzAPHNBg+KnFcK2HwlHTs/YrAGUr6qgTVUZmXv1UEXXl0bZNBKMA9fud6lRYFdPGz0xXxycPzmmiw==
   /right-align/0.1.3:
     dependencies:
       align-text: 0.1.4
     dev: true
     resolution:
       integrity: sha1-YTObci/mo1FWiSENJOFMlhSGE+8=
-  /rollbar/2.2.9:
+  /rollbar/2.3.1:
     dependencies:
       async: 1.2.1
       console-polyfill: 0.3.0
@@ -1329,17 +1326,17 @@ packages:
     optionalDependencies:
       decache: 3.1.0
     resolution:
-      integrity: sha512-Py4hASLSS5RtVZRfCc7n5FIu3HRVDW9JhChXMX9sANL0FanOrTKqBevaaicMWHBY1r3KJ0XZKXx9De12UqU7cw==
+      integrity: sha512-WJ0e8yJ5XUouhyb5Qed1blzb6lsZHp1uotpo13zRaGpIOg1xYVbHdMcUuSfNCP5kGE8FlrJE8V0VcFj5whIW0A==
   /safe-buffer/5.1.1:
     dev: true
     resolution:
       integrity: sha512-kKvNJn6Mm93gAczWVJg7wH+wGYWNrDHdWvpUmHyEsgCtIwwo3bqPtV4tR5tuPaUhTOo/kvhVwd8XwwOllGYkbg==
-  /select2/4.0.4:
+  /select2/4.0.6-rc.0:
     dependencies:
       almond: 0.3.3
       jquery-mousewheel: 3.1.13
     resolution:
-      integrity: sha1-oYpih4X5jROZmXGuldjX5XJoB2s=
+      integrity: sha1-2YLSIg1dAytcXQVFgGvHMKy45yk=
   /semver/4.3.6:
     dev: true
     resolution:
@@ -1348,9 +1345,9 @@ packages:
     dev: true
     resolution:
       integrity: sha1-kM/xnQLgcCf9dn9erT57ldHnOAw=
-  /serializr/1.1.13:
+  /serializr/1.1.14:
     resolution:
-      integrity: sha1-IbIPIg/PlMquzYbrCeQ4zeZTKyU=
+      integrity: sha1-q9Q0FZK497OMypMp19ZZ01QY9Vk=
   /setimmediate/1.0.5:
     resolution:
       integrity: sha1-KQy7Iy4waULX1+qbg3Mqt4VvgoU=
@@ -1440,9 +1437,9 @@ packages:
     optional: true
     resolution:
       integrity: sha1-YdvC1Ttp/2CRoSoWj9fUMxB+QPE=
-  /ua-parser-js/0.7.14:
+  /ua-parser-js/0.7.17:
     resolution:
-      integrity: sha1-EQ1T+kw/MmwSEpK76skE0uAzh8o=
+      integrity: sha512-uRdSdu1oA1rncCQL7sCj8vSyZkgtL7faaw9Tc9rZ3mGgraQ7+Pdx7w5mnOSF3gw9ZNG6oc+KXfkon3bKuROm0g==
   /uglify-js/2.8.29:
     dependencies:
       source-map: 0.5.7
@@ -1514,7 +1511,7 @@ packages:
       integrity: sha1-LzVsh6VQolVGHza76ypbqL94SEc=
   /vinyl/0.5.3:
     dependencies:
-      clone: 1.0.2
+      clone: 1.0.3
       clone-stats: 0.0.1
       replace-ext: 0.0.1
     dev: true

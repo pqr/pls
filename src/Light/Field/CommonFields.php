@@ -1,6 +1,7 @@
 <?php
 namespace Light\Field;
 
+use Light\Config;
 use Light\Field\FieldAbstract as F;
 
 class CommonFields
@@ -124,11 +125,14 @@ class CommonFields
 
         if (!isset($params['name'])) {
 
+            $name = Config::$lang === 'ru' ? 'Валюта' : 'Currency';
+            $nameTable = Config::$lang === 'ru' ? 'Валюта' : 'Curr.';
+
             $defaultParams += [
-                'name' => 'Currency',
-                'nameTable' => 'Curr.',
-                'title' => 'Currency',
-                'nameTableSettings' => 'Currency',
+                'name' => $name,
+                'nameTable' => $nameTable,
+                'title' => $name,
+                'nameTableSettings' => $name,
             ];
 
             if ($prefix != '') {

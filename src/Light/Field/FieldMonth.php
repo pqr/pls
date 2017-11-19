@@ -1,6 +1,8 @@
 <?php
 namespace Light\Field;
 
+use Light\Config;
+
 /**
  * @method string getAllYear()
  * @method string getYearFrom()
@@ -26,6 +28,7 @@ class FieldMonth extends FieldInputAbstract
         $this->yearUntil = (int)date('Y') + 1;
         $this->inputPattern = '(\d{1,2})?/?(\d{4})?';
         $this->tableWidthHtml = 50;
+        $this->name = Config::$lang === 'ru' ? 'Месяц' : 'Month';
     }
 
     public function getHtmlInner($value, array $data, $forTable)
