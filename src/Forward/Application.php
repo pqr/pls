@@ -75,7 +75,6 @@ class Application extends ApplicationAbstract
         ModuleRegister::addModule('CustomerAccount', 'Customer Accounts', 'Customer');
         ModuleRegister::addModule('CInvoice', 'Customer Invoices', 'Customer');
         ModuleRegister::addModule('CPayment', 'Customer Payments', 'Customer');
-        ModuleRegister::addModule('ImportCPaymentFrom1CLog', 'История оплат из 1С', 'Customer');
 
         ModuleRegister::addModule('Vendor', 'Vendors', 'Vendor');
         ModuleRegister::addModule('VendorAccount', 'Vendor Accounts', 'Vendor');

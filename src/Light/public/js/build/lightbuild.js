@@ -524,8 +524,8 @@ $body.on("focus", "input[type=text].input-datetime:not(.hasDatepicker)", functio
         allowTimes: false,
         step: 1,
         dayOfWeekStart: 1,
-        format: dateformatToJs(window._lightDateTimeFormat),
-        lang: window._lightLang
+        format: window['_lightDateTimeFormat'],
+        lang: window['_lightLang']
     });
     //$input.blur();
     //$input.focus();

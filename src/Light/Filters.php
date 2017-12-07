@@ -212,7 +212,7 @@ class Filters
             $field = $this->getField($fieldKey);
             $fieldName = $field->getName();
             $fieldType = $field->getType();
-            if ($fieldType === 'Date') {
+            if ($fieldType === 'Date' || $fieldType === 'DateTime') {
                 if (substr($fieldKey, -4) === 'From') {
                     $fieldName .= ' from';
                 } elseif (substr($fieldKey, -5) === 'Until') {
@@ -313,12 +313,17 @@ class Filters
 
             /** @var FieldDate $field */
             if (property_exists($field, 'filterFromUntil')
-                && $field->filterFromUntil
-                && substr($field->key, -4) === 'From') {
-                // Нашли поле, которое является либо датой From либо датой Until
-                // В колонку будем долавлять только поле From, причём нужно отрезать суффикс From
-                // Да, имеем дело с полем типа From, отрезаем суффикс From
-                $templateKey = substr($field->key, 0, -4);
+                && $field->filterFromUntil) {
+
+                if (substr($field->key, -4) === 'From') {
+                    // Нашли поле, которое является либо датой From либо датой Until
+                    // В колонку будем долавлять только поле From, причём нужно отрезать суффикс From
+                    // Да, имеем дело с полем типа From, отрезаем суффикс From
+                    $templateKey = substr($field->key, 0, -4);
+                } elseif (substr($field->key, -5) === 'Until') {
+                    // Поле Until вообще не добавляем в эту автосгенерированную колонку
+                    continue;
+                }
             }
 
             $firstColumn[$templateKey] = $templateKey;
@@ -558,8 +563,10 @@ class Filters
             /** @var FieldDate $fieldFrom */
             /** @var FieldDate $fieldUntil */
             if ($fieldFrom && $fieldUntil
-                && $fieldFrom->getType() === 'Date' && $fieldFrom->filterFromUntil
-                && $fieldUntil->getType() === 'Date' && $fieldUntil->filterFromUntil) {
+                && ($fieldFrom->getType() === 'Date' || $fieldFrom->getType() === 'DateTime')
+                && $fieldFrom->filterFromUntil
+                && ($fieldUntil->getType() === 'Date' || $fieldUntil->getType() === 'DateTime')
+                && $fieldUntil->filterFromUntil) {
                 return Template::datesFromUntil($templateKey, $cssClass, $templateKey);
             }
         }

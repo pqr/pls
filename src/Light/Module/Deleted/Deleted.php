@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Module\Deleted;
 
 use Light\Db;
@@ -8,6 +9,7 @@ use Light\Js;
 use Light\ModuleBase\ModuleAbstract;
 use Light\Response;
 use Light\Session;
+use Light\Template;
 
 class Deleted extends ModuleAbstract
 {
@@ -39,6 +41,7 @@ class Deleted extends ModuleAbstract
             F::createString('JSON', ['name' => 'JSON Data', 'title' => 'Usage: "ID": "12345"'])
         );
         $this->addFiltersDatesFromUntil($this->getField('CreatedDateTime'));
+
     }
 
     public function initViewSubmenu()
@@ -92,7 +95,7 @@ class Deleted extends ModuleAbstract
         return $insertId;
     }
 
-    protected function getTableRowCssClass(array $rowData, int $rowNum):string
+    protected function getTableRowCssClass(array $rowData, int $rowNum): string
     {
         if ($rowData['Restored']) {
             return 'completed-tr';
