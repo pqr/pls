@@ -143,7 +143,7 @@ class ResultsTable extends Table
 
     protected function initFilters()
     {
-        $this->_filtersNoSettings = true;
+        $this->filtersNoSettings = true;
 
         $this->addFilters(
             GeneralFields::vendorId(false, true),
@@ -159,7 +159,7 @@ class ResultsTable extends Table
             CommonFields::chargeableWeight()->setSqlWhere('')
         );
 
-        $this->_filtersDefaultTemplateArray = [
+        $this->filtersLayout = [
             [
                 'VendorID',
                 'AirlineAlphaCode',

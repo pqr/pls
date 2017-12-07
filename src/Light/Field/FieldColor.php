@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Field;
 
 use Light\ApplicationAbstract;
@@ -91,10 +92,14 @@ class FieldColor extends FieldAbstract
 
         $tdata = $this->getHtmlInputTplData($value, $data, $idPrefix);
 
-        return $this->getHtmlImg($data)
-        . '<input type="hidden" id="' . $tdata['editId']
-        . '" name="' . $tdata['editName']
-        . '" class="color-input" value="' . htmlspecialchars($tdata['value']) . '">';
+        $colorCssClass = $value ? " color$value" : '';
+
+        return '<div class="color-container' . $colorCssClass . '">'
+            . $this->getHtmlImg($data)
+            . '<input type="hidden" id="' . $tdata['editId']
+            . '" name="' . $tdata['editName']
+            . '" class="color-input" value="' . htmlspecialchars($tdata['value']) . '">'
+            . '</div>';
     }
 
     protected function getDataFromRequestInner(array $request)

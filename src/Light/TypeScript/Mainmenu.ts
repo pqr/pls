@@ -1,11 +1,13 @@
+import {setUserParam, toastError} from "./Light";
+
 $(function () {
     //Навесим обработчики на пункты меню
-    const $mainmenu = $("#mainmenu");
+    const $mainmenu:JQuery = $("#mainmenu");
     //$("ul[data-status=closed]").hide();
     $mainmenu.on("click", ".mainmenu__sectionhead", function (this:HTMLElement) {
-        const $clikedHeader = $(this);
-        const sectionText = $clikedHeader.attr("data-name");
-        const $ul = $clikedHeader.next('ul');
+        const $clikedHeader:JQuery = $(this);
+        const sectionText:string = $clikedHeader.attr("data-name")!;
+        const $ul:JQuery = $clikedHeader.next('ul');
         //Узнаем текущее состояние этой секции
         const newState = $ul.attr("data-status") === 'closed' ? 'open' : 'closed';
         $ul.attr("data-status", newState);
@@ -14,14 +16,14 @@ $(function () {
         } else {
             $ul.slideDown();
         }
-        Light.setUserParam("Mainmenu/" + sectionText, newState);
+        setUserParam("Mainmenu/" + sectionText, newState);
     });
 
-    const $body = $("body");
-    const $layout = $("#global-layout");
-    const $menu = $(".global-menu");
-    const $menuBut = $(".hideshow-menu-button");
-    const $pinBut = $(".pin-menu-button");
+    const $body:JQuery = $("body");
+    const $layout:JQuery = $("#global-layout");
+    const $menu:JQuery = $(".global-menu");
+    const $menuBut:JQuery = $(".hideshow-menu-button");
+    const $pinBut:JQuery = $(".pin-menu-button");
 
 
     const showMenu = function () {
@@ -36,21 +38,21 @@ $(function () {
 
     $menuBut.on("click", showMenu);
 
-    $body.on("click", function (event) {
+    $body.on("click", (e:JQuery.Event) => {
         if ($menu.hasClass("global-menu-show")
-            && !$(event.target).closest('.hideshow-menu-button').length
-            && !$(event.target).closest('.global-menu').length) {
+            && !$(e.target).closest('.hideshow-menu-button').length
+            && !$(e.target).closest('.global-menu').length) {
             hideMenu();
         }
     });
 
-    $pinBut.on("click", function () {
+    $pinBut.on("click", () => {
         if ($layout.hasClass("global-menu-unfix")) {
             $layout.removeClass("global-menu-unfix");
-            Light.setUserParam("global-menu-unfix", "0");
+            setUserParam("global-menu-unfix", "0");
         } else {
             $layout.addClass("global-menu-unfix");
-            Light.setUserParam("global-menu-unfix", "1");
+            setUserParam("global-menu-unfix", "1");
         }
     });
 
@@ -76,7 +78,7 @@ $(function () {
                     imageCrop: true,
                     done: function (_:any, data:any) {
                         if (data.result.error) {
-                            Light.toastError(data.result.text);
+                            toastError(data.result.text);
                         } else {
                             $("#mainmenu__avatarimg").attr('src', data.result.imgUrl);
                         }

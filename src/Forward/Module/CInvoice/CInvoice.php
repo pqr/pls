@@ -125,13 +125,12 @@ class CInvoice extends InvoiceModuleAbstract
 
         //Добавим больше фильтров по статусам - по каждому статусу отдельный чекбокс
         foreach (Finance::$cinvoiceStatuses as $status => $info) {
-            $this->addFilter(F::createCheckbox("Status$status",
-                ['name' => $info['text'], 'noCheckInvisible' => true]));
+            $this->addFilter(F::createCheckbox("Status$status",$info['text']));
         }
 
         $this->addFiltersDatesFromUntil('DocDate', ['name' => 'Doc Date']);
 
-        $this->_filtersDefaultTemplateArray = [
+        $this->filtersLayout = [
 
             [
 

@@ -426,11 +426,6 @@ abstract class FieldAbstract
     public $changeAll = false;
 
     /**
-     * @var bool для фильтров - не проверять скрытый фильтр в недефолтном значении
-     */
-    public $noCheckInvisible = false;
-
-    /**
      * @var bool позволить пользователю менять значение поля в режиме просмотра/таблицы через ajax функциональность
      */
     public $ajax = false;

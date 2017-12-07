@@ -84,6 +84,10 @@ trait TableWithFoldersTrait
                         return '';
                     }
 
+                    $folderBaseDir = $this->getFolderBaseDir();
+                    if (!$folderBaseDir) {
+                        return '';
+                    }
                     $folderRelativePath = $this->getFolderRelativePath($data);
                     if ($folderRelativePath === null) {
                         return '';
@@ -95,7 +99,7 @@ trait TableWithFoldersTrait
                     } else {
                         //Для текущей строки в кеше непустых ничего нет, значит запустим проверку на пустоту вручную,
                         //сохраним в базу
-                        $isNotEmpty = FilesFolder::updateCacheNotEmpty($folderRelativePath, $this->getFolderBaseDir(),
+                        $isNotEmpty = FilesFolder::updateCacheNotEmpty($folderRelativePath, $folderBaseDir,
                             $data[$this->_folderNameFieldKey]);
                     }
 

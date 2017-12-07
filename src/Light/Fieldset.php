@@ -139,11 +139,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess
      */
     public function offsetGet($fieldKey)
     {
-        if (isset($this->_fields[$fieldKey])) {
-            return $this->_fields[$fieldKey];
-        }
-
-        return null;
+        return $this->_fields[$fieldKey] ?? null;
     }
 
     public function setFields(array $fieldsArr)
@@ -158,7 +154,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess
 
     public function isEmpty()
     {
-        return count($this) == 0;
+        return count($this) === 0;
     }
 
     /**

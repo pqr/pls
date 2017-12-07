@@ -51,6 +51,7 @@ abstract class HomeBlockAbstract extends Table
     {
         parent::__construct($this->getHomeClass());
 
+        $this->nosticky = true;
         $this->_tablePrintTotalRecordsFound = false;
         $this->_userId = $userId;
 

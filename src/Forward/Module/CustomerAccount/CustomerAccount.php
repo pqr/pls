@@ -22,7 +22,7 @@ class CustomerAccount extends ModuleAbstract
 
     protected function initFilters()
     {
-        $this->_filtersNoSettings = true;
+        $this->filtersNoSettings = true;
 
         $this->addFilterName();
         $this->addFilter(GeneralFields::buIdsFilter());

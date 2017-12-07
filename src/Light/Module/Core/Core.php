@@ -4,18 +4,17 @@ namespace Light\Module\Core;
 
 use Carbon\Carbon;
 use Light\ApplicationAbstract;
+use Light\Config;
 use Light\CsvLog;
 use Light\Db;
 use Light\DbLog;
 use Light\File;
-use Light\FilesFolder;
 use Light\Metric;
 use Light\Misc;
 use Light\ModuleRegister;
 use Light\Request;
 use Light\Response;
 use Light\Table;
-use Light\Template;
 use Light\Traits\TableLayoutable;
 use Light\User;
 
@@ -205,127 +204,235 @@ class Core
         }
     }
 
-    public static function proceedGetHistoryFilters()
+    public static function proceedFiltersGetHistoryHtml()
     {
-        if (!isset($_POST['TableName'])) {
+        if (!isset($_GET['TableName'])) {
+            Response::abort(400, 'No GET TableName');
             return;
         }
 
-        $response = [];
-
-        $tableId = DbLog::getTableId($_POST['TableName']);
-        $data = Db::getAssoc("
-            SELECT CreatedDateTime, FilterValues
+        $tableId = (int)DbLog::getTableId($_GET['TableName']);
+        $history = Db::getAssoc("
+            SELECT CreatedDateTime, Description, FiltersJSON
             FROM user_filter_history
-            WHERE TableID = @i AND CreatedBy = @i
+            WHERE TableID = $tableId AND CreatedBy = " . User::getId() . "
             ORDER BY ID DESC
-            LIMIT 10
-        ", $tableId, User::getId());
+            LIMIT 10"
+        );
 
-        if ($data) {
-            foreach ($data as $date => $values) {
-                $values = json_decode($values, true);
-                foreach ($values as &$valueData) {
-                    if (strlen($valueData['Text']) > 50) {
-                        $valueData['Text'] = mb_substr($valueData['Text'], 0, 50) . '...';
-                    }
-                    $valueData['Text'] = htmlspecialchars($valueData['Text']);
-                }
-                unset($valueData);
-                $response[] = [
-                    'DateText' => (new Carbon($date))->diffForHumans(),
-                    'Values' => $values
-                ];
-            }
+        if (!$history) {
+            $msg = Config::$lang === 'ru' ? 'История фильтров пуста' : 'History is empty';
+            print $msg;
+            ApplicationAbstract::terminate();
+            return;
         }
 
-        Response::json($response);
+        $html = '<ul>';
+        foreach ($history as $createdDateTime => ['Description' => $description, 'FiltersJSON' => $filtersJson]) {
+
+            $createdDateTimeText = (new Carbon($createdDateTime))->diffForHumans();
+
+            $html .= '<li>'
+                .'<a href="#" data-filtersjson="'.htmlspecialchars($filtersJson).'">'
+                .'<div class="note nobr">'.$createdDateTimeText.':</div>'
+                .'<div>'.$description.'</div>'
+                .'</a>'
+            .'</li>';
+
+            }
+        $html .= '</ul>';
+
+        print $html;
+        ApplicationAbstract::terminate();
     }
 
-    public static function proceedSaveFiltersLikeReset()
+    public static function proceedFiltersSaveLikeReset()
     {
-        if (!isset($_POST['TableName'], $_POST['FilterValues'])) {
+        if (!isset($_GET['TableName'])) {
+            Response::abort(400, 'No GET TableName');
             return;
         }
 
-        $tableId = DbLog::getTableId($_POST['TableName']);
-
-        $filterValues = [];
-        foreach ($_POST['FilterValues'] as $value) {
-            $filterValues[$value['FieldKey']] = $value['Value'];
+        if (!isset($_POST['Defaults'])) {
+            Response::abort(400, 'No POST Defaults');
+            return;
         }
 
-        if ($id = Db::getOne("SELECT ID FROM user_filter_settings WHERE CreatedBy = @i AND TableID = @i", User::getId(), $tableId)) {
-            Db::updateRow(['Defaults' => json_encode($filterValues)], 'user_filter_settings', $id);
+        $defaultsJson = json_encode($_POST['Defaults']);
+
+        $tableId = (int)DbLog::getTableId($_GET['TableName']);
+        $existSettingsId = $id = Db::getOne(
+            "SELECT ID 
+             FROM user_filter_settings 
+             WHERE CreatedBy = " . User::getId() . " 
+                AND TableID = $tableId"
+        );
+        if ($existSettingsId) {
+            Db::updateRow(['Defaults' => $defaultsJson], 'user_filter_settings', $existSettingsId);
         } else {
             Db::insertRow([
                 'CreatedBy' => User::getId(),
                 'TableID' => $tableId,
-                'Defaults' => json_encode($filterValues)
+                'Defaults' => $defaultsJson
             ], 'user_filter_settings');
         }
+
+        $msg = Config::$lang === 'ru'
+            ? 'Значения фильтров сохранены как REST'
+            : 'Saved as RESET';
+
+        Response::sendToast('success', $msg);
 
         ApplicationAbstract::terminate();
     }
 
-    public static function proceedSaveFilters()
+    public static function proceedFiltersGetSavedHtml()
     {
-        if (!isset($_POST['TableName'], $_POST['Name'], $_POST['FilterValues'])) {
+        if (!isset($_GET['TableName'])) {
+            Response::abort(400, 'No GET TableName');
             return;
         }
 
-        $tableId = DbLog::getTableId($_POST['TableName']);
+        $textSetReset = Config::$lang === 'ru' ? "Установить как RESET" : "Set current filter values as default";
+        $textSave = Config::$lang === 'ru' ? "Сохранить фильтры" : "Save filter values as";
+        $textSavePlaceholder = Config::$lang === 'ru' ? "Название" : "...give it a name";
+        $textSaveBtn = Config::$lang === 'ru' ? "Сохранить" : "Save";
+
+        $html = '<div class="like-reset">
+                    <span>' . $textSetReset . '</span>
+                </div>
+                <div class="save-filter">
+                    <div class="save-filter-text">' . $textSave . ': </div>
+                    <div class="save-filter-form">
+                        <input type="text" class="input-default" placeholder="' . $textSavePlaceholder . '">
+                        <button>' . $textSaveBtn . '</button>
+                    </div>
+                 </div>';
+
+        $tableId = (int)DbLog::getTableId($_GET['TableName']);
+
+        $saved = Db::getAssoc("
+                SELECT Name, FiltersJSON
+                FROM user_filter_saved
+                WHERE TableID = $tableId
+                   AND CreatedBy = " . User::getId() . "
+                ORDER BY ID DESC"
+        );
+
+        if ($saved) {
+            $html .= '<ul>';
+            foreach ($saved as $name => $filtersJson) {
+
+                $html .= '<li>'
+                    . '<a href="#" data-filtersjson="' . htmlspecialchars($filtersJson) . '">'
+                    . htmlspecialchars($name)
+                    . '</a>'
+                    . '<a href="#" class="del-link"><i class="fa fa-trash-o"></i></a>'
+                    . '</li>';
+            }
+            $html .= '</ul>';
+        }
+
+        print $html;
+        ApplicationAbstract::terminate();
+    }
+
+    public static function proceedFiltersSave()
+    {
+        if (!isset($_GET['TableName'])) {
+            Response::abort(400, 'No GET TableName');
+            return;
+        }
+
+        if (!isset($_POST['Name'], $_POST['Filters'])) {
+            Response::abort(400, 'No POST Name or Filters');
+            return;
+        }
+
+        $tableId = (int)DbLog::getTableId($_GET['TableName']);
         Db::replaceRow([
             'CreatedBy' => User::getId(),
             'Name' => $_POST['Name'],
             'TableID' => $tableId,
-            'FilterValues' => json_encode($_POST['FilterValues'])
+            'FiltersJSON' => json_encode($_POST['Filters'])
         ], 'user_filter_saved');
 
-        ApplicationAbstract::terminate();
+        $msg = Config::$lang === 'ru'
+            ? 'Фильтр <strong>' . htmlspecialchars($_POST['Name']) . '</strong> успешно сохранён'
+            : 'Filter values <strong>' . htmlspecialchars($_POST['Name']) . '</strong> saved';
+        Response::sendToast('success', $msg);
+
+        // В ответ отдадим свежий список сохранённых фильтров
+        self::proceedFiltersGetSavedHtml();
     }
 
-    public static function proceedDeleteFilters()
+    public static function proceedFiltersDelete()
     {
-        if (!isset($_POST['TableName'], $_POST['Name'])) {
+        if (!isset($_GET['TableName'])) {
+            Response::abort(400, 'No GET TableName');
             return;
         }
 
-        $tableId = DbLog::getTableId($_POST['TableName']);
-        Db::query("DELETE FROM user_filter_saved WHERE CreatedBy = @i AND TableID = @i AND Name = @s", User::getId(),
-            $tableId, $_POST['Name']);
-
-        ApplicationAbstract::terminate();
-    }
-
-    public static function proceedSaveSettingsFilters()
-    {
-        if (!isset($_POST['TableName'], $_POST['Sort'], $_POST['Invisible'], $_POST['NewSystemFlag'])) {
+        if (!isset($_POST['Name'])) {
+            Response::abort(400, 'No POST Name or FilterValues');
             return;
         }
 
-        $tableId = DbLog::getTableId($_POST['TableName']);
+        $tableId = (int)DbLog::getTableId($_GET['TableName']);
+        Db::query(
+            "DELETE FROM user_filter_saved 
+          WHERE CreatedBy = " . User::getId() . " 
+              AND TableID = $tableId 
+              AND Name = @s"
+            , $_POST['Name']
+        );
 
-        if (filter_var($_POST['NewSystemFlag'], FILTER_VALIDATE_BOOLEAN)) {
-            $data = [
-                'Sort' => json_encode($_POST['Sort']),
-                'Invisible' => json_encode($_POST['Invisible'])
-            ];
-        } else {
-            $data = [
-                'Sort_deprecated' => json_encode($_POST['Sort']),
-                'Invisible_deprecated' => json_encode($_POST['Invisible'])
-            ];
+        $msg = Config::$lang === 'ru'
+            ? 'Фильтр ' . htmlspecialchars($_POST['Name']) . ' удалён'
+            : 'Filter values ' . htmlspecialchars($_POST['Name']) . ' deleted';
+        Response::sendToast('success', $msg);
+
+        // В ответ отдадим свежий список сохранённых фильтров
+        self::proceedFiltersGetSavedHtml();
+    }
+
+    public static function proceedFiltersSaveLayout()
+    {
+        if (!isset($_GET['TableName'])) {
+            Response::abort(400, 'No GET TableName');
+            return;
         }
 
-        if ($id = Db::getOne("SELECT ID FROM user_filter_settings WHERE CreatedBy = @i AND TableID = @i", User::getId(), $tableId)) {
-            Db::updateRow($data, 'user_filter_settings', $id);
-        } else {
-            Db::insertRow(array_merge($data, [
-                'CreatedBy' => User::getId(),
-                'TableID' => $tableId
-            ]), 'user_filter_settings');
+        if (!isset($_POST['Layout'], $_POST['Invisible'])) {
+            Response::abort(400, 'No POST Layout or Invisible');
+            return;
         }
+
+        $tableId = (int)DbLog::getTableId($_GET['TableName']);
+        $data = [
+            'Sort' => json_encode($_POST['Layout']),
+            'Invisible' => json_encode($_POST['Invisible'])
+        ];
+
+        $existSettingsId = $id = Db::getOne(
+            "SELECT ID 
+             FROM user_filter_settings 
+             WHERE CreatedBy = " . User::getId() . " 
+                AND TableID = $tableId"
+        );
+        if ($existSettingsId) {
+            Db::updateRow($data, 'user_filter_settings', $existSettingsId);
+        } else {
+            Db::insertRow($data + [
+                    'CreatedBy' => User::getId(),
+                    'TableID' => $tableId
+                ], 'user_filter_settings');
+        }
+
+        $msg = Config::$lang === 'ru'
+            ? "Настройки фильтров успешно сохранены"
+            : "Filters layout saved";
+        Response::sendToast('success', $msg);
 
         ApplicationAbstract::terminate();
     }

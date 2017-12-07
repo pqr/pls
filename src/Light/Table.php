@@ -328,21 +328,7 @@ class Table
     {
         //Если таблица пуста, возвращаем сообщение No data available
         if (!$printIfEmpty && $this->getTableDataCount() === 0) {
-
-            $outHtml = '';
-            if ($printHeadBlock) {
-                $outHtml .= '<div style="display: inline-block;">';
-                $outHtml .= Html::progress();
-            }
-
-            $outHtml .= $this->_tableMsgIfEmpty ?? 'No data available';
-
-            if ($printHeadBlock) {
-                $outHtml .= '</div>';
-            }
-
-            return $outHtml;
-
+            return $this->_tableMsgIfEmpty ?? (Config::$lang === 'ru' ? 'Нет данных' : 'No data available');
         }
 
         $allFields = $this->getAllFields();
@@ -354,7 +340,6 @@ class Table
 
         if ($printHeadBlock) {
             $outHtml .= '<div style="display: inline-block;">';
-            $outHtml .= Html::progress();
         }
 
         //Отркоем тег <table>, внутри будет много data-* атрибутов
@@ -382,7 +367,8 @@ class Table
 
     protected function getHtmlTableTotalRecordsFound()
     {
-        return '<span class="table-totalrows">Total rows: ' . $this->getTableTotalRecordsFound() . '</span>';
+        $msg = Config::$lang === 'ru' ? 'Найдено' : 'Total rows';
+        return '<span class="table-totalrows">' . $msg . ': ' . $this->getTableTotalRecordsFound() . '</span>';
     }
 
     protected function getHtmlTableHeadBlock()
@@ -669,6 +655,13 @@ class Table
 
             $tdHtml = $this->getHtmlTableCell($rowData, $rowNum, $field, $fullLinkParams);
 
+            // Если в css классе для td присутсвует хитрый класс "overflow300", то его нужно оттуда убрать
+            // т.к. этот класс портит рендеринг td. Придётся добавить отдельный div поверх контента ячейки
+            if (strpos($tdCssClass, 'overflow300') !== false) {
+                $tdCssClass = str_replace(' overflow300', '', $tdCssClass);
+                $tdHtml = '<div class="overflow300">' . $tdHtml . '</div>';
+            }
+
             $outHtml .= "<td{$tdCssClass}{$tdTitle}{$tdTagParams}>{$tdHtml}</td>";
 
         }
@@ -822,7 +815,6 @@ class Table
 
         return array_sum($amounts);
     }
-
 
     protected function getTableTotalRecordsFound()
     {

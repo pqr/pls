@@ -1,11 +1,16 @@
 {
   "devDependencies": {
+    "dts-bundle": "^0.7.3",
     "gulp": "^3.9.0",
     "gulp-concat": "^2.5.2",
     "gulp-filter": "^4.0.0",
     "gulp-plumber": "^1.0.0",
     "gulp-rename": "^1.2.2",
-    "gulp-uglify": "^2.0.0"
+    "gulp-uglify": "^2.0.0",
+    "source-map-loader": "latest",
+    "ts-loader": "latest",
+    "typescript": "latest",
+    "webpack": "latest"
   },
   "dependencies": {
     "@types/jquery": "latest",

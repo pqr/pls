@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Module\CurrencyRate;
 
 use Light\Field\CommonFields as CF;
@@ -18,15 +19,12 @@ class CurrencyRateObj extends ObjAbstract
 
             CF::currency('', ['sqlSelectMandatory' => true]),
 
-            F::createDate(
-                'ValidDate',
-                [
-                    'name' => 'Date',
-                    'default' => date('Y-m-d'),
-                    'sqlSelectMandatory' => true,
-                    'editMandatory' => true
-                ]
-            ),
+            F::createDate('ValidDate', [
+                'name' => 'Date',
+                'default' => date('Y-m-d'),
+                'sqlSelectMandatory' => true,
+                'editMandatory' => true
+            ]),
 
             F::createFloat('RateToRUB', [
                 'name' => 'Rate to RUB',

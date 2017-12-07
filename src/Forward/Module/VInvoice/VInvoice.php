@@ -180,7 +180,7 @@ class VInvoice extends InvoiceModuleAbstract
         $this->addFiltersDatesFromUntil('ReceivedDate', ['name' => 'Received']);
         $this->addFiltersDatesFromUntil('DocDate', ['name' => 'Doc Date']);
 
-        $this->_filtersDefaultTemplateArray = [
+        $this->filtersLayout = [
             [
 
                 'CompanyID',

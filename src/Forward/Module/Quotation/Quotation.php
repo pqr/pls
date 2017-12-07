@@ -273,7 +273,7 @@ class Quotation extends ModuleAbstract
 
         $this->addFiltersDatesFromUntil('Valid', ['name' => 'Validity', 'asInterval' => true]);
 
-        $this->_filtersDefaultTemplateArray = [
+        $this->filtersLayout = [
             [
 
                 'FilterName',

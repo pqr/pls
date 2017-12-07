@@ -465,7 +465,7 @@ abstract class ApplicationAbstract
         //Чтобы POST запросы на сохранение быстро редиректили надо также в php.ini поставить output_buffering = 0
 
 
-        if (!isset($GLOBALS['argv']) && User::isAuth()) {
+        if (!isset($GLOBALS['argv']) && User::isAuth() && !isset($_REQUEST['nouserrefreshtime'])) {
             User::updateLastRefreshDateTime();
             VisitLog::write();
         }
@@ -492,7 +492,7 @@ abstract class ApplicationAbstract
             if (file_exists(LIGHT_DIR_ROOT . '/version.txt')) {
                 $version = trim(file_get_contents(LIGHT_DIR_ROOT . '/version.txt'));
             } else {
-                $version = filemtime(LIGHT_DIR_LIGHTPUBLIC . '/js/lightbuild.js');
+                $version = filemtime(LIGHT_DIR_LIGHTPUBLIC . '/js/build/lightbuild.js');
             }
         }
         return (string)$version;

@@ -52,7 +52,7 @@ class CPayment extends PaymentModuleAbstract
 
         $this->addFiltersDatesFromUntil('PaymentDate', ['name' => 'Payment Date']);
 
-        $this->_filtersDefaultTemplateArray = [
+        $this->filtersLayout = [
             [
                 'CompanyID',
                 'CustomerID',

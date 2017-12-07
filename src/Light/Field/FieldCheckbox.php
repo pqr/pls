@@ -2,6 +2,8 @@
 
 namespace Light\Field;
 
+use Light\Config;
+
 class FieldCheckbox extends FieldAbstract
 {
 
@@ -15,6 +17,11 @@ class FieldCheckbox extends FieldAbstract
         $this->default = 0;
         $this->tableAlign = 'center';
         $this->tableWidthExcel = 10;
+
+        if (Config::$lang === 'ru') {
+            $this->textYes = 'Да';
+            $this->textNo = 'Нет';
+        }
     }
 
     public function getNameTableSettings()

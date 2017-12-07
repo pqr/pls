@@ -81,6 +81,12 @@ class ModuleRegister
             'order' => 111,
             'hidden' => false,
             'section' => 'System'
+        ],
+        'Phpinfo' => [
+            'name' => 'PHP Info',
+            'order' => 112,
+            'hidden' => false,
+            'section' => 'System'
         ]
     ];
 

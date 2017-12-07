@@ -56,7 +56,7 @@ abstract class MassactionAbstract
         //Обновим таблицу, отправив специальный заголовок, который на стороне клиента вызовет перезагрузку
         //Перезагрузка таблицы будет происходить в фоновом режиме, пока пользователь читает диалоговое окно о результатах
         if ($reloadTable) {
-            Response::sendHeaderJsEval('Light.tables.get(Light.getModule()).reload();');
+            Response::sendHeaderJsEval('Light.table.get(Light.getModule()).reload();');
         }
         Response::showDialog($bodyHtml);
     }

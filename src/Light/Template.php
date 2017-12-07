@@ -116,11 +116,12 @@ class Template
         self::$tdata = $tdata;
     }
 
-    public static function control($title, $label, $html, $cssClass = null, $filterFieldKey = null)
+    public static function control($title, $label, $html, $cssClass = null, $filterTemplateKey = null)
     {
-        return '<tr' . $title . ($filterFieldKey ? ' data-sort="' .
-                htmlspecialchars($filterFieldKey) . '"' : '') . ($cssClass ? ' class="' .
-                htmlspecialchars($cssClass) . '"' : '') . '><th>' . $label . '</th><td>' . $html . '</td></tr>';
+        $dataSort = $filterTemplateKey ? ' data-templatekey="' . htmlspecialchars($filterTemplateKey) . '"' : '';
+        $class = $cssClass ? ' class="' . $cssClass . '"' : '';
+
+        return "<tr{$title}{$dataSort}{$class}><th>{$label}</th><td>{$html}</td></tr>";
     }
 
     public static function h3($fieldKey)
@@ -128,7 +129,7 @@ class Template
         return static::c($fieldKey, true);
     }
 
-    public static function c($fieldKey, $h3 = false, $cssClass = null, $filterFieldKey = false)
+    public static function c($fieldKey, $h3 = false, $cssClass = null, $filterTemplateKey = null)
     {
         if (!isset(static::$tdata['_fieldset'][$fieldKey])) {
             return static::control('', htmlspecialchars($fieldKey),
@@ -138,8 +139,8 @@ class Template
         $title = static::title($fieldKey);
         $label = static::label($fieldKey);
         $html = $h3 ? static::htmlh3($fieldKey) : static::html($fieldKey);
-        $filterFieldKey = $filterFieldKey ? (is_string($filterFieldKey) ? $filterFieldKey : $fieldKey) : null;
-        return static::control($title, $label, $html, $cssClass, $filterFieldKey);
+        $filterTemplateKey = $filterTemplateKey ? (is_string($filterTemplateKey) ? $filterTemplateKey : $fieldKey) : null;
+        return static::control($title, $label, $html, $cssClass, $filterTemplateKey);
     }
 
     public static function amountWithCurrency($fieldKey, $currencyKey = null)
@@ -230,10 +231,10 @@ class Template
         $data = static::$tdata['_data'] ?? [];
         $value = $data[$fieldKey] ?? null;
         if ($mode === F::MODE_EDIT && $field->hasMode(F::MODE_EDIT)) {
-            //Преобразуем поле в элемент ввода
+            // Преобразуем поле в элемент ввода
             $html = $field->getHtmlInput($value, $data) . ' ' . $field->uom;
         } else {
-            //Преобразуем поле в текстовый элемент для просмотра
+            // Преобразуем поле в текстовый элемент для просмотра
             $html = $field->getHtml($value, $data);
             if ($html === '') {
                 $html = '&nbsp;';
@@ -378,14 +379,14 @@ class Template
                 <nobr><div><div class="filters-buttons-icons">
                     <span class="btn-flat waves-effect toggle-tooltip filters-history" title="' . $textHistory . '"><i class="fa fa-history"></i></span>
                     <span class="btn-flat waves-effect toggle-tooltip filters-save" title="' . $textSaved . '"><i class="fa fa-save"></i></span>
-                    ' . (!(static::issetvar('noSettings') && static::variable('noSettings')) ? '<span class="btn-flat waves-effect toggle-tooltip filters-settings" title="' . $textSettings . '"><i class="fa fa-cog"></i></span>' : '') . '
+                    ' . (!(static::issetvar('noSettings') && static::variable('noSettings')) ? '<span class="btn-flat waves-effect toggle-tooltip filters-layout" title="' . $textSettings . '"><i class="fa fa-cog"></i></span>' : '') . '
                 </div></div></nobr>
                 </div>';
     }
 
     public static function filtersButtonsRow()
     {
-        return '<tr data-sort="FilterButtons"><th></th><td style="padding-top:1em;">' . static::filtersButtons() . '</td></tr>';
+        return '<tr><th></th><td style="padding-top:1em;">' . static::filtersButtons() . '</td></tr>';
     }
 
     public static function filterImport()
@@ -394,13 +395,17 @@ class Template
         return static::control('', 'Import ID', $html);
     }
 
-    public static function datesFromUntil($fieldKey, $cssClass = null, $filterFieldKey = false)
+    public static function datesFromUntil($fieldKey, $cssClass = null, $filterTemplateKey = null)
     {
         $title = static::title($fieldKey . 'From');
         $label = static::label($fieldKey . 'From');
         $html = '<nobr>' . static::html($fieldKey . 'From') . ' - ' . static::html($fieldKey . 'Until') . '</nobr>';
-        $filterFieldKey = $filterFieldKey ? (is_string($filterFieldKey) ? $filterFieldKey : $fieldKey) : null;
-        return static::control($title, $label, $html, $cssClass, $filterFieldKey);
+        if (!$filterTemplateKey) {
+            // Поскольку функция datesFromUntil() используется в основном только в фильтрах
+            // добавим
+            $filterTemplateKey = $fieldKey;
+        }
+        return static::control($title, $label, $html, $cssClass, $filterTemplateKey);
     }
 
     /**

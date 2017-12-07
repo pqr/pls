@@ -9,7 +9,6 @@ use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\FilesFolder;
-use Light\Html;
 use Light\Img;
 use Light\Intro\IntroManager;
 use Light\Js;
@@ -22,6 +21,7 @@ use Light\PrintForm;
 use Light\Request;
 use Light\Response;
 use Light\Session;
+use Light\SubtableBase\Subtable;
 use Light\Table;
 use Light\Template;
 use Light\Timer;
@@ -508,7 +508,6 @@ abstract class ModuleAbstract extends Table
         $textSave = Config::$lang === 'ru' ? 'Сохранить' : 'Save';
         $textCancel = Config::$lang === 'ru' ? 'Отмена' : 'Cancel';
         $contentHtml = '<div class="formactions_fixed">'
-            . Html::progress()
             . '<button type="button" class="waves-effect waves-light btn btn-save bgcolor-btn-primary" title="Ctrl + S">'
             . "$textSave $this->_textObjectName"
             . '</button>'
@@ -1321,7 +1320,7 @@ abstract class ModuleAbstract extends Table
         foreach ($this->_subtables as $subtableName => $subtableParams) {
             if (!$subtableParams['readonly']) {
                 $subtableObj = $this->getSubtableObject($obj, $subtableName);
-                if (is_subclass_of($subtableObj, 'Light\SubtableBase\Subtable')) {
+                if ($subtableObj instanceof Subtable) {
                     $subtableObj->loadData();
                     $oldData['_subtables'][$subtableName] = $subtableObj->getData();
                 }
@@ -1382,7 +1381,7 @@ abstract class ModuleAbstract extends Table
 
         $query = "SELECT ID
                   FROM " . $this->getDbTable() . "
-                  WHERE " . $nameFieldKey . " = '" . Db::esc($name) . "'
+                  WHERE `$nameFieldKey` = '" . Db::esc($name) . "'
                       AND ID != " . (int)$this->_obj->getId();
 
         if ($existId = Db::getOne($query)) {
@@ -1401,9 +1400,11 @@ abstract class ModuleAbstract extends Table
      */
     protected function riseSaveErorrAlreadyExists($name, $existId, $fieldKey)
     {
+        $alreadyExistsText = Config::$lang === 'ru' ? 'уже существует' : 'already exists';
+        $viewText = Config::$lang === 'ru' ? 'посмотреть...' : 'view...';
         $msg = $this->_textObjectName
-            . ' <strong>' . htmlspecialchars($name) . '</strong> already exists '
-            . Link::moduleViewBlank('view...', $existId);
+            . ' <strong>' . htmlspecialchars($name) . '</strong> ' . $alreadyExistsText . ', '
+            . Link::moduleViewBlank($viewText, $existId);
         $this->riseSaveErorr($msg, $fieldKey);
     }
 
@@ -1673,8 +1674,8 @@ abstract class ModuleAbstract extends Table
 
             //Возвращаем специальный header, который позволяет выполнить js на стороне клиента
             if (isset($_GET['fromList'])) {
-                //Light.tables.get(Light.getModule()).reload();
-                Response::sendHeaderJsEval('Light.tables.get(Light.getModule()).reload()');
+                //Light.table.get(Light.getModule()).reload();
+                Response::sendHeaderJsEval('Light.table.get(Light.getModule()).reload()');
                 ApplicationAbstract::terminate();
             } else {
                 $this->redirectToList();
@@ -1994,7 +1995,7 @@ abstract class ModuleAbstract extends Table
             $this->initFieldsFromSubtables();
             $this->initLayoutable();
             $this->initList();
-            $this->sendAjaxTableLayoutSettings();
+            $this->showTableLayoutSettingsDialog();
             return;
         }
 
@@ -2019,7 +2020,7 @@ abstract class ModuleAbstract extends Table
 
         $this->initCssJs();
 
-        //Регистрируем массовые действия - метод initMassactionOptions должен быть переопределён в классе потомке
+        //Регистрируем массовые действия - метод initMassactions должен быть переопределён в классе потомке
         $this->initMassactions();
         //Добавляем опции печати
         $this->initPrintForms();
@@ -2352,16 +2353,21 @@ abstract class ModuleAbstract extends Table
      */
     protected function addListFieldMoneyWithCurrency(string $moneyFieldKey, string $currencyFieldKey = 'CurrencyISO')
     {
+        $sourceMoneyField = $this->getField($moneyFieldKey);
+        $sourceParams = $sourceMoneyField->initialParams;
+        $sqlSelect = $sourceMoneyField->getSqlSelect();
+        if (!$sqlSelect) {
+            $sqlSelect = Db::quote($moneyFieldKey);
+        }
         // Создаём новое поле типа MoneyWithCurrency на основе старого поля с ключём $moneyFieldKey
         $params = [
-                'sqlSelect' => "CONCAT(`$currencyFieldKey`, ' ', `$moneyFieldKey`)",
-                'modes' => F::MODE_READONLY
-            ]
-            + $this->getField($moneyFieldKey)->initialParams;
+            'sqlSelect' => "CONCAT(`$currencyFieldKey`, ' ', $sqlSelect)",
+            'modes' => F::MODE_READONLY
+        ];
 
         // При добавлении поля с ключём $moneyFieldKey старое поле будет заменено новым
         $this->addField(
-            F::createMoneyWithCurrency($moneyFieldKey, $params)
+            F::createMoneyWithCurrency($moneyFieldKey, $params + $sourceParams)
         );
     }
 
@@ -2376,28 +2382,32 @@ abstract class ModuleAbstract extends Table
         }
     }
 
+    protected function addCheckboxCol()
+    {
+        $this->getFieldsetFirst()->addField(F::createHtml('CheckBox', [
+                'tableWidthHtml' => 20,
+                'tableOrderBy' => '',
+                'tableAlign' => 'center',
+                'nameTable' => '<input type="checkbox" class="cb-all">',
+                'getHtmlFunction' => function ($value, array $data) {
+                    if (isset($data['ID'])) {
+                        return '<input type="checkbox" class="cb" value="' . $data['ID'] . '">';
+                    }
+
+                    return '';
+                }
+            ]
+        ));
+    }
+
     /**
      * Регистрирует дополнительные поля для таблицы списка, такие как CheckBox, DEL ...
      * @return void
      */
     protected function initTableFieldsAdditional()
     {
-        //Общие параметры для всех полей типов
-        $commonParams['tableWidthHtml'] = 20;
-        $commonParams['tableOrderBy'] = '';
-        $commonParams['tableAlign'] = 'center';
-
         if ($this->massactions) {
-            $params = $commonParams;
-            $params['nameTable'] = '<input type="checkbox" class="cb-all">';
-            $params['getHtmlFunction'] = function ($value, array $data) {
-                if (isset($data['ID'])) {
-                    return '<input type="checkbox" class="cb" value="' . $data['ID'] . '">';
-                }
-
-                return '';
-            };
-            $this->getFieldsetFirst()->addField(F::create('CheckBox', F::TYPE_HTML, $params));
+            $this->addCheckboxCol();
         }
 
         if ($this->_folders) {
@@ -2422,14 +2432,18 @@ abstract class ModuleAbstract extends Table
             }
 
             if ($this->_allowDelete || $this->_allowEdit) {
+
+                $params = [
+                    'nameTable' => '',
+                    'tableOrderBy' => '',
+                    'tableAlign' => 'center',
+                ];
                 //Ширина колонки Del зависит от наличия иконки удаления
-                $params = $commonParams;
                 if ($this->_allowDelete && $this->_allowEdit) {
                     $params['tableWidthHtml'] = 60;
                 } else {
                     $params['tableWidthHtml'] = 20;
                 }
-                $params['nameTable'] = '';
                 $params['getHtmlFunction'] = function ($value, array $data) {
 
                     $outHtml = '';
@@ -3049,9 +3063,21 @@ abstract class ModuleAbstract extends Table
             return '';
         }
         $textWithSelected = Config::$lang === 'ru' ? 'С выделенными' : 'With selected';
+        $textSelectAll = Config::$lang === 'ru' ? 'Выделить все' : 'Select All';
+        $textSelectNone = Config::$lang === 'ru' ? 'Снять выделение' : 'Select None';
         return '<div class="listmassaction">'
-            . '<label for="massaction-select">' . $textWithSelected . ':</label>&nbsp;'
-            . F::createSelect('massaction-select', ['options' => $this->massactions])->getHtmlInput('')
+            . ' <div class="listmassaction__selectlinks">'
+            . '<a href="#" class="listmassaction__selectall">' . $textSelectAll . '</a>'
+            . ' / '
+            . '<a href="#" class="listmassaction__selectnone">' . $textSelectNone . '</a>'
+            . '</div>'
+            . '<div class="listmassaction__content">'
+            . '<label for="massaction-select">' . $textWithSelected . '<span></span>:</label>&nbsp;'
+            . F::createSelect('massaction-select', [
+                'options' => $this->massactions,
+                'editWidth' => 'medium'
+            ])->getHtmlInput('')
+            . '</div>'
             . '</div>';
     }
 }

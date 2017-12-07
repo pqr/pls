@@ -21,7 +21,7 @@ class ModuleAbstractLog extends Table
     {
         parent::__construct(Request::getModule() . 'Log');
 
-        $this->_filtersNoSettings = true;
+        $this->filtersNoSettings = true;
 
         $this->_moduleId = (int)Db::getOne(
             "SELECT ID FROM dblog_module WHERE ModuleName = '" . Db::esc(Request::getModule()) . "'"

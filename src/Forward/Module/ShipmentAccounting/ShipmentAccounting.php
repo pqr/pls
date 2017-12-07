@@ -185,7 +185,7 @@ class ShipmentAccounting extends ModuleAbstract
 
         $this->addFiltersDatesFromUntil('ATA', ['name' => 'ATA']);
 
-        $this->_filtersDefaultTemplateArray = [
+        $this->filtersLayout = [
             [
 
                 'FileNumbers',
@@ -202,7 +202,7 @@ class ShipmentAccounting extends ModuleAbstract
         ];
 
         foreach (Constant::$standardFolders as $i => $standardFolder) {
-            $this->_filtersDefaultTemplateArray[1][] = "File$i";
+            $this->filtersLayout[1][] = "File$i";
         }
     }
 

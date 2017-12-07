@@ -33,7 +33,7 @@ class AirfreightRate extends ModuleAbstract
 
         $this->addFiltersDatesFromUntil('Valid', ['name' => 'Validity', 'asInterval' => true]);
 
-        $this->_filtersDefaultTemplateArray = [
+        $this->filtersLayout = [
             ['VendorID'],
             ['Valid'],
             [

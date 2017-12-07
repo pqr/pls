@@ -158,6 +158,15 @@ class Shipment extends ModuleAbstract
         );
     }
 
+    protected function initFieldsFromSubtables()
+    {
+        parent::initFieldsFromSubtables();
+
+        // К полю Shipper добавим параметр, который будет обрезать длинные названия
+        $this->getField('CacheShippersName')->setViewMaxWidth300(true);
+    }
+
+
     private function getListVatMountField($vatPercent)
     {
         return F::createMoney("VAT{$vatPercent}Amount", [
@@ -450,7 +459,7 @@ class Shipment extends ModuleAbstract
         $this->addFiltersDatesFromUntil('ATA', ['name' => 'ATA']);
         $this->addFiltersDatesFromUntil('ReadyForCarriageDate', ['name' => 'Ready Carr.']);
 
-        $this->_filtersDefaultTemplateArray = [
+        $this->filtersLayout = [
             [
 
                 'FileNumbers',

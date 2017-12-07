@@ -27,7 +27,7 @@ abstract class ReportAbstract extends Table
     {
         parent::__construct($tableName);
         $this->_tableSortingEnabled = false;
-        $this->_filtersNoSettings = true;
+        $this->filtersNoSettings = true;
     }
 
     /**

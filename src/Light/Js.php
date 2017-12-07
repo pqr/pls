@@ -37,7 +37,7 @@ class Js
         if (self::$select2) {
             $out[] = 'lightpublic/js/select2.min.js';
         }
-        $out[] = 'lightpublic/js/lightbuild.js';
+        $out[] = 'lightpublic/js/build/lightbuild.js';
         if (self::$angularJs) {
             $out[] = "lightpublic/js/angular/angular$min.js";
             $out[] = "lightpublic/js/angular/angular-sanitize$min.js";

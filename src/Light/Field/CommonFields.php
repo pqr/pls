@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Field;
 
 use Light\Config;
@@ -6,7 +7,7 @@ use Light\Field\FieldAbstract as F;
 
 class CommonFields
 {
-    public static function id(array $params = []):FieldInt
+    public static function id(array $params = []): FieldInt
     {
         $defaultParams = ['modes' => F::MODE_LIST, 'tableAlign' => 'left', 'tableWidthHtml' => 24];
         $params = array_merge($defaultParams, $params);
@@ -14,9 +15,10 @@ class CommonFields
         return F::createInt('ID', $params);
     }
 
-    public static function color(array $params = []):FieldColor
+    public static function color(array $params = []): FieldColor
     {
         $defaultParams = [
+            'name' => Config::$lang === 'ru' ? 'Цвет' : 'Color',
             'modes' => F::MODE_ALL & ~F::MODE_LIST,
             'sqlSelectMandatory' => true
         ];
@@ -24,7 +26,7 @@ class CommonFields
         return F::createColor('Color', $params);
     }
 
-    public static function active(array $params = []):FieldSelect
+    public static function active(array $params = []): FieldSelect
     {
         $defaultParams = [
             'name' => 'Active / Inactive',
@@ -43,17 +45,19 @@ class CommonFields
         return F::createSelect('Active', $params + $defaultParams);
     }
 
-    public static function validFrom(array $params = []):FieldDate
+    public static function validFrom(array $params = []): FieldDate
     {
-        $defaultParams = ['name' => 'Valid From'];
+        $defaultParams = [
+            'name' => Config::$lang === 'ru' ? 'Дата начала' : 'Valid From',
+        ];
         $params = array_merge($defaultParams, $params);
         return F::createDate('ValidFrom', $params);
     }
 
-    public static function validUntil(array $params = []):FieldDate
+    public static function validUntil(array $params = []): FieldDate
     {
         $defaultParams = [
-            'name' => 'Valid Until',
+            'name' => Config::$lang === 'ru' ? 'Дата окончания' : 'Valid Until',
             'getDataFromRequestFunction' => function ($value) {
                 //Если пользователь не ввёл даты и засабмитил пустое поле Valid Until, первратим его в 2099-01-01
                 if ($value !== null && !$value) {
@@ -73,7 +77,7 @@ class CommonFields
      * @param array $params
      * @return FieldMoney
      */
-    public static function amount($prefix = '', array $params = []):FieldMoney
+    public static function amount($prefix = '', array $params = []): FieldMoney
     {
         $fieldKey = $prefix . 'Amount';
         $defaultParams = [];
@@ -93,7 +97,7 @@ class CommonFields
      * @return FieldMoneyWithCurrency
      * @deprecated
      */
-    public static function amountWithCurrency($prefix = '', array $params = []):FieldMoneyWithCurrency
+    public static function amountWithCurrency($prefix = '', array $params = []): FieldMoneyWithCurrency
     {
         $fieldKey = $prefix . 'Amount';
         $defaultParams = [];
@@ -112,7 +116,7 @@ class CommonFields
      * @param string $postfix
      * @return \Light\Field\FieldSelect
      */
-    public static function currency($prefix = '', array $params = [], $postfix = ''):FieldSelect
+    public static function currency($prefix = '', array $params = [], $postfix = ''): FieldSelect
     {
         $fieldKey = $prefix . 'CurrencyISO' . $postfix;
         $defaultParams = [
@@ -148,33 +152,34 @@ class CommonFields
         return F::createSelect($fieldKey, $params);
     }
 
-    public static function comments(array $params = []):FieldText
+    public static function comments(array $params = []): FieldText
     {
-        return F::createText('Comments', $params + ['ajax' => true]);
+        $params += [
+            'ajax' => true,
+            'name' => Config::$lang === 'ru' ? 'Комментарии' : 'Comments',
+        ];
+        return F::createText('Comments', $params);
     }
 
-    public static function orderId():FieldInt
+    public static function orderId(): FieldInt
     {
         return F::createInt('OrderID', [
-            'name' => 'Order ID',
+            'name' => Config::$lang === 'ru' ? 'Порядок' : 'Order ID',
             'editAlign' => 'left',
             'tableAlign' => 'center',
             'tableWidthHtml' => 50
         ]);
     }
 
-    public static function grossWeight():FieldFloat
+    public static function grossWeight(): FieldFloat
     {
-        return F::createFloat(
-            'GrossWeight',
-            [
-                'name' => 'Gross Weight',
-                'nameTable' => "Gross\nWeight (kg)",
-                'tableWidthHtml' => 62,
-                'editCssClass' => 'input-weight',
-                'uom' => 'kg'
-            ]
-        );
+        return F::createFloat('GrossWeight', [
+            'name' => 'Gross Weight',
+            'nameTable' => "Gross\nWeight (kg)",
+            'tableWidthHtml' => 62,
+            'editCssClass' => 'input-weight',
+            'uom' => 'kg'
+        ]);
     }
 
     public static function netWeight()
@@ -191,7 +196,7 @@ class CommonFields
         );
     }
 
-    public static function chargeableWeight():FieldFloat
+    public static function chargeableWeight(): FieldFloat
     {
         return F::createFloat(
             'ChargeableWeight',
@@ -204,27 +209,27 @@ class CommonFields
         );
     }
 
-    public static function width():FieldInt
+    public static function width(): FieldInt
     {
         return F::createInt('Width', ['uom' => 'cm']);
     }
 
-    public static function height():FieldInt
+    public static function height(): FieldInt
     {
         return F::createInt('Height', ['uom' => 'cm']);
     }
 
-    public static function length():FieldInt
+    public static function length(): FieldInt
     {
         return F::createInt('Length', ['uom' => 'cm']);
     }
 
-    public static function quantity():FieldInt
+    public static function quantity(): FieldInt
     {
         return F::createInt('Quantity');
     }
 
-    public static function volume():FieldFloat
+    public static function volume(): FieldFloat
     {
         return F::createFloat('Volume', [
                 'name' => 'Volume',
@@ -236,47 +241,47 @@ class CommonFields
         );
     }
 
-    public static function pieces():FieldInt
+    public static function pieces(): FieldInt
     {
         return F::createInt('Pieces', ['name' => 'Pieces']);
     }
 
-    public static function address($key = 'Address'):FieldText
+    public static function address($key = 'Address'): FieldText
     {
         return F::createText($key, ['clickable' => true, 'ajax' => true]);
     }
 
-    public static function ets():FieldDate
+    public static function ets(): FieldDate
     {
         return F::createDate('ETS', ['title' => 'Estimated Time of Ship']);
     }
 
-    public static function etd():FieldDate
+    public static function etd(): FieldDate
     {
         return F::createDate('ETD', ['title' => 'Estimated Time of Departure']);
     }
 
-    public static function eta():FieldDate
+    public static function eta(): FieldDate
     {
         return F::createDate('ETA', ['title' => 'Estimated Time of Arrival']);
     }
 
-    public static function ata():FieldDate
+    public static function ata(): FieldDate
     {
         return F::createDate('ATA', ['title' => 'Actual Time of Arrival']);
     }
 
-    public static function teu():FieldInt
+    public static function teu(): FieldInt
     {
         return F::createInt('TEU', ['tableAlign' => 'center']);
     }
 
-    public static function synonyms():FieldText
+    public static function synonyms(): FieldText
     {
         return F::createText('Synonyms');
     }
 
-    public static function email():FieldString
+    public static function email(): FieldString
     {
         return F::createString('Email', [
             'name' => 'E-mail',
@@ -286,7 +291,7 @@ class CommonFields
         ]);
     }
 
-    public static function phone($fieldKey = 'Phone', array $params = []):FieldString
+    public static function phone($fieldKey = 'Phone', array $params = []): FieldString
     {
         $defaultParams = [
             'name' => 'Phone',
@@ -297,7 +302,7 @@ class CommonFields
         return F::createString($fieldKey, $params + $defaultParams);
     }
 
-    public static function checkbox(string $name = "ids"):FieldHtml
+    public static function checkbox(string $name = "ids"): FieldHtml
     {
         return F::createHtml('Checkbox', [
             'nameTable' => '<input type="checkbox" class="cb-all">',

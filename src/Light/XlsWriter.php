@@ -1,4 +1,5 @@
 <?php
+
 namespace Light;
 
 use Light\Field\FieldAbstract;
@@ -181,7 +182,17 @@ class XlsWriter
                     preg_match_all("/%([\\w\\d]+)%/", $templateValue, $matches);
                     if (isset($matches[1][0])) {
                         //Что-то нашли! Сделаем замену: либо с учётом типа, если есть fieldset, либо тупую замену без учёта типа
-                        if ($fieldset !== null
+                        if (count($matches[1]) === 1
+                            && isset($data[$matches[1][0]])
+                            && $data[$matches[1][0]] instanceof Table) {
+                            // Если в ячейке ровно один плейсхолдер и он присутсвует в $data и является инстансом класса Table
+                            // то сделаем подстановку таблицы с добавлением новых строк
+                            /** @var Table $table */
+                            $table = $data[$matches[1][0]];
+                            $insertedRows = $this->insertTable($currentCol, $currentRow, $table, false);
+                            $currentRow += $insertedRows;
+                            $highestRow += $insertedRows;
+                        } elseif ($fieldset !== null
                             && $matches[0][0] === $templateValue
                             && isset($data[$matches[1][0]])
                             && count($matches[1]) === 1
@@ -270,7 +281,6 @@ class XlsWriter
     public function replaceDataWithTablesOnActiveSheet(array $tables, $withHeader = true)
     {
         $sheet = $this->_phpExcelObj->getActiveSheet();
-        $sheetIndex = $this->_phpExcelObj->getActiveSheetIndex();
 
         //Пройдёмся по всем ячейкам в поисках плейсхолдеров $tableName$
         $highestRow = $sheet->getHighestRow(); // e.g. 10
@@ -290,40 +300,16 @@ class XlsWriter
                     //Проверим, что такая таблица есть в массиве с таблицами для вставки
                     if (isset($tables[$tableName])) {
 
-                        //Очистим ячейку от названия таблицы
-                        $sheet->setCellValueByColumnAndRow($currentCol, $currentRow, '');
-
                         /** @var Table $table */
                         $table = $tables[$tableName];
-                        $numRows = $table->getTableDataCount();
+                        $numRows = $this->insertTable($currentCol, $currentRow, $table, $withHeader);
 
-                        //Если число строк больше 0 - нужно добавить эти новые строки на лист
-                        //и записать таблицу
-                        if ($numRows > 0) {
+                        //После вставки дополнительных строк, очевидно, увеличился параметр $highestRow
+                        $highestRow += $numRows;
+                        //Продолжим поиск других плейсхолдеров, однако, нужно перепрыгнуть сразу в конец
+                        //только что вставленной таблицы, чтобы не искать плейсхолдеры внутри
+                        $currentRow += $numRows;
 
-                            //Вставлять строки будем между текущей строкой (на которой обнаружили плейсхолдер) и следующей
-                            //таким образом на вновь вставленных строках будет скопирован стиль строки с плейсхолдером
-                            $sheet->insertNewRowBefore($currentRow + 1, $numRows);
-
-                            //Метод writeTableData пишет данные на активнй лист, поэтому нужно активировать текущий лист
-                            $this->_phpExcelObj->setActiveSheetIndex($sheetIndex);
-                            //Теперь приступаем непосредственно к записи
-                            $this->writeTableData(
-                                $table->getTableData(),
-                                $table->getFieldset(),
-                                $currentCol,
-                                $currentRow,
-                                $withHeader,
-                                null,
-                                true
-                            );
-
-                            //После вставки дополнительных строк, очевидно, увеличился параметр $highestRow
-                            $highestRow += $numRows;
-                            //Продолжим поиск других плейсхолдеров, однако, нужно перепрыгнуть сразу в конец
-                            //только что вставленной таблицы, чтобы не искать плейсхолдеры внутри
-                            $currentRow += $numRows;
-                        }
                     }
 
                     //По условиям шаблонизатора, если в текущей строке был найден какой-то плейсхолдер - больше
@@ -334,6 +320,38 @@ class XlsWriter
                 }
             }
         }
+    }
+
+    public function insertTable($col, $row, Table $table, $withHeader)
+    {
+        $sheet = $this->_phpExcelObj->getActiveSheet();
+        //Очистим ячейку от названия таблицы
+        $sheet->setCellValueByColumnAndRow($col, $row, '');
+
+        $numRows = $table->getTableDataCount();
+
+        //Если число строк больше 0 - нужно добавить эти новые строки на лист
+        //и записать таблицу
+        if ($numRows > 0) {
+
+            //Вставлять строки будем между текущей строкой (на которой обнаружили плейсхолдер) и следующей
+            //таким образом на вновь вставленных строках будет скопирован стиль строки с плейсхолдером
+            $sheet->insertNewRowBefore($row + 1, $numRows);
+
+            //Теперь приступаем непосредственно к записи
+            $this->writeTableData(
+                $table->getTableData(),
+                $table->getFieldset(),
+                $col,
+                $row,
+                $withHeader,
+                null,
+                true
+            );
+
+        }
+
+        return $numRows;
     }
 
     public function insertTextPerRows($col, $row, $text)
@@ -385,8 +403,13 @@ class XlsWriter
         }
     }
 
-    public function applyTableColumnStyles(Fieldset $fieldset, $startCol, $startDataRow, $lastRow, $fromTemplate = false)
-    {
+    public function applyTableColumnStyles(
+        Fieldset $fieldset,
+        $startCol,
+        $startDataRow,
+        $lastRow,
+        $fromTemplate = false
+    ) {
         $ws = $this->_phpExcelObj->getActiveSheet();
 
         $currentCol = $startCol;
@@ -478,8 +501,14 @@ class XlsWriter
         $ws->setSelectedCellByColumnAndRow($startCol, $startRow);
     }
 
-    public function writeTableRow(array $rowData, Fieldset $fieldset, $startCol, $currentRow, callable $rowStyleFunction = null, $fromTemplate = false)
-    {
+    public function writeTableRow(
+        array $rowData,
+        Fieldset $fieldset,
+        $startCol,
+        $currentRow,
+        callable $rowStyleFunction = null,
+        $fromTemplate = false
+    ) {
         $ws = $this->_phpExcelObj->getActiveSheet();
 
         $firsColLetter = \PHPExcel_Cell::stringFromColumnIndex($startCol);

@@ -34,7 +34,7 @@ class Location extends ModuleAbstract
 
     protected function initFilters()
     {
-        $this->_filtersNoSettings = true;
+        $this->filtersNoSettings = true;
         $this->addFilterName(F::TYPE_STRING, ['name' => 'Name / IATA', 'sqlWhere' => "Name LIKE '%{value}%' OR NameRu LIKE '%{value}%' OR IATA = '{value}'"]);
     }
 }

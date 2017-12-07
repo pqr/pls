@@ -138,10 +138,6 @@ th {
     left: 0;
 }
 
-.global-menu-unfix .listmassaction-fixed {
-    left: 0;
-}
-
 .list-top-buttons-div {
     margin-bottom: 10px;
 }
@@ -495,6 +491,10 @@ input.input-date {
 
 input[type=date].input-date {
     width: 120px;
+}
+
+input[type=date].empty-date {
+    color: #CCCCCC;
 }
 
 input.input-datetime {
@@ -953,12 +953,6 @@ td.col-right table.form > tbody > tr > td {
     z-index: 1;
 }
 
-.formactions .progress,
-.formactions_fixed .progress {
-    margin-left: -135px;
-    margin-top: -15px;
-}
-
 .buttonsbar {
     margin: 12px 0;
 }
@@ -1043,7 +1037,7 @@ form.multipleupdate table.form > tbody > tr {
 
 .listmassaction {
     background-color: white;
-    padding: 15px 20px 15px 0px;
+    padding: 15px 20px 15px 0;
 }
 
 .listmassaction.sticky {
@@ -1052,8 +1046,21 @@ form.multipleupdate table.form > tbody > tr {
     bottom: 0;
 }
 
-.listmassaction .total-span {
+.listmassaction__selectlinks {
+    margin-bottom: 5px;
+}
+
+.listmassaction__content {
+    display: inline-block;
+}
+
+.listmassaction__total {
     margin-left: 20px;
+    display: inline-flex;
+}
+
+.listmassaction__totalamount {
+    text-align: right;
 }
 
 @media print {
@@ -1121,6 +1128,11 @@ form.multipleupdate table.form > tbody > tr {
     .ui-corner-all {
         border: 0;
     }
+}
+
+div.color-container {
+    display: inline-block;
+    padding: 2px 10px;
 }
 
 .color-span {
@@ -1659,22 +1671,22 @@ i.left {
     margin-right: 5px;
 }
 
-.progress {
-    float: left;
-    position: relative;
-    height: 4px;
+#globalprogress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    height: 2px;
     display: block;
     width: 100%;
     background-color: #acece6;
-    border-radius: 2px;
-    overflow: hidden;
 }
 
-.progress .indeterminate {
+#globalprogress > div {
     background-color: #26a69a;
 }
 
-.progress .indeterminate:before {
+#globalprogress > div:before {
     content: '';
     position: absolute;
     background-color: inherit;
@@ -1689,7 +1701,7 @@ i.left {
     animation: indeterminate 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
 }
 
-.progress .indeterminate:after {
+#globalprogress > div:after {
     content: '';
     position: absolute;
     background-color: inherit;

@@ -21,7 +21,7 @@
                     <?php if ($allowPaste): ?>
                         <a href="#" class="subtable-paste-link btn-flat waves-effect">
                             <i class="fa fa-clipboard"></i>
-                            Paste</a>
+                            <?= \Light\Config::$lang === 'ru' ? 'Вставить' : 'Paste' ?></a>
                     <?php endif; ?>
                 </p>
             </td>

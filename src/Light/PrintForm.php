@@ -207,11 +207,16 @@ class PrintForm
             $sheet = $xls->getPhpExcelObj()->getActiveSheet();
             $sheet->setTitle($title);
         }
-        $data = $this->getDataForExcel($obj);
+        $dataForExcel = $this->getDataForExcel($obj);
         $fieldset = new Fieldset();
         $fieldset->addFields($obj->getFieldset());
         $fieldset->addFields($this->getFieldset());
-        $xls->replaceData($data, $fieldset);
+        $this->replaceExcelData($xls, $dataForExcel, $fieldset);
+    }
+
+    protected function replaceExcelData(XlsWriter $xls, array $dataForExcel, Fieldset $fieldset)
+    {
+        $xls->replaceData($dataForExcel, $fieldset);
     }
 
     public function proceedPrint(ObjAbstract $obj, string $filesFolderRelativePath = '')

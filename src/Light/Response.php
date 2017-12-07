@@ -97,7 +97,7 @@ class Response
 
     public static function sendHeaderJsReloadTable($tableName, array $additionalData = [])
     {
-        Response::sendHeaderJsEval('Light.tables.get(' . json_encode($tableName) . ').reload(' . json_encode($additionalData) . ')');
+        Response::sendHeaderJsEval('Light.table.get(' . json_encode($tableName) . ').reload(' . json_encode($additionalData) . ')');
     }
 
     public static function isRedirected()

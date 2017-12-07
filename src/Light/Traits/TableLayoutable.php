@@ -112,7 +112,7 @@ trait TableLayoutable
         return '';
     }
 
-    protected function sendAjaxTableLayoutSettings()
+    protected function showTableLayoutSettingsDialog()
     {
         $fieldset = $this->getFieldset();
         $shownFieldKeys = $this->getTableFieldsShow() ?? $fieldset->getKeys();

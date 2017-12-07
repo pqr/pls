@@ -21,7 +21,7 @@ class Vendor extends ModuleAbstract
 
     protected function initFilters()
     {
-        $this->_filtersNoSettings = true;
+        $this->filtersNoSettings = true;
 
         $vendorType = [
             'isAirline' => 'Airline',

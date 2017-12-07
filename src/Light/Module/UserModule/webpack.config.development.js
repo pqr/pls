@@ -4,7 +4,7 @@ module.exports = {
     devtool: '#cheap-module-inline-source-map',
     entry: './source/index.tsx',
     output: {
-        filename: '../../public/js/UserModuleBuild.js'
+        filename: '../../public/js/build/UserModuleBuild.js'
     },
     resolve: {
         extensions: ['.ts', '.tsx', '.js']

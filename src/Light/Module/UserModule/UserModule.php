@@ -30,7 +30,7 @@ class UserModule
         Js::$preact = true;
         Js::$preactcompat = true;
         Js::$mobx = true;
-        Js::addLight('UserModuleBuild.js');
+        Js::addLight('build/UserModuleBuild.js');
 
         $orderBy = User::getParam('UserModuleUsersOrderBy') ?? 'Name ASC';
         list($usersSortFieldKey, $usersSortDirection) = explode(' ', $orderBy);

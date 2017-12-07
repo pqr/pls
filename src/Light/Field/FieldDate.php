@@ -26,10 +26,13 @@ class FieldDate extends FieldInputAbstract
         $this->editMaxLength = 12;
         $this->tableWidthHtml = 79;
 
-        if (Request::isMobileOrTablet()) {
-            // Для использования нативных контрол-элементов на мобильных устройствах
+        /*
+        if (Config::$useInputTypeDate || Request::isMobileOrTablet()) {
+            // Если в конфиге явно указано, что будем использовать input type=date
+            // или при использовании на мобильных устройствах
             $this->inputType = 'date';
         }
+        */
     }
 
     protected function getEditCssClass($value, array $data)
@@ -40,7 +43,7 @@ class FieldDate extends FieldInputAbstract
     protected function getHtmlInner($value, array $data, $forTable)
     {
         if ($value === '2099-01-01') {
-            return 'until further notice';
+            return Config::$lang === 'ru' ? 'бессрочно' : 'until further notice';
         }
 
         return FieldDate::beautify($value);
@@ -143,7 +146,7 @@ class FieldDate extends FieldInputAbstract
         $dateStr = (string)$dateStr;
 
         $dateStr = trim(str_replace(chr(160), '', $dateStr));
-        if ($dateStr === '') {
+        if ($dateStr === '' || $dateStr === '0000-00-00') {
             return '';
         }
 

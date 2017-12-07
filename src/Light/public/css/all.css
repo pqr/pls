@@ -150,10 +150,6 @@ th {
     left: 0;
 }
 
-.global-menu-unfix .listmassaction-fixed {
-    left: 0;
-}
-
 .list-top-buttons-div {
     margin-bottom: 10px;
 }
@@ -507,6 +503,10 @@ input.input-date {
 
 input[type=date].input-date {
     width: 120px;
+}
+
+input[type=date].empty-date {
+    color: #CCCCCC;
 }
 
 input.input-datetime {
@@ -965,12 +965,6 @@ td.col-right table.form > tbody > tr > td {
     z-index: 1;
 }
 
-.formactions .progress,
-.formactions_fixed .progress {
-    margin-left: -135px;
-    margin-top: -15px;
-}
-
 .buttonsbar {
     margin: 12px 0;
 }
@@ -1055,7 +1049,7 @@ form.multipleupdate table.form > tbody > tr {
 
 .listmassaction {
     background-color: white;
-    padding: 15px 20px 15px 0px;
+    padding: 15px 20px 15px 0;
 }
 
 .listmassaction.sticky {
@@ -1064,8 +1058,21 @@ form.multipleupdate table.form > tbody > tr {
     bottom: 0;
 }
 
-.listmassaction .total-span {
+.listmassaction__selectlinks {
+    margin-bottom: 5px;
+}
+
+.listmassaction__content {
+    display: inline-block;
+}
+
+.listmassaction__total {
     margin-left: 20px;
+    display: inline-flex;
+}
+
+.listmassaction__totalamount {
+    text-align: right;
 }
 
 @media print {
@@ -1133,6 +1140,11 @@ form.multipleupdate table.form > tbody > tr {
     .ui-corner-all {
         border: 0;
     }
+}
+
+div.color-container {
+    display: inline-block;
+    padding: 2px 10px;
 }
 
 .color-span {
@@ -1671,22 +1683,22 @@ i.left {
     margin-right: 5px;
 }
 
-.progress {
-    float: left;
-    position: relative;
-    height: 4px;
+#globalprogress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    height: 2px;
     display: block;
     width: 100%;
     background-color: #acece6;
-    border-radius: 2px;
-    overflow: hidden;
 }
 
-.progress .indeterminate {
+#globalprogress > div {
     background-color: #26a69a;
 }
 
-.progress .indeterminate:before {
+#globalprogress > div:before {
     content: '';
     position: absolute;
     background-color: inherit;
@@ -1701,7 +1713,7 @@ i.left {
     animation: indeterminate 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
 }
 
-.progress .indeterminate:after {
+#globalprogress > div:after {
     content: '';
     position: absolute;
     background-color: inherit;
@@ -2153,7 +2165,7 @@ div.filters input[type=text].input-default {
     margin-right: 1em;
 }
 
-.filters-settings-save {
+.filters-layout-save {
     margin-right: 0.6em;
 }
 
@@ -2169,12 +2181,11 @@ div.filters input[type=text].input-default {
 .filters-reset,
 .filters-history,
 .filters-save,
-.filters-settings,
-.filters-settings-cancel,
-.filters-settings-reset-sort,
-.filters-settings-all-visible,
-.filters-settings-all-invisible,
-.filters-has-active-invisible-values {
+.filters-layout,
+.filters-layout-cancel,
+.filters-layout-reset,
+.filters-layout-allvisible,
+.filters-layout-allinvisible {
     font-size: 1.2em;
     padding: 0 0.8em;
     color: #999;
@@ -2186,15 +2197,7 @@ div.filters input[type=text].input-default {
     font-size: 1.1em;
 }
 
-.filters-has-active-invisible-values {
-    color: #d32f2f;
-}
-
-.filters-has-active-invisible-values:hover {
-    color: #f44336;
-}
-
-.filters-reset:hover, .filters-settings-cancel:hover {
+.filters-reset:hover, .filters-layout-cancel:hover {
     color: #f44336;
 }
 
@@ -2206,19 +2209,19 @@ div.filters input[type=text].input-default {
     color: #3C861A;
 }
 
-.filters-settings:hover {
+.filters-layout:hover {
     color: #594C05;
 }
 
-.filters-settings-reset-sort:hover:hover {
+.filters-layout-reset:hover {
     color: #6B4C86;
 }
 
-.filters-settings-all-visible:hover {
+.filters-layout-allvisible:hover {
     color: #1E88E5;
 }
 
-.filters-settings-all-invisible:hover {
+.filters-layout-allinvisible:hover {
     color: #000;
 }
 
@@ -2226,31 +2229,23 @@ div.filters input[type=text].input-default {
     margin-right: 0.5em;
     cursor: pointer;
     transition: color .1s ease-out;
-}
-
-.filter-hide-icon i {
     opacity: 0.6;
 }
 
-.filter-hide-icon i:hover {
+.filter-hide-icon:hover {
     opacity: 1;
 }
 
-.filter-hide-icon i.fa-eye {
+.filter-hide-icon.fa-eye {
     color: #1E88E5;
 }
 
-.filter-hide-icon i.fa-eye-slash {
+.filter-hide-icon.fa-eye-slash {
     color: #999;
 }
 
 .filter-invisible {
     display: none;
-}
-
-.invisible-icon {
-    color: #999;
-    margin-right: 0.5em;
 }
 
 .layer {
@@ -2306,23 +2301,28 @@ div.filters input[type=text].input-default {
     padding: 0;
     margin: 0;
     width: 100%;
+    display: flex;
+    justify-content: space-between;
 }
 
 .widget-block ul li a {
     color: #000;
-    font-size: 1em;
     margin: 0;
     padding: 4px 10px 4px 10px;
-    display: flex;
-    align-content: flex-start;
+    display: inline-block;
     transition: none;
 }
 
-.widget-block ul li a:hover {
+.widget-block ul li a:not(.del-link) {
+    width: 100%;
+}
+
+.widget-block ul li a:not(.del-link):hover {
     background-color: #08C !important;
     color: #FFF;
 }
 
+/*
 .widget-block ul li a:hover .time {
     color: #fff;
 }
@@ -2332,13 +2332,11 @@ div.filters input[type=text].input-default {
     font-size: 0.9em;
     margin-right: 0.5em;
 }
+*/
 
-.widget-block ul li a .delete {
-    margin-left: auto;
-}
-
-.widget-block ul li a .delete:hover {
-    color: #ff6b70;
+.widget-block ul li a.del-link {
+    width: 30px;
+    text-align: center;
 }
 
 .widget-block .like-reset {
