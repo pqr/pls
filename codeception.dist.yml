@@ -24,18 +24,10 @@ coverage:
             - www/Light/Codeception/*
 modules:
     config:
-        Db:
-            dsn: 'mysql:host=127.0.0.1;dbname=pls'
-            user: 'root'
-            password: '1234'
-            dump: tests/_data/dump.sql
-            populate: true
-            cleanup: false
-            reconnect: false
         PhpBrowser:
-            url: http://localhost/book4a/www
+            url: http://book4a.test
         REST:
-            url: http://localhost/book4a/www
+            url: http://book4a.test
         \Light\Codeception\AdminSessionHelper:
             username: admin
             password: changeme in codeception.yml local file

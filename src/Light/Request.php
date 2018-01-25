@@ -6,6 +6,12 @@ use Detection\MobileDetect;
 class Request
 {
     public static $detect;
+    private static $isMobileOrTablet;
+
+    public static function reset()
+    {
+        self::$isMobileOrTablet = null;
+    }
 
     public static function getMehod()
     {
@@ -39,17 +45,16 @@ class Request
 
     public static function isMobileOrTablet()
     {
-        static $isMobileOrTablet;
-        if ($isMobileOrTablet === null) {
+        if (self::$isMobileOrTablet === null) {
 
             if (!self::$detect) {
                 self::$detect = new MobileDetect();
             }
 
-            $isMobileOrTablet = self::$detect->isMobile() || self::$detect->isTablet();
+            self::$isMobileOrTablet = self::$detect->isMobile() || self::$detect->isTablet();
 
         }
 
-        return $isMobileOrTablet;
+        return self::$isMobileOrTablet;
     }
 }

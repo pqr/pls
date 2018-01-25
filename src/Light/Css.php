@@ -8,6 +8,13 @@ class Css
     private static $lightFiles = [];
     private static $projectFiles = [];
 
+    public static function reset()
+    {
+        self::$select2 = false;
+        self::$lightFiles = [];
+        self::$projectFiles = [];
+    }
+
     public static function addLight(string $file)
     {
         self::$lightFiles[] = "lightpublic/css/$file";

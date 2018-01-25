@@ -3,6 +3,7 @@
 namespace tests\functional;
 
 use Light\Codeception\ModuleCestAbstract;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class QuotationCest extends ModuleCestAbstract
 {
@@ -36,10 +37,8 @@ class QuotationCest extends ModuleCestAbstract
         $filepath = __DIR__ . '/../_output/quotation_test_' . $lang . '.xlsx';
         file_put_contents($filepath, $I->grabResponse());
 
-        $reader = new \PHPExcel_Reader_Excel2007();
-        $phpExcel = $reader->load($filepath);
-
-        $a9val = $phpExcel->getSheet(0)->getCellByColumnAndRow(0, 9)->getValue();
+        $spreadsheet = IOFactory::load($filepath);
+        $a9val = $spreadsheet->getSheet(0)->getCell("A2")->getValue();
         $title = $lang === 'ru' ? 'Котировка' : 'Quotation';
         $I->assertContains($title . ' #' . $this->getTestObjId(), $a9val);
     }

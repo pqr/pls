@@ -3,6 +3,8 @@ namespace Light\Codeception;
 
 use Codeception\Lib\Connector\Universal;
 
+use Light\Css;
+use Light\Js;
 use Symfony\Component\BrowserKit\Request;
 use Symfony\Component\BrowserKit\Response;
 
@@ -49,6 +51,13 @@ class LightConnector extends Universal
 
         $_SESSION['lightauth'] = 'admin';
         $_SESSION['csrf_token'] = 'abc';
+
+        // Выставляем значения по умолчанияю во все статические переменные
+        // внутри объекта Response (важно для функциональных тестов)
+        \Light\Request::reset();
+        \Light\Response::reset();
+        Js::reset();
+        Css::reset();
 
         try {
             $appClass = PROJECT_NAMESPACE .'\\Application';

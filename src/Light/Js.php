@@ -14,6 +14,19 @@ class Js
     private static $lightFiles = [];
     private static $projectFiles = [];
 
+    public static function reset()
+    {
+        self::$select2 = false;
+        self::$angularJs = false;
+        self::$react = false;
+        self::$preact = false;
+        self::$preactcompat = false;
+        self::$mobx = false;
+
+        self::$lightFiles = [];
+        self::$projectFiles = [];
+    }
+
     public static function addLight(string $file)
     {
         self::$lightFiles[] = "lightpublic/js/$file";

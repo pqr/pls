@@ -272,10 +272,6 @@ abstract class ApplicationAbstract
      */
     public function __invoke()
     {
-        // Выставляем значения по умолчанияю во все статические переменные
-        // внутри объекта Response (важно для функциональных тестов)
-        Response::reset();
-
         //В качестве обработчика сессий используем самописный класс реализующий интерфейс SessionHandlerInterface
         //http://php.net/manual/en/class.sessionhandlerinterface.php
         //В этом самописном классе будем сохранять сессии в базу данных в таблицу phpsession
