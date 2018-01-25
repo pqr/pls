@@ -440,7 +440,7 @@ class Quotation extends ModuleAbstract
         $sheet = $xls->getPhpExcelObj()->getActiveSheet();
 
         $excelData = $this->_obj->getExcelData();
-        $excelData['CompanyID'] = str_replace(['(USD)', '(EUR)'], '', $excelData['CompanyID']);
+        $excelData['CompanyID'] = str_replace(['(USD)', '(EUR)', 'new'], '', $excelData['CompanyID']);
 
         //Добавим общие данные по грузу
         $query = "SELECT sum(Pieces) AS TotalQuantity
@@ -453,6 +453,8 @@ class Quotation extends ModuleAbstract
         $xls->replaceData($excelData);
 
         // Добавим адрес компании
+        // Задача от 2017-01-15: убрать адрес компании из шаблона
+        /*
         $address = Db::getOne("SELECT Address FROM ourcompany WHERE ID = " . (int)$this->_obj['CompanyID']);
         if ($address) {
             $addressLines = explode("\n", $address);
@@ -467,6 +469,7 @@ class Quotation extends ModuleAbstract
                 $rowNum++;
             }
         }
+        */
 
         //Добавим детальное описание груза
         $cargo = Db::getAll("SELECT * FROM quotationcargo WHERE QuotationID = " . $this->_obj->getId());
