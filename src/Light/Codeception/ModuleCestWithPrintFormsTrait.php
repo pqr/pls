@@ -1,6 +1,8 @@
 <?php
 namespace Light\Codeception;
 
+use Codeception\Example;
+
 trait ModuleCestWithPrintFormsTrait
 {
     abstract protected function getModule():string;
@@ -11,7 +13,7 @@ trait ModuleCestWithPrintFormsTrait
      * @param \AcceptanceTester | \FunctionalTester $I
      * @param \Codeception\Example $example
      */
-    private function printHtmlInternal($I, \Codeception\Example $example)
+    private function printHtmlInternal($I, Example $example)
     {
         list($id, $form) = $example;
 
@@ -28,7 +30,7 @@ trait ModuleCestWithPrintFormsTrait
      * @param \AcceptanceTester | \FunctionalTester $I
      * @param \Codeception\Example $example
      */
-    private function printPdfInternal($I, \Codeception\Example $example)
+    private function printPdfInternal($I, Example $example)
     {
         list($id, $form) = $example;
 
@@ -48,7 +50,7 @@ trait ModuleCestWithPrintFormsTrait
      * @param \AcceptanceTester | \FunctionalTester $I
      * @param \Codeception\Example $example
      */
-    private function testPrintButtonsInternal($I, \Codeception\Example $example)
+    private function testPrintButtonsInternal($I, Example $example)
     {
         /** @var array $forms */
         list($id, $forms) = $example;
@@ -84,7 +86,7 @@ trait ModuleCestWithPrintFormsTrait
      * @param \AcceptanceTester | \FunctionalTester $I
      * @param \Codeception\Example $example
      */
-    private function testPrintButtonsMultipleInternal($I, \Codeception\Example $example)
+    private function testPrintButtonsMultipleInternal($I, Example $example)
     {
         /** @var array $forms */
         list($idsString, $forms) = $example;

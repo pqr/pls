@@ -2,6 +2,7 @@
 
 namespace Light\Traits;
 
+use Light\Config;
 use Light\Db;
 use Light\DbLog;
 use Light\Field\FieldAbstract as F;
@@ -72,12 +73,12 @@ trait TableFilterable
         }
     }
 
-    protected function getFiltersFieldset():Fieldset
+    protected function getFiltersFieldset(): Fieldset
     {
         return $this->filters->getFieldset();
     }
 
-    protected function hasFilters():bool
+    protected function hasFilters(): bool
     {
         return !$this->getFiltersFieldset()->isEmpty();
     }
@@ -204,8 +205,12 @@ trait TableFilterable
      * @param int $yearTill
      * @return FieldSelect
      */
-    public function addFilterYear(string $tableName = null, string $dateField = null, int $yearFrom = null, int $yearTill = null)
-    {
+    public function addFilterYear(
+        string $tableName = null,
+        string $dateField = null,
+        int $yearFrom = null,
+        int $yearTill = null
+    ) {
         //Определим год начала
         if (!$yearFrom) {
             //Если переданы таблица и поле по котором искать год начала, сделаем запрос к базе
@@ -235,10 +240,14 @@ trait TableFilterable
         $years = array_reverse($years);
         $options = array_combine($years, $years);
 
-        $fieldKey = 'Year';
-        $fieldParams = ['default' => date('Y'), 'options' => $options, 'empty' => false, 'any' => false];
+        $filterYear = F::createSelect('Year', [
+            'name' => Config::$lang === 'ru' ? 'Год' : 'Year',
+            'default' => date('Y'),
+            'options' => $options,
+            'empty' => false,
+            'any' => false
+        ]);
 
-        $filterYear = F::createSelect($fieldKey, $fieldParams);
         $this->addFilter($filterYear);
 
         return $filterYear;
@@ -259,7 +268,7 @@ trait TableFilterable
      * Возвращает занчения всех полей, в том числе знаяния по умолчанию
      * @return array $values
      */
-    public function getFiltersValues():array
+    public function getFiltersValues(): array
     {
         return $this->filters->getValues();
     }
