@@ -24,6 +24,9 @@ use Light\XlsWriter;
 
 class Quotation extends ModuleAbstract
 {
+    private const EXCEL_CARGO_STARTROW = 15;
+    private const EXCEL_DETAILS_STARTROW = 20;
+    
     public function __construct()
     {
         parent::__construct();
@@ -434,8 +437,6 @@ class Quotation extends ModuleAbstract
             $companySuffix = 'pgl';
         }
 
-        $cargoStartRowNum = 22;
-        $quotationDetailsStartRowNum = 27;
         $xls = new XlsWriter(__DIR__ . "/quotation_{$companySuffix}_{$lang}.xlsx");
         $sheet = $xls->getPhpExcelObj()->getActiveSheet();
 
@@ -474,11 +475,11 @@ class Quotation extends ModuleAbstract
         //Добавим детальное описание груза
         $cargo = Db::getAll("SELECT * FROM quotationcargo WHERE QuotationID = " . $this->_obj->getId());
         $insertedRows = 0;
-        $rowNum = $cargoStartRowNum;
+        $rowNum = self::EXCEL_CARGO_STARTROW;
         foreach ($cargo as $cargoLine) {
-            if ($rowNum > $cargoStartRowNum) {
+            if ($rowNum > self::EXCEL_CARGO_STARTROW) {
                 //При вставке первой строки cargo новую строку в Excel НЕ добавляем
-                //при последующих строках ($rowNum > $cargoStartRowNum), нужно добавлять новые строки
+                //при последующих строках ($rowNum > self::EXCEL_CARGO_STARTROW), нужно добавлять новые строки
                 $sheet->insertNewRowBefore($rowNum);
                 $insertedRows++;
             }
@@ -494,12 +495,12 @@ class Quotation extends ModuleAbstract
         if ($cargo) {
             $sheet->setCellValueExplicit(
                 'F' . $rowNum,
-                '=SUM(F' . $cargoStartRowNum . ':F' . ($rowNum - 1) . ')',
+                '=SUM(F' . self::EXCEL_CARGO_STARTROW . ':F' . ($rowNum - 1) . ')',
                 \PHPExcel_Cell_DataType::TYPE_FORMULA
             );
             $sheet->setCellValueExplicit(
                 'G' . $rowNum,
-                '=SUM(G' . $cargoStartRowNum . ':G' . ($rowNum - 1) . ')',
+                '=SUM(G' . self::EXCEL_CARGO_STARTROW . ':G' . ($rowNum - 1) . ')',
                 \PHPExcel_Cell_DataType::TYPE_FORMULA
             );
         }
@@ -518,12 +519,12 @@ class Quotation extends ModuleAbstract
             }
         }
 
-        $quotationDetailsStartRowNum += $insertedRows; //сдвиг на $insertedRows из-за таблицы с описанием груза
-        $rowNum = $quotationDetailsStartRowNum;
+        $detailsStartRow = self::EXCEL_DETAILS_STARTROW + $insertedRows; //сдвиг на $insertedRows из-за таблицы с описанием груза
+        $rowNum = $detailsStartRow;
         foreach ($details as $detailLine) {
-            if ($rowNum > $quotationDetailsStartRowNum) {
+            if ($rowNum > $detailsStartRow) {
                 //При вставке первой строки details новую строку в Excel НЕ добавляем
-                //при последующих строках ($rowNum > $quotationDetailsStartRowNum), нужно добавлять новые строки
+                //при последующих строках ($rowNum > self::EXCEL_DETAILS_STARTROW), нужно добавлять новые строки
                 $sheet->insertNewRowBefore($rowNum);
             }
             $sheet->mergeCells('A' . $rowNum . ':C' . $rowNum);
@@ -543,7 +544,7 @@ class Quotation extends ModuleAbstract
         if ($details) {
             $sheet->setCellValueExplicit(
                 'G' . $rowNum,
-                '=SUM(G' . $quotationDetailsStartRowNum . ':G' . ($rowNum - 1) . ')',
+                '=SUM(G' . $detailsStartRow . ':G' . ($rowNum - 1) . ')',
                 \PHPExcel_Cell_DataType::TYPE_FORMULA
             );
         }
