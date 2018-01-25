@@ -7,7 +7,7 @@ class ModuleRegister
     const MODULE_HIDDEN = 0b01;
     const MODULE_HASBADGE = 0b10;
 
-    private static $coreModules = ['Core' => 'Core', 'Login' => 'Login', 'Logout' => 'Logout'];
+    private static $coreModules = ['Core' => 'Core', 'Login' => 'Login', 'Logout' => 'Logout', 'Bot' => 'Bot'];
 
     public static $modules = [
         'Home' => [

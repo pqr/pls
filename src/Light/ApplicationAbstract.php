@@ -112,7 +112,15 @@ abstract class ApplicationAbstract
     {
         $module = Request::getModule();
 
-        if ($module !== 'Login' && !User::isAuth()) {
+        if ($module === 'Login' || $module === 'Bot') {
+            // К модулям Login и Bot доступ есть всегда, не проверяем User::isAuth().
+            // Модуль Login понятно почему - должен отображать форму для не зарегистрированных пользователей
+            // Модуль Bot имеет свою схему авторизации через $_GET['telegramid'], поэтому на данном этапе
+            // пользователь не авторизован и это нормально - пропускаем его внутрь модуля Bot
+            return;
+        }
+
+        if (!User::isAuth()) {
             if ($_SERVER['QUERY_STRING']) {
                 $redirectUrlParams = ['next' => $_SERVER['QUERY_STRING']];
             } else {
@@ -233,13 +241,7 @@ abstract class ApplicationAbstract
     private function initDb()
     {
         //Инициализируем singleton объект базы
-        Db::connect(
-            Config::$mysqlHost,
-            Config::$mysqlUser,
-            Config::$mysqlPassword,
-            Config::$mysqlDb,
-            Config::$mysqlPort
-        );
+        Db::connect();
     }
 
     public function runAutolaunchCli()
@@ -282,7 +284,7 @@ abstract class ApplicationAbstract
             session_start();
         }
 
-        //Пытаемся инициализировать пользователя на основе данных сессии
+        // Пытаемся инициализировать пользователя на основе данных сессии
         User::loadFromSession();
 
         if (!defined("CODECEPTION_FUNCTIONAL_TEST") && Config::$sentry) {

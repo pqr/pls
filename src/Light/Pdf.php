@@ -181,6 +181,7 @@ class Pdf
      * Принимает массив путей к pdf файлам (относительно filesfolder), склеивает их и отдаёт пользователю в браузер
      * @param array $filesRelative массив имён файлов относительно FilesFolder
      * @param string $attachementFilename имя файла, которое пользователь увидит в браузере в диалоговом окне "скачать..."
+     * @throws Codeception\TestResponseException
      */
     public static function concatenateAndStreamFromFilesFolder(array $filesRelative, $attachementFilename)
     {

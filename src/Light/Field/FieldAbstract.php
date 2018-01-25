@@ -565,7 +565,7 @@ abstract class FieldAbstract
         }
     }
 
-    final public function getHtml($value, array $data = [], $forTable = false, $forLog = false)
+    public function getHtml($value, array $data = [], $forTable = false, $forLog = false)
     {
         if ($this->groupconcat && $value) {
 
@@ -716,7 +716,7 @@ abstract class FieldAbstract
         return $out;
     }
 
-    final public function getExcel($value, array $data = [])
+    public function getExcel($value, array $data = [])
     {
         if ($value !== null) {
             //Правильное оформление перевода строк
@@ -1021,23 +1021,36 @@ abstract class FieldAbstract
         return $sqlSelect;
     }
 
-    public function getViewCssClass($value, array $data = [], $forTable = false)
+    private $evaluatedViewCssClass = null;
+    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeOverflow300 = false)
     {
-        $viewCssClass = $this->viewCssClass;
-
-        if ($viewCssClass && is_callable($viewCssClass)) {
-            $viewCssClass = $viewCssClass($value, $data, $forTable, $this);
+        if ($this->evaluatedViewCssClass !== null) {
+            return $this->evaluatedViewCssClass;
         }
 
+        $result = '';
         if ($this->nobr) {
-            $viewCssClass .= ' nobr';
+            $result .= ' nobr';
         }
 
-        if ($this->viewMaxWidth300) {
-            $viewCssClass .= ' overflow300';
+        if ($this->viewMaxWidth300 && !$excludeOverflow300) {
+            $result .= ' overflow300';
         }
 
-        return $viewCssClass;
+        $viewCssClass = $this->viewCssClass;
+        if ($viewCssClass && is_callable($viewCssClass)) {
+            $result .= ' ' . $viewCssClass($value, $data, $forTable, $this);
+        } else {
+            if ($viewCssClass) {
+                $result .= ' ' . $viewCssClass;
+            }
+            // В случае когда viewCssClass не является определённой пользователем функцией
+            // можем закешировать результат для данного поля раз и навсегда!
+            // Чтобы больше не проверять nobr, viewMaxWidth300 и не склеивать по кусочкам.
+            $this->evaluatedViewCssClass = $result;
+        }
+
+        return $result;
     }
 
     public function getViewTitle($value, array $data = [], $forTable = false)

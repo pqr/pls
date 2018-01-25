@@ -6,8 +6,10 @@ use Carbon\Carbon;
 use Light\ApplicationAbstract;
 use Light\Config;
 use Light\CsvLog;
+use Light\Currency;
 use Light\Db;
 use Light\DbLog;
+use Light\Field\FieldDate;
 use Light\File;
 use Light\Metric;
 use Light\Misc;
@@ -233,13 +235,13 @@ class Core
             $createdDateTimeText = (new Carbon($createdDateTime))->diffForHumans();
 
             $html .= '<li>'
-                .'<a href="#" data-filtersjson="'.htmlspecialchars($filtersJson).'">'
-                .'<div class="note nobr">'.$createdDateTimeText.':</div>'
-                .'<div>'.$description.'</div>'
-                .'</a>'
-            .'</li>';
+                . '<a href="#" data-filtersjson="' . htmlspecialchars($filtersJson) . '">'
+                . '<div class="note nobr">' . $createdDateTimeText . ':</div>'
+                . '<div>' . $description . '</div>'
+                . '</a>'
+                . '</li>';
 
-            }
+        }
         $html .= '</ul>';
 
         print $html;
@@ -486,5 +488,16 @@ class Core
         imagejpeg($avatar, $destAvatar, 90);
 
         echo json_encode(['imgUrl' => "i/employees/users/$userId.jpg" . "?" . filemtime($destImg)]);
+    }
+
+    public static function proceedGetCurrRate()
+    {
+        if (!isset($_GET['from']) || !isset($_GET['to']) || !isset($_GET['date'])) {
+            Response::abort(400, 'Not enought GET parameters');
+            ApplicationAbstract::terminate();
+        }
+
+        print Currency::getRate($_GET['from'], $_GET['to'], FieldDate::parse($_GET['date']));
+        ApplicationAbstract::terminate();
     }
 }

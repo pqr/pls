@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Traits;
 
 use Light\ApplicationAbstract;
@@ -7,6 +8,7 @@ use Light\Fieldset;
 use Light\File;
 use Light\Metric;
 use Light\Request;
+use Light\Response;
 use Light\Timer;
 use Light\XlsWriter;
 
@@ -22,6 +24,7 @@ trait TableExcelExportable
      * @return Fieldset|F[]
      */
     abstract public function getFieldsetShowed();
+
     abstract public function getTableData();
 
     public function isExcelEnabled()
@@ -40,7 +43,7 @@ trait TableExcelExportable
     protected function getTableExcelMaxRows()
     {
         $maxRows = ApplicationAbstract::getParam('TableExcelMaxRows');
-        return $maxRows ? : 30000;
+        return $maxRows ?: 30000;
     }
 
     protected function getXlsWriter($sheetname)
@@ -72,21 +75,30 @@ trait TableExcelExportable
 
     public function sendExcel($filename = null, $sheetname = null)
     {
+        ini_set('display_errors', 1);
+        error_reporting(E_ERROR);
         $timer = new Timer();
 
         list($filename, $sheetname) = $this->normalizeFilenameSheetname($filename, $sheetname);
         //Получим специальный объект типа XlsWriter, в котором содержится PHPExcel с заполненными данными
-        $xls = $this->getXlsWriter($sheetname);
+        if (isset($_GET['json'])) {
+
+            $json = json_encode($this->getTableData(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            Response::streamFileFromContent($json, "$filename.json");
+
+        } else {
+            $xls = $this->getXlsWriter($sheetname);
+            //Отправляем в поток
+            $xls->send($filename);
+        }
 
         // Запишем метрику экспорта в Excel - в том числе удобно для логов кто сколько выгружает
         $payload = ['count' => $this->getTableDataCount()];
         if (method_exists($this, 'getFiltersValues')) {
             $payload['filterValues'] = $this->getFiltersValues();
         }
-        Metric::record(Request::getModule() . '::sendExcel ' . $this->getTableName(), $timer->getMs(), $payload);
-
-        //Отправляем в поток
-        $xls->send($filename);
+        $act = isset($_GET['json']) ? '::sendJSON ' : '::sendExcel ';
+        Metric::record(Request::getModule() . $act . $this->getTableName(), $timer->getMs(), $payload);
     }
 
     public function saveExcel($filename = null, $sheetname = null)
@@ -107,8 +119,7 @@ trait TableExcelExportable
         //Если расширение неизвестное или отсутсвует, используем настройку из базы
         $ext = pathinfo($filename, PATHINFO_EXTENSION);
         if ($ext !== 'xls' && $ext !== 'xlsx') {
-            $ext = ApplicationAbstract::getParam('excel_export_format') === '2003' ? 'xls' : 'xlsx';
-            $filename .= '.' . $ext;
+            $filename .= '.xlsx';
         }
 
         if ($sheetname === null) {

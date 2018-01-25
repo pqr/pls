@@ -150,10 +150,10 @@ abstract class HomeBlockAbstract extends Table
     /**
      * Метод для переопределеняи в классах потомках
      * @param int $userId
-     * @return bool
+     * @return string
      */
     protected function getViewAllLink($userId)
     {
-        return false;
+        return '';
     }
 }

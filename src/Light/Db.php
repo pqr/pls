@@ -15,20 +15,14 @@ class Db
     /** @var \mysqli */
     public static $mysqli;
 
-    public static function connect(
-        $host = null,
-        $username = null,
-        $passwd = null,
-        $dbname = null,
-        $port = 3306,
-        $socket = null
-    ) {
-        self::$mysqli = new \mysqli($host, $username, $passwd, $dbname, $port, $socket);
+    public static function connect() {
+        self::$mysqli = new \mysqli(Config::$mysqlHost, Config::$mysqlUser, Config::$mysqlPassword, Config::$mysqlDb, Config::$mysqlPort);
         if (\mysqli_connect_errno()) {
             die(\mysqli_connect_errno() . ' ' . \mysqli_connect_error());
         }
         self::$mysqli->set_charset('utf8');
         self::$mysqli->set_opt(MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
+        self::$mysqli->query("SET SESSION SQL_MODE = ''");
     }
 
     /**
@@ -258,7 +252,7 @@ class Db
             $all = $res->fetch_all(MYSQLI_ASSOC);
             $keyName = mysqli_fetch_field($res)->name;
             $keys = array_column($all, $keyName);
-            foreach($all as &$row) {
+            foreach ($all as &$row) {
                 unset($row[$keyName]);
             }
             $a = array_combine($keys, $all);

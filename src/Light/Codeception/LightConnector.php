@@ -29,8 +29,10 @@ class LightConnector extends Universal
         $_REQUEST = $this->remapRequestParameters($request->getParameters());
         if (strtoupper($request->getMethod()) == 'GET') {
             $_GET = $_REQUEST;
+            $_POST = [];
         } else {
             $_POST = $_REQUEST;
+            $_GET = [];
         }
 
         $uriQuery = ltrim(parse_url($request->getUri(), PHP_URL_QUERY), '?');
@@ -43,6 +45,7 @@ class LightConnector extends Universal
         $_SERVER['REQUEST_METHOD'] = strtoupper($request->getMethod());
         $_SERVER['REQUEST_URI'] = $uri;
         $_SERVER['QUERY_STRING'] = $uriQuery;
+        $_SERVER['SCRIPT_NAME'] = 'index.php';
 
         $_SESSION['lightauth'] = 'admin';
         $_SESSION['csrf_token'] = 'abc';

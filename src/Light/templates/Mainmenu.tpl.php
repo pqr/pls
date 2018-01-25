@@ -7,7 +7,7 @@ $activeModule = \Light\Request::getModule();
             <a class="pin-menu-button"><i class="fa fa-thumb-tack"></i></a>
         </div>
         <div id="mainmenu__avatar">
-            <!--            <img src="Light/i/santa-hat.png" class="santa-hat">-->
+<!--            <img src="lightpublic/i/santa-hat.png" class="santa-hat">-->
             <img id="mainmenu__avatarimg" src="<?= \Light\Img::getUserAvatarUrl(\Light\User::getId()) ?>">
             <input id="mainmenu__avatarinputfile" type="file" name="avatar">
         </div>

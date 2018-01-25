@@ -161,12 +161,19 @@ abstract class AutolaunchAbstract
 
         $errors = $this->validateMandatory($params);
         if ($errors) {
+
             foreach ($errors as $error) {
                 $this->_msgBuff->addError($error['msg']);
             }
             $this->_msgBuffShort->addError('Some mandotry fields missed');
+
         } else {
-            $this->run($params);
+
+            try {
+                $this->run($params);
+            } catch (\Throwable $e) {
+                $this->_msgBuff->addError($e->getMessage());
+            }
         }
 
         $this->saveLog();

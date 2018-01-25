@@ -12,10 +12,10 @@ class User
 
     public static function loadFromSession()
     {
-        //Проверим сессию пользователя, есть ли там lightauth
+        // Проверим сессию пользователя, есть ли там lightauth
         if (isset($_SESSION['lightauth'])) {
 
-            //Проверим, есть ли такой пользователь в базе
+            // Проверим, есть ли такой пользователь в базе
             if (!self::loadData($_SESSION['lightauth'])) {
                 unset($_SESSION['lightauth']);
                 return;

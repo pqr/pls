@@ -1,6 +1,7 @@
 <?php
 namespace Light\Module\Reportmenu;
 
+use Codeception\Module;
 use Light\ApplicationAbstract;
 use Light\Css;
 use Light\Db;
@@ -10,6 +11,7 @@ use Light\Fieldset;
 use Light\Img;
 use Light\Js;
 use Light\Link;
+use Light\ModuleRegister;
 use Light\Response;
 use Light\Session;
 use Light\Template;
@@ -92,7 +94,7 @@ class Reportmenu
             }
 
             //Если в GET запросе не передан конкретный класс подмодуля, выведем список всех
-            $moduleName = '<strong>Reports</strong>';
+            $moduleName = ModuleRegister::getModuleName('Reportmenu');
             Response::setPageTitle($moduleName);
             Response::setPageHeadHtml($moduleName);
 

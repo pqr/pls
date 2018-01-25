@@ -96,17 +96,18 @@ th {
 }
 
 #mainmenu__avatar {
+    /*margin: 5px auto 0.5em;*/
     margin: -0.5em auto 0.5em;
 }
 
-/*#mainmenu__avatar .santa-hat {*/
-/*position: absolute;*/
-/*width: 50px;*/
-/*top: -23px;*/
-/*left: 26%;*/
-/*transform: rotate(340deg) scale(-1, 1);*/
-/*cursor: pointer;*/
-/*}*/
+#mainmenu__avatar .santa-hat {
+    position: absolute;
+    width: 50px;
+    top: 0px;
+    left: 26%;
+    transform: rotate(340deg) scale(-1, 1);
+    cursor: pointer;
+}
 
 #mainmenu__avatarimg {
     width: 50px;
@@ -557,12 +558,15 @@ a.ajax-input:focus {
 a.ajax-input:empty {
     opacity: 0;
 }
+
 a.ajax-input:empty:after {
     content: "change...";
 }
+
 a.ajax-input:empty:hover {
     opacity: 1;
 }
+
 /* поле при редактировании через ajax поле даты нужно сделать чуть меньше, чтобы не дёргалась вёрстка */
 input.input-date-ajax {
     height: 12px;
@@ -778,6 +782,9 @@ ul.checkboxset {
     font-size: 12px;
     color: #15428b;
     margin: 0;
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
 
 .next-link,
@@ -785,7 +792,7 @@ ul.checkboxset {
     color: white !important;
     float: left;
     font-size: 15px;
-    font-weight:bold;
+    font-weight: bold;
     text-align: center;
     margin: 0 5px;
     background-color: #90a4ae !important;
@@ -796,15 +803,19 @@ ul.checkboxset {
 }
 
 .tabsmenu {
-    margin: 5px 0 0 10px;
+    margin-top: 5px;
     white-space: nowrap;
     background: #fff;
-    padding: 0;
+    border-bottom: 1px solid #b6babf;
+    padding-left: 20px;
     font-weight: normal;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .tabsmenu a {
-    display: inline;
+    display: inline-block;
     margin: 1px 5px;
     padding: 5px 10px;
     font-size: 12px;
@@ -833,15 +844,8 @@ ul.checkboxset {
 
 .submenu {
     padding: 10px;
-    margin: -6px 5px 0 0;
-    border-top: 1px solid #b6babf;
     background-color: #f2f2f2;
-    border-radius: 0 0 0.5em 0.5em;
-}
-
-.submenu-empty + .filters {
-    margin: -5px 5px 0 0;
-    border-radius: 0 0 0.5em 0.5em;
+    border-radius: 0 0 4px 4px;
 }
 
 .submenu a,
@@ -1390,7 +1394,6 @@ a.subtable-del-link:hover {
     color: #ff9800 !important;
 }
 
-
 .hiddendiv {
     display: none;
 }
@@ -1434,7 +1437,7 @@ ul.tabs > li a {
 }
 
 .lightdialog {
-    padding: 0;
+    padding: 0 0 56px 0;
     /*height: 70%;*/
     /*top: 10%;*/
     position: fixed;
@@ -1446,19 +1449,20 @@ ul.tabs > li a {
 
 .lightdialog__content {
     position: relative;
-    height: calc(100% - 56px);
-    overflow-y: auto;
-    padding: 20px 20px 10px 20px;
+    height: 100%;
+    overflow-y: scroll;
+    padding: 20px 20px 16px 20px;
 }
 
 .lightdialog__footer {
-    position: relative;
+    position: absolute;
     bottom: 0;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0 0 2px 2px;
     background-color: #fafafa;
     padding: 4px 6px;
     height: 56px;
+    width: 100%;
 }
 
 .lightdialog__button {

@@ -29,9 +29,9 @@ class FieldCheckbox extends FieldAbstract
         return parent::getNameTableSettings() . ' (' . $this->textYes . '/' . $this->textNo . ')';
     }
 
-    public function getViewCssClass($value, array $data = [], $forTable = false)
+    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeOverflow300 = false)
     {
-        $viewCssClass = parent::getViewCssClass($value, $data, $forTable);
+        $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeOverflow300);
         if ($value !== null) {
             $viewCssClass .= ' ' . ($value ? 'yes' : 'no');
         }

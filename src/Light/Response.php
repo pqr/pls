@@ -128,7 +128,7 @@ class Response
             Response::header('HTTP/1.1 ' . $status);
         }
         Response::header("Content-type: application/json");
-        print json_encode($data);
+        print json_encode($data, JSON_UNESCAPED_UNICODE);
         ApplicationAbstract::terminate();
     }
 
@@ -340,6 +340,10 @@ class Response
 
             case 'zip':
                 $contentType = 'application/zip';
+                break;
+
+            case 'json':
+                $contentType = 'application/json';
                 break;
 
             default:

@@ -186,6 +186,24 @@ class Table
         return $outFieldset;
     }
 
+    protected function addCheckboxCol()
+    {
+        $this->getFieldsetFirst()->addField(F::createHtml('CheckBox', [
+                'tableWidthHtml' => 20,
+                'tableOrderBy' => '',
+                'tableAlign' => 'center',
+                'nameTable' => '<input type="checkbox" class="cb-all">',
+                'getHtmlFunction' => function ($value, array $data) {
+                    if (isset($data['ID'])) {
+                        return '<input type="checkbox" class="cb" value="' . $data['ID'] . '">';
+                    }
+
+                    return '';
+                }
+            ]
+        ));
+    }
+
     /**
      * Проверяет, отображется ли поле в режиме таблицы?
      * Поле должно иметь mode F::MODE_LIST и быть среди отображаемых в текущих настроках Table layout settings (массив $this->_tableFieldsShow)
@@ -629,6 +647,8 @@ class Table
 
         foreach ($allFields as $field) {
 
+            $tdHtml = $this->getHtmlTableCell($rowData, $rowNum, $field, $fullLinkParams);
+
             /** @var \Light\Field\FieldAbstract $field */
             $fieldKey = $field->key;
             $value = $rowData[$fieldKey];
@@ -637,11 +657,20 @@ class Table
                 //В этом случае каждое значение должно быть подсвечено отдельно
                 $tdCssClass = '';
             } else {
-                $tdCssClass = $field->getViewCssClass($value, $rowData, true);
+                // Четрвёртым параметром $excludeOverflow300 = true задаём поведение, чтобы класс overflow300
+                // не добавлялся ко всей ячейке td - он портит вывод.
+                $tdCssClass = $field->getViewCssClass($value, $rowData, true, true);
+
+                // Добавим этот класс внутрь содержимого, обернув содержимое дополнительным div
+                if ($field->viewMaxWidth300) {
+                    $tdHtml = "<div class=\"overflow300\">$tdHtml</div>";
+                }
             }
+
             if ($field->tableAlign) {
                 $tdCssClass .= ' ta' . $field->tableAlign[0]; //получается 'tac' (если center) или 'tar' (если right)
             }
+
             if (!$field->showInTable) {
                 $tdCssClass .= ' display-none';
             }
@@ -652,15 +681,6 @@ class Table
 
             $tdTagParams = $field->getViewTagParams($value, $rowData, true);
             $tdTagParams = $tdTagParams ? ' ' . $tdTagParams : '';
-
-            $tdHtml = $this->getHtmlTableCell($rowData, $rowNum, $field, $fullLinkParams);
-
-            // Если в css классе для td присутсвует хитрый класс "overflow300", то его нужно оттуда убрать
-            // т.к. этот класс портит рендеринг td. Придётся добавить отдельный div поверх контента ячейки
-            if (strpos($tdCssClass, 'overflow300') !== false) {
-                $tdCssClass = str_replace(' overflow300', '', $tdCssClass);
-                $tdHtml = '<div class="overflow300">' . $tdHtml . '</div>';
-            }
 
             $outHtml .= "<td{$tdCssClass}{$tdTitle}{$tdTagParams}>{$tdHtml}</td>";
 
@@ -736,12 +756,12 @@ class Table
         return $outHtml;
     }
 
-    private $findId;
+    private $findId = null;
 
     protected function isFindId(array $rowData): bool
     {
         // Инициализируем кэш, если он ещё не был инициализирован
-        if (!is_array($this->findId)) {
+        if ($this->findId === null) {
 
             $this->findId = [];
 
@@ -792,14 +812,22 @@ class Table
 
         $isMoneyWithCurrency = $this->getField($fieldKey)->getType() == F::TYPE_MONEY_WITH_CURRENCY;
         if ($isMoneyWithCurrency) {
+            $groupconcat = $this->getField($fieldKey)->groupconcat;
             $amountPerCurrency = [];
-            foreach ($amounts as $amountWithCurrency) {
-                [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($amountWithCurrency);
-                if ($amount && $currencyIso) {
-                    if (!isset($amountPerCurrency[$currencyIso])) {
-                        $amountPerCurrency[$currencyIso] = 0;
+            foreach ($amounts as $cellText) {
+                if ($groupconcat) {
+                    $linesText = explode("\n", $cellText);
+                } else {
+                    $linesText = [$cellText];
+                }
+                foreach($linesText as $lineText) {
+                    [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($lineText);
+                    if ($amount && $currencyIso) {
+                        if (!isset($amountPerCurrency[$currencyIso])) {
+                            $amountPerCurrency[$currencyIso] = 0;
+                        }
+                        $amountPerCurrency[$currencyIso] += $amount;
                     }
-                    $amountPerCurrency[$currencyIso] += $amount;
                 }
             }
 

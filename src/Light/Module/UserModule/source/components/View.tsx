@@ -276,10 +276,6 @@ class ViewFormActions extends React.Component<{store?:UserModuleStore}, {}> {
 
         return (
             <div className="formactions_fixed">
-                <div className={"progress" + (userOrGroup.isSaving ? '' : ' visibility-hidden')}>
-                    <div className="indeterminate"></div>
-                </div>
-
                 <span
                     className={"waves-effect waves-light btn bgcolor-btn-primary" + (userOrGroup.isSaving ? ' disabled' : '')}
                     title="Ctrl + S"

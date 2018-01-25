@@ -7,12 +7,14 @@ namespace Light\Field;
  * @param string $cssClassZero
  * @param bool $zeroEmpty
  * @param bool $zeroEmptyExcel
+ * @param bool $groupconcatSum
  *
  * @method $this setCssClassNegative(string $cssClass)
  * @method $this setCssClassPositive(string $cssClass)
  * @method $this setCssClassZero(string $cssClass)
  * @method $this setZeroEmpty(bool $value)
  * @method $this setZeroEmptyExcel(bool $value)
+ * @method $this setGroupconcatSum(bool $value)
  *
  */
 abstract class FieldNumberAbstract extends FieldInputAbstract
@@ -22,6 +24,7 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
     public $cssClassZero;
     public $zeroEmpty = false;
     public $zeroEmptyExcel = false;
+    public $groupconcatSum = false;
 
     protected function initDefaultParams()
     {
@@ -37,9 +40,9 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
         return parent::getEditTagParams($value, $data) . ' autocomplete="off"';
     }
 
-    public function getViewCssClass($value, array $data = [], $forTable = false)
+    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeOverflow300 = false)
     {
-        $viewCssClass = parent::getViewCssClass($value, $data, $forTable);
+        $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeOverflow300);
 
         if (is_numeric($value)) {
             if ($value > 0) {
@@ -56,6 +59,31 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
         }
 
         return $viewCssClass;
+    }
+
+    public function getHtml($value, array $data = [], $forTable = false, $forLog = false)
+    {
+        if ($this->groupconcat && $this->groupconcatSum && $value && strpos($value, "\n")) {
+            // Для этого поля определена настройка $this->groupconcatSum
+            // и внутри действительно есть несколько значений для суммирования - выполним его!
+            $value = $this->calcGroupconcatSum($value);
+        }
+        return parent::getHtml($value, $data, $forTable, $forLog);
+    }
+
+    public function getExcel($value, array $data = [])
+    {
+        if ($this->groupconcat && $this->groupconcatSum && $value && strpos($value, "\n")) {
+            // Для этого поля определена настройка $this->groupconcatSum
+            // и внутри действительно есть несколько значений для суммирования - выполним его!
+            $value = $this->calcGroupconcatSum($value);
+        }
+        return parent::getExcel($value, $data);
+    }
+
+    protected function calcGroupconcatSum($value) {
+        $lines = explode("\n", $value);
+        return array_sum($lines);
     }
 
     protected function getHtmlInputInner($value, array $data, $idPrefix)

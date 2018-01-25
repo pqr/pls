@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Field;
 
 use Light\Config;
@@ -78,23 +79,27 @@ class FieldMonth extends FieldInputAbstract
         return parent::getEditCssClass($value, $data) . ' input-small';
     }
 
+    public static function beautify($value)
+    {
+        if (!$value || $value === '0000-00-00') {
+            return '';
+        }
+        if (strpos($value, '-') !== false) {
+            [$year, $month] = explode('-', $value);
+            return "$month/$year";
+        }
+
+        if (!is_numeric($value) || $value < 2000) {
+            return '';
+        }
+
+        return $value;
+    }
+
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
-        if ($value) {
-            if ($value === '0000-00-00') {
-                $value = '';
-            } else {
-                if (strpos($value, '-') !== false) {
-                    list($year, $month) = explode('-', $value);
-                    $value = $month . '/' . $year;
-                } else {
-                    if (!is_numeric($value) || $value < 2000) {
-                        $value = '';
-                    }
-                }
-            }
-        }
-        return parent::getHtmlInputInner($value, $data, $idPrefix);
+        $beautyMonth = self::beautify($value);
+        return parent::getHtmlInputInner($beautyMonth, $data, $idPrefix);
     }
 
     protected function getDataFromRequestInner(array $requset)

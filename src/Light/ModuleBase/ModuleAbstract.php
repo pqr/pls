@@ -69,6 +69,7 @@ abstract class ModuleAbstract extends Table
 
     //Настройки сообщений на экран
     protected $_textObjectName = '';
+    protected $_textObjectNameGen = '';
 
     //Внутренние переменные состояния
     protected $_saveErrors = []; //Массив имя поля => сообщение об ошибке
@@ -240,7 +241,8 @@ abstract class ModuleAbstract extends Table
     protected function proceedUpdateObjFromMultipleUpdate(ObjAbstract $obj, array $dataFromPost, Msg $msgBuff)
     {
         $oldData = $this->getOldDataBeforeSubmitOrDelete($obj);
-        $affectedRows = $obj->updateDb($dataFromPost, 'Multiple Update');
+        $affectedRows = $obj->updateDb($dataFromPost,
+            Config::$lang === 'ru' ? 'Массовое редактирование' : 'Multiple Update');
         $this->afterUpdate($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, true);
         $this->afterSubmit($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, true);
         return $affectedRows;
@@ -507,9 +509,10 @@ abstract class ModuleAbstract extends Table
         // чтобы форма не отрпавлялась случайно при нажатии enter на лубом из полей
         $textSave = Config::$lang === 'ru' ? 'Сохранить' : 'Save';
         $textCancel = Config::$lang === 'ru' ? 'Отмена' : 'Cancel';
+        $textObjectName = $this->_textObjectNameGen ?: $this->_textObjectName;
         $contentHtml = '<div class="formactions_fixed">'
             . '<button type="button" class="waves-effect waves-light btn btn-save bgcolor-btn-primary" title="Ctrl + S">'
-            . "$textSave $this->_textObjectName"
+            . "$textSave $textObjectName"
             . '</button>'
             . '<a href="javascript: history.back()" class="btn-flat waves-effect cancel-link">'
             . $textCancel
@@ -878,7 +881,6 @@ abstract class ModuleAbstract extends Table
 
         ApplicationAbstract::terminate();
     }
-
 
     protected function proceedViewPage()
     {
@@ -2382,24 +2384,6 @@ abstract class ModuleAbstract extends Table
         }
     }
 
-    protected function addCheckboxCol()
-    {
-        $this->getFieldsetFirst()->addField(F::createHtml('CheckBox', [
-                'tableWidthHtml' => 20,
-                'tableOrderBy' => '',
-                'tableAlign' => 'center',
-                'nameTable' => '<input type="checkbox" class="cb-all">',
-                'getHtmlFunction' => function ($value, array $data) {
-                    if (isset($data['ID'])) {
-                        return '<input type="checkbox" class="cb" value="' . $data['ID'] . '">';
-                    }
-
-                    return '';
-                }
-            ]
-        ));
-    }
-
     /**
      * Регистрирует дополнительные поля для таблицы списка, такие как CheckBox, DEL ...
      * @return void
@@ -2874,7 +2858,8 @@ abstract class ModuleAbstract extends Table
     final protected function addMassactionMultipleUpdate()
     {
         if (User::hasWriteAccess() && $this->_allowEdit) {
-            $this->addMassaction('MultipleUpdate', 'Multiple Update');
+            $this->addMassaction('MultipleUpdate',
+                Config::$lang === 'ru' ? 'Массовое редактирование' : 'Multiple Update');
         }
     }
 

@@ -324,7 +324,11 @@ abstract class Subtable extends Table
                         if ($this->_cacheOnlyUniqueValues) {
                             $sqlSelect .= "DISTINCT ";
                         }
-                        $sqlSelect .= $fieldKey . " ORDER BY ID SEPARATOR '\\n')";
+                        $fieldSqlSelect = $field->getSqlSelect();
+                        if (!$fieldSqlSelect) {
+                            $fieldSqlSelect = $field->key;
+                        }
+                        $sqlSelect .= $fieldSqlSelect . " ORDER BY ID SEPARATOR '\\n')";
                         $sqlSelect .= " FROM " . $this->getDbTable();
                         $sqlSelect .= " WHERE " . $this->getMasterFieldKey() . "
                                               = " . $this->_masterObj->getDbTable() . ".ID";

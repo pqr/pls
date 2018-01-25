@@ -202,7 +202,7 @@ trait TableFilterable
      * @param string $dateField
      * @param int $yearFrom
      * @param int $yearTill
-     * @return $this
+     * @return FieldSelect
      */
     public function addFilterYear(string $tableName = null, string $dateField = null, int $yearFrom = null, int $yearTill = null)
     {
@@ -238,9 +238,10 @@ trait TableFilterable
         $fieldKey = 'Year';
         $fieldParams = ['default' => date('Y'), 'options' => $options, 'empty' => false, 'any' => false];
 
-        $this->addFilter(F::createSelect($fieldKey, $fieldParams));
+        $filterYear = F::createSelect($fieldKey, $fieldParams);
+        $this->addFilter($filterYear);
 
-        return $this;
+        return $filterYear;
     }
 
     /**

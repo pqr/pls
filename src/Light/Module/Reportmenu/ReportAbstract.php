@@ -6,6 +6,7 @@ use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
 use Light\Link;
 use Light\Metric;
+use Light\ModuleRegister;
 use Light\Request;
 use Light\Response;
 use Light\Table;
@@ -120,9 +121,11 @@ abstract class ReportAbstract extends Table
     {
         //Распечатка полноценной страницы с отчётом
         $img = '<img src="i/' . static::getIconFile() . '" width="24">';
-        Response::setPageTitle('Reports - ' . self::getTitle());
+        $moduleName = ModuleRegister::getModuleName('Reportmenu');
+        $reportName = self::getTitle();
+        Response::setPageTitle("$moduleName - $reportName");
         Response::setPageHeadHtml(
-            Link::module('Reports') . ' ' . $img . ' <strong>' . static::getTitle() . '</strong>'
+            Link::module($moduleName) . " $img <strong>$reportName</strong>"
         );
 
     }
@@ -134,7 +137,7 @@ abstract class ReportAbstract extends Table
 
     protected function getExcelWorksheetName()
     {
-        return 'Report on ' . date('d.m.Y');
+        return 'Generated ' . date('Y-m-d');
     }
 
     protected function getTableReloadUrl()

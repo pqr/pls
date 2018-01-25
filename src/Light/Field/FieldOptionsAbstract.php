@@ -45,7 +45,7 @@ abstract class FieldOptionsAbstract extends FieldAbstract
                 if (is_array($options)) {
                     $this->_cacheEvaluatedOptions = $options;
                 } elseif (is_callable($options)) {
-                    $this->_cacheEvaluatedOptions = $options();
+                    $this->_cacheEvaluatedOptions = $options($this);
                 } elseif (is_string($options)) {
 
                     if (isset(self::$_queryCache[$options])) {

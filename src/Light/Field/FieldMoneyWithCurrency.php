@@ -32,9 +32,38 @@ class FieldMoneyWithCurrency extends FieldMoney
         return $sqlSelect;
     }
 
-    public function getViewCssClass($value, array $data = [], $forTable = false)
+    protected function calcGroupconcatSum($value) {
+        $lines = explode("\n", $value);
+
+        $amountPerCurrency = [];
+        foreach ($lines as $amountWithCurrency) {
+            [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($amountWithCurrency);
+            if (!isset($amountPerCurrency[$currencyIso])) {
+                $amountPerCurrency[$currencyIso] = $amount;
+            } else {
+                $amountPerCurrency[$currencyIso] += $amount;
+            }
+        }
+        ksort($amountPerCurrency);
+
+        if (count($amountPerCurrency) === 1) {
+            // Для оптимизации, в большенстве случаев валюта всего одна, сразу возвращаем
+            $currencyIso = key($amountPerCurrency);
+            $amount = reset($amountPerCurrency);
+            return "$currencyIso $amount";
+        }
+
+        $outLines = [];
+        foreach ($amountPerCurrency as $currencyIso => $amount) {
+            $outLines[] = "$currencyIso $amount";
+        }
+
+        return implode("\n", $outLines);
+    }
+
+    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeOverflow300 = false)
     {
-        $viewCssClass = parent::getViewCssClass($value, $data, $forTable);
+        $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeOverflow300);
 
         if ($value) {
             $parts = explode(' ', $value);

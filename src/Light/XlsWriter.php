@@ -118,7 +118,7 @@ class XlsWriter
         }
 
         Response::header('Content-Type: application/' . $mimetype);
-        Response::header('Content-Disposition: attachment;filename="' . File::getValidFilename($filename) . '"');
+        Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($filename)) . '');
         Response::header('Cache-Control: max-age=0');
 
         $writerObj->save('php://output');

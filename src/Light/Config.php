@@ -47,13 +47,13 @@ class Config
     public static $projectParams = [];
 
     /** @var string путь к исполняемому файлу hg - нужно для модуля Console */
-    public static $hgPath;
+    public static $hgPath = 'hg';
 
     /** @var string путь к исполняемому файлу утилиты wkhtmltopdf, используемой для генерации PDF */
     public static $wkhtmltopdfPath = 'wkhtmltopdf';
 
     /** @var string путь к исполняемому файлу gswin64c.exe - используется для разбивки PDF на маленькие файлы и для перевода PDF в PNG */
-    public static $ghostScriptPath = 'gswin64c';
+    public static $ghostScriptPath = 'gsc';
     /** @var string путь к исполняемому файлу pdftk - используется для склейки нескольких PDF файлов https://www.pdflabs.com/tools/pdftk-server/ */
     public static $pdftkPath = 'pdftk';
     /** @var string путь к исполняемому файлу convert входящему в ImageMagic - используется для наложения картинки печати на PNG изображения и склеивания PNG в PDF */
