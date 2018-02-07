@@ -209,7 +209,7 @@ class ShipmentGp
         );
 
         $minDocDate = '';
-        if (!$docDates) {
+        if ($docDates) {
             $minDocDate = min($docDates);
         }
 
