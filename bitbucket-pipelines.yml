@@ -33,14 +33,14 @@ pipelines:
         services:
           - database
 
-     - step:
-          name: Deploy to Production
-          image: forwardhkg/ansible
-          trigger: manual
-          script:
-            - cd ansible
-            - echo $VAULT_PASS > .vault-pass
-            - ansible-playbook --vault-password-file .vault-pass --tags=deploy,sentry --extra-vars "git_version=$BITBUCKET_COMMIT" playbook_08_deploy_pls.yml
+    - step:
+        name: Deploy to Production
+        image: forwardhkg/ansible
+        trigger: manual
+        script:
+          - cd ansible
+          - echo $VAULT_PASS > .vault-pass
+          - ansible-playbook --vault-password-file .vault-pass --tags=deploy,sentry --extra-vars "git_version=$BITBUCKET_COMMIT" playbook_08_deploy_pls.yml
 
 definitions:
   services:
