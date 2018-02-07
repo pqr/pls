@@ -1,8 +1,21 @@
 {
   "config" : {
-    "optimize-autoloader": true
+    "optimize-autoloader": true,
+    "platform": {
+      "php": "7.1"
+    }
   },
   "require": {
+    "php": "7.1.* || 7.2.*",
+    "ext-gd": "*",
+    "ext-mbstring": "*",
+    "ext-curl": "*",
+    "ext-mysqli": "*",
+    "ext-imap": "*",
+    "ext-readline": "*",
+    "ext-xml": "*",
+    "ext-xsl": "*",
+    "ext-zip": "*",
     "phpoffice/phpexcel": "@stable",
     "swiftmailer/swiftmailer": "@stable",
     "tedivm/fetch": "@stable",
@@ -17,7 +30,6 @@
     "phpoffice/phpspreadsheet": "^1.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "@stable",
-    "codeception/codeception": "@stable"
+    "codeception/codeception": "^2.3"
   }
 }
