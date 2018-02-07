@@ -7,6 +7,8 @@ use Light\Codeception\ModuleCestAbstract;
 class VInvoiceCest extends ModuleCestAbstract
 {
     /**
+     * @group download
+     *
      * @param \FunctionalTester|\AcceptanceTester $I
      */
     public function download($I)

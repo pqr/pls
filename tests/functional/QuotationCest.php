@@ -9,6 +9,8 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 class QuotationCest extends ModuleCestAbstract
 {
     /**
+     * @group download
+     *
      * @param \FunctionalTester|\AcceptanceTester $I
      *
      * @param Example $example

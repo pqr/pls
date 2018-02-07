@@ -28,7 +28,7 @@ pipelines:
           - php public/index.php Light/Migrate
 
           - vendor/bin/codecept build
-          - vendor/bin/codecept run functional --xml test-reports/junit.xml
+          - vendor/bin/codecept run functional --skip-group download --xml test-reports/junit.xml
 
         services:
           - database
