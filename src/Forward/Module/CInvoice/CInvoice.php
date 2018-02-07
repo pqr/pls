@@ -195,6 +195,14 @@ class CInvoice extends InvoiceModuleAbstract
             }
         }
 
+        if (!$this->_obj->getId()) {
+            if ($dataFromPost['CompanyID'] == Constant::OC_PGL_OOO) {
+                $this->riseSaveErorr('от старой компании PGL OOO счета больше не выставляются, используйте PGL OOO new', 'CompanyID');
+            } elseif ($dataFromPost['CompanyID'] == Constant::OC_PLS_OOO) {
+                $this->riseSaveErorr('от старой компании PLS OOO счета больше не выставляются, используйте PLS OOO new', 'CompanyID');
+            }
+        }
+
         /*
         if ($this->_obj->getId() && $dataFromPost['Name'] === '') {
             $this->riseSaveErorr('Empty Inv. No', 'Name');

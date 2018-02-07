@@ -15,6 +15,7 @@ class ShipmentCriteria
     const AllInvCleared = 9;
     const ToBeClosed = 10;
     const OpenCInv = 11;
+    const PartClearedCInv = 12;
 
     private static $criteria = [
 
@@ -38,6 +39,11 @@ class ShipmentCriteria
             'Description' => 'Есть исходящие счета в статусе Open или Partially Cleared',
             'class' => 'OpenCInv',
             'cssClass' => 'invopen'
+        ],
+        self::PartClearedCInv => [
+            'text' => 'Part Cleared Customer Inv.',
+            'Description' => 'Есть исходящие счета в статусе Partially Cleared',
+            'class' => 'PartClearedCInv',
         ],
         self::NotAllCInv => [
             'text' => 'Not All Customer Inv. Issued',

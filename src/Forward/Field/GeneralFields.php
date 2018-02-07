@@ -17,7 +17,7 @@ class GeneralFields
         return F::createSelect('CompanyID', [
             'name' => 'Our Company',
             'tableWidthExcel' => 30,
-            'options' => "SELECT ID, Name FROM ourcompany ORDER BY OrderID",
+            'options' => "SELECT ID, Name, Active FROM ourcompany ORDER BY OrderID",
             'empty' => false,
             'linkModule' => 'OurCompany'
         ]);

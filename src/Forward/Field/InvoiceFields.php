@@ -66,6 +66,7 @@ class InvoiceFields
             'name' => 'St.Ico',
             'title' => 'Status Icon',
             'nameTableSettings' => 'Status Icon',
+            'nobr' => true,
             'modes' => F::MODE_READONLY,
             'tableAlign' => 'center',
             'default' => Finance::INVOICESTATUS_OPEN,

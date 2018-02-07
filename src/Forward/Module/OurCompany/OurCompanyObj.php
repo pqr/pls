@@ -17,7 +17,9 @@ class OurCompanyObj extends ObjAbstract
 
             F::createText('Address'),
 
-            CF::orderId()
+            CF::orderId(),
+
+            CF::active()
 
         );
     }
