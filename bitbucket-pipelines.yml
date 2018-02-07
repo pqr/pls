@@ -1,0 +1,41 @@
+# This is a sample build configuration for PHP.
+# Check our guides at https://confluence.atlassian.com/x/e8YWN for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+
+
+pipelines:
+
+  default:
+    - step:
+        name: PHPUnit and Codeception tests
+        image: forwardhkg/basis-php-test
+        caches:
+          - composer
+        script:
+
+          - composer config -g github-oauth.github.com $GITHUB_OAUTHTOKEN
+          - composer install
+
+          - mysql -h127.0.0.1 -uroot -ptest -e "create database pls_test"
+          - mysql -h127.0.0.1 -uroot -ptest seta_test < tests/_data/pls_test.sql
+
+          - mv config/config_test.php config/config.php
+          - mkdir temp
+          - mkdir logs
+          - ln -s `pwd`/public/lightpublic src/Light/public
+
+          - php public/index.php Light/Migrate
+
+          - vendor/bin/codecept run functional --xml test-reports/junit.xml
+
+        services:
+          - database
+
+definitions:
+  services:
+    database:
+      image: mariadb
+      environment:
+        MYSQL_ROOT_PASSWORD: test
