@@ -15,9 +15,9 @@ class OceanCarrier extends ModuleAbstract
 
         $this->setDbTable('oceancarrier');
         $this->_textObjectName = 'Ocean Carrier';
-        $this->_tableDefaultOrderBy = 'Name ASC';
+        $this->tableDefaultOrderBy = 'Name ASC';
 
-        $this->_tableLayoutsEnabled = false;
+        $this->allowTableLayouts = false;
 
         $this->addFields(
             F::createString('Name', ['submitToupper' => true])

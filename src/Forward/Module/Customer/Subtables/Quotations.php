@@ -13,7 +13,7 @@ class Quotations extends Subtable
         parent::__construct($masterObj);
 
         $this->_printHeadBlock = false;
-        $this->_tableLinkModule = 'Quotation';
+        $this->tableLinkModule = 'Quotation';
         $this->_tableMsgIfEmpty = '';
         $this->_orderBy = 'ID DESC';
         $this->setDbTable('quotation');

@@ -20,13 +20,13 @@ class VendorAccounts extends Many2ManyAbstract
         $this->_slaveModule = 'VendorAccount';
 
         //Для определения по какому полю внутри массива data искать ID для данной строки
-        $this->_tableLinkIdFieldKey = 'VendorAccountID';
+        $this->tableLinkIdFieldKey = 'VendorAccountID';
         //Список полей, на которых нужно сделать ссылки
-        $this->_tableLinkFieldKeys = ['VendorAccountID'];
-        //Модуль на который нужно сделать ссылки на поле определённом в _tableLinkFieldKeys и при двойном клике
-        $this->_tableLinkModule = 'VendorAccount';
+        $this->tableLinkFieldKeys = ['VendorAccountID'];
+        //Модуль на который нужно сделать ссылки на поле определённом в tableLinkFieldKeys и при двойном клике
+        $this->tableLinkModule = 'VendorAccount';
 
-        $this->_textAddLink = 'Add Vendor Account';
+        $this->textAddLink = 'Add Vendor Account';
 
         $this->_tableMsgIfEmpty = 'No linked vendor accounts';
         $this->_title = 'Vendor Accounts';

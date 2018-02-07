@@ -20,17 +20,17 @@ class Vendors extends Many2ManyAbstract
         $this->_slaveModule = 'Vendor';
 
         //Для определения по какому полю внутри массива data искать ID для данной строки
-        $this->_tableLinkIdFieldKey = 'VendorID';
+        $this->tableLinkIdFieldKey = 'VendorID';
         //Список полей, на которых нужно сделать ссылки
-        $this->_tableLinkFieldKeys = ['VendorID'];
-        //Модуль на который нужно сделать ссылки на поле определённом в _tableLinkFieldKeys и при двойном клике
-        $this->_tableLinkModule = 'Vendor';
+        $this->tableLinkFieldKeys = ['VendorID'];
+        //Модуль на который нужно сделать ссылки на поле определённом в tableLinkFieldKeys и при двойном клике
+        $this->tableLinkModule = 'Vendor';
 
-        $this->_textAddLink = 'Add Vendor';
+        $this->textAddLink = 'Add Vendor';
 
         $this->_tableMsgIfEmpty = 'No linked vendors';
-        $this->_folders = true;
-        $this->_folderBaseDir = 'Vendor';
+        $this->folders = true;
+        $this->folderBaseDir = 'Vendor';
         $this->_title = 'Vendors';
 
         $this->addFields(

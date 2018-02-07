@@ -18,8 +18,8 @@ class CInvoice extends HomeBlockAbstract
         $this->_width = 550;
         $this->_description = 'Customer Invoices в статусах Open и Partially Cleared. Сортировка по клиенту.';
         $this->_informationFor = 'Информация для всех, у кого настроены права доступа в модуле Users::Home::Show Customer Invoices';
-        $this->_tableLinkModule = 'CInvoice';
-        $this->_tableLinkFieldKeys = ['CInvoiceName'];
+        $this->tableLinkModule = 'CInvoice';
+        $this->tableLinkFieldKeys = ['CInvoiceName'];
 
         $this->addFields(
 

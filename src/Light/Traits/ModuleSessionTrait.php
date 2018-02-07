@@ -30,6 +30,8 @@ trait ModuleSessionTrait
                 $this->moduleSessionId = $res['ID'];
                 $this->moduleSessionStartPage = (int)$res['StartPage'];
                 $this->moduleSessionObjectsIds = explode(',', $res['IDs']);
+
+                $this->tableLinkUrlParams['msid'] = $this->moduleSessionId;
             }
         }
 
@@ -56,6 +58,8 @@ trait ModuleSessionTrait
         $this->moduleSessionObjectsIds = explode(',', $idsString);
 
         $this->moduleSessionInited = true;
+
+        $this->tableLinkUrlParams['msid'] = $this->moduleSessionId;
     }
 
     /**
@@ -153,15 +157,4 @@ trait ModuleSessionTrait
         return $out;
     }
 
-    /**
-     * Переопределяем один из основных методов класса Table
-     * Если в дочернем классе использующем этот Trait этот мето будет переопределён ещё один раз, нужно не забыть
-     * вызвать $this->getModuleSessionUrlParams()
-     *
-     * @return array
-     */
-    protected function getTableLinkUrlParams(): array
-    {
-        return $this->getModuleSessionUrlParams();
-    }
 }

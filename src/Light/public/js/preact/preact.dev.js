@@ -36,10 +36,33 @@
 
     var EMPTY_CHILDREN = [];
 
-    /** JSX/hyperscript reviver
-    *	Benchmarks: https://esbench.com/bench/57ee8f8e330ab09900a1a1a0
-     *	@see http://jasonformat.com/wtf-is-jsx
-     *	@public
+    /**
+     * JSX/hyperscript reviver.
+     * @see http://jasonformat.com/wtf-is-jsx
+     * Benchmarks: https://esbench.com/bench/57ee8f8e330ab09900a1a1a0
+     *
+     * Note: this is exported as both `h()` and `createElement()` for compatibility reasons.
+     *
+     * Creates a VNode (virtual DOM element). A tree of VNodes can be used as a lightweight representation
+     * of the structure of a DOM tree. This structure can be realized by recursively comparing it against
+     * the current _actual_ DOM structure, and applying only the differences.
+     *
+     * `h()`/`createElement()` accepts an element name, a list of attributes/props,
+     * and optionally children to append to the element.
+     *
+     * @example The following DOM tree
+     *
+     * `<div id="foo" name="bar">Hello!</div>`
+     *
+     * can be constructed using this function as:
+     *
+     * `h('div', { id: 'foo', name : 'bar' }, 'Hello!');`
+     *
+     * @param {string} nodeName	An element name. Ex: `div`, `a`, `span`, etc.
+     * @param {Object} attributes	Any attributes/props to set on the created element.
+     * @param rest			Additional arguments are taken to be children to append. Can be infinitely nested Arrays.
+     *
+     * @public
      */
     function h(nodeName, attributes) {
         var children = EMPTY_CHILDREN,
@@ -90,9 +113,12 @@
         return p;
     }
 
-    /** Copy own-properties from `props` onto `obj`.
-     *	@returns obj
-     *	@private
+    /**
+     *  Copy all properties from `props` onto `obj`.
+     *  @param {Object} obj		Object onto which properties should be copied.
+     *  @param {Object} props	Object from which to copy properties.
+     *  @returns obj
+     *  @private
      */
     function extend(obj, props) {
       for (var i in props) {
@@ -100,13 +126,23 @@
       }return obj;
     }
 
-    /** Call a function asynchronously, as soon as possible.
-     *	@param {Function} callback
+    /**
+     * Call a function asynchronously, as soon as possible. Makes
+     * use of HTML Promise to schedule the callback if available,
+     * otherwise falling back to `setTimeout` (mainly for IE<11).
+     *
+     * @param {Function} callback
      */
     var defer = typeof Promise == 'function' ? Promise.resolve().then.bind(Promise.resolve()) : setTimeout;
 
+    /**
+     * Clones the given VNode, optionally adding attributes/props and replacing its children.
+     * @param {VNode} vnode		The virutal DOM element to clone
+     * @param {Object} props	Attributes/props to add when cloning
+     * @param {VNode} rest		Any additional arguments will be used as replacement children.
+     */
     function cloneElement(vnode, props) {
-        return h(vnode.nodeName, extend(extend({}, vnode.attributes), props), arguments.length > 2 ? [].slice.call(arguments, 2) : vnode.children);
+      return h(vnode.nodeName, extend(extend({}, vnode.attributes), props), arguments.length > 2 ? [].slice.call(arguments, 2) : vnode.children);
     }
 
     // DOM properties that should NOT have "px" added when numeric
@@ -131,50 +167,56 @@
         }
     }
 
-    /** Check if two nodes are equivalent.
-     *	@param {Element} node
-     *	@param {VNode} vnode
-     *	@private
+    /**
+     * Check if two nodes are equivalent.
+     *
+     * @param {Node} node			DOM Node to compare
+     * @param {VNode} vnode			Virtual DOM node to compare
+     * @param {boolean} [hyrdating=false]	If true, ignores component constructors when comparing.
+     * @private
      */
     function isSameNodeType(node, vnode, hydrating) {
-        if (typeof vnode === 'string' || typeof vnode === 'number') {
-            return node.splitText !== undefined;
-        }
-        if (typeof vnode.nodeName === 'string') {
-            return !node._componentConstructor && isNamedNode(node, vnode.nodeName);
-        }
-        return hydrating || node._componentConstructor === vnode.nodeName;
+      if (typeof vnode === 'string' || typeof vnode === 'number') {
+        return node.splitText !== undefined;
+      }
+      if (typeof vnode.nodeName === 'string') {
+        return !node._componentConstructor && isNamedNode(node, vnode.nodeName);
+      }
+      return hydrating || node._componentConstructor === vnode.nodeName;
     }
 
-    /** Check if an Element has a given normalized name.
-    *	@param {Element} node
-    *	@param {String} nodeName
+    /**
+     * Check if an Element has a given nodeName, case-insensitively.
+     *
+     * @param {Element} node	A DOM Element to inspect the name of.
+     * @param {String} nodeName	Unnormalized name to compare against.
      */
     function isNamedNode(node, nodeName) {
-        return node.normalizedNodeName === nodeName || node.nodeName.toLowerCase() === nodeName.toLowerCase();
+      return node.normalizedNodeName === nodeName || node.nodeName.toLowerCase() === nodeName.toLowerCase();
     }
 
     /**
      * Reconstruct Component-style `props` from a VNode.
      * Ensures default/fallback values from `defaultProps`:
      * Own-properties of `defaultProps` not present in `vnode.attributes` are added.
+     *
      * @param {VNode} vnode
      * @returns {Object} props
      */
     function getNodeProps(vnode) {
-        var props = extend({}, vnode.attributes);
-        props.children = vnode.children;
+      var props = extend({}, vnode.attributes);
+      props.children = vnode.children;
 
-        var defaultProps = vnode.nodeName.defaultProps;
-        if (defaultProps !== undefined) {
-            for (var i in defaultProps) {
-                if (props[i] === undefined) {
-                    props[i] = defaultProps[i];
-                }
-            }
+      var defaultProps = vnode.nodeName.defaultProps;
+      if (defaultProps !== undefined) {
+        for (var i in defaultProps) {
+          if (props[i] === undefined) {
+            props[i] = defaultProps[i];
+          }
         }
+      }
 
-        return props;
+      return props;
     }
 
     /** Create an element with the given nodeName.

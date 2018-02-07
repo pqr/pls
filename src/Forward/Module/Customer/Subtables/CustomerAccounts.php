@@ -20,13 +20,13 @@ class CustomerAccounts extends Many2ManyAbstract
         $this->_slaveModule = 'CustomerAccount';
 
         //Для определения по какому полю внутри массива data искать ID для данной строки
-        $this->_tableLinkIdFieldKey = 'CustomerAccountID';
+        $this->tableLinkIdFieldKey = 'CustomerAccountID';
         //Список полей, на которых нужно сделать ссылки
-        $this->_tableLinkFieldKeys = ['CustomerAccountID'];
-        //Модуль на который нужно сделать ссылки на поле определённом в _tableLinkFieldKeys и при двойном клике
-        $this->_tableLinkModule = 'CustomerAccount';
+        $this->tableLinkFieldKeys = ['CustomerAccountID'];
+        //Модуль на который нужно сделать ссылки на поле определённом в tableLinkFieldKeys и при двойном клике
+        $this->tableLinkModule = 'CustomerAccount';
 
-        $this->_textAddLink = 'Add Customer Account';
+        $this->textAddLink = 'Add Customer Account';
 
         $this->_tableMsgIfEmpty = 'No linked customer accounts';
         $this->_title = 'Customer Accounts';

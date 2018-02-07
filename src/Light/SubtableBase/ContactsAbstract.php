@@ -21,9 +21,9 @@ abstract class ContactsAbstract extends Subtable
         $this->_title = 'Contacts';
         $this->_tableMsgIfEmpty = 'No contacts';
         $this->_printHeadBlock = false;
-        $this->_tableExcelEnabled = false;
-        $this->_tableLayoutsEnabled = false;
-        $this->_textAddLink = 'Add Contact';
+        $this->allowExportToExcel = false;
+        $this->allowTableLayouts = false;
+        $this->textAddLink = 'Add Contact';
 
         $this->addFields(
 

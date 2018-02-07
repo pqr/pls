@@ -3,10 +3,12 @@
 namespace Light\SubtableBase;
 
 use Light\ApplicationAbstract;
+use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldFloat;
 use Light\Field\FieldMoney;
+use Light\Misc;
 use Light\Msg;
 use Light\ObjAbstract;
 use Light\Request;
@@ -82,17 +84,18 @@ abstract class Subtable extends Table
     //Сортировка по умолчанию
     protected $_orderBy = 'ID';
 
-    //Настройки режима редактирования (Subtable::STATE_EDIT)
-    protected $_allowAdd = true;
-    protected $_allowPaste = true;
-    protected $_allowDelete = true;
-    protected $_textAddLink = 'Add Line';
+    // Настройки режима редактирования (Subtable::STATE_EDIT)
+    protected $allowAdd = true;
+    protected $allowPaste = true;
+    protected $allowDelete = true;
+
+    protected $textAddLink;
 
     //По умолчанию имя папки строится так же как <dbTableName>/<id>
     //Но для подтаблиц ссылающихся на объекты из других модулей как многие-ко-многим это не верно
 
     //Во-первых, нужно указать базовую папку внутри которой искать подпапки - имя модуля
-    protected $_folderBaseDir;
+    protected $folderBaseDir;
 
     protected $_viewTableLayout;
     protected $_editTableLayout;
@@ -121,12 +124,15 @@ abstract class Subtable extends Table
     {
         $this->_masterObj = $masterObj;
 
-        $parts = explode('\\', get_class($this));
-        parent::__construct(end($parts));
+        parent::__construct(Misc::getClass($this));
+
+        $this->tableReloadUrl = '?a=' . Request::getModule() . '&id=' . $masterObj->getId() . '&subtable=' . $this->getTableName();
 
         $this->_tablePrintTotalRecordsFound = false;
-        $this->_tableSortingEnabled = false;
-        $this->_tableLayoutsEnabled = false;
+        $this->allowSort = false;
+        $this->allowTableLayouts = false;
+
+        $this->textAddLink = Config::$lang === 'ru' ? 'Добавить строку' : 'Add Line';
 
         $masterModule = $this->getMasterModule();
         if ($masterModule) {
@@ -214,7 +220,7 @@ abstract class Subtable extends Table
 
     protected function getFolderBaseDir()
     {
-        return $this->_folderBaseDir;
+        return $this->folderBaseDir;
     }
 
     /**
@@ -386,7 +392,7 @@ abstract class Subtable extends Table
             $query .= "0";
         }
 
-        if ($this->isSortingEnabled()) {
+        if ($this->allowSort) {
             $query .= " ORDER BY " . $this->getSqlOrderBy();
         } elseif ($this->_orderBy != '') {
             $query .= " ORDER BY " . $this->_orderBy;
@@ -411,9 +417,9 @@ abstract class Subtable extends Table
         //Массив $this->_tableData специально приводим к виду последовательно пронумерованного
         $this->_tableData = array_values($data);
 
-        if ($this->_state == self::STATE_VIEW && $data && $this->_folders) {
+        if ($this->_state == self::STATE_VIEW && $data && $this->folders) {
             //Загрузим специальный массив с закешированным состоянием непустых папок
-            $notEmptyIds = array_filter(array_column($data, $this->_folderNameFieldKey));
+            $notEmptyIds = array_filter(array_column($data, $this->folderNameFieldKey));
             if ($notEmptyIds) {
                 $idsString = implode(',', $notEmptyIds);
                 $this->loadCacheNotEmptyFolderIds($idsString);
@@ -485,7 +491,7 @@ abstract class Subtable extends Table
     {
         $jsFields = [];
         //Добавим соответсвующую ячейку содержащую кнопку на удаление строки
-        if ($this->_allowDelete) {
+        if ($this->allowDelete) {
             $field = $this->getFieldsetFirst()['Del'];
             $jsFields['Del'] = [
                 'calcTotal' => false,
@@ -589,7 +595,7 @@ abstract class Subtable extends Table
             'tableAlign' => 'center'
         ];
 
-        if ($this->_allowDelete && $this->isStateEdit()) {
+        if ($this->allowDelete && $this->isStateEdit()) {
             $params = $commonParams;
             $params['name'] = 'Del';
             $params['getHtmlFunction'] = function ($value, $data, $outHtml, $forTable) {
@@ -603,7 +609,7 @@ abstract class Subtable extends Table
             $this->getFieldsetFirst()->addField(F::createHtml('Del', $params));
         }
 
-        if ($this->_folders && $this->isStateView()) {
+        if ($this->folders && $this->isStateView()) {
             $this->getFieldsetFirst()->addField($this->fieldFolder());
         }
     }
@@ -626,7 +632,7 @@ abstract class Subtable extends Table
     protected function initViewLayout()
     {
         //Если ссылка Table Layout Settings не выводится, фиксируем выводимые поля
-        if (!$this->_tableLayoutsEnabled) {
+        if (!$this->allowTableLayouts) {
             //В режиме редактирования необходимо зафиксировать набор полей, вне зависимости от текущих настроек пользователя Table Layout Settins
             if (!$this->_viewTableLayout) {
                 //Если в конструкторе этот набор полей не был определён, выведем в таблицу все возможные поля
@@ -659,21 +665,6 @@ abstract class Subtable extends Table
         }
 
         $this->setTableFieldsShow($this->_editTableLayout);
-    }
-
-    /**
-     * Метод для переопределения в классах потомках. Эти параметры будут вставлены в data-reloadurlparams
-     * и будут использованы при ajax обновлении таблицы
-     * @return string
-     */
-    protected function getTableReloadUrl()
-    {
-        return '?a=' . Request::getModule() . '&id=' . $this->_masterObj->getId() . '&subtable=' . $this->getTableName();
-    }
-
-    public function getTableExcelUrl()
-    {
-        return '?a=' . Request::getModule() . '&id=' . $this->_masterObj->getId() . '&subtable=' . $this->getTableName() . '&xls=1';
     }
 
     public function getHtmlView()
@@ -719,7 +710,7 @@ abstract class Subtable extends Table
         $this->_state = self::STATE_EDIT;
 
         //В режиме Edit принудительно отключаем переход по двойному клику на строке
-        $this->_tableLinkModule = null;
+        $this->tableLinkModule = null;
 
         $this->initCssJs();
         $this->initTableFieldsAdditional();
@@ -763,10 +754,10 @@ abstract class Subtable extends Table
             'name' => $this->getTableName(),
             'content' => $this->getHtmlTable(false, true),
             'ids' => $ids,
-            'allowAdd' => $this->_allowAdd,
-            'allowDelete' => $this->_allowDelete,
-            'allowPaste' => $this->_allowPaste,
-            'textAddLink' => $this->_textAddLink,
+            'allowAdd' => $this->allowAdd,
+            'allowDelete' => $this->allowDelete,
+            'allowPaste' => $this->allowPaste,
+            'textAddLink' => $this->textAddLink,
             'fieldsJson' => json_encode($this->getJsFieldsArray())
         ];
 
@@ -818,7 +809,7 @@ abstract class Subtable extends Table
         }
 
         //Удаляем некоторые строки из базы, если разрешено удаление
-        if ($this->_allowDelete) {
+        if ($this->allowDelete) {
             foreach ($this->getRowsToBeDeleted($dataFromRequest) as $rowNum) {
                 //Узнаем ID записи лежащей в данной строке
                 $id = $this->getRowIdFromPost($rowNum, $dataFromRequest);
@@ -967,7 +958,7 @@ abstract class Subtable extends Table
         //Возвращает набор данных из $_REQUEST - может пригодится для внешних классов
         foreach ($this->getRowsIdsFromPost($dataFromRequest) as $rowNum => $id) {
             //Удалённые строки пропускаем
-            if ($this->_allowDelete && $this->isRowDeleted($rowNum, $dataFromRequest)) {
+            if ($this->allowDelete && $this->isRowDeleted($rowNum, $dataFromRequest)) {
                 continue;
             }
 
@@ -1028,7 +1019,6 @@ abstract class Subtable extends Table
     /**
      * Поля из массива $this->_cacheFieldsKeys - по ним собираются все данные и выполняет UPDATE запрос
      * на таблицу $this->_masterObj->getDbTable(), для каждого поля, добавляя префикс Cache<Имя класса без Subtable>
-     * @return void
      */
     public function updateCache()
     {

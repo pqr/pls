@@ -1,4 +1,5 @@
 <?php
+
 namespace Light;
 
 use Light\Field\FieldAbstract as F;
@@ -166,26 +167,20 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess
     {
         //Специально выставляем Read Only, чтобы поле автоматически не превращалось в Input в режиме Edit
         $this->addField(
-            F::createSelect(
-                'UpdatedBy',
-                [
-                    'name' => 'Updated By',
-                    'modes' => F::MODE_READONLY,
-                    'nobr' => true,
-                    'tableWidthExcel' => 18,
-                    'options' => 'user'
-                ]
-            )
+            F::createSelect('UpdatedBy', [
+                'name' => Config::$lang === 'ru' ? 'Автор обновления' : 'Updated By',
+                'modes' => F::MODE_READONLY,
+                'nobr' => true,
+                'tableWidthExcel' => 18,
+                'options' => 'user'
+            ])
         );
 
         $this->addField(
-            F::createDateTime(
-                'UpdatedDateTime',
-                [
-                    'name' => 'Updated Date, Time',
-                    'modes' => F::MODE_READONLY
-                ]
-            )
+            F::createDateTime('UpdatedDateTime', [
+                'name' => Config::$lang === 'ru' ? 'Дата и время обновления' : 'Updated Date, Time',
+                'modes' => F::MODE_READONLY,
+            ])
         );
 
         return $this;
@@ -200,27 +195,20 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess
     {
         //Специально выставляем Read Only, чтобы поле автоматически не превращалось в Input в режиме Edit
         $this->addField(
-            F::createSelect(
-                'CreatedBy',
-                [
-                    'name' => 'Created By',
-                    'modes' => F::MODE_READONLY,
-                    'nobr' => true,
-                    'tableWidthExcel' => 18,
-                    'options' => 'user'
-                ]
-            )
+            F::createSelect('CreatedBy', [
+                'name' => Config::$lang === 'ru' ? 'Автор' : 'Created By',
+                'modes' => F::MODE_READONLY,
+                'nobr' => true,
+                'tableWidthExcel' => 18,
+                'options' => 'user'
+            ])
         );
 
         $this->addField(
-            F::createDateTime(
-                'CreatedDateTime',
-                [
-                    'name' => 'Creation Date, Time',
-                    'modes' => F::MODE_READONLY,
-                    'tableWidthHtml' => 110
-                ]
-            )
+            F::createDateTime('CreatedDateTime', [
+                'name' => Config::$lang === 'ru' ? 'Дата и время создания' : 'Creation Date, Time',
+                'modes' => F::MODE_READONLY,
+            ])
         );
 
         return $this;
@@ -577,7 +565,12 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess
                 }
             }
         }
-        return implode(' AND ', $sqlWhere);
+
+        if (!$sqlWhere) {
+            return '1';
+        }
+
+        return '('. implode(' AND ', $sqlWhere) . ')';
     }
 
     public function validateMandatory(array $dataFromRequest)

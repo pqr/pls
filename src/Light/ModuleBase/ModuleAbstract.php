@@ -14,6 +14,7 @@ use Light\Intro\IntroManager;
 use Light\Js;
 use Light\Link;
 use Light\Metric;
+use Light\Misc;
 use Light\ModuleRegister;
 use Light\Msg;
 use Light\ObjAbstract;
@@ -59,10 +60,10 @@ abstract class ModuleAbstract extends Table
     const STATE_SUBTABLE_FUNC = 'subtable_func';
 
     //Общие настройки для всех режимов
-    protected $_allowAdd = true;
-    protected $_allowEdit = true;
-    protected $_allowLog = true;
-    protected $_allowDelete = true;
+    protected $allowAdd = true;
+    protected $allowEdit = true;
+    protected $allowLog = true;
+    protected $allowDelete = true;
 
     //Использовать ли выпадающий список с выбором действия после сохранения?
     protected $continmethod = false;
@@ -103,12 +104,14 @@ abstract class ModuleAbstract extends Table
 
     public function __construct()
     {
-        parent::__construct(Request::getModule());
+        parent::__construct($this->getModule());
+
+        $this->tableReloadUrl = '?a=' . $this->getModule();
     }
 
-    public function getTableExcelUrl()
+    private function getModule()
     {
-        return '?a=' . Request::getModule() . '&xls=1';
+        return Request::getModule() ?: Misc::getClass($this);
     }
 
     /**
@@ -124,7 +127,7 @@ abstract class ModuleAbstract extends Table
         $updated = 0;
         $nothingChanged = 0;
 
-        if ($this->_allowEdit && User::hasWriteAccess()) {
+        if ($this->allowEdit && User::hasWriteAccess()) {
 
             $dataFromPost = $this->multipleUpdateGetDataFromPost($msgBuff);
             if ($dataFromPost) {
@@ -278,7 +281,7 @@ abstract class ModuleAbstract extends Table
         $this->_state = self::STATE_ADDNEW;
 
         //Проверим права на запись в этот модуль
-        if (!$this->_allowAdd || !User::hasWriteAccess()) {
+        if (!$this->allowAdd || !User::hasWriteAccess()) {
             //При обычном запросе сделаем редирект на режим просмотра с flash сообщенеим
             Session::flashError('No acces to add new');
             $this->redirectToList();
@@ -292,7 +295,7 @@ abstract class ModuleAbstract extends Table
             $this->initDataForCopy($_GET['copymode'], $_GET['copyfrom']);
         }
 
-        $moduleName = ModuleRegister::getModuleName(Request::getModule());
+        $moduleName = ModuleRegister::getModuleName($this->getModule());
         $headText = Link::module($moduleName, $this->getModuleSessionUrlParams());
         $headText .= ' - <strong>Add New</strong>';
         Response::setPageHeadHtml($headText);
@@ -312,13 +315,13 @@ abstract class ModuleAbstract extends Table
 
     protected function redirectToList()
     {
-        Response::redirect(Request::getModule(), $this->getModuleSessionUrlParams());
+        Response::redirect($this->getModule(), $this->getModuleSessionUrlParams());
     }
 
     protected function initCssJs()
     {
         //Проверим, есть ли файлы для этого модуля в зависимости от текущего режима
-        $module = Request::getModule();
+        $module = $this->getModule();
         $sufffix = '';
         switch ($this->_state) {
             case self::STATE_LIST:
@@ -438,7 +441,7 @@ abstract class ModuleAbstract extends Table
     protected function getViewEditTemplate()
     {
         //Проверим, есть ли шаблон для отображения объектов этого модуля?
-        $module = Request::getModule();
+        $module = $this->getModule();
         $templateFile = $module . '.tpl.php';
         if (!Template::findfile($templateFile)) {
             $templateFile = 'module/auto.tpl.php';
@@ -456,7 +459,7 @@ abstract class ModuleAbstract extends Table
         if ($this->_state === self::STATE_VIEW && $this->hasField('Color')) {
             $this->getField('Color')->setParam(
                 'source',
-                '?a=' . Request::getModule() . '&id=' . $this->_obj->getId() . '&func=changeField'
+                '?a=' . $this->getModule() . '&id=' . $this->_obj->getId() . '&func=changeField'
             );
         }
 
@@ -526,11 +529,11 @@ abstract class ModuleAbstract extends Table
                 'edit' => 'Edit this'
             ];
 
-            if ($this->_allowAdd) {
+            if ($this->allowAdd) {
                 $continmetods['addnew'] = 'Add new';
             }
 
-            $continmethod = User::getParam(Request::getModule() . '_continmethod') ?? 'view';
+            $continmethod = User::getParam($this->getModule() . '_continmethod') ?? 'view';
 
             $contentHtml .= F::createSelect('_continmethod', [
                 'editWidth' => 'auto',
@@ -664,14 +667,14 @@ abstract class ModuleAbstract extends Table
     {
         $this->_state = self::STATE_VIEW_ELFINDER;
 
-        if (!$this->_folders) {
+        if (!$this->folders) {
             Response::abort(403, 'Module without folders');
             return;
         }
 
         // На всякий случай создадим папку, если её ещё нет на сервере
         $this->createFolder($this->_obj->getData());
-        $module = Request::getModule();
+        $module = $this->getModule();
         $id = $this->_obj->getId();
 
         // Чтобы правильно работала функция basename с файлами на русском языке
@@ -787,7 +790,7 @@ abstract class ModuleAbstract extends Table
     protected function redirectToView()
     {
         $urlParams = ['id' => $this->_obj->getId()] + $this->getModuleSessionUrlParams();
-        Response::redirect(Request::getModule(), $urlParams);
+        Response::redirect($this->getModule(), $urlParams);
     }
 
     private function proceedViewFunc()
@@ -844,7 +847,7 @@ abstract class ModuleAbstract extends Table
         $printForm = $this->beforePrint();
 
 
-        $module = Request::getModule();
+        $module = $this->getModule();
         $id = $this->_obj->getId();
         $form = $printForm->getKey();
         $formAction = "?a={$module}&id=$id&func=Print&form=$form";
@@ -886,16 +889,20 @@ abstract class ModuleAbstract extends Table
     {
         $this->_state = self::STATE_VIEW;
 
-        if (!$this->_allowEdit || !User::hasWriteAccess() || !$this->hasWriteAccessRightToObj($this->_obj)) {
+        if (!$this->allowEdit || !User::hasWriteAccess() || !$this->hasWriteAccessRightToObj($this->_obj)) {
             $this->disableAllFieldsEdit();
         }
 
         //Наконец, это обычный режим view
         $this->initCssJs();
-        $this->setPageHeadForObj();
+
+        $headText = $this->getPageHeadHtml();
+        Response::setPageHeadHtml($headText);
+        Response::setPageTitle($headText);
+
         $this->initViewJsData();
 
-        if ($this->_folders) {
+        if ($this->folders) {
             $this->createFolder($this->_obj->getData());
         }
 
@@ -914,9 +921,9 @@ abstract class ModuleAbstract extends Table
         Template::includeTpl('module/view.tpl.php', $tdata);
     }
 
-    protected function setPageHeadForObj($stateText = '')
+    protected function getPageHeadHtml($stateText = '')
     {
-        $moduleName = ModuleRegister::getModuleName(Request::getModule());
+        $moduleName = ModuleRegister::getModuleName($this->getModule());
         $headText = Link::module($moduleName, $this->getFindidUrlParams() + $this->getModuleSessionUrlParams());
         $headText .= ' - ';
         if ($stateText) {
@@ -924,8 +931,8 @@ abstract class ModuleAbstract extends Table
         }
         $headText .= '<strong>' . $this->_obj->getDescriptionHtml() . '</strong>';
         $headText .= ' (ID: ' . $this->_obj->getId() . ')';
-        Response::setPageHeadHtml($headText);
-        Response::setPageTitle($headText);
+
+        return $headText;
     }
 
     /**
@@ -977,7 +984,7 @@ abstract class ModuleAbstract extends Table
             'active' => $this->_state === self::STATE_VIEW
         ];
 
-        if ($this->_allowEdit && User::hasWriteAccess() && $this->hasWriteAccessRightToObj($this->_obj)) {
+        if ($this->allowEdit && User::hasWriteAccess() && $this->hasWriteAccessRightToObj($this->_obj)) {
             $out[] = [
                 'text' => 'Edit',
                 'url' => Link::url(['editid' => $id] + $msUrlParams + $subtablesFindidUrlParams),
@@ -985,7 +992,7 @@ abstract class ModuleAbstract extends Table
             ];
         }
 
-        if ($this->_allowLog && User::hasLogInPlaceAccess() && $this->hasLogAccessRightToObj($this->_obj)) {
+        if ($this->allowLog && User::hasLogInPlaceAccess() && $this->hasLogAccessRightToObj($this->_obj)) {
             $out[] = [
                 'text' => 'Log ',
                 'url' => Link::url(['logid' => $id] + $msUrlParams + $subtablesFindidUrlParams),
@@ -993,7 +1000,7 @@ abstract class ModuleAbstract extends Table
             ];
         }
 
-        if ($this->_allowDelete && User::hasWriteAccess() && $this->hasDeleteAccessRightToObj($this->_obj)) {
+        if ($this->allowDelete && User::hasWriteAccess() && $this->hasDeleteAccessRightToObj($this->_obj)) {
             $out[] = [
                 'text' => 'Delete',
                 'url' => Link::url(['delid' => $id] + $msUrlParams) . '#ajax',
@@ -1007,9 +1014,9 @@ abstract class ModuleAbstract extends Table
     protected function getSubmenuItemsTplData()
     {
         $out = [];
-        if ($this->_folders) {
+        if ($this->folders) {
             $out[] = [
-                'html' => $this->fieldFolder('Folder')->getHtml('', $this->_obj->getData())
+                'html' => $this->fieldFolder()->getHtml('', $this->_obj->getData())
             ];
 
             /*
@@ -1017,7 +1024,7 @@ abstract class ModuleAbstract extends Table
             if ($folderRelativePath) {
                 $isNotEmpty = FilesFolder::isNotEmpty($folderRelativePath);
                 $moduleName = $this->getFolderBaseDir();
-                $recordId = $this->_obj[$this->_folderNameFieldKey];
+                $recordId = $this->_obj[$this->folderNameFieldKey];
                 if ($isNotEmpty) {
                     Db::insertRow(['ModuleName' => $moduleName, 'RecordID' => $recordId], 'cache_notemptyfilesfolder',
                         true);
@@ -1039,7 +1046,7 @@ abstract class ModuleAbstract extends Table
             //Добавим ссылки на копирование
             $this->initCopyModes();
             if ($this->_copyModes) {
-                $urlCopy = '?a=' . Request::getModule() . '&addnew=1&copyfrom=' . $this->_obj->getId() . '&copymode=';
+                $urlCopy = '?a=' . $this->getModule() . '&addnew=1&copyfrom=' . $this->_obj->getId() . '&copymode=';
                 foreach ($this->_copyModes as $name => $_) {
 
                     $out[] = [
@@ -1053,7 +1060,7 @@ abstract class ModuleAbstract extends Table
             if ($this->printForms) {
 
                 // Начало ссылки на печать
-                $printFormUrlStart = '?a=' . Request::getModule() . '&id=' . $this->_obj->getId() . '&func=Print&form=';
+                $printFormUrlStart = '?a=' . $this->getModule() . '&id=' . $this->_obj->getId() . '&func=Print&form=';
 
                 /**
                  * @var string $printFormName
@@ -1078,6 +1085,53 @@ abstract class ModuleAbstract extends Table
         return $out;
     }
 
+    /**
+     * Удобная фнуция, которую можно вызвать сделав ajax get запрос по адресу ?a=<module>&id=...&func=Dialog#ajax
+     * В итоге движок покажет диалоговое окно как бы из режима View
+     */
+    protected function viewGetDialog()
+    {
+        if (!Request::isAjax()) {
+            $this->redirectToView();
+            return;
+        }
+
+        $this->_state = self::STATE_VIEW;
+
+        $obj = $this->_obj;
+
+        $module = Request::getModule();
+        $id = $obj->getId();
+        $viewUrl = "?a=$module&id=$id";
+
+        $openExternalText = Config::$lang === 'ru' ? 'Открыть в новом окне' : 'Open in new window';
+        $headLink = "{$this->_textObjectName} <strong>$obj</strong> <span class='note'>(ID: $id)</span>";
+
+        $html = '<div style="margin-bottom:10px; display: flex;  justify-content: space-between;">'
+            . '<h3 style="padding:0; margin: 0px">' . $headLink . '</h3>'
+            . "<a href=$viewUrl target=_blank>$openExternalText <i class='fa fa-external-link'></i></a>"
+            . '</div>';
+
+        // Добавляем кнопки подменю включая кнопки печати
+        $this->initViewSubmenu();
+        $this->initPrintForms();
+        $html .= Template::parseTpl('submenu.tpl.php', ['items' => $this->getSubmenuItemsTplData()]);
+
+        // Формируем HTML код страницы в режиме view
+        // Чтобы работали ajax ссылки на изменение полей, обернём в дополнительный div с параметрами для ajax запросов
+        $html .= '<div data-ajaxchangefieldurl="?a=' . $module . '&func=ChangeField&id=">';
+        $tdata = $this->getTplData();
+        $html .= Template::parseTpl("$module.tpl.php", $tdata);
+        $html .= '<div>';
+
+        // Отправляем в диалоговом окне
+        Response::showDialog($html
+            , null
+            , null
+            , Config::$lang === 'ru' ? 'Закрыть' : 'Close'
+        );
+    }
+
     final protected function isStateView()
     {
         return $this->_state == self::STATE_VIEW;
@@ -1086,7 +1140,7 @@ abstract class ModuleAbstract extends Table
     protected function proceedEdit()
     {
         if (isset($_GET['fromList'])) {
-            Metric::record('EditFromList', 0, Request::getModule());
+            Metric::record('EditFromList', 0, $this->getModule());
         }
 
         //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
@@ -1095,14 +1149,18 @@ abstract class ModuleAbstract extends Table
         $this->_state = self::STATE_EDIT;
 
         //Проверим права на запись текущего объекта
-        if (!$this->_allowEdit || !User::hasWriteAccess() || !$this->hasWriteAccessRightToObj($this->_obj)) {
+        if (!$this->allowEdit || !User::hasWriteAccess() || !$this->hasWriteAccessRightToObj($this->_obj)) {
             //При обычном запросе сделаем редирект на режим просмотра с flash сообщенеим
             Session::flashError('No acces to edit');
             $this->redirectToView();
         }
 
         $this->initCssJs();
-        $this->setPageHeadForObj('Edit');
+
+        $headText = $this->getPageHeadHtml('Edit');
+        Response::setPageHeadHtml($headText);
+        Response::setPageTitle($headText);
+
         $this->initEditJsData();
         $this->addModuleSessionNextPrevLinks($this->_obj, 'editid');
         $this->initEditSubmenu();
@@ -1155,7 +1213,7 @@ abstract class ModuleAbstract extends Table
         //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
         $this->loadObjAndCheck($_GET['logid']);
 
-        if (!$this->_allowLog || !User::hasLogInPlaceAccess() || !$this->hasLogAccessRightToObj($this->_obj)) {
+        if (!$this->allowLog || !User::hasLogInPlaceAccess() || !$this->hasLogAccessRightToObj($this->_obj)) {
             Session::flashError('No access to log');
             $this->redirectToView();
         }
@@ -1174,7 +1232,11 @@ abstract class ModuleAbstract extends Table
         } else {
 
             $this->initCssJs();
-            $this->setPageHeadForObj('Log');
+
+            $headText = $this->getPageHeadHtml('Log');
+            Response::setPageHeadHtml($headText);
+            Response::setPageTitle($headText);
+
             Response::addJsData(['state' => 'log', 'id' => $this->_obj->getId()]);
             $this->addModuleSessionNextPrevLinks($this->_obj, 'logid');
 
@@ -1200,14 +1262,14 @@ abstract class ModuleAbstract extends Table
         }
 
         //Проверим, есть ли права на запись в этот модуль?
-        if (!$this->_allowEdit || !User::hasWriteAccess()) {
+        if (!$this->allowEdit || !User::hasWriteAccess()) {
             $this->riseSaveErorr('No access to edit');
             $this->abortInsertUpdate(403);
         }
 
         //Проверим можно ли вообще добавлять новые элементы, если это режим добавления?
         if ($id === 0) {
-            if (!$this->_allowAdd) {
+            if (!$this->allowAdd) {
                 $this->riseSaveErorr('Add new records not allowed');
                 $this->abortInsertUpdate(403);
             }
@@ -1247,7 +1309,7 @@ abstract class ModuleAbstract extends Table
         $msgBuff = new Msg();
         $affectedRows = $this->proceedInsertUpdateObj($dataFromPost, $msgBuff);
 
-        if ($this->_folders) {
+        if ($this->folders) {
             $this->createFolder($this->_obj->getData());
         }
 
@@ -1277,7 +1339,7 @@ abstract class ModuleAbstract extends Table
 
     protected function redirectAfterSubmit()
     {
-        $module = Request::getModule();
+        $module = $this->getModule();
 
         if ($this->continmethod) {
             $continmethod = $_POST['_continmethod'] ?? 'view';
@@ -1316,7 +1378,7 @@ abstract class ModuleAbstract extends Table
      * @param ObjAbstract $obj
      * @return array
      */
-    protected function getOldDataBeforeSubmitOrDelete(ObjAbstract $obj)
+    public function getOldDataBeforeSubmitOrDelete(ObjAbstract $obj)
     {
         $oldData = $obj->getData();
         foreach ($this->_subtables as $subtableName => $subtableParams) {
@@ -1585,7 +1647,8 @@ abstract class ModuleAbstract extends Table
         array $oldData,
         Msg $msgBuff,
         $fromMultipleUpdate
-    ) {
+    )
+    {
     }
 
     /**
@@ -1606,7 +1669,8 @@ abstract class ModuleAbstract extends Table
         array $oldData,
         Msg $msgBuff,
         $fromMultipleUpdate
-    ) {
+    )
+    {
     }
 
     /**
@@ -1617,7 +1681,7 @@ abstract class ModuleAbstract extends Table
     protected function getSubtableObject(ObjAbstract $obj, $subtableName)
     {
         if (!isset($this->_initedSubtables[$obj->getId() . '-' . $subtableName])) {
-            $module = Request::getModule();
+            $module = $this->getModule();
             $class = PROJECT_NAMESPACE . "\\Module\\$module\\Subtables\\$subtableName";
             $this->_initedSubtables[$obj->getId() . '-' . $subtableName] = new $class($obj);
         }
@@ -1637,7 +1701,7 @@ abstract class ModuleAbstract extends Table
         //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
         $this->loadObjAndCheck($_GET['delid']);
 
-        if (!$this->_allowDelete || !User::hasWriteAccess() || !$this->hasDeleteAccessRightToObj($this->_obj)) {
+        if (!$this->allowDelete || !User::hasWriteAccess() || !$this->hasDeleteAccessRightToObj($this->_obj)) {
             Response::abort(403, 'Delete not allowed');
         }
 
@@ -1697,7 +1761,7 @@ abstract class ModuleAbstract extends Table
      */
     protected function sendDeleteConfirmDialog()
     {
-        $module = Request::getModule();
+        $module = $this->getModule();
         $id = $this->_obj->getId();
         $formAction = "?a=$module&delid=$id";
         if (isset($_GET['fromList'])) {
@@ -1707,7 +1771,9 @@ abstract class ModuleAbstract extends Table
             . $this->getDeleteConfirmationDialogHtml()
             . '</form>';
 
-        Response::showDialog($bodyHtml, 'Delete');
+        $deleteText = Config::$lang === 'ru' ? 'Удалить' : 'Delete';
+        $cancelText = Config::$lang === 'ru' ? 'Отмена' : 'Cancel';
+        Response::showDialog($bodyHtml, $deleteText, null, $cancelText);
     }
 
     /**
@@ -1717,7 +1783,7 @@ abstract class ModuleAbstract extends Table
      */
     protected function proceedDeleteObj(ObjAbstract $obj, $dbLogMsg = '')
     {
-        if ($this->_folders) {
+        if ($this->folders) {
             $this->deleteFolder($obj->getData());
         }
         $obj->deleteDb($dbLogMsg);
@@ -1766,7 +1832,7 @@ abstract class ModuleAbstract extends Table
      */
     protected function whileDeleteGetForeignFieldKey(string $className)
     {
-        return Request::getModule() . 'ID';
+        return $this->getModule() . 'ID';
     }
 
     /**
@@ -1810,7 +1876,8 @@ abstract class ModuleAbstract extends Table
         $className,
         $description,
         $countLinkedIds
-    ) {
+    )
+    {
         $outHtml = $description . ': <strong>' . $countLinkedIds . '</strong> ';
         $link = $this->whileDeleteGetErrorMessageLinkViewMore($oldId, $className);
         if ($link) {
@@ -2011,14 +2078,14 @@ abstract class ModuleAbstract extends Table
         }
 
         //Правильно определим переменную _state
-        if ($this->_tableExcelEnabled && Request::isXls()) {
+        if ($this->allowExportToExcel && Request::isXls()) {
             $this->_state = self::STATE_LIST_EXCEL;
         } else {
             $this->_state = self::STATE_LIST;
         }
 
         //Параметр из класса Table: имя модуля на который автоматически делать ссылки в таблице
-        $this->_tableLinkModule = $this->_tableLinkModule ?: Request::getModule();
+        $this->tableLinkModule = $this->tableLinkModule ?: $this->getModule();
 
         $this->initCssJs();
 
@@ -2035,7 +2102,7 @@ abstract class ModuleAbstract extends Table
 
         //Если у пользователя нет прав на редактирование в этом модуле - нужно закрыть для редактирования все поля
         //Это особо актуально для полей с ajax редактированием, чтобы они не рендрились в таблицу как редактируемые
-        if (!$this->_allowEdit || !User::hasWriteAccess()) {
+        if (!$this->allowEdit || !User::hasWriteAccess()) {
             $this->disableAllFieldsEdit();
         }
         //Регистрирует поля типа Folder, Checkbox, Del, ...
@@ -2074,9 +2141,10 @@ abstract class ModuleAbstract extends Table
 
         } else {
 
-            $moduleName = ModuleRegister::getModuleName(Request::getModule());
+            $moduleName = ModuleRegister::getModuleName($this->getModule());
             Response::setPageHeadHtml('<strong>' . $moduleName . '</strong>');
             Response::setPageTitle($moduleName);
+
             $this->initListJsData();
             $this->initListIntro();
             $this->initListFlashMessagess();
@@ -2124,10 +2192,10 @@ abstract class ModuleAbstract extends Table
     protected function getListButtons()
     {
         $out = [];
-        if ($this->_allowAdd && User::hasWriteAccess()) {
+        if ($this->allowAdd && User::hasWriteAccess()) {
             $out[] = [
                 'text' => 'Add New',
-                'url' => '?a=' . Request::getModule() . '&addnew=1',
+                'url' => '?a=' . $this->getModule() . '&addnew=1',
             ];
         }
 
@@ -2184,17 +2252,17 @@ abstract class ModuleAbstract extends Table
 
     protected function getFolderBaseDir()
     {
-        return Request::getModule();
+        return $this->getModule();
     }
 
     protected function getExcelFilename()
     {
-        return ModuleRegister::getModuleName(Request::getModule());
+        return ModuleRegister::getModuleName($this->getModule());
     }
 
     protected function getExcelWorksheetName()
     {
-        return ModuleRegister::getModuleName(Request::getModule());
+        return ModuleRegister::getModuleName($this->getModule());
     }
 
     /**
@@ -2213,10 +2281,11 @@ abstract class ModuleAbstract extends Table
         $text,
         $imgHtml,
         $viewFunc,
-        array $urlParams = [],
+        ?array $urlParams = [],
         $blank = false,
         $urlHash = ''
-    ) {
+    )
+    {
         $urlParams['id'] = $this->_obj->getId();
         $urlParams['func'] = $viewFunc;
         $urlParams += $this->getModuleSessionUrlParams();
@@ -2236,7 +2305,8 @@ abstract class ModuleAbstract extends Table
         $imgHtml,
         $viewFunc,
         array $urlParams = []
-    ) {
+    )
+    {
         $this->addSubmenuItemViewFunc($text, $imgHtml, $viewFunc, $urlParams, false, 'post');
     }
 
@@ -2245,7 +2315,8 @@ abstract class ModuleAbstract extends Table
         $imgHtml,
         $viewFunc,
         array $urlParams = []
-    ) {
+    )
+    {
         $this->addSubmenuItemViewFunc($text, $imgHtml, $viewFunc, $urlParams, false, 'ajax');
     }
 
@@ -2253,7 +2324,7 @@ abstract class ModuleAbstract extends Table
         $text,
         $imgHtml,
         $viewFunc,
-        array $urlParams = []
+        ?array $urlParams = []
     ) {
         $this->addSubmenuItemViewFunc($text, $imgHtml, $viewFunc, $urlParams, false, 'ajax-post');
     }
@@ -2292,11 +2363,6 @@ abstract class ModuleAbstract extends Table
             'fieldKey' => $fieldKey,
             'critical' => $critical
         ];
-    }
-
-    protected function getTableReloadUrl()
-    {
-        return '?a=' . Request::getModule();
     }
 
     /**
@@ -2394,7 +2460,7 @@ abstract class ModuleAbstract extends Table
             $this->addCheckboxCol();
         }
 
-        if ($this->_folders) {
+        if ($this->folders) {
             $this->getFieldsetFirst()->addField($this->fieldFolder());
             $this->addFields(
                 $this->fieldFolderIsEmpty(),
@@ -2410,12 +2476,12 @@ abstract class ModuleAbstract extends Table
                 $colorField = $this->getField('Color');
                 $colorField->setParam(
                     'source',
-                    '?a=' . Request::getModule() . '&id={id}&func=changeField'
+                    '?a=' . $this->getModule() . '&id={id}&func=changeField'
                 );
                 $this->getFieldsetFirst()->addField($colorField);
             }
 
-            if ($this->_allowDelete || $this->_allowEdit) {
+            if ($this->allowDelete || $this->allowEdit) {
 
                 $params = [
                     'nameTable' => '',
@@ -2423,7 +2489,7 @@ abstract class ModuleAbstract extends Table
                     'tableAlign' => 'center',
                 ];
                 //Ширина колонки Del зависит от наличия иконки удаления
-                if ($this->_allowDelete && $this->_allowEdit) {
+                if ($this->allowDelete && $this->allowEdit) {
                     $params['tableWidthHtml'] = 60;
                 } else {
                     $params['tableWidthHtml'] = 20;
@@ -2432,14 +2498,14 @@ abstract class ModuleAbstract extends Table
 
                     $outHtml = '';
                     if (isset($data['ID'])) {
-                        if ($this->_allowEdit) {
+                        if ($this->allowEdit) {
                             $outHtml .= Link::moduleEdit(
                                 Img::iconEdit(),
                                 $data['ID'],
                                 $this->getModuleSessionUrlParams() + ['fromList' => 1]
                             );
                         }
-                        if ($this->_allowDelete) {
+                        if ($this->allowDelete) {
                             $url = Link::url([
                                         'delid' => $data['ID'],
                                         'fromList' => 1
@@ -2462,7 +2528,7 @@ abstract class ModuleAbstract extends Table
     protected function tableLoadData()
     {
         //Cформируем условие сортировки.
-        //Оно может состоять из сортировки указанной в trait TableSortable и из _tableDefaultOrderBy
+        //Оно может состоять из сортировки указанной в trait TableSortable и из tableDefaultOrderBy
         //Сначала соберём всё в массив, потом из него склеим строку
         $sqlOrderBy = $this->getSqlOrderBy();
 
@@ -2496,17 +2562,17 @@ abstract class ModuleAbstract extends Table
             $queryIds .= " FROM " . Db::quote($this->getDbTable());
 
             $sqlWhere = $this->getFiltersSqlWhere();
-            if ($sqlWhere) {
-                $queryIds .= " WHERE " . $sqlWhere;
+            if ($sqlWhere !== '') {
+                $queryIds .= " WHERE $sqlWhere";
             }
 
             if ($sqlOrderBy) {
-                $queryIds .= " ORDER BY " . $sqlOrderBy;
+                $queryIds .= " ORDER BY $sqlOrderBy";
             }
 
             if ($this->isStateListExcel()) {
                 $queryIds .= ' LIMIT ' . $this->getTableExcelMaxRows();
-            } elseif ($this->_tablePaginationEnabled) {
+            } elseif ($this->allowPagination) {
                 $page = $this->getTablePage();
                 $rowsPerPage = $this->getTableRowsPerPage();
                 $queryIds .= ' LIMIT ' . ($page - 1) * $rowsPerPage . ', ' . $rowsPerPage;
@@ -2627,7 +2693,7 @@ abstract class ModuleAbstract extends Table
 
     protected function hasWriteAccessAjaxChnageField(FieldAbstract $field): bool
     {
-        return $this->_allowEdit
+        return $this->allowEdit
             && User::hasWriteAccess()
             && $this->hasWriteAccessRightToObj($this->_obj)
             && $field->hasMode(F::MODE_SUBMIT);
@@ -2825,7 +2891,8 @@ abstract class ModuleAbstract extends Table
         string $optgroup = '',
         string $class = null,
         bool $blank = false
-    ) {
+    )
+    {
         //Если передан флаг blank, значит нужно откывать новое окно браузера при сабмите massaction
         //Это происходит в js окружении, поэтому нужно как-то передать информацию в js окружение, что данный massaction
         //следует открывать в новом окне. Используем для этого css class
@@ -2843,21 +2910,21 @@ abstract class ModuleAbstract extends Table
 
     final protected function addMassactionDelete()
     {
-        if (User::hasWriteAccess() && $this->_allowDelete) {
+        if (User::hasWriteAccess() && $this->allowDelete) {
             $this->addMassaction('delete', 'Delete', 'bad');
         }
     }
 
     final protected function addMassactionCollectPdfs()
     {
-        if ($this->_folders) {
+        if ($this->folders) {
             $this->addMassaction('CollectPdfs', 'Собрать PDF файлы в папку');
         }
     }
 
     final protected function addMassactionMultipleUpdate()
     {
-        if (User::hasWriteAccess() && $this->_allowEdit) {
+        if (User::hasWriteAccess() && $this->allowEdit) {
             $this->addMassaction('MultipleUpdate',
                 Config::$lang === 'ru' ? 'Массовое редактирование' : 'Multiple Update');
         }
@@ -2905,7 +2972,7 @@ abstract class ModuleAbstract extends Table
 
     protected function massactionDelete(array $ids)
     {
-        if (!$this->_allowDelete || !User::hasWriteAccess()) {
+        if (!$this->allowDelete || !User::hasWriteAccess()) {
             MassactionAbstract::sendErrorDialog('No access to delete');
         }
         $msgBuff = new Msg();
@@ -2969,7 +3036,7 @@ abstract class ModuleAbstract extends Table
     protected function massactionMultipleUpdate(array $ids)
     {
         // Функция getHtmlMultipleUpdateForm может быть переопределена в классе потомке - именно она формирует HTML код формы
-        $html = '<form action="?a=' . Request::getModule() . '&p=MultipleUpdateSubmit#ajax" method="post" class="multipleupdate">
+        $html = '<form action="?a=' . $this->getModule() . '&p=MultipleUpdateSubmit#ajax" method="post" class="multipleupdate">
                      <input type="hidden" name="CheckedIds" value="' . implode(',', $ids) . '">
                      ' . $this->getHtmlMultipleUpdateFormBody($ids) . '
                      </form>';
@@ -3006,7 +3073,7 @@ abstract class ModuleAbstract extends Table
         $tdata = $this->getTplDataMultipleUpdateFormBody();
 
         //Определим шаблон, который использовать для формы MultipleUpdate
-        $module = Request::getModule();
+        $module = $this->getModule();
         $templateFile = $module . 'MultipleUpdate.tpl.php';
         if (!Template::findfile($templateFile)) {
             $templateFile = LIGHT_DIR_LIGHT . '/templates/module/multipleupdate/auto.tpl.php';

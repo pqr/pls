@@ -18,10 +18,10 @@ class EmailQueueModule extends ModuleAbstract
 
         $this->setNameFieldKey('ID');
 
-        $this->_allowAdd = false;
-        $this->_allowEdit = false;
-        $this->_allowLog = false;
-        $this->_allowDelete = false;
+        $this->allowAdd = false;
+        $this->allowEdit = false;
+        $this->allowLog = false;
+        $this->allowDelete = false;
 
         $this->addFieldsCreatedBy();
 

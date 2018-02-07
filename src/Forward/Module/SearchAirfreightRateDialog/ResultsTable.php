@@ -22,9 +22,10 @@ class ResultsTable extends Table
     {
         parent::__construct('SearchAirfreightRateDialogResultsTable');
 
+        $this->tableReloadUrl = '?a=SearchAirfreightRateDialog&action=ajaxSearch';
+
         $this->proceedFilters();
         $chargeableWeightFilterValue = $this->getFilterValue('ChargeableWeight');
-
 
         $this->getFieldsetFirst()->addField(F::createHtml('Rb')
             ->setName('')
@@ -115,13 +116,11 @@ class ResultsTable extends Table
         }
 
         //Сразу загружаем данные
-        $query = "SELECT * FROM airfreightrate";
-        $sqlWhere = $this->getFiltersSqlWhere();
-        if ($sqlWhere) {
-            $query .= " WHERE " . $sqlWhere;
-        }
-
-        $query .= " ORDER BY ID DESC LIMIT 50";
+        $query = "SELECT * 
+                  FROM airfreightrate 
+                  WHERE ". $this->getFiltersSqlWhere()." 
+                  ORDER BY ID DESC 
+                  LIMIT 50";
 
         $this->_tableData = Db::getAll($query);
 
@@ -173,11 +172,6 @@ class ResultsTable extends Table
                 'ChargeableWeight',
             ]
         ];
-    }
-
-    protected function getTableReloadUrl()
-    {
-        return '?a=SearchAirfreightRateDialog&action=ajaxSearch';
     }
 
     private function loadSurcharges()

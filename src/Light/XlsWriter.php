@@ -155,7 +155,7 @@ class XlsWriter
      * @param Fieldset $fieldset опциональный параметр для записи данных с учётом типов
      * @return void
      */
-    public function replaceData(array $data, Fieldset $fieldset = null)
+    public function replaceData(array $data, Fieldset $fieldset = null, $tablesWithHeader = false)
     {
         $phpExcel = $this->getPhpExcelObj();
 
@@ -189,7 +189,7 @@ class XlsWriter
                             // то сделаем подстановку таблицы с добавлением новых строк
                             /** @var Table $table */
                             $table = $data[$matches[1][0]];
-                            $insertedRows = $this->insertTable($currentCol, $currentRow, $table, false);
+                            $insertedRows = $this->insertTable($currentCol, $currentRow, $table, $tablesWithHeader);
                             $currentRow += $insertedRows;
                             $highestRow += $insertedRows;
                         } elseif ($fieldset !== null

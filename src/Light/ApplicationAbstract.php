@@ -283,8 +283,12 @@ abstract class ApplicationAbstract
         // Пытаемся инициализировать пользователя на основе данных сессии
         User::loadFromSession();
 
-        if (!defined("CODECEPTION_FUNCTIONAL_TEST") && Config::$sentry) {
-            $client = new \Raven_Client(Config::$sentry['dns'], Config::$sentry['options']);
+        if (!defined("CODECEPTION_FUNCTIONAL_TEST") && Config::$sentry && Config::$sentry['dns']) {
+            $options = Config::$sentry['options'] + [
+                    'app_path' => LIGHT_DIR_ROOT . '/src',
+                    'prefixes' => [LIGHT_DIR_ROOT]
+                ];
+            $client = new \Raven_Client(Config::$sentry['dns'], $options);
             $client->install();
             $client->setRelease(ApplicationAbstract::getVersion());
             $client->user_context(array(

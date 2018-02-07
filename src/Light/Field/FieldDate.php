@@ -4,10 +4,29 @@ namespace Light\Field;
 
 use Light\Config;
 use Light\Db;
-use Light\Request;
 
+/**
+ * @param string $cssClassFuture
+ * @param string $cssClassPast
+ * @param string $cssClassToday
+ * @param bool $filterFromUntil
+ * @param bool $asInterval
+ *
+ * @method $this setCssClassFuture(string $cssClass)
+ * @method $this setCssClassPast(string $cssClass)
+ * @method $this setCssClassToday(string $cssClass)
+ * @method $this setFilterFromUntil(bool $value)
+ * @method $this setAsInterval(bool $value)
+ *
+ */
 class FieldDate extends FieldInputAbstract
 {
+    const UNTIL_FUTURE_NOTICE = '2099-01-01';
+
+    public $cssClassFuture;
+    public $cssClassPast;
+    public $cssClassToday;
+
     public $filterFromUntil = false;
 
     /**
@@ -35,6 +54,31 @@ class FieldDate extends FieldInputAbstract
         */
     }
 
+    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeOverflow300 = false)
+    {
+        $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeOverflow300);
+
+        if ($value
+            && $value != '0000-00-00'
+            && $value != self::UNTIL_FUTURE_NOTICE
+            && ($this->cssClassFuture || $this->cssClassPast || $this->cssClassToday)) {
+            $today = date('Y-m-d');
+            if ($value > $today) {
+                $addCssClass = $this->cssClassFuture;
+            } elseif ($value < $today) {
+                $addCssClass = $this->cssClassPast;
+            } else {
+                $addCssClass = $this->cssClassToday;
+            }
+
+            if ($addCssClass) {
+                $viewCssClass .= ' ' . $addCssClass;
+            }
+        }
+
+        return $viewCssClass;
+    }
+
     protected function getEditCssClass($value, array $data)
     {
         return 'input-date ' . parent::getEditCssClass($value, $data);
@@ -42,7 +86,7 @@ class FieldDate extends FieldInputAbstract
 
     protected function getHtmlInner($value, array $data, $forTable)
     {
-        if ($value === '2099-01-01') {
+        if ($value === self::UNTIL_FUTURE_NOTICE) {
             return Config::$lang === 'ru' ? 'бессрочно' : 'until further notice';
         }
 

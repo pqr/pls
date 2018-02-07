@@ -14,7 +14,7 @@ class Agents extends Subtable
 
         $this->setDbTable('customeragent');
         $this->_title = 'Origins & Agents';
-        $this->_textAddLink = 'Add Origin Agent';
+        $this->textAddLink = 'Add Origin Agent';
         $this->_printHeadBlock = false;
 
         $this->addFields(

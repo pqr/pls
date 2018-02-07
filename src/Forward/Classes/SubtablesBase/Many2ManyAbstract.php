@@ -26,8 +26,8 @@ class Many2ManyAbstract extends Subtable
 
         $this->_orderBy = 'Name';
 
-        $this->_tableExcelEnabled = false;
-        $this->_tableLayoutsEnabled = false;
+        $this->allowExportToExcel = false;
+        $this->allowTableLayouts = false;
         $this->_printHeadBlock = false;
         $this->_allowPaste = false;
     }

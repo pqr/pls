@@ -12,10 +12,10 @@ class CurrencyRate extends ModuleAbstract
         parent::__construct();
 
         $this->_textObjectName = 'Currency Rate';
-        $this->_tableDefaultOrderBy = 'ValidDate DESC';
-        $this->_tableLayoutsEnabled = false;
-        $this->_tableLinkFieldKeys = [];
-        $this->_tableFieldsShow = ['ValidDate', 'CurrencyISO', 'RateToRUB', 'Provider'];
+        $this->tableDefaultOrderBy = 'ValidDate DESC';
+        $this->allowTableLayouts = false;
+        $this->tableLinkFieldKeys = [];
+        $this->tableFieldsShow = ['ValidDate', 'CurrencyISO', 'RateToRUB', 'Provider'];
     }
 
     protected function initFilters()

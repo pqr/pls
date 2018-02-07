@@ -27,21 +27,21 @@ abstract class InvoicesAbstract extends Subtable
         $this->setDbTable(strtolower($firstLetter . 'payment_' . $firstLetter . 'invoice'));
         $this->_title = $customerOrVendor . ' Invoices';
         $this->_allowPaste = false;
-        $this->_tableExcelEnabled = true;
-        $this->_tableLayoutsEnabled = false;
+        $this->allowExportToExcel = true;
+        $this->allowTableLayouts = false;
         $this->_tablePrintTotalRecordsFound = false;
         $this->_tableMsgIfEmpty = 'No ' . $customerOrVendor . ' Invoices';
 
         //Параметры для формирования ссылок на модули CInvoice или VInvoice
-        $this->_tableLinkModule = $firstLetter . 'Invoice';
-        $this->_tableLinkIdFieldKey = 'RealInvoiceID';
-        $this->_tableLinkFieldKeys = [$firstLetter . 'InvoiceName'];
+        $this->tableLinkModule = $firstLetter . 'Invoice';
+        $this->tableLinkIdFieldKey = 'RealInvoiceID';
+        $this->tableLinkFieldKeys = [$firstLetter . 'InvoiceName'];
 
-        $this->_textAddLink = 'Add Invoice';
+        $this->textAddLink = 'Add Invoice';
 
-        $this->_folders = true;
-        $this->_folderBaseDir = strtolower($firstLetter) . 'Invoice';
-        $this->_folderNameFieldKey = 'RealInvoiceID';
+        $this->folders = true;
+        $this->folderBaseDir = strtolower($firstLetter) . 'Invoice';
+        $this->folderNameFieldKey = 'RealInvoiceID';
 
         $commonFields = $firstLetter . 'InvoiceName|InvoiceAmount|InvoiceOutstandingAmount|ClearingAmountInInvoiceCurrency|RateToInvoiceCurrency|ClearingAmountInPaymentCurrency';
         $this->_viewTableLayout = 'StatusIco|' . $commonFields;

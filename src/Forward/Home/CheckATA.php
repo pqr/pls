@@ -14,7 +14,7 @@ class CheckATA extends HomeBlockAbstract
         $this->_title = 'Check ATA';
         $this->_description = 'За 1 день до наступления ETA, если ATA ещё не проставлено.';
         $this->_informationFor = 'Информация для Shipment Responsible CS и Sales.';
-        $this->_tableLinkModule = 'Shipment';
+        $this->tableLinkModule = 'Shipment';
 
         $this->addFields(
             HomeFields::name(),

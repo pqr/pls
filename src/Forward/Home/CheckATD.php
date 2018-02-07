@@ -14,7 +14,7 @@ class CheckATD extends HomeBlockAbstract
         $this->_title = 'Check ATD';
         $this->_description = 'Остался один день до даты Ready For Carriage или ETD уже наступило, но дата ATD ещё не проставлена.';
         $this->_informationFor = 'Информация для Shipment Responsible CS и Sales.';
-        $this->_tableLinkModule = 'Shipment';
+        $this->tableLinkModule = 'Shipment';
 
         $this->addFields(
 

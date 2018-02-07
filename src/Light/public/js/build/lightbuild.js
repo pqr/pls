@@ -3279,13 +3279,16 @@ var Subtable = /** @class */ (function () {
         var field = this.fields[fieldKey];
         var $node = this.getFieldNode(rowNum, fieldKey);
         if (field.mode === "view") {
-            //Для поля находящегося в режиме view просто запишем значение в html код ячейки
-            //При этом значение нужно обренуть в вызов функции getBeautyValue(), чтобы было красиво!
+            // Для поля находящегося в режиме view просто запишем значение в html код ячейки
+            // При этом значение нужно обренуть в вызов функции getBeautyValue(), чтобы было красиво!
             $node.html(Light_1.getBeautyValue(newValue, field.type));
         }
         else {
-            //Для поля находящегося в режиме edit, записываем значение в поле ввода
-            Light_1.setNodeValue($node, newValue, field.type, triggerChange && this.calcTotalEnabled);
+            // Для поля находящегося в режиме edit, записываем значение в поле ввода
+            // но только если это поле не находится в состоянии disabled
+            if (!$node.prop('disabled')) {
+                Light_1.setNodeValue($node, newValue, field.type, triggerChange && this.calcTotalEnabled);
+            }
         }
         // Обновим Total по этому полю, если у него есть флаг calcTotal и при вызове этого метода не было запрещено обновлять total
         if (this.calcTotalEnabled && field.calcTotal) {
@@ -4467,8 +4470,8 @@ var currentState = {
     dialogSubmitCallback: null
 };
 /**
-     * Эта функция вызывается всего один раз при первом клике на любую кнопку Table layout settings
-     */
+ * Эта функция вызывается всего один раз при первом клике на любую кнопку Table layout settings
+ */
 function initDialog() {
     $btnSaveLayout = $("#tablelayoutdialog__btnsave").on("click", function (e) {
         e.preventDefault();
@@ -4481,7 +4484,8 @@ function initDialog() {
             layoutName: layoutName,
             fieldsShow: getShownFieldKeys().join("|")
         }).done(function () {
-            Light_1.toastSuccess("\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u044B: <strong>" + layoutName + "</strong>");
+            var successText = Light_1.isLangRu ? 'Настройки сохранены' : 'Layout saved';
+            Light_1.toastSuccess(successText + ": <strong>" + layoutName + "</strong>");
         });
     });
     $newLayoutInput = $("#tablelayoutdialog__newlayout"); //.on('key', userLayoutSaveByEnter, 'enter');
@@ -4530,7 +4534,8 @@ function initDialog() {
     var $content = $("#tablelayoutdialog");
     var options = {
         width: "770px",
-        buttonOkText: "Apply new Layout",
+        buttonOkText: Light_1.isLangRu ? 'Применить' : 'Apply new Layout',
+        buttonCancelText: Light_1.isLangRu ? 'Отмена' : 'Cancel',
         buttonOkHandler: function () {
             dialog.close();
             currentState.dialogSubmitCallback(getShownFieldKeys());

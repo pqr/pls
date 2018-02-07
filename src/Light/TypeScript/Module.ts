@@ -238,7 +238,7 @@ export function save(saveanyway: boolean, additionalData?: Object) {
     }
 
     $.post(url, postData)
-        .done((_, __, jqXHR: any) => {
+        .done((_:any, __:any, jqXHR: any) => {
             //В заголовках ответа должен прийти Location куда перенаправить пользователя после сохранения
             if (!jqXHR.getResponseHeader("x-light-redirect")) {
                 //Если же нет этого заголовка для перенаправления, то разблокируем кнопки Save и выведем диалог с ошибками
@@ -251,7 +251,7 @@ export function save(saveanyway: boolean, additionalData?: Object) {
                 }
             }
         })
-        .fail(jqXHR => {
+        .fail((jqXHR:any) => {
             blockSaveButtons(false);
             //Если в пришедшем ajax ответе от срвера есть Header заголовок указывающий на то, что ответ содержит в себе
             //какое-то диалоговое окно, то в этом методе ничего делать не будем. Диалог отрисуется средствами js

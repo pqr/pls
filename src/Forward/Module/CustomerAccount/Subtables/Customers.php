@@ -20,17 +20,17 @@ class Customers extends Many2ManyAbstract
         $this->_slaveModule = 'Customer';
 
         //Для определения по какому полю внутри массива data искать ID для данной строки
-        $this->_tableLinkIdFieldKey = 'CustomerID';
+        $this->tableLinkIdFieldKey = 'CustomerID';
         //Список полей, на которых нужно сделать ссылки
-        $this->_tableLinkFieldKeys = ['CustomerID'];
-        //Модуль на который нужно сделать ссылки на поле определённом в _tableLinkFieldKeys и при двойном клике
-        $this->_tableLinkModule = 'Customer';
+        $this->tableLinkFieldKeys = ['CustomerID'];
+        //Модуль на который нужно сделать ссылки на поле определённом в tableLinkFieldKeys и при двойном клике
+        $this->tableLinkModule = 'Customer';
 
-        $this->_textAddLink = 'Add Customer';
+        $this->textAddLink = 'Add Customer';
 
         $this->_tableMsgIfEmpty = 'No linked customers';
-        $this->_folders = true;
-        $this->_folderBaseDir = 'Customer';
+        $this->folders = true;
+        $this->folderBaseDir = 'Customer';
         $this->_title = 'Customers';
 
         $this->addFields(

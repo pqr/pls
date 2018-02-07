@@ -33,8 +33,8 @@ class VInvoice extends InvoiceModuleAbstract
         parent::__construct();
 
         $this->_textObjectName = 'Vendor Invoice';
-        $this->_tableLinkFieldKeys = ['VendorID'];
-        $this->_tableLayouts['Default'] = 'VendorID|Name|Amount|CurrencyISO|StatusIco|CacheResponsibleUserID|' .
+        $this->tableLinkFieldKeys = ['VendorID'];
+        $this->tableLayouts['Default'] = 'VendorID|Name|Amount|CurrencyISO|StatusIco|CacheResponsibleUserID|' .
             'ReceivedDate|DocDate|DueDate|CacheLastPaymentDate|Comments';
 
         $this->registerSubtable('Responsibles');

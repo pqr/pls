@@ -2,6 +2,7 @@
 
 namespace tests\functional;
 
+use Codeception\Example;
 use Light\Codeception\ModuleCestAbstract;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -9,26 +10,14 @@ class QuotationCest extends ModuleCestAbstract
 {
     /**
      * @param \FunctionalTester|\AcceptanceTester$I
+     *
+     * @example ["en"]
+     * @example ["ru"]
      */
-    public function downloadExcelEn( $I)
+    public function downloadExcel( $I, Example $example)
     {
-        $this->downloadExcelTest($I, 'en');
-    }
+        $lang = $example[0];
 
-    /**
-     * @param \FunctionalTester|\AcceptanceTester$I
-     */
-    public function downloadExcelRu( $I)
-    {
-        $this->downloadExcelTest($I, 'ru');
-    }
-
-    /**
-     * @param \FunctionalTester|\AcceptanceTester $I
-     * @param string $lang
-     */
-    private function downloadExcelTest( $I, string $lang)
-    {
         $I->wantTo('Download Quotation Excel ' . $lang);
 
         $I->sendGET('?a=Quotation&lang=' . $lang . '&id=' . $this->getTestObjId() . '&func=Excel');
@@ -38,8 +27,9 @@ class QuotationCest extends ModuleCestAbstract
         file_put_contents($filepath, $I->grabResponse());
 
         $spreadsheet = IOFactory::load($filepath);
-        $a9val = $spreadsheet->getSheet(0)->getCell("A2")->getValue();
+        $a2val = $spreadsheet->getSheet(0)->getCell("A2")->getValue();
         $title = $lang === 'ru' ? 'Котировка' : 'Quotation';
-        $I->assertContains($title . ' #' . $this->getTestObjId(), $a9val);
+        $I->assertContains($title . ' #' . $this->getTestObjId(), $a2val);
     }
+
 }

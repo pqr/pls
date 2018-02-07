@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Field;
 
 use Light\Db;
@@ -18,6 +19,7 @@ class FieldWeek extends FieldInputAbstract
         $year = '';
 
         if ($value !== '-' && strpos($value, '-') !== false) {
+
             [$year, $week] = explode('-', $value);
 
             //intval уберёт лидирующий ноль у номера недели
@@ -30,6 +32,11 @@ class FieldWeek extends FieldInputAbstract
             if ($year === 0) {
                 $year = '';
             }
+
+        } elseif (strlen($value) === 4) {
+
+            $year = $value;
+
         }
 
         return [$week, $year];
@@ -67,7 +74,7 @@ class FieldWeek extends FieldInputAbstract
 
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
-        list($week, $year) = $this->getAsTouple($value);
+        [$week, $year] = $this->getAsTouple($value);
 
         $params = $this->initialParams;
 

@@ -10,8 +10,8 @@ class OurCompany extends ModuleAbstract
         parent::__construct();
 
         $this->_textObjectName = 'Company';
-        $this->_tableDefaultOrderBy = 'OrderID ASC';
-        $this->_tableLayouts['Default'] = 'OrderID|Name';
+        $this->tableDefaultOrderBy = 'OrderID ASC';
+        $this->tableLayouts['Default'] = 'OrderID|Name';
 
         $this->registerSubtable('Banks');
     }

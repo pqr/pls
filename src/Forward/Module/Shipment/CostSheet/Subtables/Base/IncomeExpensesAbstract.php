@@ -20,8 +20,8 @@ abstract class IncomeExpensesAbstract extends Subtable
         parent::__construct($masterObj);
 
         $this->_printHeadBlock = false;
-        $this->_tableExcelEnabled = false;
-        $this->_tableLayoutsEnabled = false;
+        $this->allowExportToExcel = false;
+        $this->allowTableLayouts = false;
         $this->_copyOnAddFieldKeys = ['Quantity', 'Amount'];
     }
 

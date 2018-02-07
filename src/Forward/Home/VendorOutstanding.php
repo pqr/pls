@@ -15,7 +15,7 @@ class VendorOutstanding extends HomeBlockAbstract
     protected function init()
     {
         $this->_title = 'Vendor Outstanding';
-        $this->_tableLinkModule = 'Vendor';
+        $this->tableLinkModule = 'Vendor';
 
         $this->addFields(
 

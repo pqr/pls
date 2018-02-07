@@ -10,9 +10,9 @@ class Vendor extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_folders = true;
+        $this->folders = true;
         $this->_textObjectName = 'Vendor';
-        $this->_tableLayouts['Default'] = 'Name|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
+        $this->tableLayouts['Default'] = 'Name|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
 
         $this->registerSubtable('Responsibles');
         $this->registerSubtable('VendorAccounts');

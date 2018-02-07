@@ -14,7 +14,7 @@ class Uom extends ModuleAbstract
         $this->setDbTable('uom');
 
         $this->_textObjectName = 'UOM';
-        $this->_tableDefaultOrderBy = 'OrderID';
+        $this->tableDefaultOrderBy = 'OrderID';
 
         $this->addFields(
 

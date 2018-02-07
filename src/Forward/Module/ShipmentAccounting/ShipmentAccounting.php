@@ -29,23 +29,23 @@ class ShipmentAccounting extends ModuleAbstract
 
         $this->setDbTable('shipment');
 
-        $this->_folders = true;
+        $this->folders = true;
 
-        $this->_allowAdd = false;
-        $this->_allowEdit = false;
-        $this->_allowLog = false;
-        $this->_allowDelete = false;
+        $this->allowAdd = false;
+        $this->allowEdit = false;
+        $this->allowLog = false;
+        $this->allowDelete = false;
 
         $this->_textObjectName = 'Накладная';
-        $this->_tableDefaultOrderBy = 'shipment.ID DESC';
-        $this->_tableLayouts['Default'] =
+        $this->tableDefaultOrderBy = 'shipment.ID DESC';
+        $this->tableLayouts['Default'] =
             'Name|MAWBNumber|ShipmentRequestNo|CompanyID|CustomerID|CustomerInvoices|CActs|VendorID|DepartureIATA|ArrivalIATA|ATA';
 
         foreach (Constant::$standardFolders as $i => $_) {
-            $this->_tableLayouts['Default'] .= "|File$i";
+            $this->tableLayouts['Default'] .= "|File$i";
         }
 
-        $this->_tableLayouts['Default'] .= '|DocsSentToAccountingDate';
+        $this->tableLayouts['Default'] .= '|DocsSentToAccountingDate';
 
         $onecCompanyIdsSql = implode(',', array_keys(Constant::$onecCompany));
 
@@ -260,10 +260,7 @@ class ShipmentAccounting extends ModuleAbstract
     {
         // Ограничим доступ только к накладным относящимся к рублёвым компаниям
         $sqlWhere = parent::getFiltersSqlWhere();
-        if ($sqlWhere) {
-            $sqlWhere .= " AND ";
-        }
-        $sqlWhere .= "CompanyID IN (" . implode(',', array_keys(Constant::$onecCompany)) . ")";
+        $sqlWhere .= " AND CompanyID IN (" . implode(',', array_keys(Constant::$onecCompany)) . ")";
 
         $fileFilters = [];
         foreach (Constant::$standardFolders as $i => $standardFolder) {

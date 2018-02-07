@@ -1,35 +1,23 @@
 <?php
+
 namespace Light;
 
 class User
 {
-    private static $id = 0;
-    private static $data;
-    private static $moduleAccess;
-    private static $specialAccess;
-    private static $groupAccess;
-    private static $groupSpecialAccess;
+    /** @var User */
+    private static $current;
 
-    public static function loadFromSession()
-    {
-        // Проверим сессию пользователя, есть ли там lightauth
-        if (isset($_SESSION['lightauth'])) {
+    // Если запрошен доступ по какому-то другому пользователю (не текущему), то загрузим из базы отдельно
+    static $usersCache = [];
 
-            // Проверим, есть ли такой пользователь в базе
-            if (!self::loadData($_SESSION['lightauth'])) {
-                unset($_SESSION['lightauth']);
-                return;
-            }
+    private $id = 0;
+    private $data = [];
+    private $moduleAccess = [];
+    private $specialAccess = [];
+    private $groupAccess = [];
+    private $groupSpecialAccess = [];
 
-            //Проверим, активен ли этот пользователь всё ещё?
-            if (!self::$data['Active']) {
-                unset($_SESSION['lightauth']);
-                return;
-            }
-        }
-    }
-
-    public static function loadData(string $login)
+    public function __construct(int $userId)
     {
         $query = "SELECT user.*
                       , usergroup.Name AS GroupName
@@ -39,67 +27,124 @@ class User
                   FROM user, usergroup 
                   WHERE 
                     `user`.GroupID = usergroup.ID
-                    AND Login = " . Db::escString($login);
+                    AND `user`.ID = $userId";
 
-        $row = Db::getRow($query);
-        if (!$row) {
+        $data = Db::getRow($query);
+        if (!$data) {
+            // Пользователь с таким ID не найден, возвращаем пустого пользователя
+            return;
+        }
+
+        $this->data = $data;
+        $this->id = $userId;
+
+        $this->moduleAccess = json_decode($data['ModuleAccessJSON'], true);
+        $this->specialAccess = json_decode($data['SpecialAccessJSON'], true);
+        $this->groupAccess = json_decode($data['GroupModuleAccessJSON'], true);
+        $this->groupSpecialAccess = json_decode($data['GroupSpecialAccessJSON'], true);
+
+    }
+
+    private static function getUserById(int $userId = null): self
+    {
+        if ($userId === null) {
+            // Если явно не передан ID пользователя, значит нужно вернуть текущего (current) пользователя
+            // Если и текущего пользователя нет, то быстренько вернём нулевого пользователя
+            return self::$current ?? new User(0);
+        }
+
+        // Сначала проверим в кэше
+        if (isset(self::$usersCache[$userId])) {
+            return self::$usersCache[$userId];
+        }
+
+        // Если в кэше нет, то создаём на лету
+        $user = new User($userId);
+        if ($user->id === $userId) {
+            // Если удалось-таки загрузить пользователя с таким id из базы, то сохраним в кэш
+            self::$usersCache[$userId] = $user;
+        }
+
+        return $user;
+    }
+
+    public static function loadFromSession()
+    {
+        // Проверим сессию пользователя, есть ли там lightauth
+        if (isset($_SESSION['lightauth'])) {
+
+            // Проверим, есть ли такой пользователь в базе
+            if (!self::loadAsCurrent($_SESSION['lightauth'])) {
+                unset($_SESSION['lightauth']);
+                return;
+            }
+
+            // Проверим, активен ли этот пользователь всё ещё?
+            if (!self::$current->data['Active']) {
+                self::$current = null;
+                unset($_SESSION['lightauth']);
+                return;
+            }
+        }
+    }
+
+    public static function loadAsCurrent(string $login)
+    {
+        $userId = Db::getOne("SELECT ID FROM user WHERE Login = @s", $login);
+        if (!$userId) {
             return false;
         }
 
-        self::$data = $row;
-        self::$id = (int)$row['ID'];
-
-        self::$moduleAccess = json_decode($row['ModuleAccessJSON'], true);
-        self::$specialAccess = json_decode($row['SpecialAccessJSON'], true);
-        self::$groupAccess = json_decode($row['GroupModuleAccessJSON'], true);
-        self::$groupSpecialAccess = json_decode($row['GroupSpecialAccessJSON'], true);
-
+        self::$current = self::getUserById($userId);
         return true;
     }
 
-    public static function getId()
+    public static function getId(): int
     {
-        return self::$id;
+        if (!self::$current) {
+            return 0;
+        }
+        return self::$current->id;
     }
 
-    public static function getData()
+    public static function getData(int $userId = null): array
     {
-        return self::$data;
+        return self::getUserById($userId)->data;
     }
 
-    public static function getFieldData($fieldKey)
+    public static function getFieldData(string $fieldKey, int $userId = null)
     {
-        return self::$data[$fieldKey] ?? null;
+        return self::getUserById($userId)->data[$fieldKey] ?? null;
     }
 
-    public static function getLogin()
+    public static function getLogin(int $userId = null)
     {
-        return self::$data['Login'] ?? null;
+        return self::getUserById($userId)->data['Login'] ?? null;
     }
 
-    public static function getName()
+    public static function getName(int $userId = null)
     {
-        return self::$data['Name'] ?? null;
+        return self::getUserById($userId)->data['Name'] ?? null;
     }
 
-    public static function getGroupId()
+    public static function getGroupId(int $userId = null)
     {
-        return self::$data['GroupID'] ?? 0;
+        return self::getUserById($userId)->data['GroupID'] ?? 0;
     }
 
-    public static function getGroupName()
+    public static function getGroupName(int $userId = null)
     {
-        return self::$data['GroupName'] ?? null;
+        return self::getUserById($userId)->data['GroupName'] ?? null;
     }
 
-    public static function getEmail()
+    public static function getEmail(int $userId = null)
     {
-        return self::$data['Email'] ?? null;
+        return self::getUserById($userId)->data['Email'] ?? null;
     }
 
-    public static function hasResponsibleRole(string $role)
+    public static function hasResponsibleRole(string $role, int $userId = null)
     {
-        $responsibleRoles = self::$data['ResponsibleRoles'] ?? null;
+        $responsibleRoles = self::getUserById($userId)->data['ResponsibleRoles'] ?? null;
         if (!$responsibleRoles) {
             // Либо пользователь вообще не загружен, либо у него нет никаких ролей (поле ResponsibleRoles пусто)
             return false;
@@ -116,75 +161,75 @@ class User
      */
     public static function isAuth()
     {
-        return self::$id !== 0;
+        return self::$current && self::$current->id;
     }
 
-    public static function isActive()
+    public static function isActive(int $userId = null)
     {
-        return (bool)(self::$data['Active'] ?? false);
+        return (bool)(self::getUserById($userId)->data['Active'] ?? false);
     }
 
-    private static function getAccess(string $module = null): int
+    private static function getAccess(string $module = null, int $userId = null): int
     {
+        try {
+
+            $user = self::getUserById($userId);
+
+        } catch (\Exception $e) {
+
+            // Если не удалось загрузить пользователя из базы, то возвращаем 0 - доступ запрещён
+            return 0;
+
+        }
+
         if (!$module) {
             $module = Request::getModule();
         }
 
-        $moduleAccess = self::$moduleAccess[$module] ?? -1;
-        if ($moduleAccess === -1) {
-            return self::$groupAccess[$module] ?? 0;
-        }
-        return $moduleAccess;
-    }
+        $userModuleAccess = $user->moduleAccess[$module] ?? -1;
 
-    public static function hasReadAccess($module = null)
-    {
-        return self::getAccess($module) > 0;
-    }
-
-    public static function hasWriteAccess($module = null)
-    {
-        return self::getAccess($module) === 2;
-    }
-
-    public static function hasLogInPlaceAccess()
-    {
-        return self::hasSpecialAccess('Logviewer1');
-    }
-
-    public static function hasSpecialAccess(string $accessKey, $userId = null):bool
-    {
-        if ($userId === null || $userId == self::$id) {
-
-            $userSpecialAccess = self::$specialAccess[$accessKey] ?? -1;
-            $groupSpecialAccess = self::$groupSpecialAccess[$accessKey] ?? 0;
-
-        } else {
-            // Если запрошен доступ по какому-то другому пользователю (не текущему), то загрузим из базы отдельно
-            static $specialAccessCache = [];
-            if (!array_key_exists($userId, $specialAccessCache)) {
-                $data = Db::getRow(
-                    "SELECT u.SpecialAccessJSON, g.SpecialAccessJSON AS GroupSpecialAccessJSON
-                     FROM user u, usergroup g
-                     WHERE u.GroupID = g.ID
-                        AND u.ID = " . (int)$userId
-                );
-                if (!$data) {
-                    $specialAccessCache[$userId] = null;
-                } else {
-                    $specialAccessCache[$userId] = [
-                        'SpecialAccess' => json_decode($data['SpecialAccessJSON'], true),
-                        'GroupSpecialAccess' => json_decode($data['GroupSpecialAccessJSON'], true)
-                    ];
-                }
-            }
-
-            $userSpecialAccess = $specialAccessCache[$userId]['SpecialAccess'][$accessKey] ?? -1;
-            $groupSpecialAccess = $specialAccessCache[$userId]['GroupSpecialAccess'][$accessKey] ?? 0;
+        if ($userModuleAccess === -1) {
+            return $user->groupAccess[$module] ?? 0;
         }
 
-        return $userSpecialAccess === -1 ? (bool)$groupSpecialAccess : (bool)$userSpecialAccess;
+        return $userModuleAccess;
+    }
 
+    public static function hasReadAccess($module = null, int $userId = null)
+    {
+        return self::getAccess($module, $userId) > 0;
+    }
+
+    public static function hasWriteAccess($module = null, int $userId = null)
+    {
+        return self::getAccess($module, $userId) === 2;
+    }
+
+    public static function hasLogInPlaceAccess(int $userId = null)
+    {
+        return self::hasSpecialAccess('Logviewer1', $userId);
+    }
+
+    public static function hasSpecialAccess(string $accessKey, $userId = null): bool
+    {
+        try {
+
+            $user = self::getUserById($userId);
+
+        } catch (\Exception $e) {
+
+            // Если не удалось загрузить пользователя из базы, то возвращаем 0 - доступ запрещён
+            return 0;
+
+        }
+
+        $userSpecialAccess = $user->specialAccess[$accessKey] ?? -1;
+
+        if ($userSpecialAccess === -1) {
+            return (bool)($user->groupSpecialAccess[$accessKey] ?? 0);
+        }
+
+        return (bool)$userSpecialAccess;
     }
 
     public static function getParam(string $name, int $userId = null)

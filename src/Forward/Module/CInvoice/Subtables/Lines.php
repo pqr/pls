@@ -17,11 +17,12 @@ class Lines extends Subtable
 
         $this->setDbTable('cinvoiceline');
 
-        $this->_tableLayoutsEnabled = false;
+        $this->allowTableLayouts = false;
 
-        $this->_tableLinkModule = 'Shipment';
-        $this->_tableLinkFieldKeys = ['FileNumber', 'ContainerName'];
-        $this->_tableLinkIdFieldKey = 'ShipmentID';
+        $this->tableLinkModule = 'Shipment';
+        $this->tableLinkFieldKeys = ['FileNumber', 'ContainerName'];
+        $this->tableLinkIdFieldKey = 'ShipmentID';
+        $this->tableLinkUrlParams = ['func' => 'cs', 'fromInvNum' => $masterObj['Name']];
 
         $this->_viewTableLayout = 'FileNumber|Name|UOMID|Quantity|Price|Amount';
         $this->_editTableLayout = $this->_viewTableLayout;
@@ -34,7 +35,7 @@ class Lines extends Subtable
         $this->_cacheFieldsKeys = ['FileNumber'];
         $this->_cacheOnlyUniqueValues = true;
 
-        $this->getField('Amount')->setParam('nameTable', "Amount in " . $this->_masterObj['CurrencyISO']);
+        $this->getField('Amount')->setParam('nameTable', "Amount in " . $masterObj['CurrencyISO']);
 
         if (Constant::isOneCCompany($masterObj['CompanyID'])) {
             $this->getField('Name')->setGetHtmlFunction(function ($value, array $data, $outHtml) {
@@ -142,14 +143,4 @@ class Lines extends Subtable
         return parent::getHtmlEdit();
     }
 
-    protected function getTableLinkUrlParams(): array
-    {
-        //Переопределяем метод (который предназначен именно для переопределения) чтобы добавить к ссылкам на модуль
-        //Shipment параметры, чтобы автоматически открывался нужный Cost-sheet,
-        //а также параметр fromInvNum - благодаря которому в Cost-sheet'е будут подсвечены все строки связанные с этим счётом
-        return [
-            'func' => 'cs',
-            'fromInvNum' => $this->_masterObj['Name']
-        ];
-    }
 }

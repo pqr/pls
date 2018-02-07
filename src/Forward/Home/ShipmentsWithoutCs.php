@@ -11,7 +11,7 @@ class ShipmentsWithoutCs extends HomeBlockAbstract
     {
         $this->_title = 'New Shipments';
         $this->_description = 'Перевозки у которых ещё не выбран Customer Service';
-        $this->_tableLinkModule = 'Shipment';
+        $this->tableLinkModule = 'Shipment';
 
         $this->getFieldset()->addFieldsCreatedBy();
         $this->addField(ShipmentFields::name());

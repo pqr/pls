@@ -24,7 +24,7 @@ class FieldDateTime extends FieldInputAbstract
         $this->tableAlign = 'center';
         $this->tableWidthExcel = 18;
         $this->editMaxLength = 12;
-        $this->tableWidthHtml = 100;
+        $this->tableWidthHtml = 110;
     }
 
     protected function getEditCssClass($value, array $data)

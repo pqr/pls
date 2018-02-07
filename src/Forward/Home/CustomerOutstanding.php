@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Home;
 
 use Forward\Classes\Constant;
@@ -18,8 +19,8 @@ class CustomerOutstanding extends HomeBlockAbstract
         $this->_title = 'Customer Outstanding';
         $this->_description = '';
         $this->_informationFor = 'Information for Customer Responsible CS / Sales.';
-        $this->_tableLinkModule = 'Customer';
-        $this->_tableExcelEnabled = false;
+        $this->tableLinkModule = 'Customer';
+        $this->allowExportToExcel = false;
         $this->_printHeadBlock = false;
 
         $this->addFields(
@@ -71,11 +72,9 @@ class CustomerOutstanding extends HomeBlockAbstract
     protected function getCountForTitle()
     {
         // Отобразим число просроченных счетов по клиентам на этом Home
-        $customerIds = array_column($this->_tableData, 'ID');
-
         $query = "SELECT count(*) 
                   FROM cinvoice 
-                  WHERE Status IN (".implode(',',Finance::$cinvoiceOpenStatuses).") 
+                  WHERE Status IN (" . implode(',', Finance::$cinvoiceOpenStatuses) . ") 
                       AND DueDate < CURDATE()";
 
         if ($this->userGroupId != Constant::USERGROUP_FIN) {

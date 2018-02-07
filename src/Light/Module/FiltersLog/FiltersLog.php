@@ -46,7 +46,7 @@ class FiltersLog extends Table
 
         $this->getFieldset()->addFieldsCreatedBy();
 
-        $this->_tableFieldsShow = [
+        $this->tableFieldsShow = [
             'CreatedDateTime',
             'CreatedBy',
             'TableID',
@@ -105,13 +105,13 @@ class FiltersLog extends Table
 
         $sqlWhere = $this->getFiltersSqlWhere();
         if ($sqlWhere) {
-            $queryIds .= " WHERE " . $sqlWhere;
+            $queryIds .= " WHERE $sqlWhere";
         }
 
         $queryIds .= " ORDER BY ID DESC";
 
         $limit = $this->isListExcelAction() ? $this->getTableExcelMaxRows() : 500;
-        $queryIds .= ' LIMIT ' . $limit;
+        $queryIds .= " LIMIT $limit";
 
         //Получим все ID из базы
         $ids = Db::getCol($queryIds);
@@ -124,7 +124,7 @@ class FiltersLog extends Table
             $query = "SELECT "
                 . $this->getSqlSelect()
                 . " FROM user_filter_log
-                    WHERE ID IN (" . $idsString . ")
+                    WHERE ID IN ($idsString)
                     ORDER BY ID DESC";
 
             $this->_tableData = Db::getAll($query);

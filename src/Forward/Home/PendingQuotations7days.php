@@ -14,7 +14,7 @@ class PendingQuotations7days extends HomeBlockAbstract
         $this->_title = 'Pending Quotations';
         $this->_description = 'Котировки находящиеся в статусе Pending или Draft 2 или более дней с даты создания';
         $this->_informationFor = 'Информация для Quotation Responsible CS и Sales.';
-        $this->_tableLinkModule = 'Quotation';
+        $this->tableLinkModule = 'Quotation';
 
         $this->addFields(
             CF::id(),

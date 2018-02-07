@@ -261,6 +261,9 @@ trait TableFilterable
      */
     public function getFilterValue(string $fieldKey)
     {
+        if (!$this->filters) {
+            return null;
+        }
         return $this->filters->getValue($fieldKey);
     }
 
@@ -270,6 +273,9 @@ trait TableFilterable
      */
     public function getFiltersValues(): array
     {
+        if (!$this->filters) {
+            return null;
+        }
         return $this->filters->getValues();
     }
 

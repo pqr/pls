@@ -5,7 +5,7 @@ namespace Light;
 use Rollbar\Payload\Level;
 use Rollbar\Rollbar;
 
-if (Config::$rollbar) {
+if (isset(Config::$rollbar['access_token']) && Config::$rollbar['access_token']) {
 
     $config = Config::$rollbar;
     $config['person_fn'] = function () {

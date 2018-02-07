@@ -13,7 +13,7 @@ class Cargo extends Subtable
 
         $this->setDbTable('quotationcargo');
         $this->_title = 'Cargo';
-        $this->_textAddLink = 'Add Cargo';
+        $this->textAddLink = 'Add Cargo';
         $this->_printHeadBlock = false;
 
         $this->addFields(

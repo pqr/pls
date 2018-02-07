@@ -1,6 +1,7 @@
 <?php
 namespace Light\Traits;
 
+use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
@@ -11,8 +12,8 @@ use Light\User;
 
 trait TableLayoutable
 {
-    protected $_tableLayouts = [];
-    protected $_tableLayoutsEnabled = true;
+    protected $tableLayouts = [];
+    protected $allowTableLayouts = true;
 
     private static $isLayoutDailogPrinted = false;
 
@@ -32,7 +33,7 @@ trait TableLayoutable
 
     protected function initLayoutable()
     {
-        if ($this->_tableLayoutsEnabled) {
+        if ($this->allowTableLayouts) {
 
             //Проверим, возможно вместе с запросом отобразить страницу пришел новый Layout в параметре fields
             //Затем пробуем установить поля из настроек пользователя из базы
@@ -64,7 +65,7 @@ trait TableLayoutable
 
     public function isLayoutEnabled()
     {
-        return $this->_tableLayoutsEnabled;
+        return $this->allowTableLayouts;
     }
 
     protected function setLayout($layoutName)
@@ -88,8 +89,8 @@ trait TableLayoutable
     private function getLayoutFieldsKeys($layoutName)
     {
         //Проверим, возможно такой layout есть среди стандартных в массиве $this->_layouts?
-        if (isset($this->_tableLayouts[$layoutName])) {
-            $fieldsKeysString = $this->_tableLayouts[$layoutName];
+        if (isset($this->tableLayouts[$layoutName])) {
+            $fieldsKeysString = $this->tableLayouts[$layoutName];
         } else {
             //Попробуем загрузить из user_tablelayout
             $query = "SELECT FieldsShow
@@ -105,8 +106,9 @@ trait TableLayoutable
 
     protected function getHtmlTableHeadLayoutSettingsLink()
     {
-        if ($this->isLayoutEnabled()) {
-            return '<span><a href="#" class="table-layoutsettings"><i class="fa fa-cog icon-tablelayoutsettings"></i> Table layout settings</a></span>';
+        if ($this->allowTableLayouts) {
+            $linkText = Config::$lang === 'ru' ? 'Настройка колонок' : 'Table layout settings';
+            return '<span><a href="#" class="table-layoutsettings"><i class="fa fa-cog icon-tablelayoutsettings"></i> '.$linkText.'</a></span>';
         }
 
         return '';
@@ -135,7 +137,7 @@ trait TableLayoutable
         array_multisort($fieldNames, $allFields);
 
         $layouts = [];
-        foreach ($this->_tableLayouts as $name => $layoutFields) {
+        foreach ($this->tableLayouts as $name => $layoutFields) {
             $layouts[] = ['name' => $name, 'fieldKeys' => explode('|', $layoutFields)];
         }
 

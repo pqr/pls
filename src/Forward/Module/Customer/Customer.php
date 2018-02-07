@@ -21,9 +21,9 @@ class Customer extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_folders = true;
+        $this->folders = true;
         $this->_textObjectName = 'Customer';
-        $this->_tableLayouts['Default'] = 'Name|Commodity|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
+        $this->tableLayouts['Default'] = 'Name|Commodity|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
 
         $this->registerSubtable('CustomerAccounts');
         $this->registerSubtable('Responsibles');

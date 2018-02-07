@@ -13,11 +13,11 @@ class StandartRates extends Subtable
     {
         parent::__construct($masterObj);
 
-        $this->_tableExcelEnabled = false;
+        $this->allowExportToExcel = false;
         $this->_tableMsgIfEmpty = '';
         $this->_orderBy = 'ID DESC';
 
-        $this->_tableLayouts['Default'] = 'ID|Name|ResponsibleSalesID|DepartureIATA|ArrivalIATA|ValidFrom|ValidUntil|CommentsInternal';
+        $this->tableLayouts['Default'] = 'ID|Name|ResponsibleSalesID|DepartureIATA|ArrivalIATA|ValidFrom|ValidUntil|CommentsInternal';
 
         $this->getFieldsetLast()->createField('Del', F::TYPE_HTML, [
             'tableWidthHtml' => 20,

@@ -1,4 +1,5 @@
 <?php
+
 namespace Light;
 
 class Pdf
@@ -7,10 +8,11 @@ class Pdf
      * Генерирует pdf из html контента по абсолютному пути. Проверок на сущетсвование файла не осущетсвляет
      * @param string $html
      * @param string $filepathAbs абсолютный путь до файла (с именем файла и расширением .pdf)
+     * @param bool $landscape
      * @param Msg $msgBuff
      * @return bool
      */
-    public static function save($html, $filepathAbs, Msg $msgBuff = null)
+    public static function save($html, $filepathAbs, $landscape = false, Msg $msgBuff = null)
     {
         //Создадим директорию, если её ещё нет
         //$filepathAbs = File::encode($filepathAbs);
@@ -39,7 +41,7 @@ class Pdf
         if ($isHttp) {
             return self::runHttp($html, $filepathAbs, $msgBuff);
         } else {
-            return self::runLocal($html, $filepathAbs, $msgBuff);
+            return self::runLocal($html, $filepathAbs, $landscape, $msgBuff);
         }
     }
 
@@ -74,10 +76,14 @@ class Pdf
         }
     }
 
-    private static function runLocal($html, $filepathAbs, Msg $msgBuff = null)
+    private static function runLocal($html, $filepathAbs, $landscape = false, Msg $msgBuff = null)
     {
         //Путь к исполняемому файлу wkhtmltopd должен быть в конфиге
         $cmd = '"' . Config::$wkhtmltopdfPath . '"';
+
+        if ($landscape) {
+            $cmd .= " -O landscape";
+        }
 
         //Do not use lossless compression on pdf objects
         //$cmd .= " --no-pdf-compression";
@@ -121,7 +127,7 @@ class Pdf
         //В качестве файла назначения указываем $filepathAbs
         //если имя файла содержит русские буквы, то в итоге получаем иероглифы в проводнике
         //поэтому сначала создадим временный файл, а потом переименуем
-        $tmpfilepathAbs = LIGHT_DIR_TEMP . '/'.User::getId().'_'.time().'.pdf';
+        $tmpfilepathAbs = LIGHT_DIR_TEMP . '/' . User::getId() . '_' . time() . '.pdf';
         $cmd .= ' "' . $tmpfilepathAbs . '"';
 
         $result = Misc::procOpen($cmd, $msgBuff, $html);
@@ -168,7 +174,7 @@ class Pdf
         //Определим абсолютный путь до генерируемого файла
         $filepathAbs = FilesFolder::getAbsolutePath($relativePath);
         //Сохраняем pdf файла
-        $result = self::save($html, $filepathAbs, $msgBuff);
+        $result = self::save($html, $filepathAbs, false, $msgBuff);
         if ($result) {
             //Если успешно сохранили файл в папку, нужно записать md5 хеш от html в специальную таблицу pdfhash
             Db::replaceRow(['Filepath' => $relativePath, 'HtmlMD5' => md5($html)], 'pdfhash');
@@ -188,7 +194,7 @@ class Pdf
         $timer = new Timer();
 
         Response::header('Content-Type: application/pdf');
-        Response::header('Content-Disposition: attachment;filename="' . $attachementFilename . '"');
+        Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . $attachementFilename);
         Response::header('Cache-Control: max-age=0');
 
         // Важный параметр -dSubsetFonts=false, чтобы не терять символы при склейке
@@ -210,7 +216,8 @@ class Pdf
         array $filesRelative,
         string $outAbsFilepathEnc,
         Msg $msgBuff = null
-    ) {
+    )
+    {
         $cmd = self::getCmdConcatenatePdf($filesRelative, $outAbsFilepathEnc);
         Misc::procOpen($cmd, $msgBuff);
     }
@@ -258,7 +265,7 @@ class Pdf
         $timer = new Timer();
 
         Response::header('Content-Type: application/pdf');
-        Response::header('Content-Disposition: attachment;filename="' . File::getValidFilename($attachementFilename) . '"');
+        Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($attachementFilename)));
         Response::header('Cache-Control: max-age=0');
 
         $cmd = '"' . Config::$pdftkPath . '"';

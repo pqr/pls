@@ -78,7 +78,7 @@ export class Dialog {
         if (options.buttonOkText) {
             $('<a href="#ok" class="lightdialog__button waves-effect waves-light btn bgcolor-btn-primary"></a>')
                 .html(options.buttonOkText)
-                .on("click", e => {
+                .on("click", (e:any) => {
                     e.preventDefault();
                     // обрабатываем клик, только если кнопка уже не заблокирована
                     if (!$(e.currentTarget).hasClass("disabled")) {

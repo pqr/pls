@@ -20,21 +20,6 @@ class FilesFolder
         static $isWindowsSharedFolderAllowed;
         if ($isWindowsSharedFolderAllowed === null) {
 
-            $serverAddr = $_SERVER['SERVER_ADDR'] ?? $_SERVER['SERVER_NAME'] ?? '';
-            $isLocal = strpos($serverAddr, '192.') === 0 || strpos($serverAddr, '127.') === 0 || strpos($serverAddr,
-                    '10.') === 0;
-            if (!$isLocal) {
-                $isWindowsSharedFolderAllowed = false;
-                return $isWindowsSharedFolderAllowed;
-            }
-
-            if (self::isUserAgentNix()) {
-                // работаем в OS X или Linux - в этих системах расшаренный папки успешно работают через smb в любых браузерах!
-                // можно возвращать true
-                $isWindowsSharedFolderAllowed = true;
-                return $isWindowsSharedFolderAllowed;
-            }
-
             // Если дошли до этого момента, значит мы в локальной сети и под Windows - тут всё зависит от браузера
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
             $isFirefox = strpos($userAgent, 'Firefox') !== false;
@@ -61,7 +46,9 @@ class FilesFolder
      */
     public static function getUrl(string $relativePath)
     {
-        if (self::isWindowsSharedFolderAllowed()) {
+        // Если задана переменная Config::$filesfolder и текущее окружение пользователя позволяет открывать ссылки
+        // в проводнике - тогда сформируем ссылку для проводника
+        if (Config::$filesfolder && self::isWindowsSharedFolderAllowed()) {
 
             // Когда url передаётся в браузер под видом ссылки file:// важно чтобы имена папок и файлов
             // были закодированы с помощью rawurlencode
@@ -80,8 +67,10 @@ class FilesFolder
 
         }
 
-        // Если же доступ через сетевые папки невозможен, сформируем ссыклу на ModuleAbstract
-        // Относительный путь обычно бывает двух видов: <ModuleName>/<thousand>/<RecordID> или <ModuleName>/<RecordID>
+        // Если же не задана переменная Config::$filesfolder или доступ через сетевые папки невозможен
+        // сформируем ссыклу на ModuleAbstract - elfinder
+
+        // Относительный путь обычно выглядит так: <ModuleName>/<thousand>/<RecordID>
         $parts = explode('/', $relativePath);
         if (count($parts) < 2) {
             // Странный относительный путь, по которому невозможно посроить ссылку на ModuleAbstract

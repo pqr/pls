@@ -41,7 +41,7 @@ class CInvoice extends InvoiceModuleAbstract
         parent::__construct();
 
         $this->_textObjectName = 'Customer Invoice';
-        $this->_tableLayouts['Default'] =
+        $this->tableLayouts['Default'] =
             'Name|CustomerAccountID|Amount|CurrencyISO|DocType|StatusIco|DocDate|DueDate|Overdue|Comments';
 
         $this->registerSubtable('Lines');

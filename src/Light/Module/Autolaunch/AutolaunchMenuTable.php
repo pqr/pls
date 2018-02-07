@@ -16,7 +16,7 @@ class AutolaunchMenuTable extends Table
     {
         parent::__construct();
 
-        $this->_tableLinkModule = 'Autolaunch';
+        $this->tableLinkModule = 'Autolaunch';
 
         $crontabLines = explode("\n",
             str_replace('run-one', '', shell_exec("sudo -u " . Config::$crontabUser . " -S crontab -l")));

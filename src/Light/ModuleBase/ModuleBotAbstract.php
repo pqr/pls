@@ -3,6 +3,7 @@
 namespace Light\ModuleBase;
 
 
+use Light\Config;
 use Light\Db;
 use Light\Response;
 use Light\User;
@@ -12,6 +13,17 @@ abstract class ModuleBotAbstract
     protected $telegramId;
     public function __invoke()
     {
+        $token = $_GET['token'] ?? '';
+        if (!$token) {
+            $this->sendResponse('Ошибка: не передан token.', 403);
+            return;
+        }
+
+        if ($token !== Config::$telegramBotToken) {
+            $this->sendResponse('Ошибка: не верный token.', 403);
+            return;
+        }
+
         $this->telegramId = (int)($_GET['telegramid'] ?? 0);
         if (!$this->telegramId) {
             $this->sendResponse('Ошибка: не передан telegramid. Попробуйте отправить запрос повторно.', 400);
@@ -124,7 +136,7 @@ abstract class ModuleBotAbstract
             return false;
         }
 
-        return User::loadData($userLogin);
+        return User::loadAsCurrent($userLogin);
     }
 
     protected function loadUserByToken(string $token, int $telegramId)
@@ -140,7 +152,7 @@ abstract class ModuleBotAbstract
             return false;
         }
 
-        if (!User::loadData($userLogin)) {
+        if (!User::loadAsCurrent($userLogin)) {
             return false;
         }
 

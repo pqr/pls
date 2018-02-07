@@ -77,7 +77,7 @@ abstract class Subtable2
      */
     protected $_cacheFieldsPrefix = '';
 
-    protected $_folderBaseDir;
+    protected $folderBaseDir;
 
     /**
      * Системные поля, которые должны быть в начале таблицы, не выводятся в Excel
@@ -89,9 +89,9 @@ abstract class Subtable2
     protected $_orderBy = 'ID';
 
     //Настройки режима редактирования (Subtable::STATE_EDIT)
-    protected $_allowAdd = true;
-    protected $_allowDelete = true;
-    protected $_textAddLink = 'Add Line';
+    protected $allowAdd = true;
+    protected $allowDelete = true;
+    protected $textAddLink = 'Add Line';
 
     /**
      * Обычно при двойном клике по строке мы проваливаемся куда-то внутрь объекта. Возможно, в этом объекте есть подтаблица
@@ -122,7 +122,7 @@ abstract class Subtable2
 
     protected function getFolderBaseDir()
     {
-        return $this->_folderBaseDir;
+        return $this->folderBaseDir;
     }
 
     /**
@@ -463,7 +463,7 @@ abstract class Subtable2
         unset($blockData);
 
         //Подготовим шаблон для добавления новых элементов
-        if ($this->_allowAdd) {
+        if ($this->allowAdd) {
             $newBlockDefaultData = $this->getEditBlockDataWithDefaults([]);
             $newBlockHtmlTemplate = $this->getEditBlockHtml($newBlockDefaultData, '{NewBlockNum}');
         } else {
@@ -489,13 +489,13 @@ abstract class Subtable2
 
         $outHtml .= '<input type="hidden" name="' . $subtableName . 'Subtable2[ids]" id="' . $subtableName . '-subtable2-ids" value="' . implode(',',
                 $ids) . '">';
-        if ($this->_allowDelete) {
+        if ($this->allowDelete) {
             $outHtml .= '<input type="hidden" name="' . $subtableName . 'Subtable2[delrows]" id="' . $subtableName . '-subtable2-delrows">';
         }
 
-        if ($this->_allowAdd) {
+        if ($this->allowAdd) {
             $outHtml .= '<p class="subtable2-add-p">'
-                . '<a href="#" class="subtable2-add-link">' . Img::iconPlus() . ' ' . $this->_textAddLink . '</a>'
+                . '<a href="#" class="subtable2-add-link">' . Img::iconPlus() . ' ' . $this->textAddLink . '</a>'
                 . '</p>';
         }
         $outHtml .= '</div>';
@@ -574,7 +574,7 @@ abstract class Subtable2
         $this->_obj->setMasterIdForDbLog($this->_masterObj->getId());
 
         //Удаляем некоторые строки из базы, если разрешено удаление
-        if ($this->_allowDelete) {
+        if ($this->allowDelete) {
             foreach ($this->getRowsToBeDeleted() as $rowNum) {
                 //Узнаем ID записи лежащей в данной строке
                 $id = $this->getRowIdFromPost($rowNum);
@@ -700,7 +700,7 @@ abstract class Subtable2
         //Возвращает набор данных из $_REQUEST - может пригодится для внешних классов
         foreach ($this->getRowsIdsFromPost() as $rowNum => $id) {
             //Удалённые строки пропускаем
-            if ($this->_allowDelete && $this->isRowDeleted($rowNum)) {
+            if ($this->allowDelete && $this->isRowDeleted($rowNum)) {
                 continue;
             }
 

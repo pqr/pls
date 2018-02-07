@@ -14,7 +14,7 @@ class Consignee extends Subtable
 
         $this->setDbTable('customerconsignee');
         $this->_title = 'Consignee';
-        $this->_textAddLink = 'Add Consignee';
+        $this->textAddLink = 'Add Consignee';
         $this->_printHeadBlock = false;
 
         $this->addFields(

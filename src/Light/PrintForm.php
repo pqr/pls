@@ -22,6 +22,7 @@ class PrintForm
     protected $title; // начало текста, который попадёт в начало имени файла и в заголовок html страницы (при выводе в браузер)
     protected $format; // в каком формате в итоге генерировать документ
     protected $out; // что сделать с резульатом? Сохранить в папку объекта или отправить в браузер пользователю или и то и другое?
+    protected $pdfLandscape = false;
 
     /** @var Fieldset|F[] */
     protected $_fieldset;
@@ -57,6 +58,11 @@ class PrintForm
     public function setOut(string $out)
     {
         $this->out = $out;
+    }
+
+    public function setPdfLandscape()
+    {
+        $this->pdfLandscape = true;
     }
 
     final public function getFieldset()
@@ -262,7 +268,7 @@ class PrintForm
             case self::FORMAT_PDF:
                 // В случае PDF формата в любом случае придётся создать временный PDF файл
                 $tempFilepathAbs = tempnam(LIGHT_DIR_TEMP, 'print');
-                Pdf::save($fullHtml, $tempFilepathAbs);
+                Pdf::save($fullHtml, $tempFilepathAbs, $this->pdfLandscape);
                 if ($this->out & self::OUT_STREAM) {
                     // Отправляем в браузер пользователю pdf файл из временной папки
                     Response::streamFileFromContent(file_get_contents($tempFilepathAbs), $filename);
@@ -311,6 +317,9 @@ class PrintForm
                 break;
 
             case self::FORMAT_EXCEL:
+                // Обнаружил ситуацию, когда в Excel выдается output о php-ошибках. Пока не нашел причину, но решил отключить,
+                //   т.т. в любом случае эти ошибки не должны попадать в excel
+                error_reporting(0);
                 $xls = new XlsWriter(Template::findfile($this->getTemplate($obj)));
                 $this->writeToActiveSheet($xls, $obj);
                 if ($this->out & self::OUT_SAVE) {
@@ -320,6 +329,8 @@ class PrintForm
                 if ($this->out & self::OUT_STREAM) {
                     $xls->send($filename);
                 }
+                // после вывода Excel - включаем вывод ошибок обратно
+                error_reporting(1);
                 break;
         }
 

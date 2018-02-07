@@ -13,8 +13,8 @@ class Traffic extends ModuleAbstract
 
         $this->setDbTable('traffic');
         $this->_textObjectName = 'Traffic';
-        $this->_tableDefaultOrderBy = 'OrderID';
-        $this->_tableLayouts['Default'] = 'OrderID|Name|FileNumberFrom|FileNumberUntil|NextFileNumber|Type';
+        $this->tableDefaultOrderBy = 'OrderID';
+        $this->tableLayouts['Default'] = 'OrderID|Name|FileNumberFrom|FileNumberUntil|NextFileNumber|Type';
 
         $typeOptions = ['avia' => 'Avia', 'ocean' => 'Ocean', 'truck' => 'Truck'];
 

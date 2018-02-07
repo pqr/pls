@@ -1,16 +1,26 @@
+<?php
+
+use Light\Config;
+
+$isLangRu = Config::$lang === 'ru'
+?>
 <div id="tablelayoutdialog" class="display-none">
     <table>
         <tr>
             <td>
-                <h3>Show <a href="#" id="tablelayoutdialog__linkall">all</a></h3>
+                <h3><?= $isLangRu ? 'Отображаемые' : 'Visible' ?> <a href="#"
+                                                                     id="tablelayoutdialog__linkall"><?= $isLangRu ? 'все' : 'all' ?></a>
+                </h3>
             </td>
 
             <td>
-                <h3>Hide <a href="#" id="tablelayoutdialog__linknone">all</a></h3>
+                <h3><?= $isLangRu ? 'Скрытые' : 'Hidden' ?> <a href="#"
+                                                               id="tablelayoutdialog__linknone"><?= $isLangRu ? 'все' : 'all' ?></a>
+                </h3>
             </td>
 
             <td>
-                <h3>Layouts</h3>
+                <h3><?= $isLangRu ? 'Сохранённые наборы' : 'Saved Layouts' ?></h3>
             </td>
         </tr>
 
@@ -19,7 +29,8 @@
 
             </td>
             <td>
-                <input type="text" id="tablelayoutdialog__filter" placeholder="<?= \Light\Config::$lang === 'ru' ? 'Найти поле...' : 'Search...' ?>">
+                <input type="text" id="tablelayoutdialog__filter"
+                       placeholder="<?= $isLangRu ? 'Найти поле...' : 'Search...' ?>">
             </td>
             <td rowspan="2">
 
@@ -29,7 +40,10 @@
                 </div>
                 <div style="margin-top: 10px;">
                     <input type="text" id="tablelayoutdialog__newlayout">
-                    <input type="button" value="Save" id="tablelayoutdialog__btnsave">
+                    <p>
+                        <input type="button" value="<?= $isLangRu ? 'Сохранить набор' : 'Save layout' ?>"
+                           id="tablelayoutdialog__btnsave">
+                    </p>
                 </div>
 
             </td>

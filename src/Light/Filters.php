@@ -274,10 +274,10 @@ class Filters
         Db::query($insertQuery);
     }
 
-    public function getSqlWhere()
+    public function getSqlWhere(): string
     {
         if ($this->fieldset->isEmpty()) {
-            return '';
+            return '1';
         }
 
         $values = $this->getValues();
@@ -437,7 +437,7 @@ class Filters
      * @param array $filtersLayout - это массив настроек заданный внутри метода $this->initFilters(), он имеет не совсем верную стуктуру с числовыми ключами
      * @param array $doNotReset
      * @return string
-     * @throws Exception
+     * @throws \Exception
      */
     public function getHtml(bool $noSettings, array $filtersLayout, array $doNotReset): string
     {
@@ -462,7 +462,7 @@ class Filters
                 foreach ($col as $key => $val) {
                     if (is_numeric($key)) {
                         if (!is_string($val)) {
-                            throw new Exception("В массиве filtersLayout в колонке $colIndex задан элемент с индексом $key значение которого не является строкой - такого не должно быть!");
+                            throw new \Exception("В массиве filtersLayout в колонке $colIndex задан элемент с индексом $key значение которого не является строкой - такого не должно быть!");
                         }
                         $layout[$colIndex][$val] = $val;
                     } else {
@@ -483,9 +483,9 @@ class Filters
             // Далее попробуем загрузить настроки пользователя и применить их поверх $layout
             $settings = Db::getRow(
                 "SELECT ID, Sort, Invisible, Defaults 
-            FROM user_filter_settings 
-            WHERE TableID = {$this->tableId} 
-               AND CreatedBy = " . (int)User::getId()
+                FROM user_filter_settings 
+                WHERE TableID = {$this->tableId} 
+                   AND CreatedBy = " . (int)User::getId()
             );
 
             if ($settings) {

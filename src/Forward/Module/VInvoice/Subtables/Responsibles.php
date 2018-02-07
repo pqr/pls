@@ -15,11 +15,11 @@ class Responsibles extends Subtable
         $this->setDbTable('vinvoice_responsible');
 
         $this->_printHeadBlock = false;
-        $this->_tableExcelEnabled = false;
-        $this->_tableLayoutsEnabled = false;
+        $this->allowExportToExcel = false;
+        $this->allowTableLayouts = false;
         $this->_allowPaste = false;
         $this->_tableMsgIfEmpty = 'No responsibles';
-        $this->_textAddLink = 'Add Responsible';
+        $this->textAddLink = 'Add Responsible';
 
         $this->addFields(
 

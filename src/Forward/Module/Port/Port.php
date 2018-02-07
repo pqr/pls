@@ -16,8 +16,8 @@ class Port extends ModuleAbstract
         parent::__construct();
 
         $this->_textObjectName = 'Port';
-        $this->_tableDefaultOrderBy = 'Name ASC';
-        $this->_tableLayouts['Default'] = 'ID|Name|NameRu|isPOL|isPOD';
+        $this->tableDefaultOrderBy = 'Name ASC';
+        $this->tableLayouts['Default'] = 'ID|Name|NameRu|isPOL|isPOD';
 
         $this->addFields(
 

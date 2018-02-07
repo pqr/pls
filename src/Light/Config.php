@@ -53,7 +53,7 @@ class Config
     public static $wkhtmltopdfPath = 'wkhtmltopdf';
 
     /** @var string путь к исполняемому файлу gswin64c.exe - используется для разбивки PDF на маленькие файлы и для перевода PDF в PNG */
-    public static $ghostScriptPath = 'gsc';
+    public static $ghostScriptPath = 'gs';
     /** @var string путь к исполняемому файлу pdftk - используется для склейки нескольких PDF файлов https://www.pdflabs.com/tools/pdftk-server/ */
     public static $pdftkPath = 'pdftk';
     /** @var string путь к исполняемому файлу convert входящему в ImageMagic - используется для наложения картинки печати на PNG изображения и склеивания PNG в PDF */
@@ -88,5 +88,7 @@ class Config
     public static $lang = 'ru';
     public static $showRatesInMenu = true;
     public static $useInputTypeDate = false;
+
+    public static $telegramBotToken = '';
 
 }

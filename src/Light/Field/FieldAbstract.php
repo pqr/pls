@@ -31,6 +31,7 @@ use Light\Html;
  * @method $this setEditTitle($stringOrCallable)
  * @method $this setEditTagParams($stringOrCallable)
  * @method $this setEditMandatory($value)
+ * @method $this setPlaceholder(string $value)
  * @method $this setNobr(bool $value)
  * @method $this setClickable(bool $value)
  * @method $this setSubmitToupper(bool $value)
@@ -63,6 +64,7 @@ use Light\Html;
  * @method string getEditWidth()
  * @method string getEditAlign()
  * @method bool|string getEditMandatory()
+ * @method string getPlaceholder()
  * @method bool getSubmitToupper()
  * @method callable getGetHtmlFunction()
  * @method callable getGeExcelFunction()
@@ -291,6 +293,11 @@ abstract class FieldAbstract
      * @var bool|string используется в ModuleAbstract::validateMandatory()
      */
     public $editMandatory = false;
+
+    /**
+     * @var string используется в полях типа input и в react-select
+     */
+    public $placeholder;
 
     /**
      * @var bool

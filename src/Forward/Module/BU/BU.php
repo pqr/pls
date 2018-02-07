@@ -14,7 +14,7 @@ class BU extends ModuleAbstract
 
         $this->setDbTable('bu');
         $this->_textObjectName = 'Business Unit';
-        $this->_tableDefaultOrderBy = 'OrderID';
+        $this->tableDefaultOrderBy = 'OrderID';
 
         $this->addFields(
 
@@ -27,6 +27,6 @@ class BU extends ModuleAbstract
 
         );
 
-        $this->_tableLayouts['Default'] = 'OrderID|Name';
+        $this->tableLayouts['Default'] = 'OrderID|Name';
     }
 }

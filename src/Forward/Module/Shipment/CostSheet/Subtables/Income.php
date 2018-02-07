@@ -10,7 +10,7 @@ class Income extends IncomeExpensesAbstract
     {
         parent::__construct($masterObj);
 
-        $this->_textAddLink = 'Add Income Row';
+        $this->textAddLink = 'Add Income Row';
         $this->_tableTotalRowData = [
             'Name' => 'Total Income',
             'Amount' => 'USD ' . $this->_masterObj['CacheCSIncomeinUSD']

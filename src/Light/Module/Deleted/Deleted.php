@@ -19,11 +19,11 @@ class Deleted extends ModuleAbstract
 
         Js::addLight('Deleted.js');
 
-        $this->_allowAdd = false;
-        $this->_allowDelete = false;
-        $this->_allowEdit = false;
-        $this->_tableSortingEnabled = false;
-        $this->_tableDefaultOrderBy = 'ID DESC';
+        $this->allowAdd = false;
+        $this->allowDelete = false;
+        $this->allowEdit = false;
+        $this->allowSort = false;
+        $this->tableDefaultOrderBy = 'ID DESC';
 
         $this->addMassaction('Restore', 'Restore');
     }
@@ -117,8 +117,8 @@ class Deleted extends ModuleAbstract
                 $sqlOrderBy[] = $sortField->tableOrderBy . ' ' . $this->getSortOrder();
             }
 
-            if ($this->_tableDefaultOrderBy) {
-                $sqlOrderBy[] = $this->_tableDefaultOrderBy;
+            if ($this->tableDefaultOrderBy) {
+                $sqlOrderBy[] = $this->tableDefaultOrderBy;
             }
 
             $sqlOrderBy = implode(', ', $sqlOrderBy);
@@ -143,30 +143,30 @@ class Deleted extends ModuleAbstract
 
             $sqlWhere = $this->getFiltersSqlWhere();
             if ($sqlWhere) {
-                $queryIds .= " WHERE " . $sqlWhere;
+                $queryIds .= " WHERE $sqlWhere";
             }
 
             //Cформируем условие сортировки.
-            //Оно может состоять из сортировки указанной в trait TableSortable и из _tableDefaultOrderBy
+            //Оно может состоять из сортировки указанной в trait TableSortable и из tableDefaultOrderBy
             //Сначала соберём всё в массив, потом из него склеим строку
             $sqlOrderBy = [];
             if ($sortField) {
                 $sqlOrderBy[] = $sortField->tableOrderBy . ' ' . $this->getSortOrder();
             }
 
-            if ($this->_tableDefaultOrderBy) {
-                $sqlOrderBy[] = $this->_tableDefaultOrderBy;
+            if ($this->tableDefaultOrderBy) {
+                $sqlOrderBy[] = $this->tableDefaultOrderBy;
             }
 
             $sqlOrderBy = implode(', ', $sqlOrderBy);
 
             if ($sqlOrderBy) {
-                $queryIds .= " ORDER BY " . $sqlOrderBy;
+                $queryIds .= " ORDER BY $sqlOrderBy";
             }
 
             if ($this->isStateListExcel()) {
                 $queryIds .= ' LIMIT ' . $this->getTableExcelMaxRows();
-            } elseif ($this->_tablePaginationEnabled) {
+            } elseif ($this->allowPagination) {
                 $page = $this->getTablePage();
                 $rowsPerPage = $this->getTableRowsPerPage();
                 $queryIds .= ' LIMIT ' . ($page - 1) * $rowsPerPage . ', ' . $rowsPerPage;

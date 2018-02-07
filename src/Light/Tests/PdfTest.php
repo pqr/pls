@@ -11,7 +11,7 @@ class PdfTest extends \PHPUnit_Framework_TestCase
         $msgBuff = new Msg();
         $html = file_get_contents(__DIR__ . '/PdfAssets/Html2PdfExample.html');
 
-        $result = Pdf::save($html, __DIR__ . '/PdfAssets/PdfSaveTest.pdf', $msgBuff);
+        $result = Pdf::save($html, __DIR__ . '/PdfAssets/PdfSaveTest.pdf', false, $msgBuff);
 
         self::assertEquals(true, $result);
     }

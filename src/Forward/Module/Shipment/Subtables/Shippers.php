@@ -17,12 +17,12 @@ class Shippers extends Subtable
         $this->setDbTable('shipmentshipper');
 
         $this->_printHeadBlock = false;
-        $this->_tableExcelEnabled = false;
-        $this->_tableLayoutsEnabled = false;
+        $this->allowExportToExcel = false;
+        $this->allowTableLayouts = false;
         $this->_tableMsgIfEmpty = 'No shippers';
 
         $this->_title = 'Shippers';
-        $this->_textAddLink = 'Add Shipper';
+        $this->textAddLink = 'Add Shipper';
 
         $this->addFields(
 

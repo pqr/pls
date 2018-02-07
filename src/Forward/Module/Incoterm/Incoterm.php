@@ -14,7 +14,7 @@ class Incoterm extends ModuleAbstract
         $this->setDbTable('incoterm');
 
         $this->_textObjectName = 'Incoterm';
-        $this->_tableDefaultOrderBy = 'OrderID';
+        $this->tableDefaultOrderBy = 'OrderID';
 
         $this->addFields(
 

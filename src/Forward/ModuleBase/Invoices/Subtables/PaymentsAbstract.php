@@ -21,18 +21,18 @@ abstract class PaymentsAbstract extends Subtable
 
         $this->setDbTable(strtolower($firstLetter . 'payment_' . $firstLetter . 'invoice'));
         $this->_title = $customerOrVendor . ' Payments';
-        $this->_tableExcelEnabled = true;
-        $this->_tableLayoutsEnabled = false;
+        $this->allowExportToExcel = true;
+        $this->allowTableLayouts = false;
         $this->_tablePrintTotalRecordsFound = false;
         $this->_tableMsgIfEmpty = 'No ' . $customerOrVendor . ' Payments yet';
 
         //Параметры для формирования ссылок на модули CPayment или VPayment
-        $this->_tableLinkModule = $firstLetter . 'Payment'; //имя модуля на который делать ссылку
-        $this->_tableLinkIdFieldKey = 'RealPaymentID'; //ключ в массиве $rowData по которому взять значение id=... для ссылки на CPayment или VPayment
+        $this->tableLinkModule = $firstLetter . 'Payment'; //имя модуля на который делать ссылку
+        $this->tableLinkIdFieldKey = 'RealPaymentID'; //ключ в массиве $rowData по которому взять значение id=... для ссылки на CPayment или VPayment
 
-        $this->_folders = true;
-        $this->_folderBaseDir = $firstLetter . 'Payment';
-        $this->_folderNameFieldKey = 'RealPaymentID';
+        $this->folders = true;
+        $this->folderBaseDir = $firstLetter . 'Payment';
+        $this->folderNameFieldKey = 'RealPaymentID';
 
         $this->addFields(
 

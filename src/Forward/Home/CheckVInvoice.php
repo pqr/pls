@@ -16,7 +16,7 @@ class CheckVInvoice extends HomeBlockAbstract
         $this->_description = 'Vendor Invoices в статусах On checking и Under dipsute.  Учитываются только USD/EUR счета. Сортировка по кол-ву оставшихся на проверку дней (Days Left).';
         $this->_width = 550;
         $this->_informationFor = 'Информация для Vendor Invoice Responsible.';
-        $this->_tableLinkModule = 'VInvoice';
+        $this->tableLinkModule = 'VInvoice';
 
         $this->addFields(
 

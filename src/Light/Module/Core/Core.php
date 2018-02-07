@@ -280,8 +280,8 @@ class Core
         }
 
         $msg = Config::$lang === 'ru'
-            ? 'Значения фильтров сохранены как REST'
-            : 'Saved as RESET';
+            ? 'Значения фильтров сохранены как СБРОС'
+            : 'Saved as default';
 
         Response::sendToast('success', $msg);
 
@@ -295,7 +295,7 @@ class Core
             return;
         }
 
-        $textSetReset = Config::$lang === 'ru' ? "Установить как RESET" : "Set current filter values as default";
+        $textSetReset = Config::$lang === 'ru' ? "Установить как СБРОС" : "Set current filter values as default";
         $textSave = Config::$lang === 'ru' ? "Сохранить фильтры" : "Save filter values as";
         $textSavePlaceholder = Config::$lang === 'ru' ? "Название" : "...give it a name";
         $textSaveBtn = Config::$lang === 'ru' ? "Сохранить" : "Save";

@@ -24,7 +24,7 @@ class CActNotReceived extends HomeBlockAbstract
         $this->_title = 'Нет оригинала акта';
         $this->_description = 'Клиенту отправлен акт (заполнена папка 3), но ещё не получен подписанный оригинал (пустая папка 4). Проверяются перевозки только в статусе Open.';
         $this->_informationFor = 'Информация для Shipment Customer Service.';
-        $this->_tableLinkModule = 'Shipment';
+        $this->tableLinkModule = 'Shipment';
 
         $this->addFields(
             HomeFields::name(),

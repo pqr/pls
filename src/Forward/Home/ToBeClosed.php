@@ -12,7 +12,7 @@ class ToBeClosed extends HomeBlockAbstract
         $this->_title = 'To be closed';
         $this->_description = ShipmentCriteria::getText(ShipmentCriteria::ToBeClosed) . '.';
         $this->_informationFor = 'Информация для Shipment Responsible CS и Sales.';
-        $this->_tableLinkModule = 'Shipment';
+        $this->tableLinkModule = 'Shipment';
 
         $this->addFields(
             F::createString('Name', ['name' => 'File Number']),

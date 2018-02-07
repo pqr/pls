@@ -370,12 +370,14 @@ class Template
 
     public static function filtersButtons()
     {
-        $textHistory = Config::$lang === 'ru' ? 'История фильтров' : 'Filters history';
-        $textSaved = Config::$lang === 'ru' ? 'Сохраненные фильтры' : 'Saved filters';
-        $textSettings = Config::$lang === 'ru' ? 'Настройка фильтров' : 'Filters layout';
+        $isLangRu = Config::$lang === 'ru';
+        $textHistory = $isLangRu ? 'История фильтров' : 'Filters history';
+        $textSaved = $isLangRu ? 'Сохраненные фильтры' : 'Saved filters';
+        $textSettings = $isLangRu ? 'Настройка фильтров' : 'Filters layout';
+        $textReset = $isLangRu ? 'СБРОС' : 'RESET';
         return '<div class="filters-buttons">
                 <button class="btn waves-effect waves-light btn-filter" type="submit">' . Img::iconSearch() . '</button>
-                <span class="btn-flat waves-effect filters-reset" title="Reset">Reset</span>
+                <button class="btn-flat waves-effect filters-reset" type="button">' . $textReset . '</button>
                 <nobr><div><div class="filters-buttons-icons">
                     <span class="btn-flat waves-effect toggle-tooltip filters-history" title="' . $textHistory . '"><i class="fa fa-history"></i></span>
                     <span class="btn-flat waves-effect toggle-tooltip filters-save" title="' . $textSaved . '"><i class="fa fa-save"></i></span>

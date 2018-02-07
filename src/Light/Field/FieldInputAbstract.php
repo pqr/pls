@@ -4,24 +4,20 @@ namespace Light\Field;
 
 /**
  * @param string $editMaxLength
- * @param string $placeholder
  * @param string $inputType
  * @param string $inputPattern
  *
  * @method $this setEditMaxLength(int $value)
- * @method $this setPlaceholder(string $value)
  * @method $this setInputType(string $value)
  * @method $this setInputPattern(string $value)
  *
  * @method int getEditMaxLength()
- * @method string getPlaceholder()
  * @method string getInputType()
  * @method string getInputPattern()
  */
 abstract class FieldInputAbstract extends FieldAbstract
 {
     public $editMaxLength;
-    public $placeholder;
     public $inputType;
     public $inputPattern; // можно задавать regex выражения, например [0-9]* http://htmlbook.ru/html/input/pattern
 

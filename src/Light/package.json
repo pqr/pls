@@ -13,8 +13,8 @@
     "webpack": "latest"
   },
   "dependencies": {
-    "@types/jquery": "latest",
-    "@types/jqueryui": "latest",
+    "@types/jquery": "^3.3.0",
+    "@types/jqueryui": "^1.12.1",
     "@types/keypress.js": "latest",
     "@types/lodash": "latest",
     "@types/react": "latest",

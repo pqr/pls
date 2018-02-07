@@ -21,7 +21,10 @@ class AutolaunchLog extends Table
         parent::__construct('autolaunchlog');
 
         $this->className = $className;
-        $this->_tableLinkModule = 'Autolaunch';
+        $this->tableLinkModule = 'Autolaunch';
+        $this->tableLinkUrlParams = ['class' => $className];
+
+        $this->tableReloadUrl = "?a=Autolaunch&class=$className";
 
         //Добавим поле Log в котором будут ссылки на режим View
         $this->setFieldsetLast(
@@ -38,7 +41,7 @@ class AutolaunchLog extends Table
             )
         );
 
-        $this->_tableFieldsShow = ['ID', 'CreatedDateTime', 'CreatedBy', 'Filename', 'ShortMessage', 'WorkTime', 'Log'];
+        $this->tableFieldsShow = ['ID', 'CreatedDateTime', 'CreatedBy', 'Filename', 'ShortMessage', 'WorkTime', 'Log'];
 
         $this->initPaginatable();
         $this->tableLoadData();
@@ -78,16 +81,6 @@ class AutolaunchLog extends Table
 
         $foundRows = Db::getOne("SELECT FOUND_ROWS()");
         $this->setTableTotalRecordsFound($foundRows);
-    }
-
-    protected function getTableReloadUrl()
-    {
-        return Link::url(['class' => $this->className]);
-    }
-
-    protected function getTableLinkUrlParams(): array
-    {
-        return ['class' => $this->className];
     }
 
     /**

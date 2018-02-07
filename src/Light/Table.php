@@ -30,9 +30,9 @@ class Table
      */
     private $fieldsetLast;
 
-    //Массив ключей полей, которые следует отображать в нужном порядке
-    //Если это поле null, будут выведены все поля
-    protected $_tableFieldsShow;
+    // Массив ключей полей, которые следует отображать в нужном порядке
+    // Если это поле null, будут выведены все поля
+    protected $tableFieldsShow;
 
     protected $_tableData = [];
     protected $_tableTotalRowData;
@@ -40,16 +40,24 @@ class Table
     /** @var array $_tableTotalRowCalcFieldsKeys */
     protected $_tableTotalRowCalcFieldsKeys;
 
-    /** @var string $_tableLinkModule модуль, на который автоматически делать ссылки при двойном клике по строке
+    /** @var string $tableReloadUrl путь по которому таблица будет делать ajax запрос, чтобы перезагрузить себя с сервера
+     * например при пажинации или при применении фильтров
+     */
+    protected $tableReloadUrl;
+
+    /** @var string $tableLinkModule модуль, на который автоматически делать ссылки при двойном клике по строке
      * с добавленим data-linkid из строки
      */
-    protected $_tableLinkModule;
+    protected $tableLinkModule;
 
-    /** Имена полей, которые должны стать ссылками на внешний модуль $this->_tableLinkModule */
-    protected $_tableLinkFieldKeys = ['ID', 'Name'];
+    /** Имена полей, которые должны стать ссылками на внешний модуль $this->tableLinkModule */
+    protected $tableLinkFieldKeys = ['ID', 'Name'];
 
-    /** @var string $_tableLinkIdFieldKey ключевое поле поле, в котором хранится id для подстановки ссылки при использовании _tableLinkModule и _tableLinkFieldKeys */
-    protected $_tableLinkIdFieldKey = 'ID';
+    /** @var string $tableLinkIdFieldKey ключевое поле поле, в котором хранится id для подстановки ссылки при использовании tableLinkModule и tableLinkFieldKeys */
+    protected $tableLinkIdFieldKey = 'ID';
+
+    /** @var array дополнительные параметры, которые будут добавлены к ссылкам генерируемым по трём предыдущим свойствам */
+    protected $tableLinkUrlParams = [];
 
     public $nosticky = false;
     public $stickyOffset;
@@ -158,16 +166,16 @@ class Table
     public function setTableFieldsShow($fieldsKeysString)
     {
         if ($fieldsKeysString === null) {
-            $this->_tableFieldsShow = null;
+            $this->tableFieldsShow = null;
         } else {
             //Пробежимся по списку, проверим реальность этих полей, занесём правильные поля в $this->FieldsShow
-            $this->_tableFieldsShow = explode('|', $fieldsKeysString);
+            $this->tableFieldsShow = explode('|', $fieldsKeysString);
         }
     }
 
     public function getTableFieldsShow()
     {
-        return $this->_tableFieldsShow;
+        return $this->tableFieldsShow;
     }
 
     /**
@@ -179,8 +187,8 @@ class Table
         /** @var $outFieldset Fieldset */
         $outFieldset = $this->getFieldset()->filterByMode(F::MODE_LIST);
         //Если _fieldsShow установлен в null - это сигнал к тому, что нужно выводить все поля!
-        if ($this->_tableFieldsShow !== null) {
-            $outFieldset = $outFieldset->filterByKeys($this->_tableFieldsShow);
+        if ($this->tableFieldsShow !== null) {
+            $outFieldset = $outFieldset->filterByKeys($this->tableFieldsShow);
         }
 
         return $outFieldset;
@@ -206,7 +214,7 @@ class Table
 
     /**
      * Проверяет, отображется ли поле в режиме таблицы?
-     * Поле должно иметь mode F::MODE_LIST и быть среди отображаемых в текущих настроках Table layout settings (массив $this->_tableFieldsShow)
+     * Поле должно иметь mode F::MODE_LIST и быть среди отображаемых в текущих настроках Table layout settings (массив $this->tableFieldsShow)
      * @param string $fieldKey
      * @return bool
      */
@@ -224,7 +232,7 @@ class Table
         }
 
         /** @noinspection IfReturnReturnSimplificationInspection */
-        if ($this->_tableFieldsShow !== null && !in_array($fieldKey, $this->_tableFieldsShow)) {
+        if ($this->tableFieldsShow !== null && !in_array($fieldKey, $this->tableFieldsShow)) {
             //Если задан конкретный массив поле для отображения, но при этом требуемого нам поля нет в этом массиве
             //значит поле не отображатеся в режиме таблицы
             return false;
@@ -271,27 +279,6 @@ class Table
     }
 
     /**
-     * Метод для переопределения в классах потомках. Эти параметры будут вставлены в data-reloadurlparams
-     * и будут использованы при ajax обновлении таблицы
-     * @return string
-     */
-    protected function getTableReloadUrl()
-    {
-        return '?a=' . Request::getModule();
-    }
-
-    /**
-     * Метод для переопределения в классах потомках. Эти параметры будут вставлены в data-linkurlparams
-     * и будут использованы при генерации ссылок в полях $this->_tableLinkFieldKeys и при двойном клике на строке
-     * Чтобы ссылки и двойной клик сработали, дополнительно нужно определить $this->_tableLinkModule
-     * @return array
-     */
-    protected function getTableLinkUrlParams(): array
-    {
-        return [];
-    }
-
-    /**
      * @desc возвращате полный html код таблицы
      * @param bool $printHeadBlock
      * @param bool $printIfEmpty
@@ -300,9 +287,9 @@ class Table
     public function getHtmlTable($printHeadBlock = true, $printIfEmpty = false)
     {
         $linkmodule =
-            $this->_tableLinkModule ? ' data-linkmodule="' . htmlspecialchars($this->_tableLinkModule) . '"' : '';
-        $reloadurl = $this->getTableReloadUrl();
-        $reloadurl = $reloadurl ? ' data-reloadurl="' . htmlspecialchars($reloadurl) . '"' : '';
+            $this->tableLinkModule ? ' data-linkmodule="' . htmlspecialchars($this->tableLinkModule) . '"' : '';
+
+        $reloadurl = $this->tableReloadUrl ? ' data-reloadurl="' . htmlspecialchars($this->tableReloadUrl) . '"' : '';
 
         return
             '<div class="table-div" id="' . $this->getTableName() .
@@ -400,25 +387,27 @@ class Table
 
         if (method_exists($this, 'getTablePagesHtml')) {
             /** @var $this \Light\Traits\TablePaginatable */
-            $paginationHtml = $this->getTablePagesHtml();
-            $paginationHtml .= $this->getTableHtmlShowAll();
-            $outHtml .= $paginationHtml;
+            $outHtml .= $this->getTablePagesHtml()
+                . $this->getTableHtmlShowAll();
         }
+
         /** @var $this \Light\Traits\TableExcelExportable */
-        if (method_exists($this, 'isExcelEnabled') && $this->isExcelEnabled()) {
-            $excelLinkHtml = '<span class="table-excel"><a href="' . $this->getTableExcelUrl() . '">' . Img::iconExcel() . ' Export to Excel</a></span>';
-            $outHtml .= $excelLinkHtml;
+        if (property_exists($this, 'allowExportToExcel') && $this->allowExportToExcel) {
+            /** @var $this \Light\Traits\TableExcelExportable */
+            $exportToExcelText = Config::$lang === 'ru' ? 'Экспорт в Excel' : 'Export to Excel';
+            $outHtml .= '<span class="table-excel"><a href="' . $this->tableReloadUrl . '&xls=1">' . Img::iconExcel() . ' ' . $exportToExcelText . '</a></span>';
         }
+
         /** @var $this \Light\Traits\TableSortable */
-        if (method_exists($this, 'isSortingEnabled') && $this->isSortingEnabled()) {
-            $sortBlockHtml = $this->getHtmlTableHeadBlockSortable();
-            $outHtml .= $sortBlockHtml;
+        if (property_exists($this, 'allowSort') && $this->allowSort) {
+            /** @var $this \Light\Traits\TableSortable */
+            $outHtml .= $this->getHtmlTableHeadBlockSortable();
         }
 
         /** @var $this \Light\Traits\TableLayoutable */
-        if (method_exists($this, 'isLayoutEnabled') && $this->isLayoutEnabled()) {
-            $layoutsLinkHtml = $this->getHtmlTableHeadLayoutSettingsLink();
-            $outHtml .= $layoutsLinkHtml;
+        if (property_exists($this, 'allowTableLayouts') && $this->allowTableLayouts) {
+            /** @var $this \Light\Traits\TableLayoutable */
+            $outHtml .= $this->getHtmlTableHeadLayoutSettingsLink();
         }
 
         if (method_exists($this,
@@ -437,8 +426,10 @@ class Table
         $dataTableName = ' data-tablename="' . $this->getTableName() . '"';
         $class = ' class="table' . ($this->nosticky ? ' nosticky' : '') . '"';
         $stickyOffset = $this->stickyOffset !== null ? ' data-stickyoffset="' . $this->stickyOffset . '"' : '';
-        $dataLinkUrlParams = http_build_query($this->getTableLinkUrlParams());
-        if ($dataLinkUrlParams) {
+
+        $dataLinkUrlParams = '';
+        if ($this->tableLinkUrlParams) {
+            $dataLinkUrlParams = http_build_query($this->tableLinkUrlParams);
             $dataLinkUrlParams = ' data-linkurlparams="' . htmlspecialchars($dataLinkUrlParams) . '"';
         }
 
@@ -448,7 +439,7 @@ class Table
     /**
      * Возвращает массив из строк, которые должны быть помещены в thead. Обычно это одна строка
      * @param array $allFields
-     * @return array
+     * @return string
      */
     private function getHtmlTableThead(array $allFields)
     {
@@ -506,8 +497,6 @@ class Table
             $calcFieldKeysHash = null;
         }
 
-        $tableLinkUrlParams = $this->getTableLinkUrlParams();
-
         $outHtml = '<tbody>';
         for ($rowNum = 0; $rowNum < $tableDataCount; $rowNum++) {
 
@@ -528,7 +517,7 @@ class Table
                 }
             }
 
-            $outHtml .= $this->getHtmlTableTr($rowData, $rowNum, $allFields, $tableLinkUrlParams);
+            $outHtml .= $this->getHtmlTableTr($rowData, $rowNum, $allFields, $this->tableLinkUrlParams);
 
         }
 
@@ -592,25 +581,25 @@ class Table
     {
         $value = $rowData[$field->key] ?? null;
         $outHtml = $field->getHtml($value, $rowData, true); //forTable = ture
-        // Обернём значение ячейки в ссылку на модуль _tableLinkModule, если это поле среди _tableLinkFieldKeys
-        if ($this->_tableLinkModule) {
+        // Обернём значение ячейки в ссылку на модуль tableLinkModule, если это поле среди tableLinkFieldKeys
+        if ($this->tableLinkModule) {
 
             if ($this->tableLinkFieldKeysHash === null) {
                 //Оптимизация: кеширующая переменная хэш с ключами полей, которые являются ссылками, чтобы
                 //делать более быструю проверку isset вместо in_array
-                if ($this->_tableLinkFieldKeys) {
-                    $this->tableLinkFieldKeysHash = array_flip($this->_tableLinkFieldKeys);
+                if ($this->tableLinkFieldKeys) {
+                    $this->tableLinkFieldKeysHash = array_flip($this->tableLinkFieldKeys);
                 } else {
                     $this->tableLinkFieldKeysHash = [];
                 }
             }
 
-            if (isset($this->tableLinkFieldKeysHash[$field->key], $rowData[$this->_tableLinkIdFieldKey])) {
+            if (isset($this->tableLinkFieldKeysHash[$field->key], $rowData[$this->tableLinkIdFieldKey])) {
                 $outHtml = Link::moduleView(
                     $outHtml,
-                    $rowData[$this->_tableLinkIdFieldKey],
+                    $rowData[$this->tableLinkIdFieldKey],
                     $fullLinkParams,
-                    $this->_tableLinkModule
+                    $this->tableLinkModule
                 );
             }
         }
@@ -633,7 +622,7 @@ class Table
 
         $cssClass = $cssClass ? ' class="' . $cssClass . '"' : '';
 
-        $dataLinkId = isset($rowData[$this->_tableLinkIdFieldKey]) ? ' data-linkid="' . $rowData[$this->_tableLinkIdFieldKey] . '"' : '';
+        $dataLinkId = isset($rowData[$this->tableLinkIdFieldKey]) ? ' data-linkid="' . $rowData[$this->tableLinkIdFieldKey] . '"' : '';
 
         $rowLinkUrlParams = $this->getTableRowLinkUrlParams($rowData, $rowNum);
         $dataLinkUrlParams = $rowLinkUrlParams ? ' data-linkurlparams="' . htmlspecialchars(http_build_query($rowLinkUrlParams)) . '"' : '';
@@ -820,7 +809,7 @@ class Table
                 } else {
                     $linesText = [$cellText];
                 }
-                foreach($linesText as $lineText) {
+                foreach ($linesText as $lineText) {
                     [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($lineText);
                     if ($amount && $currencyIso) {
                         if (!isset($amountPerCurrency[$currencyIso])) {

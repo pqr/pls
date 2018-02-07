@@ -21,8 +21,8 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_folders = true;
-        $this->_tableDefaultOrderBy = 'ID DESC';
+        $this->folders = true;
+        $this->tableDefaultOrderBy = 'ID DESC';
     }
 
     protected function initCssJs()
@@ -114,7 +114,7 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
      * @param ObjAbstract $obj
      * @return array
      */
-    protected function getOldDataBeforeSubmitOrDelete(ObjAbstract $obj)
+    public function getOldDataBeforeSubmitOrDelete(ObjAbstract $obj)
     {
         $oldData = parent::getOldDataBeforeSubmitOrDelete($obj);
 

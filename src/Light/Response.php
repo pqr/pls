@@ -299,11 +299,6 @@ class Response
 
     public static function streamFileFromContent(string $content, string $downloadFilename)
     {
-//        // Отключаем все буферы вывода
-//        while (ob_get_level()) {
-//            ob_end_clean();
-//        }
-
         $extension = pathinfo($downloadFilename, PATHINFO_EXTENSION);
         switch (mb_strtolower($extension, 'UTF-8')) {
             case 'pdf':
@@ -352,7 +347,7 @@ class Response
 
         Response::header('Content-Type: ' . $contentType);
         Response::header('Content-Length: ' . strlen($content));
-        Response::header('Content-Disposition: attachment;filename="' . File::getValidFilename($downloadFilename) . '"');
+        Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($downloadFilename)));
         Response::header('Cache-Control: max-age=0');
 
         print $content;
@@ -360,11 +355,6 @@ class Response
 
     public static function streamFileFromFilesystem(string $filepathAbs, string $downloadFilename = null)
     {
-        // Отключаем все буферы вывода
-//        while (ob_get_level()) {
-//            ob_end_clean();
-//        }
-
         $filepathAbsEnc = File::encode($filepathAbs);
 
         if (!$downloadFilename) {
@@ -378,11 +368,10 @@ class Response
 
         Response::header('Content-Type: ' . $contentType);
         Response::header('Content-Length: ' . filesize($filepathAbsEnc));
-        Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($downloadFilename)) . '');
+        Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($downloadFilename)));
         Response::header('Cache-Control: max-age=0');
 
         readfile($filepathAbsEnc);
 
-        // ApplicationAbstract::terminate();
     }
 }

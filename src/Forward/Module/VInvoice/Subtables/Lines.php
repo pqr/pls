@@ -14,17 +14,17 @@ class Lines extends Subtable
     {
         parent::__construct($masterObj);
 
-        $this->_tableLayoutsEnabled = false;
+        $this->allowTableLayouts = false;
 
         $this->_tableMsgIfEmpty = 'No lines info';
 
-        $this->_tableLinkModule = 'Shipment';
-        $this->_tableLinkFieldKeys = ['FileNumber', 'MAWBNumber'];
-        $this->_tableLinkIdFieldKey = 'ShipmentID';
+        $this->tableLinkModule = 'Shipment';
+        $this->tableLinkFieldKeys = ['FileNumber', 'MAWBNumber'];
+        $this->tableLinkIdFieldKey = 'ShipmentID';
 
-        $this->_folders = true;
-        $this->_folderBaseDir = 'shipment';
-        $this->_folderNameFieldKey = 'FileNumber';
+        $this->folders = true;
+        $this->folderBaseDir = 'Shipment';
+        $this->folderNameFieldKey = 'FileNumber';
 
         $this->_tablePrintTotalRecordsFound = true;
         $this->_tableTotalRowData = ['Name' => 'Total'];

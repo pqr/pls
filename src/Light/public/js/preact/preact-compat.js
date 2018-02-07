@@ -12,7 +12,7 @@ var ELEMENTS = 'a abbr address area article aside audio b base bdi bdo big block
 
 var REACT_ELEMENT_TYPE = (typeof Symbol!=='undefined' && Symbol.for && Symbol.for('react.element')) || 0xeac7;
 
-var COMPONENT_WRAPPER_KEY = typeof Symbol!=='undefined' ? Symbol.for('__preactCompatWrapper') : '__preactCompatWrapper';
+var COMPONENT_WRAPPER_KEY = (typeof Symbol!=='undefined' && Symbol.for) ? Symbol.for('__preactCompatWrapper') : '__preactCompatWrapper';
 
 // don't autobind these methods since they already have guaranteed context.
 var AUTOBIND_BLACKLIST = {
@@ -315,7 +315,7 @@ function cloneElement$1(element, props) {
 	var elementProps = element.attributes || element.props;
 	var node = preact.h(
 		element.nodeName || element.type,
-		elementProps,
+		extend({}, elementProps),
 		element.children || elementProps && elementProps.children
 	);
 	// Only provide the 3rd argument if needed.
@@ -440,7 +440,7 @@ function createClass(obj) {
 		cl.defaultProps = obj.defaultProps;
 	}
 	if (obj.getDefaultProps) {
-		cl.defaultProps = obj.getDefaultProps();
+		cl.defaultProps = obj.getDefaultProps.call(cl);
 	}
 
 	F.prototype = Component$1.prototype;

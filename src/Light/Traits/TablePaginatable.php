@@ -2,6 +2,7 @@
 namespace Light\Traits;
 
 use Light\ApplicationAbstract;
+use Light\Config;
 
 /**
  * @method getTableUserParam($name)
@@ -15,11 +16,11 @@ trait TablePaginatable
     private $_rowsPerPage = 50;
     private $_tableTotalRecordsFound; //общее кол-во строк на всех страницах
 
-    protected $_tablePaginationEnabled = true;
+    protected $allowPagination = true;
 
     protected function initPaginatable()
     {
-        if ($this->_tablePaginationEnabled) {
+        if ($this->allowPagination) {
 
             //Проверим параметр showall, который также мог прийти в REQUSET, сохраним его в базу
             if (isset($_REQUEST['showall'])) {
@@ -67,7 +68,7 @@ trait TablePaginatable
 
     protected function getTablePagesHtml()
     {
-        if (!$this->_tablePaginationEnabled) {
+        if (!$this->allowPagination) {
             return '';
         }
 
@@ -216,15 +217,16 @@ trait TablePaginatable
      */
     protected function getTableHtmlShowAll()
     {
-        if (!$this->_tablePaginationEnabled) {
+        if (!$this->allowPagination) {
             return '';
         }
 
         if ($this->_showAll) {
             //Находимся в режиме "вывести все строки"
             //Выведем ссылку на постраничный просмотр
-            $linkText = 'Show ' . $this->getDefaultRowsPerPage() . ' per page';
-            return '<span><a href="#0" class="table-showall-link">' . $linkText . '</a></span>';
+            $defaultRowsPerPage = $this->getDefaultRowsPerPage();
+            $linkText = Config::$lang === 'ru' ? "Показать $defaultRowsPerPage на страницу": "Show $defaultRowsPerPage per page";
+            return "<span><a href=#0 class=table-showall-link>$linkText</a></span>";
 
         }
 
@@ -234,13 +236,13 @@ trait TablePaginatable
             $maxRowsPerPage = $this->getMaxRowsPerPage();
             if ($this->getTableDataCount() <= $maxRowsPerPage) {
                 //Выведем ссылку с текстом 'Show all', если строк _всего_ такое кол-во, что они могут уместиться max
-                $linkText = 'Show all';
+                $linkText = Config::$lang === 'ru' ? 'Показать все' : 'Show all';
             } else {
                 //Если строк _всего_ больше, чем максимально допустимое значение, то текст ссылки Show all будет другим
-                $linkText = 'Show ' . $maxRowsPerPage . ' per page';
+                $linkText = Config::$lang === 'ru' ? "Показать $maxRowsPerPage на страницу" : "Show $maxRowsPerPage per page";
             }
 
-            return '<span><a href="#1" class="table-showall-link">' . $linkText . '</a></span>';
+            return "<span><a href=#1 class=table-showall-link>$linkText</a></span>";
         }
 
         return '';

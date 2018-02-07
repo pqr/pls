@@ -13,7 +13,7 @@ class VInvoices extends InvoicesAbstract
     {
         parent::__construct('VInvoices', $shipmentObj['Name']);
 
-        $this->_tableLinkModule = 'VInvoice';
+        $this->tableLinkModule = 'VInvoice';
 
         $this->addField(CostSheetFields::vStatusIco());
 

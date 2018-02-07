@@ -14,8 +14,8 @@ class Location extends ModuleAbstract
         $this->setDbTable('location');
 
         $this->_textObjectName = 'Airport';
-        $this->_tableDefaultOrderBy = 'Name';
-        $this->_tableLayouts['Default'] = 'Name|NameRu|IATA|CountryCode';
+        $this->tableDefaultOrderBy = 'Name';
+        $this->tableLayouts['Default'] = 'Name|NameRu|IATA|CountryCode';
 
         $this->addFields(
 

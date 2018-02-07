@@ -1,11 +1,14 @@
 <?php
+
 namespace Light\Module\Reportmenu;
 
+use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
 use Light\Link;
 use Light\Metric;
+use Light\Misc;
 use Light\ModuleRegister;
 use Light\Request;
 use Light\Response;
@@ -27,7 +30,9 @@ abstract class ReportAbstract extends Table
     public function __construct($tableName = null)
     {
         parent::__construct($tableName);
-        $this->_tableSortingEnabled = false;
+
+        $this->tableReloadUrl = '?a=Reportmenu&class=' . Misc::getClass($this);;
+        $this->allowSort = false;
         $this->filtersNoSettings = true;
     }
 
@@ -38,37 +43,31 @@ abstract class ReportAbstract extends Table
      */
     final public function getTableName()
     {
-        return 'Report' . $this->getSubmoduleClass();
-    }
-
-    /**
-     * Метод для переопределения в классах потоках. Здесь задаётся Fieldset
-     */
-    protected function init()
-    {
+        return 'Report' . Misc::getClass($this);
     }
 
     public static function getIconFile()
     {
-        $parts = explode("\\", get_called_class());
-        return 'Reportmenu/' . end($parts) . '.png';
+        $class = get_called_class();
+        $class = substr($class, strrpos($class, '\\') + 1);
+        return "Reportmenu/$class.png";
     }
 
     protected function getDataQuery()
     {
-        //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->_tableData
+        // Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->_tableData
         $query = "SELECT ";
         $query .= $this->getFieldset()->getSqlSelect($this->getFieldset()->getKeys());
         $query .= " FROM " . Db::quote($this->getDbTable());
 
         $sqlWhere = $this->getFiltersSqlWhere();
         if ($sqlWhere) {
-            $query .= " WHERE " . $sqlWhere;
+            $query .= " WHERE $sqlWhere";
         }
 
         $sqlOrderBy = $this->getSqlOrderBy();
         if ($sqlOrderBy) {
-            $query .= " ORDER BY " . $sqlOrderBy;
+            $query .= " ORDER BY $sqlOrderBy";
         }
 
         return $query;
@@ -87,7 +86,6 @@ abstract class ReportAbstract extends Table
         $timer = new Timer();
 
         $this->proceedFilters();
-        $this->init();
         $this->initSortable();
         $this->tableLoadData();
 
@@ -114,7 +112,8 @@ abstract class ReportAbstract extends Table
             Template::includeTpl('Submodules/Report.tpl.php', $tdata);
         }
 
-        Metric::record('Reportmenu::' . $this->getSubmoduleClass(), $timer->getMs(), 'Filters: ' . json_encode($this->getFiltersValues()));
+        Metric::record('Reportmenu::' . Misc::getClass($this), $timer->getMs(),
+            'Filters: ' . json_encode($this->getFiltersValues()));
     }
 
     protected function initTitleHeadText()
@@ -140,26 +139,14 @@ abstract class ReportAbstract extends Table
         return 'Generated ' . date('Y-m-d');
     }
 
-    protected function getTableReloadUrl()
-    {
-        return '?a=Reportmenu&class=' . $this->getSubmoduleClass();
-    }
-
-    public function getTableExcelUrl()
-    {
-        return '?a=Reportmenu&class=' . $this->getSubmoduleClass() . '&xls=1';
-    }
-
     final protected function addMonthFields($type, array $params = [])
     {
         //Регистрируем поля по месяцам
         for ($m = 1; $m <= 12; $m++) {
-            $fieldKey = 'Month' . $m;
-            $defaultParams = [
-                'name' => date('M', mktime(0, 0, 0, $m))
-            ];
-            $fieldParams = array_merge($defaultParams, $params);
-            $this->addField(F::create($fieldKey, $type, $fieldParams));
+            $fieldKey = "Month$m";
+            $name = Config::$lang === 'ru' ? Misc::getRusMonthName($m, false, true) : date('M', mktime(0, 0, 0, $m));
+            $params['name'] = $name;
+            $this->addField(F::create($fieldKey, $type, $params));
             $this->_tableTotalRowCalcFieldsKeys[] = $fieldKey;
         }
     }

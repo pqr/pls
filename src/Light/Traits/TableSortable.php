@@ -1,6 +1,7 @@
 <?php
 namespace Light\Traits;
 
+use Light\Config;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\Img;
@@ -10,8 +11,10 @@ trait TableSortable
 {
     private $_sortFieldKey = false; //Имя поля по которому сортировать
     private $_sortOrder; //Направление сортировки ASC | DESC
-    protected $_tableSortingEnabled = true; //отключить сортировку
-    protected $_tableDefaultOrderBy = 'ID DESC'; //SQL фрагмент, который будет добавлен в конец запроса ORDER BY ...
+
+    protected $allowSort = true;
+
+    protected $tableDefaultOrderBy = 'ID DESC'; //SQL фрагмент, который будет добавлен в конец запроса ORDER BY ...
 
     /**
      * @param string $fieldKey
@@ -34,15 +37,10 @@ trait TableSortable
     /** @return array */
     abstract public function getTableData();
 
-    public function isSortingEnabled()
-    {
-        return $this->_tableSortingEnabled;
-    }
-
     protected function initSortable()
     {
         //Сначала сохраним в базу новые значения сортировки, если они пришли в REQUEST
-        if ($this->_tableSortingEnabled) {
+        if ($this->allowSort) {
 
             if (isset($_POST['sort'])) {
                 $this->setTableUserParam('SortFieldKey', $_POST['sort']);
@@ -66,10 +64,12 @@ trait TableSortable
     {
         $outHtml = '';
 
-        if ($sortField = $this->getSortField()) {
+        $sortField = $this->getSortField();
+        if ($sortField) {
             //Сортировка включена (искомый столбец не спрятан и у него существует параметр сортировки
             $sortFieldName = $sortField->getNameTableSettings();
-            $outHtml .= '<span class="table-sortinfo">Sorted by ' . $sortFieldName;
+            $sortedByText = Config::$lang === 'ru' ? 'Отсортировано по' : 'Sorted by';
+            $outHtml .= "<span class=table-sortinfo>$sortedByText $sortFieldName";
 
             //Добавим ссылку на текущее состояние сортировки, которая будет её переворачивать
             $opositeOrder = $this->getSortOrder() === 'ASC' ? 'DESC' : 'ASC';
@@ -77,7 +77,8 @@ trait TableSortable
             $outHtml .= ' | ';
 
             //Добавим ссылку на отключение сортировки
-            $outHtml .= ' ' . $this->getHtmlSortLink('disable', '', '');
+            $disableText = Config::$lang === 'ru' ? 'отменить' : 'disable';
+            $outHtml .= ' ' . $this->getHtmlSortLink($disableText, '', '');
 
             $outHtml .= '</span>';
         }
@@ -91,16 +92,8 @@ trait TableSortable
      */
     protected function getSortField()
     {
-        if (!$this->_tableSortingEnabled) {
-            return false;
-        }
-
-        if (!$this->_sortFieldKey) {
-            return false;
-        }
-
-        if (!$this->_sortOrder) {
-            return false;
+        if (!$this->allowSort || !$this->_sortFieldKey || !$this->_sortOrder) {
+            return null;
         }
 
         //По умаолчанию ищем поле в _fieldset
@@ -117,12 +110,12 @@ trait TableSortable
         }
 
         if (!$field) {
-            return false;
+            return null;
         }
 
         //Если поле успешно нашли, проверим, что по нему можно делсть сортировку: оно отображается и оно сортеруемое
         if (!$this->isFieldSortable($field)) {
-            return false;
+            return null;
         }
 
         return $field;
@@ -170,11 +163,16 @@ trait TableSortable
             $sqlOrderBy[] = $sortField->tableOrderBy . ' ' . $this->getSortOrder();
         }
 
-        if ($this->_tableDefaultOrderBy) {
-            $sqlOrderBy[] = $this->_tableDefaultOrderBy;
+        if ($this->tableDefaultOrderBy) {
+            $sqlOrderBy[] = $this->tableDefaultOrderBy;
         }
 
-        return implode(', ', $sqlOrderBy);
+        if ($sqlOrderBy) {
+            return implode(', ', $sqlOrderBy);
+        }
+
+        // Возвращаем текст NULL, чтобы результат вызова этого метода можно было без проблем подставить после ORDER BY
+        return 'NULL';
     }
 
     /**
@@ -261,17 +259,18 @@ trait TableSortable
         /** @noinspection PhpUndefinedMethodInspection */
         $html = parent::getHtmlTableTheadThContent($field);
 
-        if ($this->_tableSortingEnabled) {
+        if ($this->allowSort) {
 
             // Добавим иконку сортировки, если сортировка по текущему полю
-            if ($this->getSortField() === $field) {
+            $sortField = $this->getSortField();
+            if ($sortField === $field) {
                 $icon = $this->getSortOrder() === 'DESC' ? '▼' : '▲';
                 $html .= ' <span class="tr-sort-icon">' . $icon . '</span>';
             }
 
             // Превратим загловок поля в ссылку
             if ($this->isFieldSortable($field)) {
-                if ($this->getSortField() === $field) {
+                if ($sortField === $field) {
                     $order = $this->getSortOrder() === 'DESC' ? null : 'DESC';
                     if ($order === null && isset($this->_state) && $this->_state === Subtable::STATE_EDIT) {
                         $order = 'ASC';

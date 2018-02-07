@@ -446,7 +446,7 @@ class Misc
 
         //bypass_shell (только для Windows): при установке в TRUE процесс будет запущен в обход оболочки cmd.exe
         //это нужно для обхода бага https://bugs.php.net/bug.php?id=60181 "proc_open fails to read quoted whitespaced directories in Windows"
-        $process = proc_open($cmdEnc, $descriptorspec, $pipes, null, null, ['bypass_shell' => true]);
+        $process = proc_open($cmdEnc, $descriptorspec, $pipes/*, null, null, ['bypass_shell' => true]*/);
 
         if (!is_resource($process)) {
             if ($msgBuff) {
@@ -835,5 +835,10 @@ class Misc
     public static function escapeParentheses(string $string): string
     {
         return str_replace(')', '\\\\)', str_replace('(', '\\\\(', $string));
+    }
+
+    public static function getClass($obj)
+    {
+        return (new \ReflectionClass($obj))->getShortName();
     }
 }

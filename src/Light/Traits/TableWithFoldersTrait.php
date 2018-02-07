@@ -1,6 +1,8 @@
 <?php
+
 namespace Light\Traits;
 
+use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldHtml;
@@ -9,10 +11,10 @@ use Light\FilesFolder;
 
 trait TableWithFoldersTrait
 {
-    protected $_folders = false;
-    protected $_foldersNested = false;
-    //Во-вторых, нужно указать ключ поля, которое искать в массиве $data - там должно храниться id внешнего элемента
-    protected $_folderNameFieldKey = 'ID';
+    protected $folders = false;
+
+    // Во-вторых, нужно указать ключ поля, которое искать в массиве $data - там должно храниться id внешнего элемента
+    protected $folderNameFieldKey = 'ID';
 
     protected $_cacheNotEmptyFolderIds;
 
@@ -36,12 +38,12 @@ trait TableWithFoldersTrait
     protected function getFolderName(array $data)
     {
         //По умаолчанию используется алгоритм основанный на ID текущего объекта (от котогоро массив $data)
-        if (!isset($data[$this->_folderNameFieldKey])) {
+        if (!isset($data[$this->folderNameFieldKey])) {
             return null;
         }
 
-        $sub = floor($data[$this->_folderNameFieldKey] / 1000);
-        return  "$sub/" . $data[$this->_folderNameFieldKey];
+        $sub = floor($data[$this->folderNameFieldKey] / 1000);
+        return "$sub/" . $data[$this->folderNameFieldKey];
     }
 
     protected function getFolderRelativePath(array $data)
@@ -71,14 +73,14 @@ trait TableWithFoldersTrait
         }
     }
 
-    protected function fieldFolder(string $addText = ''): FieldHtml
+    protected function fieldFolder(): FieldHtml
     {
         return F::createHtml('Folder', [
                 'nameTable' => '',
                 'tableWidthHtml' => 25,
                 'tableAlign' => 'center',
                 'tableOrderBy' => '',
-                'getHtmlFunction' => function ($value, array $data, $outHtml, $forTable) use ($addText) {
+                'getHtmlFunction' => function ($value, array $data, $outHtml, $forTable) {
 
                     if ($forTable === 'total') {
                         return '';
@@ -94,18 +96,18 @@ trait TableWithFoldersTrait
                     }
                     //При выводе иконок папок в таблицу проверим по массиву закешированных ID по которым папки точно
                     //не пустые
-                    if (isset($this->_cacheNotEmptyFolderIds[$data[$this->_folderNameFieldKey]])) {
+                    if (isset($this->_cacheNotEmptyFolderIds[$data[$this->folderNameFieldKey]])) {
                         $isNotEmpty = true;
                     } else {
                         //Для текущей строки в кеше непустых ничего нет, значит запустим проверку на пустоту вручную,
                         //сохраним в базу
                         $isNotEmpty = FilesFolder::updateCacheNotEmpty($folderRelativePath, $folderBaseDir,
-                            $data[$this->_folderNameFieldKey]);
+                            $data[$this->folderNameFieldKey]);
                     }
 
                     $innerHtml = FilesFolder::getImgHtml($isNotEmpty);
-                    if ($addText) {
-                        $innerHtml .= ' ' . $addText;
+                    if (!$forTable) {
+                        $innerHtml .= ' ' . (Config::$lang === 'ru' ? 'Файлы' : 'Folder');
                     }
 
                     return FilesFolder::getLink($folderRelativePath, $innerHtml);
@@ -127,11 +129,11 @@ trait TableWithFoldersTrait
                 1 => ['text' => 'Есть файлы', 'cssClass' => 'good'],
             ],
             'calcFunction' => function ($value, array $data) {
-                if (!isset($data[$this->_folderNameFieldKey])) {
+                if (!isset($data[$this->folderNameFieldKey])) {
                     return 0;
                 }
 
-                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->_folderNameFieldKey]])) {
+                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->folderNameFieldKey]])) {
                     return 0;
                 }
 
@@ -148,7 +150,7 @@ trait TableWithFoldersTrait
             'sqlSelect' => '',
             'tableWidthExcel' => 20,
             'calcFunction' => function ($value, array $data) {
-                if (!isset($data[$this->_folderNameFieldKey])) {
+                if (!isset($data[$this->folderNameFieldKey])) {
                     return '';
                 }
 
@@ -172,11 +174,11 @@ trait TableWithFoldersTrait
             'tableAlign' => 'center',
             'tableWidthHtml' => 50,
             'calcFunction' => function ($value, array $data) {
-                if (!isset($data[$this->_folderNameFieldKey])) {
+                if (!isset($data[$this->folderNameFieldKey])) {
                     return 0;
                 }
 
-                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->_folderNameFieldKey]])) {
+                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->folderNameFieldKey]])) {
                     return 0;
                 }
 
@@ -197,11 +199,11 @@ trait TableWithFoldersTrait
             'tableAlign' => 'center',
             'tableWidthHtml' => 70,
             'calcFunction' => function ($value, array $data) {
-                if (!isset($data[$this->_folderNameFieldKey])) {
+                if (!isset($data[$this->folderNameFieldKey])) {
                     return '';
                 }
 
-                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->_folderNameFieldKey]])) {
+                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->folderNameFieldKey]])) {
                     return 0;
                 }
 
@@ -223,7 +225,7 @@ trait TableWithFoldersTrait
 
     protected function loadCacheNotEmptyFolderIds($idsString)
     {
-        if ($this->_folders && $idsString) {
+        if ($this->folders && $idsString) {
             //подгрузим заранее все значения из кэширующей таблицы с данными о заполненности папок
             $this->_cacheNotEmptyFolderIds = Db::getAssoc(
                 "SELECT RecordID, 1

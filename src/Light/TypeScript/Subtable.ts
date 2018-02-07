@@ -831,12 +831,15 @@ export class Subtable {
 
         const $node = this.getFieldNode(rowNum, fieldKey);
         if (field.mode === "view") {
-            //Для поля находящегося в режиме view просто запишем значение в html код ячейки
-            //При этом значение нужно обренуть в вызов функции getBeautyValue(), чтобы было красиво!
+            // Для поля находящегося в режиме view просто запишем значение в html код ячейки
+            // При этом значение нужно обренуть в вызов функции getBeautyValue(), чтобы было красиво!
             $node.html(getBeautyValue(newValue, field.type));
         } else {
-            //Для поля находящегося в режиме edit, записываем значение в поле ввода
-            setNodeValue($node, newValue, field.type, triggerChange && this.calcTotalEnabled);
+            // Для поля находящегося в режиме edit, записываем значение в поле ввода
+            // но только если это поле не находится в состоянии disabled
+            if (!$node.prop('disabled')) {
+                setNodeValue($node, newValue, field.type, triggerChange && this.calcTotalEnabled);
+            }
         }
 
         // Обновим Total по этому полю, если у него есть флаг calcTotal и при вызове этого метода не было запрещено обновлять total

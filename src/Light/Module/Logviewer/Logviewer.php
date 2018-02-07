@@ -103,7 +103,7 @@ class Logviewer extends Table
 
         $this->getFieldset()->addFieldsCreatedBy();
 
-        $this->_tableFieldsShow = [
+        $this->tableFieldsShow = [
             'CreatedDateTime',
             'CreatedBy',
             'ModuleID',
@@ -224,7 +224,7 @@ class Logviewer extends Table
 
         $sqlWhere = $this->getFiltersSqlWhere();
         if ($sqlWhere) {
-            $queryIds .= " WHERE " . $sqlWhere;
+            $queryIds .= " WHERE $sqlWhere";
         }
 
         $queryIds .= " ORDER BY ID DESC";

@@ -12,7 +12,7 @@ class MakeInvoice extends HomeBlockAbstract
         $this->_title = 'Make Invoice';
         $this->_description = 'Проставлена дата ATA, но не выставлен счёт.';
         $this->_informationFor = 'Информация для Shipment Responsible CS и Sales.';
-        $this->_tableLinkModule = 'Shipment';
+        $this->tableLinkModule = 'Shipment';
 
         $this->addFields(
             HomeFields::name(),

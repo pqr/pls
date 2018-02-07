@@ -53,14 +53,14 @@ class Shipment extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_folders = true;
+        $this->folders = true;
 
         $this->_textObjectName = 'Shipment';
-        $this->_tableDefaultOrderBy = 'shipment.ID DESC';
-        $this->_tableLayouts['Default'] =
+        $this->tableDefaultOrderBy = 'shipment.ID DESC';
+        $this->tableLayouts['Default'] =
             'Name|FileClosed|Month|MAWBNumber|DepartureIATA|ArrivalIATA|CustomerID|ETD|ETA|ATA';
 
-        $this->_allowDelete = User::hasSpecialAccess(Application::SA_SHIPMENT_DELETE);
+        $this->allowDelete = User::hasSpecialAccess(Application::SA_SHIPMENT_DELETE);
 
         $this->registerSubtable('Shippers');
     }

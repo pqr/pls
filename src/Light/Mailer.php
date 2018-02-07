@@ -10,7 +10,7 @@ class Mailer
     }
 
     public static function sendMail(
-        string $from,
+        $from,
         $to,
         $cc,
         string $subject,

@@ -13,8 +13,12 @@ abstract class InvoicesAbstract extends Table
     public function __construct($tableName, $fileNumber)
     {
         parent::__construct($tableName);
+
+        $this->tableLinkUrlParams = ['fromFileNumber' => $fileNumber];
+
         $this->_fileNumber = $fileNumber;
-        $this->_folders = true;
+        $this->folders = true;
+
 
         $this->getFieldsetFirst()->addField($this->fieldFolder());
     }
@@ -63,11 +67,4 @@ abstract class InvoicesAbstract extends Table
         }, []);
     }
 
-    protected function getTableLinkUrlParams(): array
-    {
-        //Переопределяем метод (который предназначен именно для переопределения) чтобы добавить к ссылкам на модули
-        //CInvoice и VInvoice параметр fromFileNumber - благодаря этому при переходе на конкретный счёт в нём будут
-        //подсвечены все строки с этим номером файла
-        return ['fromFileNumber' => $this->_fileNumber];
-    }
 }

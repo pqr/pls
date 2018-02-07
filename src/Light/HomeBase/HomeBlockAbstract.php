@@ -2,7 +2,9 @@
 namespace Light\HomeBase;
 
 use Light\Db;
+use Light\Misc;
 use Light\Table;
+use Light\Traits\SubmoduleTrait;
 use Light\Traits\TableExcelExportable;
 
 /**
@@ -17,7 +19,7 @@ use Light\Traits\TableExcelExportable;
  */
 abstract class HomeBlockAbstract extends Table
 {
-    use TableExcelExportable;
+    use TableExcelExportable, SubmoduleTrait;
 
     const CSSCLASS_RED = 'red';
     const CSSCLASS_RED2 = 'red2';
@@ -49,24 +51,16 @@ abstract class HomeBlockAbstract extends Table
 
     public function __construct($userId)
     {
-        parent::__construct($this->getHomeClass());
+        $class = Misc::getClass($this);
+        parent::__construct($class);
 
+        $this->tableReloadUrl = '?' . $_SERVER['QUERY_STRING'] . "&class=$class";
         $this->nosticky = true;
         $this->_tablePrintTotalRecordsFound = false;
         $this->_userId = $userId;
 
         $this->init();
         $this->tableLoadData($userId);
-    }
-
-    /**
-     * Возвращает имя класса без неймспейсов
-     * @return mixed
-     */
-    private function getHomeClass()
-    {
-        $parts = explode('\\', get_class($this));
-        return end($parts);
     }
 
     protected function getExcelFilename()
@@ -77,16 +71,6 @@ abstract class HomeBlockAbstract extends Table
     protected function getExcelWorksheetName()
     {
         return 'Home';
-    }
-
-    public function getTableExcelUrl()
-    {
-        return '?' . $_SERVER['QUERY_STRING'] . '&class=' . $this->getHomeClass() . '&xls=1';
-    }
-
-    public function getTableReloadUrl()
-    {
-        return '?' . $_SERVER['QUERY_STRING'] . '&class=' . $this->getHomeClass();
     }
 
     /**

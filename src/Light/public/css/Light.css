@@ -1438,8 +1438,7 @@ ul.tabs > li a {
 
 .lightdialog {
     padding: 0 0 56px 0;
-    /*height: 70%;*/
-    /*top: 10%;*/
+    min-width: 300px;
     position: fixed;
     border-radius: 2px;
     will-change: opacity;

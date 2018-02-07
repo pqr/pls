@@ -39,7 +39,7 @@ class Airline extends ModuleAbstract
 
         );
 
-        $this->_tableLayouts['Default'] = 'AlphaCode|DigitalCode|Name';
+        $this->tableLayouts['Default'] = 'AlphaCode|DigitalCode|Name';
     }
 
     protected function initFilters()

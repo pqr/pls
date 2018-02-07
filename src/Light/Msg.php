@@ -114,9 +114,10 @@ class Msg implements \Countable
             } else {
                 $outHtml .= self::getMessageHtml($msginfo['type'], $msginfo['msg']);
             }
+            $outHtml .= "\n";
         }
 
-        return $outHtml;
+        return trim($outHtml);
     }
 
     public function getHtmlList()

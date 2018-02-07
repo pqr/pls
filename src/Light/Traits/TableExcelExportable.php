@@ -18,7 +18,7 @@ use Light\XlsWriter;
  */
 trait TableExcelExportable
 {
-    protected $_tableExcelEnabled = true;
+    protected $allowExportToExcel = true;
 
     /**
      * @return Fieldset|F[]
@@ -26,19 +26,6 @@ trait TableExcelExportable
     abstract public function getFieldsetShowed();
 
     abstract public function getTableData();
-
-    public function isExcelEnabled()
-    {
-        return $this->_tableExcelEnabled;
-    }
-
-    /**
-     * Метод для переопределения в классах использующих этот Trait
-     */
-    public function getTableExcelUrl()
-    {
-        return '?a=' . Request::getModule() . '&xls=1';
-    }
 
     protected function getTableExcelMaxRows()
     {
@@ -75,8 +62,8 @@ trait TableExcelExportable
 
     public function sendExcel($filename = null, $sheetname = null)
     {
-        ini_set('display_errors', 1);
-        error_reporting(E_ERROR);
+        ini_set('display_errors', 0);
+        error_reporting(0);
         $timer = new Timer();
 
         list($filename, $sheetname) = $this->normalizeFilenameSheetname($filename, $sheetname);

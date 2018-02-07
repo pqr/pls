@@ -1,6 +1,6 @@
 import {Dialog} from "./Dialog";
 import * as table from "./Table";
-import { myParseInt, toastSuccess } from "./Light";
+import { myParseInt, toastSuccess, isLangRu } from "./Light";
 
 let dialog: Dialog,
     $shownUl: JQuery,
@@ -41,8 +41,8 @@ let currentState: CurrentState = {
 };
 
 /**
-     * Эта функция вызывается всего один раз при первом клике на любую кнопку Table layout settings
-     */
+ * Эта функция вызывается всего один раз при первом клике на любую кнопку Table layout settings
+ */
 function initDialog() {
     $btnSaveLayout = $("#tablelayoutdialog__btnsave").on("click", e => {
         e.preventDefault();
@@ -55,17 +55,18 @@ function initDialog() {
             layoutName: layoutName,
             fieldsShow: getShownFieldKeys().join("|")
         }).done(() => {
-            toastSuccess(`Настройки сохранены: <strong>${layoutName}</strong>`);
+            const successText = isLangRu ? 'Настройки сохранены' : 'Layout saved';
+            toastSuccess(`${successText}: <strong>${layoutName}</strong>`);
         });
     });
 
     $newLayoutInput = $("#tablelayoutdialog__newlayout"); //.on('key', userLayoutSaveByEnter, 'enter');
 
-    $("#tablelayoutdialog__linkall").on("click", e => {
+    $("#tablelayoutdialog__linkall").on("click", (e:any) => {
         e.preventDefault();
         updateSortables(currentState.allFields.map(f => f.key));
     });
-    $("#tablelayoutdialog__linknone").on("click", e => {
+    $("#tablelayoutdialog__linknone").on("click", (e:any) => {
         e.preventDefault();
         updateSortables([]);
     });
@@ -78,20 +79,20 @@ function initDialog() {
     });
 
     $layoutsUser = $("#tablelayoutdialog__layoutsuser")
-        .on("click", "a", e => {
+        .on("click", "a", (e:any) => {
             e.preventDefault();
             const a = <HTMLAnchorElement>e.currentTarget;
             $newLayoutInput.val(a.innerText);
             updateSortables(a.hash.substring(1).split("|"));
         })
-        .on("click", "i", e => {
+        .on("click", "i", (e:any) => {
             ajaxCore({ delid: (<HTMLElement>e.currentTarget).getAttribute("data-delid") });
         });
 
     $shownUl = $("#tablelayoutdialog__showul").sortable({ connectWith: "#tablelayoutdialog__hideul" });
     $hiddenUl = $("#tablelayoutdialog__hideul").sortable({ connectWith: "#tablelayoutdialog__showul" });
 
-    $filter = $("#tablelayoutdialog__filter").on("keyup change", e => {
+    $filter = $("#tablelayoutdialog__filter").on("keyup change", (e:any) => {
         const filterValLower = (<HTMLInputElement>e.currentTarget).value.toLowerCase();
         if (filterValLower === "") {
             $hiddenUl.find("li.display-none").removeClass("display-none");
@@ -113,7 +114,8 @@ function initDialog() {
     const $content = $("#tablelayoutdialog");
     const options = {
         width: "770px",
-        buttonOkText: "Apply new Layout",
+        buttonOkText: isLangRu ? 'Применить' : 'Apply new Layout',
+        buttonCancelText: isLangRu ? 'Отмена' : 'Cancel',
         buttonOkHandler: () => {
             dialog.close();
             currentState.dialogSubmitCallback!(getShownFieldKeys());
@@ -190,7 +192,7 @@ function ajaxCore(postdata?: Object) {
         data: postdata,
         type: "post"
     })
-        .done(userLayoutsHtml => {
+        .done((userLayoutsHtml:string) => {
             // В ответ всегда приходит html код для вставки в виде списка пользовательских layouts
             $layoutsUser.html(userLayoutsHtml);
         })
@@ -237,13 +239,13 @@ export function showLayoutDialog(
 }
 
 // На все кнопки Table Layout Settings вешаем обрабочик клика
-$("body").on("click", "a.table-layoutsettings", e => {
+$("body").on("click", "a.table-layoutsettings", (e:any) => {
     e.preventDefault();
     const tableName: string = $(e.currentTarget)
         .closest("div.table-div")
         .attr("data-tablename")!;
     const tableObj = table.get(tableName);
-    $.ajax(tableObj.reloadUrl + "&loadTableLayoutSettings=1").done(settingsFromServer => {
+    $.ajax(tableObj.reloadUrl + "&loadTableLayoutSettings=1").done((settingsFromServer:any) => {
         const { allFields, shownFieldKeys, layouts, userLayoutsHtml } = settingsFromServer;
         showLayoutDialog(
             tableName,
