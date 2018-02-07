@@ -1,8 +1,10 @@
 <?php
+
 namespace Forward\Classes;
 
 use Forward\Application;
 use Light\ApplicationAbstract;
+use Light\Currency;
 use Light\Db;
 
 /**
@@ -85,8 +87,28 @@ class ShipmentGp
 
         $actualIncome = self::getActualIncomeExpenses($customerInvoices);
         $actualExpenses = self::getActualIncomeExpenses($vendorInvoices);
-        $estimatedIncome = self::getEstimatedIncomeExpenses($csIncomeLines, $customerInvoices, 'income', $defaultConvertionDate);
-        $estimatedExpenses = self::getEstimatedIncomeExpenses($csExpensesLines, $vendorInvoices, 'expenses', $defaultConvertionDate);
+
+        // Перед расчётом Estimated значений (которые переводятся в USD по некоему курсу)
+        // проверим, возможно все Estimated расходы и все доходы в одной валюте?
+        // Если так, то не будем использовать разные курсы покупки и продажи, будем использовать единый курс!
+        if (self::isOneCurrency($csIncomeLines, $csExpensesLines)) {
+
+            $minDocDate = self::minDocDate($customerInvoices, $vendorInvoices);
+            if (!$minDocDate || $minDocDate === '0000-00-00') {
+                $minDocDate = date('Y-m-d');
+            }
+
+            $estimatedIncome = self::getEstimatedIncomeExpensesOneRate($csIncomeLines, $minDocDate);
+            $estimatedExpenses = self::getEstimatedIncomeExpensesOneRate($csExpensesLines, $minDocDate);
+
+        } else {
+
+            $estimatedIncome = self::getEstimatedIncomeExpenses($csIncomeLines, $customerInvoices, 'income',
+                $defaultConvertionDate);
+            $estimatedExpenses = self::getEstimatedIncomeExpenses($csExpensesLines, $vendorInvoices, 'expenses',
+                $defaultConvertionDate);
+
+        }
 
         self::updateShipment(
             $shipmentId,
@@ -150,6 +172,40 @@ class ShipmentGp
         return array_sum(array_column($invoices, 'AmountOnShipmentinUSD'));
     }
 
+    private static function isOneCurrency(array $csIncomeLines, array $csExpensesLines)
+    {
+        $currencies = array_merge(
+            array_column($csExpensesLines, 'CurrencyISO'),
+            array_column($csIncomeLines, 'CurrencyISO')
+        );
+        $uniqueCurrencies = array_unique($currencies);
+
+        return count($uniqueCurrencies) <= 1;
+    }
+
+    private static function minDocDate(array $customerInvoices, array $vendorInvoices)
+    {
+        $docDates = array_merge(
+            array_column($customerInvoices, 'DocDate'),
+            array_column($vendorInvoices, 'DocDate')
+        );
+        if (!$docDates) {
+            return null;
+        }
+        return min($docDates);
+    }
+
+    private static function getEstimatedIncomeExpensesOneRate(array $csLines, $minDocDate)
+    {
+        // Посчитаем доход/расход
+        $total = 0;
+        foreach ($csLines as $csLine) {
+            $total += Currency::convertValue($csLine['Amount'], $csLine['CurrencyISO'], 'USD', $minDocDate);
+        }
+
+        return $total;
+    }
+
     private static function getEstimatedIncomeExpenses(
         array $csLines,
         array $invoices,
@@ -164,7 +220,8 @@ class ShipmentGp
                 //Перевод в какую-то другую валюту не требуется
                 $csLineAmountInUsd = $csLine['Amount'];
             } else {
-                $csLineAmountInUsd = self::convertCsLineAmountIntoUsd($csLine, $invoices, $incomeOrExpenses, $defaultConvertionDate);
+                $csLineAmountInUsd = self::convertCsLineAmountIntoUsd($csLine, $invoices, $incomeOrExpenses,
+                    $defaultConvertionDate);
             }
 
             $total += $csLineAmountInUsd;
@@ -173,8 +230,12 @@ class ShipmentGp
         return $total;
     }
 
-    private static function convertCsLineAmountIntoUsd(array $csLine, array $invoices, string $incomeOrExpenses, $defaultConvertionDate)
-    {
+    private static function convertCsLineAmountIntoUsd(
+        array $csLine,
+        array $invoices,
+        string $incomeOrExpenses,
+        $defaultConvertionDate
+    ) {
         //Переведём сумму строки в Cost-sheet $csLine['Amount'] из валюты $csLine['CurrencyISO']
         //в требуемую валюту $currencyIso
         $convertDate = $defaultConvertionDate;
