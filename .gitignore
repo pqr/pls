@@ -13,3 +13,4 @@ lightpublic
 *.retry
 codeception.yml
 version.txt
+uploads/
