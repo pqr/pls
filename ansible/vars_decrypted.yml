@@ -1,5 +1,5 @@
 # PHP переменные
-php_version: "7.1"
+php_version: "7.2"
 php_use_ppa: "ppa:ondrej/php"
 
 url_pls: "https://forwardlog.net"

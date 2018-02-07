@@ -24,8 +24,9 @@
 
   # Проверить папки logs и temp и права 777 на них:
   - name: deploy pls 3. Check logs and temp folders and mode
+    become: true
     file:
-      path: {{ item }}
+      path: "{{ item }}"
       state: directory
       mode: u=rwX,g=rwX,o=rwX
       recurse: yes
@@ -59,7 +60,10 @@
     tags: dirs
 
   - name: Run Sentry Deploy script
-    shell: sentry.sh
+    shell: "{{ project_dir_pls }}/sentry.sh"
+    args:
+      chdir: "{{ project_dir_pls }}"
+      executable: /bin/bash
     tags: sentry
 
   - name: deploy pls 7. Cron Light/CurrencyRateCBRF today at 6am

@@ -54,7 +54,7 @@
 
   handlers:
     - name: reload nginx
-      service: name=nginx state=reloaded enabled=true
+      service: name=nginx state=restarted enabled=true
 
     - name: reload php-fpm
-      service: name=php{{ php_version }}-fpm state=reloaded enabled=true
+      service: name=php{{ php_version }}-fpm state=restarted enabled=true
