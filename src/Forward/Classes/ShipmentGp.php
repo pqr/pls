@@ -85,8 +85,17 @@ class ShipmentGp
         $csIncomeLines = self::loadCsLines($shipmentId, 'income');
         $csExpensesLines = self::loadCsLines($shipmentId, 'expenses');
 
-        $actualIncome = self::getActualIncomeExpenses($customerInvoices);
-        $actualExpenses = self::getActualIncomeExpenses($vendorInvoices);
+        if (self::isOneCurrency($customerInvoices, $customerInvoices)) {
+
+            $minDocDate = self::minDocDate($customerInvoices, $vendorInvoices);
+
+            $actualIncome = self::getActualIncomeExpensesOneRate($customerInvoices, $minDocDate);
+            $actualExpenses = self::getActualIncomeExpensesOneRate($vendorInvoices, $minDocDate);
+
+        } else {
+            $actualIncome = self::getActualIncomeExpenses($customerInvoices);
+            $actualExpenses = self::getActualIncomeExpenses($vendorInvoices);
+        }
 
         // Перед расчётом Estimated значений (которые переводятся в USD по некоему курсу)
         // проверим, возможно все Estimated расходы и все доходы в одной валюте?
@@ -94,9 +103,6 @@ class ShipmentGp
         if (self::isOneCurrency($csIncomeLines, $csExpensesLines)) {
 
             $minDocDate = self::minDocDate($customerInvoices, $vendorInvoices);
-            if (!$minDocDate || $minDocDate === '0000-00-00') {
-                $minDocDate = date('Y-m-d');
-            }
 
             $estimatedIncome = self::getEstimatedIncomeExpensesOneRate($csIncomeLines, $minDocDate);
             $estimatedExpenses = self::getEstimatedIncomeExpensesOneRate($csExpensesLines, $minDocDate);
@@ -166,7 +172,19 @@ class ShipmentGp
         );
     }
 
-    private static function getActualIncomeExpenses($invoices)
+    private static function getActualIncomeExpensesOneRate(array $invoices, $minDocDate)
+    {
+        // Посчитаем доход/расход
+        $total = 0;
+        foreach ($invoices as $invoice) {
+            $total += Currency::convertValue($invoice['AmountOnShipment'], $invoice['CurrencyISO'], 'USD',
+                $minDocDate);
+        }
+
+        return $total;
+    }
+
+    private static function getActualIncomeExpenses(array $invoices)
     {
         //Посчитаем сумму по всем переданным счетам в указанной валюте
         return array_sum(array_column($invoices, 'AmountOnShipmentinUSD'));
@@ -189,10 +207,17 @@ class ShipmentGp
             array_column($customerInvoices, 'DocDate'),
             array_column($vendorInvoices, 'DocDate')
         );
+
+        $minDocDate = '';
         if (!$docDates) {
-            return null;
+            $minDocDate = min($docDates);
         }
-        return min($docDates);
+
+        if (!$minDocDate || $minDocDate === '0000-00-00') {
+            $minDocDate = date('Y-m-d');
+        }
+
+        return $minDocDate;
     }
 
     private static function getEstimatedIncomeExpensesOneRate(array $csLines, $minDocDate)
