@@ -23,10 +23,15 @@
 
   # Проверить папки logs и temp и права 777 на них:
   - name: deploy flowerbase 3. Check logs and temp folders and mode
-    file: path={{ item }} state=directory mode=0777
+    file:
+      path: {{ item }}
+      state: directory
+      mode: u=rwX,g=rwX,o=rwX
+      recurse: yes
     with_items:
       - "{{ project_dir_flowerbase }}/logs"
       - "{{ project_dir_flowerbase }}/temp"
+      - "{{ filesfolder_flowerbase }}"
     tags: dirs
 
   # Установить файл config.php с переменными

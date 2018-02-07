@@ -23,10 +23,15 @@
 
   # Проверить папки logs и temp и права 777 на них:
   - name: deploy pls 3. Check logs and temp folders and mode
-    file: path={{ item }} state=directory mode=0777
+    file:
+      path: {{ item }}
+      state: directory
+      mode: u=rwX,g=rwX,o=rwX
+      recurse: yes
     with_items:
       - "{{ project_dir_pls }}/logs"
       - "{{ project_dir_pls }}/temp"
+      - "{{ filesfolder_pls }}"
     tags: dirs
 
   # Установить файл config.php с переменными
