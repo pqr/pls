@@ -4,7 +4,6 @@ namespace Forward\Module\VInvoice;
 
 use Forward\Application;
 use Forward\Classes\CompanyChild;
-use Forward\Classes\Constant;
 use Forward\Classes\Finance;
 use Forward\Classes\InvoicesCommon;
 use Forward\Field\GeneralFields;
@@ -415,7 +414,7 @@ class VInvoice extends InvoiceModuleAbstract
         $descriptorspec = [
             2 => ["pipe", "w"]
         ];
-        $cmd = '"' . escapeshellcmd(str_replace('\\', '/', ForwardConfig::$path7z)) . '"';
+        $cmd = '7z';
         //Команда "a" означает добавить файл в архив
         $cmd .= ' a';
         //Укажем пароль
@@ -595,67 +594,67 @@ class VInvoice extends InvoiceModuleAbstract
 
     private function sendToOneC(VInvoiceObj $vinvObj)
     {
-        if (!Constant::isOneCCompany($vinvObj['CompanyID'])) {
-            return;
-        }
-
-        $vendorAccountName = Db::getOne("SELECT Name FROM vendoraccount WHERE ID = @i", $vinvObj['VendorAccountID']);
-
-        $cinvInfo = Db::getRow(
-            "SELECT s.CustomerAccountID
-                , ci.ID AS CInvoiceID
-                , ci.Name AS CInvoiceName
-                , ci.DocDate AS CInvoiceDocDate
-                , cfa.Amount AS CInvoiceAmount
-                , ci.CurrencyISO AS CInvoiceCurrencyISO
-             FROM vinvoiceline vil, shipment s
-                 LEFT JOIN cinvoice_file_amount cfa ON cfa.FileNumber = s.Name
-                 LEFT JOIN cinvoice ci ON ci.ID = cfa.CInvoiceID
-             WHERE vil.VInvoiceID = @i
-                 AND vil.FileNumber = s.Name
-             LIMIT 1"
-            , $vinvObj->getId()
-        );
-
-        $data = [
-            'ID' => $vinvObj->getId(),
-            'CompanyID' => $vinvObj['CompanyID'],
-            'VendorAccountID' => $vinvObj['VendorAccountID'],
-            'VendorAccountName' => $vendorAccountName,
-            'VendorAccountForPaymentID' => $vinvObj['VendorAccountID'],
-            'VendorAccountForPaymentName' => $vendorAccountName,
-            'CustomerAccountID' => $cinvInfo['CustomerAccountID'] ?? 0,
-            'CInvoiceID' => $cinvInfo['CInvoiceID'] ?? 0,
-            'CInvoiceName' => $cinvInfo['CInvoiceName'] ?? '',
-            'CInvoiceDocDate' => $cinvInfo['CInvoiceDocDate'] ?? '',
-            'CInvoiceAmount' => (float)($cinvInfo['CInvoiceAmount'] ?? 0),
-            'CInvoiceCurrencyISO' => $cinvInfo['CInvoiceCurrencyISO'] ?? '',
-            'DocDate' => $vinvObj['DocDate'],
-            'Name' => $vinvObj['Name'],
-            'Amount' => (float)$vinvObj['Amount'],
-            'CurrencyISO' => $vinvObj['CurrencyISO'],
-            'MAWB' => Db::getCol("SELECT DISTINCT MAWBNumber FROM vinvoiceline WHERE MAWBNumber != '' AND VInvoiceID = @i",
-                $vinvObj->getId()),
-            'Files' => []
-        ];
-
-        // Добавим файлы
-        $folder = $this->getFolderRelativePath($vinvObj->getData());
-        $folderpathAbs = FilesFolder::getAbsolutePath($folder);
-        foreach (FilesFolder::scandir($folder) as $file) {
-            $data['Files'][] = [
-                'Filename' => $file,
-                'Data' => base64_encode(file_get_contents(File::encode($folderpathAbs . '/' . $file)))
-            ];
-        }
-
-        $path = Constant::$onecCompany[$vinvObj['CompanyID']];
-        $ftpFolderpathAbs = ForwardConfig::$onecFtpFolderBase . "/vinvoice/$path";
-        File::mkdir($ftpFolderpathAbs);
-
-        // Сохраним json структуру в FTP папку
-        $ftpFilepathAbs = $ftpFolderpathAbs . '/' . $vinvObj->getId() . '.json';
-        file_put_contents($ftpFilepathAbs, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+//        if (!Constant::isOneCCompany($vinvObj['CompanyID'])) {
+//            return;
+//        }
+//
+//        $vendorAccountName = Db::getOne("SELECT Name FROM vendoraccount WHERE ID = @i", $vinvObj['VendorAccountID']);
+//
+//        $cinvInfo = Db::getRow(
+//            "SELECT s.CustomerAccountID
+//                , ci.ID AS CInvoiceID
+//                , ci.Name AS CInvoiceName
+//                , ci.DocDate AS CInvoiceDocDate
+//                , cfa.Amount AS CInvoiceAmount
+//                , ci.CurrencyISO AS CInvoiceCurrencyISO
+//             FROM vinvoiceline vil, shipment s
+//                 LEFT JOIN cinvoice_file_amount cfa ON cfa.FileNumber = s.Name
+//                 LEFT JOIN cinvoice ci ON ci.ID = cfa.CInvoiceID
+//             WHERE vil.VInvoiceID = @i
+//                 AND vil.FileNumber = s.Name
+//             LIMIT 1"
+//            , $vinvObj->getId()
+//        );
+//
+//        $data = [
+//            'ID' => $vinvObj->getId(),
+//            'CompanyID' => $vinvObj['CompanyID'],
+//            'VendorAccountID' => $vinvObj['VendorAccountID'],
+//            'VendorAccountName' => $vendorAccountName,
+//            'VendorAccountForPaymentID' => $vinvObj['VendorAccountID'],
+//            'VendorAccountForPaymentName' => $vendorAccountName,
+//            'CustomerAccountID' => $cinvInfo['CustomerAccountID'] ?? 0,
+//            'CInvoiceID' => $cinvInfo['CInvoiceID'] ?? 0,
+//            'CInvoiceName' => $cinvInfo['CInvoiceName'] ?? '',
+//            'CInvoiceDocDate' => $cinvInfo['CInvoiceDocDate'] ?? '',
+//            'CInvoiceAmount' => (float)($cinvInfo['CInvoiceAmount'] ?? 0),
+//            'CInvoiceCurrencyISO' => $cinvInfo['CInvoiceCurrencyISO'] ?? '',
+//            'DocDate' => $vinvObj['DocDate'],
+//            'Name' => $vinvObj['Name'],
+//            'Amount' => (float)$vinvObj['Amount'],
+//            'CurrencyISO' => $vinvObj['CurrencyISO'],
+//            'MAWB' => Db::getCol("SELECT DISTINCT MAWBNumber FROM vinvoiceline WHERE MAWBNumber != '' AND VInvoiceID = @i",
+//                $vinvObj->getId()),
+//            'Files' => []
+//        ];
+//
+//        // Добавим файлы
+//        $folder = $this->getFolderRelativePath($vinvObj->getData());
+//        $folderpathAbs = FilesFolder::getAbsolutePath($folder);
+//        foreach (FilesFolder::scandir($folder) as $file) {
+//            $data['Files'][] = [
+//                'Filename' => $file,
+//                'Data' => base64_encode(file_get_contents(File::encode($folderpathAbs . '/' . $file)))
+//            ];
+//        }
+//
+//        $path = Constant::$onecCompany[$vinvObj['CompanyID']];
+//        $ftpFolderpathAbs = ForwardConfig::$onecFtpFolderBase . "/vinvoice/$path";
+//        File::mkdir($ftpFolderpathAbs);
+//
+//        // Сохраним json структуру в FTP папку
+//        $ftpFilepathAbs = $ftpFolderpathAbs . '/' . $vinvObj->getId() . '.json';
+//        file_put_contents($ftpFilepathAbs, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
     }
 
 }

@@ -66,8 +66,8 @@ class Constant
             $bankId
         );
         return [
-            'OurCompanyName_raw' => str_replace(['(USD)', '(EUR)'], '', $company['Name']),
-            'OurCompanyAddress_raw' => $company['Address'],
+            'OurCompanyName_raw' => str_replace(['(USD)', '(EUR)'], '', $company['Name'] ?? ''),
+            'OurCompanyAddress_raw' => $company['Address'] ?? '',
             'OurCompanyBeneficiaryBank_raw' => $bank['BeneficiaryBank'] ?? '',
             'OurCompanyCorrespondentBank_raw' => $bank['CorrespondentBank'] ?? ''
         ];

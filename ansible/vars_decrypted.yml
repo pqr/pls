@@ -9,3 +9,5 @@ project_dir_flowerbase: "/home/ubuntu/flowerbase"
 filesfolder_pls: "/home/ubuntu/files"
 filesfolder_flowerbase: "/home/ubuntu/files/_flowerbase"
 ftpfolder: "/home/pls"
+
+git_version: master

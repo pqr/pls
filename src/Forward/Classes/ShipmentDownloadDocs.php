@@ -97,7 +97,7 @@ class ShipmentDownloadDocs
         $descriptorspec = [
             2 => ["pipe", "w"]
         ];
-        $cmd = '"' . escapeshellcmd(str_replace('\\', '/', ForwardConfig::$path7z)) . '"';
+        $cmd = '7z';
         //Команда "a" означает добавить файл в архив
         $cmd .= ' a';
         //Укажем пароль

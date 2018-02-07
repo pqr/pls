@@ -34,6 +34,4 @@ Config::$swiftmailerSecuriy = '{{ mail_security }}';
 Config::$swiftmailerUser = '{{ mail_user }}';
 Config::$swiftmailerPassword = '{{ mail_pass }}';
 
-\Forward\ForwardConfig::$path7z = '7z';
-\Forward\ForwardConfig::$onecFtpFolderBase = '{{ ftpfolder }}';
 \Forward\ForwardConfig::$vinvoiceZipPass = '{{ vinvoice_zip_pass }}';

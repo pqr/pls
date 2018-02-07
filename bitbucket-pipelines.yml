@@ -19,7 +19,7 @@ pipelines:
           - composer install
 
           - mysql -h127.0.0.1 -uroot -ptest -e "create database pls_test"
-          - mysql -h127.0.0.1 -uroot -ptest seta_test < tests/_data/pls_test.sql
+          - mysql -h127.0.0.1 -uroot -ptest pls_test < tests/_data/pls_test.sql
 
           - mv config/config_test.php config/config.php
           - mkdir temp
@@ -32,6 +32,15 @@ pipelines:
 
         services:
           - database
+
+     - step:
+          name: Deploy to Production
+          image: forwardhkg/ansible
+          trigger: manual
+          script:
+            - cd ansible
+            - echo $VAULT_PASS > .vault-pass
+            - ansible-playbook --vault-password-file .vault-pass --tags=deploy,sentry --extra-vars "git_version=$BITBUCKET_COMMIT" playbook_08_deploy_pls.yml
 
 definitions:
   services:

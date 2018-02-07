@@ -9,12 +9,12 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 class QuotationCest extends ModuleCestAbstract
 {
     /**
-     * @param \FunctionalTester|\AcceptanceTester$I
+     * @param \FunctionalTester|\AcceptanceTester $I
      *
      * @example ["en"]
      * @example ["ru"]
      */
-    public function downloadExcel( $I, Example $example)
+    public function downloadExcel($I, Example $example)
     {
         $lang = $example[0];
 

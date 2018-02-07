@@ -16,6 +16,7 @@
     git:
       repo: git@bitbucket.org:pqr/pls.git
       dest: "{{ project_dir_pls }}"
+      version: "{{ git_version }}"
       clone: yes
       force: yes
       accept_hostkey: true
@@ -56,6 +57,10 @@
       src: "{{ project_dir_pls }}/src/Light/public"
       path: "{{ project_dir_pls }}/public/lightpublic"
     tags: dirs
+
+  - name: Run Sentry Deploy script
+    shell: sentry.sh
+    tags: sentry
 
   - name: deploy pls 7. Cron Light/CurrencyRateCBRF today at 6am
     become: false
@@ -119,31 +124,3 @@
       weekday: "1-5"
       job: "php {{ project_dir_pls }}/public/index.php EmailPendingQuotations14days"
     tags: cron
-
-  - name: deploy pls 14. Cron ImportCActFrom1C 8-23 every 5 min
-    become: false
-    cron:
-      name: "pls ImportCActFrom1C"
-      minute: "*/5"
-      hour: "8-23"
-      job: "php {{ project_dir_pls }}/public/index.php ImportCActFrom1C"
-    tags: cron
-
-  - name: deploy pls 15. Cron ImportCInvoicesFrom1C 8-23 every 5 min
-    become: false
-    cron:
-      name: "pls ImportCInvoicesFrom1C"
-      minute: "*/5"
-      hour: "8-23"
-      job: "php {{ project_dir_pls }}/public/index.php ImportCInvoicesFrom1C"
-    tags: cron
-
-  - name: deploy pls 16. Cron ImportCPaymentsFrom1C 8-23 every 5 min
-    become: false
-    cron:
-      name: "pls ImportCPaymentsFrom1C"
-      minute: "*/5"
-      hour: "8-23"
-      job: "php {{ project_dir_pls }}/public/index.php ImportCPaymentsFrom1C"
-    tags: cron
-

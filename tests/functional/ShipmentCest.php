@@ -66,7 +66,7 @@ class ShipmentCest extends ModuleCestAbstract
     public function costSheetCopy($I)
     {
         $I->expect('Get Cost-sheet data for copy in JSON');
-        $I->sendGET('?a=Shipment&ps=CopyFromCs&FileNumber=105909');
+        $I->sendGET('?a=Shipment&ps=CopyFromCs&FileNumber=106525');
         $I->seeResponseCodeIs(200);
         $I->seeResponseMatchesJsonType([
             'income' => 'array',
@@ -89,7 +89,7 @@ class ShipmentCest extends ModuleCestAbstract
             'IncomeHtml' => 'string',
             'ExpensesHtml' => 'string',
             'EGP' => 'float|integer',
-            'Deviation' => 'float',
+            'Deviation' => 'float|integer',
             'HistoryHtml' => 'string',
             'QuotationIDHtml' => 'string'
         ]);
