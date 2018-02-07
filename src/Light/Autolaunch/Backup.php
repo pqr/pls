@@ -34,7 +34,7 @@ class Backup extends AutolaunchAbstract
             $cmd .= " -P" . Config::$mysqlPort;
         }
 
-        $filename = $date . "_" . Config::$mysqlDb . ".sql";
+        $filename = Config::$mysqlDb  . "_$date.sql";
         $achivename = $filename.".7z";
 
         // https://stackoverflow.com/questions/11214437/php-mysqldump-and-zip-7z
