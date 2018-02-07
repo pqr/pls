@@ -3,6 +3,8 @@
   become: true
   become_user: root
   become_method: sudo
+  vars_files:
+    - vars_decrypted.yml
 
   tasks:
   # Установка Timezone:
@@ -26,3 +28,10 @@
       name: ru_RU.UTF-8
       state: present
     tags: locale
+
+  - name: Set authorized keys
+    authorized_key:
+      user: ubuntu
+      state: present
+      key: "{{ bitbucket_pipeline_public_key_app }}"
+    tags: ssh
