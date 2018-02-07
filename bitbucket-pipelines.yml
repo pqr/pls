@@ -22,6 +22,7 @@ pipelines:
           - mysql -h127.0.0.1 -uroot -ptest pls_test < tests/_data/pls_test.sql
 
           - mv config/config_test.php config/config.php
+          - mkdir uploads
           - ln -s `pwd`/public/lightpublic src/Light/public
 
           - php public/index.php Light/Migrate

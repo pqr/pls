@@ -11,6 +11,10 @@ class QuotationCest extends ModuleCestAbstract
     /**
      * @param \FunctionalTester|\AcceptanceTester $I
      *
+     * @param Example $example
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     *
      * @example ["en"]
      * @example ["ru"]
      */
