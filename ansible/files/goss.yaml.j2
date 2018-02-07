@@ -1,0 +1,164 @@
+file:
+  /etc/php/{{ php_version }}/fpm/php-fpm.conf:
+    exists: true
+    filetype: file
+    contains: []
+  /etc/php/{{ php_version }}/fpm/pool.d/www.conf:
+    exists: true
+    filetype: file
+    contains: []
+port:
+  tcp:80:
+    listening: true
+    ip:
+    - 0.0.0.0
+service:
+  nginx:
+    enabled: true
+    running: true
+  php{{ php_version }}-fpm:
+    enabled: true
+    running: true
+user:
+  www-data:
+    exists: true
+group:
+  www-data:
+    exists: true
+command:
+  php -m:
+    exit-status: 0
+    stdout: []
+    stderr:
+    - '!/./'
+    timeout: 0
+  php -m | grep -i curl:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i date:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i dom:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i exif:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i gd:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i intl:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i imap:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i json:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i mbstring:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i mysqli:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i mysqlnd:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i opcache:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i openssl:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i readline:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i simplexml:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i sockets:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i xml:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i zip:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep -i zlib:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep newrelic:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php -m | grep xdebug:
+    exit-status: 1
+    stdout: []
+    stderr:
+    - '!/./'
+    timeout: 0
+  php -v:
+    exit-status: 0
+    stdout: []
+    stderr:
+    - '!/./'
+    timeout: 0
+  php-fpm{{ php_version }} -m:
+    exit-status: 0
+    stdout: []
+    stderr:
+    - '!/./'
+    timeout: 0
+  php-fpm{{ php_version }} -m | grep -i cgi-fcgi:
+    exit-status: 0
+    stdout: []
+    stderr: []
+    timeout: 0
+  php-fpm{{ php_version }} -v:
+    exit-status: 0
+    stdout:
+    - PHP {{ php_version }}
+    stderr:
+    - '!/./'
+    timeout: 0

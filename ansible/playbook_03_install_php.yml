@@ -29,6 +29,7 @@
       - php{{ php_version }}-fpm
       - php{{ php_version }}-gd
       - php{{ php_version }}-imap
+      - php{{ php_version }}-intl
       - php{{ php_version }}-json
       - php{{ php_version }}-mbstring
       - php{{ php_version }}-mysql

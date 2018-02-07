@@ -22,38 +22,40 @@
     apt: name=libxrender1
     tags: wkhtmltopdf
 
-  # Установить wkhtmltopdf:
-  - name: toolkit 3. Download and unarchive wkhtmltopdf
+  - name: Download and unarchive wkhtmltopdf
     unarchive:
       src: https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
-      dest: /home/ubuntu
+      dest: /tmp
       remote_src: yes
-    tags: wkhtmltopdf
+    tags:
+    - tools
+    - wkhtmltopdf
 
-  - name: toolkit 4. Copy wkhtmltopdf to bin
+  - name: Copy wkhtmltopdf to bin
+    become: true
     copy:
       remote_src: yes
-      src: /home/ubuntu/wkhtmltox/bin/wkhtmltopdf
+      src: /tmp/wkhtmltox/bin/wkhtmltopdf
       dest: /usr/local/bin/wkhtmltopdf
       mode: 0755
-    tags: wkhtmltopdf
-
-  - name: toolkit 5. Remove wkhtmltox dir from home
-    file:
-      state: absent
-      path: /home/ubuntu/wkhtmltox
-    tags: wkhtmltopdf
+    tags:
+    - tools
+    - wkhtmltopdf
 
   # Установить нужные в работе утилиты:
   - name: toolkit 6. Install tools
     apt: name={{ item }}
     with_items:
       - mc
+      - curl
+      - wget
       - unzip
       - unrar
       - p7zip-full
       - ghostscript
       - imagemagick
+      - git
+      - pdftk
     tags: tools
 
   # Установить mysql-client:
@@ -70,6 +72,25 @@
       mode: 0600
     tags: mysql
 
+  - name: Install Goss
+    become: true
+    get_url:
+      url: https://github.com/aelsabbahy/goss/releases/download/v0.3.5/goss-linux-amd64
+      dest: /usr/local/bin/goss
+      mode: 0755
+    tags:
+    - tools
+    - goss
+
+  - name: goss.yaml to home directory
+    become: false
+    template:
+      src: files/goss.yaml.j2
+      dest: /home/ubuntu/goss.yaml"
+    tags:
+    - tools
+    - goss
+
   - name: toolkit 9. Sentry-cli
     shell: "curl -sL https://sentry.io/get-cli/ | bash"
     tags: sentry
@@ -78,6 +99,6 @@
     become: false
     template:
       src: files/.sentryclirc
-      dest: /home/ubuntu/.sentryclirc
+      dest: /home/ubuntu/.sentryclirc"
       mode: 0600
     tags: sentry
