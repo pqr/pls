@@ -6,3 +6,5 @@ sentry-cli releases set-commits $VERSION --auto
 sentry-cli releases deploys $VERSION new -e production
 
 echo $VERSION > version.txt
+
+sentry-cli update
