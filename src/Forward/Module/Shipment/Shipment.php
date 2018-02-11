@@ -1327,12 +1327,13 @@ class Shipment extends ModuleAbstract
         if (!isset($_GET['confirm']) && file_exists(File::encode($filepathAbs))) {
 
             $url = '?a=Shipment&id=' . $this->_obj->getId() . '&func=ShipmentRequestExcel&confirm=1#ajax';
-            $dialogHtml = '<form action="' . $url . '" method="get">В папке уже существует файл <strong>'
+            $dialogHtml = '<form action="' . $url . '" method="post">В папке уже существует файл <strong>'
                 . htmlspecialchars($filename)
                 . '</strong>, хотите его перезаписать?'
                 . '</form>';
 
             Response::showDialog($dialogHtml, 'Перезаписать');
+            return;
 
         }
 
@@ -1423,7 +1424,7 @@ class Shipment extends ModuleAbstract
             $xls->save($filepathAbs);
             //Session::flashSuccess('Файл <strong>' . htmlspecialchars($filename) . '</strong> сохранён в папку перевозки');
             // Отправим готовый файл на экран пользователю
-            FilesFolder::streamFileTryWindowsShared($filepathRelative);
+            FilesFolder::streamFile($filepathRelative);
         } catch (\Exception $e) {
             Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($filename) . '</strong> сохранён в папку перевозки, возможно, он открыт в Excel?');
             $this->redirectToView();

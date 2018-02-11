@@ -360,7 +360,7 @@ class FilesFolder
      */
     public static function streamFileTryWindowsShared(string $relativePath)
     {
-        if (self::isWindowsSharedFolderAllowed()) {
+        if (Config::$filesfolder && self::isWindowsSharedFolderAllowed()) {
             Response::redirectUrl(self::getUrl($relativePath));
         } else {
             self::streamFile($relativePath);
