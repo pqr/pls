@@ -5,7 +5,6 @@ WHERE ID != 10;
 DELETE FROM airline
 WHERE ID != 100;
 
-TRUNCATE autolaunchlog;
 TRUNCATE cache_notemptyfilesfolder;
 TRUNCATE ccontact;
 
@@ -59,8 +58,11 @@ TRUNCATE dblog_table;
 TRUNCATE dblog_module;
 TRUNCATE dblog_field;
 TRUNCATE dblog_text;
+TRUNCATE dblog_trace;
 TRUNCATE deleted;
-TRUNCATE emaillog;
+TRUNCATE deleted_text;
+TRUNCATE deleted_trace;
+
 TRUNCATE importoneclog;
 
 DELETE FROM list_chargedescription
@@ -72,7 +74,12 @@ TRUNCATE list_placeofreceipt;
 TRUNCATE list_shipper;
 TRUNCATE list_vessel;
 
-DELETE FROM location WHERE ID != 2;
+DELETE FROM location
+WHERE ID != 2;
+
+TRUNCATE log_autolaunch;
+TRUNCATE log_email;
+TRUNCATE log_telegram;
 
 TRUNCATE metric;
 
@@ -82,7 +89,8 @@ SET Report = '';
 
 TRUNCATE modulesession;
 
-DELETE FROM oceancarrier WHERE ID != 1;
+DELETE FROM oceancarrier
+WHERE ID != 1;
 
 TRUNCATE ourcompanybank;
 
@@ -90,7 +98,8 @@ TRUNCATE pdfhash;
 TRUNCATE phpsession;
 TRUNCATE phpsessionflash;
 
-DELETE FROM port WHERE ID != 36;
+DELETE FROM port
+WHERE ID != 36;
 TRUNCATE portterminal;
 
 TRUNCATE queue_email;

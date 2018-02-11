@@ -1,6 +1,6 @@
 -- MySQL dump 10.16  Distrib 10.2.12-MariaDB, for osx10.13 (x86_64)
 --
--- Host: localhost    Database: book4a_test
+-- Host: localhost    Database: book4a_clean
 -- ------------------------------------------------------
 -- Server version	10.2.12-MariaDB
 
@@ -130,35 +130,6 @@ LOCK TABLES `airline` WRITE;
 /*!40000 ALTER TABLE `airline` DISABLE KEYS */;
 INSERT INTO `airline` VALUES (100,19,'2015-08-07 06:46:48','AIR KORYO','','JS');
 /*!40000 ALTER TABLE `airline` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `autolaunchlog`
---
-
-DROP TABLE IF EXISTS `autolaunchlog`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `autolaunchlog` (
-  `ID` int(10) NOT NULL AUTO_INCREMENT,
-  `CreatedBy` int(10) NOT NULL DEFAULT 0,
-  `CreatedDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
-  `ClassName` varchar(50) NOT NULL,
-  `Report` mediumtext NOT NULL,
-  `ShortMessage` text NOT NULL,
-  `WorkTime` float NOT NULL,
-  PRIMARY KEY (`ID`),
-  KEY `ClassName` (`ClassName`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `autolaunchlog`
---
-
-LOCK TABLES `autolaunchlog` WRITE;
-/*!40000 ALTER TABLE `autolaunchlog` DISABLE KEYS */;
-/*!40000 ALTER TABLE `autolaunchlog` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -1241,6 +1212,32 @@ LOCK TABLES `dblog_text` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `dblog_trace`
+--
+
+DROP TABLE IF EXISTS `dblog_trace`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dblog_trace` (
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `CreatedBy` int(11) NOT NULL,
+  `CreatedDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
+  `DbLogIDs` text DEFAULT NULL,
+  PRIMARY KEY (`ID`),
+  KEY `CreatedBy` (`CreatedBy`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `dblog_trace`
+--
+
+LOCK TABLES `dblog_trace` WRITE;
+/*!40000 ALTER TABLE `dblog_trace` DISABLE KEYS */;
+/*!40000 ALTER TABLE `dblog_trace` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `deleted`
 --
 
@@ -1251,12 +1248,18 @@ CREATE TABLE `deleted` (
   `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `CreatedBy` int(10) NOT NULL DEFAULT 0,
   `CreatedDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
-  `TableName` varchar(50) NOT NULL,
+  `ModuleID` int(11) NOT NULL,
+  `MasterID` int(11) NOT NULL,
+  `TableID` int(11) NOT NULL,
   `RecordID` int(11) NOT NULL,
-  `Query` varchar(255) NOT NULL,
-  `JSON` text NOT NULL,
   `Restored` tinyint(1) NOT NULL,
-  PRIMARY KEY (`ID`)
+  `TraceID` int(11) NOT NULL,
+  PRIMARY KEY (`ID`),
+  KEY `ModuleIDMasterID` (`ModuleID`,`MasterID`),
+  KEY `TableIDRecordID` (`TableID`,`RecordID`),
+  KEY `TraceID` (`TraceID`),
+  KEY `CreatedBy` (`CreatedBy`),
+  KEY `CreatedDateTime` (`CreatedDateTime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1270,38 +1273,51 @@ LOCK TABLES `deleted` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `emaillog`
+-- Table structure for table `deleted_text`
 --
 
-DROP TABLE IF EXISTS `emaillog`;
+DROP TABLE IF EXISTS `deleted_text`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `emaillog` (
-  `ID` int(11) NOT NULL AUTO_INCREMENT,
-  `CreatedBy` int(11) NOT NULL DEFAULT 0,
-  `CreatedDateTime` datetime NOT NULL,
-  `SentDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
-  `From` varchar(100) NOT NULL,
-  `To` varchar(300) NOT NULL,
-  `Cc` varchar(300) NOT NULL,
-  `Bcc` varchar(300) NOT NULL,
-  `Subject` varchar(300) NOT NULL,
-  `Body` mediumtext NOT NULL,
-  `ContentType` varchar(50) NOT NULL DEFAULT 'text/html',
-  `RetryCount` tinyint(4) NOT NULL DEFAULT 0,
-  `ReplyTo` varchar(300) NOT NULL DEFAULT '',
-  `Attachements` text NOT NULL,
-  PRIMARY KEY (`ID`)
+CREATE TABLE `deleted_text` (
+  `deletedID` int(11) NOT NULL,
+  `JSON` mediumtext NOT NULL,
+  PRIMARY KEY (`deletedID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `emaillog`
+-- Dumping data for table `deleted_text`
 --
 
-LOCK TABLES `emaillog` WRITE;
-/*!40000 ALTER TABLE `emaillog` DISABLE KEYS */;
-/*!40000 ALTER TABLE `emaillog` ENABLE KEYS */;
+LOCK TABLES `deleted_text` WRITE;
+/*!40000 ALTER TABLE `deleted_text` DISABLE KEYS */;
+/*!40000 ALTER TABLE `deleted_text` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `deleted_trace`
+--
+
+DROP TABLE IF EXISTS `deleted_trace`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `deleted_trace` (
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `CreatedBy` int(11) NOT NULL,
+  `CreatedDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`ID`),
+  KEY `CreatedBy` (`CreatedBy`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `deleted_trace`
+--
+
+LOCK TABLES `deleted_trace` WRITE;
+/*!40000 ALTER TABLE `deleted_trace` DISABLE KEYS */;
+/*!40000 ALTER TABLE `deleted_trace` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -1608,6 +1624,99 @@ LOCK TABLES `location` WRITE;
 /*!40000 ALTER TABLE `location` DISABLE KEYS */;
 INSERT INTO `location` VALUES (2,0,'2012-01-10 18:46:23','Buenos Aires','','BUE','AR');
 /*!40000 ALTER TABLE `location` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `log_autolaunch`
+--
+
+DROP TABLE IF EXISTS `log_autolaunch`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `log_autolaunch` (
+  `ID` int(10) NOT NULL AUTO_INCREMENT,
+  `CreatedBy` int(10) NOT NULL DEFAULT 0,
+  `CreatedDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
+  `ClassName` varchar(50) NOT NULL,
+  `Report` mediumtext NOT NULL,
+  `ShortMessage` text NOT NULL,
+  `WorkTime` float NOT NULL,
+  PRIMARY KEY (`ID`),
+  KEY `ClassName` (`ClassName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `log_autolaunch`
+--
+
+LOCK TABLES `log_autolaunch` WRITE;
+/*!40000 ALTER TABLE `log_autolaunch` DISABLE KEYS */;
+/*!40000 ALTER TABLE `log_autolaunch` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `log_email`
+--
+
+DROP TABLE IF EXISTS `log_email`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `log_email` (
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `CreatedBy` int(11) NOT NULL DEFAULT 0,
+  `CreatedDateTime` datetime NOT NULL,
+  `SentDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
+  `From` varchar(100) NOT NULL,
+  `To` varchar(300) NOT NULL,
+  `Cc` varchar(300) NOT NULL,
+  `Bcc` varchar(300) NOT NULL,
+  `Subject` varchar(300) NOT NULL,
+  `Body` mediumtext NOT NULL,
+  `ContentType` varchar(50) NOT NULL DEFAULT 'text/html',
+  `RetryCount` tinyint(4) NOT NULL DEFAULT 0,
+  `ReplyTo` varchar(300) NOT NULL DEFAULT '',
+  `Attachements` text NOT NULL,
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `log_email`
+--
+
+LOCK TABLES `log_email` WRITE;
+/*!40000 ALTER TABLE `log_email` DISABLE KEYS */;
+/*!40000 ALTER TABLE `log_email` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `log_telegram`
+--
+
+DROP TABLE IF EXISTS `log_telegram`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `log_telegram` (
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `CreatedBy` int(11) NOT NULL,
+  `CreatedDateTime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `TelegramID` int(11) NOT NULL,
+  `Query` text NOT NULL,
+  `Response` text NOT NULL,
+  PRIMARY KEY (`ID`),
+  KEY `CreatedBy` (`CreatedBy`),
+  KEY `TelegramID` (`TelegramID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `log_telegram`
+--
+
+LOCK TABLES `log_telegram` WRITE;
+/*!40000 ALTER TABLE `log_telegram` DISABLE KEYS */;
+/*!40000 ALTER TABLE `log_telegram` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -3166,4 +3275,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-02-07 17:26:11
+-- Dump completed on 2018-02-11 18:45:58
