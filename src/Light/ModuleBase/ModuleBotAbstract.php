@@ -11,6 +11,7 @@ use Light\User;
 abstract class ModuleBotAbstract
 {
     protected $telegramId;
+
     public function __invoke()
     {
         $token = $_GET['token'] ?? '';

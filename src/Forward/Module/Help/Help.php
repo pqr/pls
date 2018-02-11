@@ -1,18 +1,19 @@
 <?php
+
 use Light\Template;
 use Light\ApplicationAbstract;
 use Light\FilesFolder;
 use Light\Config;
 use Light\Response;
 
-    // Чтобы правильно работала функция basename с файлами на русском языке
-    // Перед этим нужно установить локаль в операционную систему:
-    // https://askubuntu.com/questions/76013/how-do-i-add-locale-to-ubuntu-server
-    // locale -a
-    // sudo locale-gen ru_RU
-    // sudo locale-gen ru_RU.UTF-8
-    // sudo update-locale
-    // sudo service php7.1-fpm restart
+// Чтобы правильно работала функция basename с файлами на русском языке
+// Перед этим нужно установить локаль в операционную систему:
+// https://askubuntu.com/questions/76013/how-do-i-add-locale-to-ubuntu-server
+// locale -a
+// sudo locale-gen ru_RU
+// sudo locale-gen ru_RU.UTF-8
+// sudo update-locale
+// sudo service php7.1-fpm restart
 if (isset($_GET['elfinder'])) {
 
     if ($_GET['elfinder'] === 'dialog') {
@@ -101,7 +102,7 @@ if (isset($_GET['elfinder'])) {
             throw new \InvalidArgumentException("file contains ..: " . $_GET['file']);
         }
 
-        $filepathAbs = Config::$filesfolderLocal .'/Help/' . $_GET['file'];
+        $filepathAbs = Config::$filesfolderLocal . '/Help/' . $_GET['file'];
         Response::streamFileFromFilesystem($filepathAbs);
         ApplicationAbstract::terminate();
         return;
@@ -114,7 +115,9 @@ if (isset($_GET['elfinder'])) {
 ?>
 
 <h2>Полезная информация</h2>
-<ul><li><?= \Light\FilesFolder::getLink('Help/0', 'Открыть папку с файлами с полезной информацией') ?></li></ul>
+<ul>
+    <li><?= \Light\FilesFolder::getLink('Help/0', 'Открыть папку с файлами с полезной информацией') ?></li>
+</ul>
 
 <?php
 $pdfs = glob(LIGHT_DIR_PUBLIC . "/Module/Help/*.pdf");
@@ -128,10 +131,10 @@ if ($pdfs): ?>
         $pdf = basename($pdf);
         ?>
         <li><a href="Module/Help/<?= htmlspecialchars(rawurlencode($pdf)) ?>" target="_blank"><?= $pdf ?></a></li>
-        <?php
+    <?php
     endforeach;
-endif;
-?>
+    endif;
+    ?>
 </ul>
 
 <h2>Цвета</h2>
@@ -147,3 +150,20 @@ endif;
     endfor;
     ?>
 </ul>
+
+
+<?php
+$token = \Light\Db::getOne("SELECT TelegramToken FROM user WHERE ID = @i", \Light\User::getId());
+if ($token): ?>
+    <br><br>
+    Вам подключён Telegram бот!
+    <p>
+        Откройте в Telegram бота с именем <strong><a href="https://telegram.me/ProactiveLogisticBot" target="_blank">@ProactiveLogisticBot</a></strong>
+        и выполните команду
+        <strong>/login <?= $token ?></strong>
+    </p>
+    <p>
+        <?= nl2br(file_get_contents(__DIR__ . '/../Bot/BotStartMessageAuthorized.html')); ?>
+    </p>
+
+<?php endif; ?>

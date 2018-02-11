@@ -1,0 +1,93 @@
+# Example: ansible-playbook playbook_10_telegram_bot.yml -i inventory.test
+- hosts: []
+  become: false
+  vars_files:
+  - vars_decrypted.yml
+  - vars_encrypted.yml
+
+  tasks:
+  # https://fabianlee.org/2017/05/21/golang-running-a-go-binary-as-a-systemd-service-on-ubuntu-16-04/
+  - name: Create user telegram-bot
+    become: true
+    user:
+      name: telegram-bot
+      shell: /sbin/nologin
+    tags: bot-service
+
+  - name: Copy telegram-bot.service file into /lib/systemd/system/
+    become: true
+    template:
+      src: files/telegram-bot.service.j2
+      dest: "/lib/systemd/system/telegram-bot.service"
+      mode: 0755
+      backup: yes
+    tags: bot-service
+
+  - name: Create telegram-bot service
+    become: yes
+    service:
+      name: telegram-bot
+      state: stopped
+      enabled: true
+      daemon_reload: yes
+    tags: bot-service
+
+  - name: Create working dir {{ telegrambot_working_dir }}
+    file: path={{ telegrambot_working_dir }} state=directory
+    tags: bot-deploy
+
+  - name: Download binary from Bitbucket Downloads into temp file
+    shell: curl -L -o "{{ telegrambot_working_dir }}/{{ telegrambot_executable }}_new" "https://{{ telegrambot_bitbucket_downloads_username }}:{{ telegrambot_bitbucket_downloads_password }}@api.bitbucket.org/2.0/repositories/forward-hkg/telegram-bot/downloads/{{ telegrambot_executable }}"
+  #    force_basic_auth: true
+  #    url: "https://api.bitbucket.org/2.0/repositories/forward-hkg/telegram-bot/downloads/{{ telegrambot_executable }}"
+  #    url_username: "{{ telegrambot_bitbucket_downloads_username }}"
+  #    url_password: "{{ telegrambot_bitbucket_downloads_password }}"
+  #    dest: "{{ telegrambot_working_dir }}/{{ telegrambot_executable }}"
+  #    mode: 0755
+
+  #  uri:
+  #    url: "https://api.bitbucket.org/2.0/repositories/forward-hkg/telegram-bot/downloads/{{ telegrambot_executable }}"
+  #    follow_redirects: all
+  #    user: "{{ telegrambot_bitbucket_downloads_username }}"
+  #    password: "{{ telegrambot_bitbucket_downloads_password }}"
+  #    force_basic_auth: yes
+  #    dest: "{{ telegrambot_working_dir }}/{{ telegrambot_executable }}"
+    tags: bot-deploy
+
+  - name: Check if current executable is present
+    stat: path="{{ telegrambot_working_dir }}/{{ telegrambot_executable }}"
+    register: current_stat
+    tags: bot-deploy
+
+  - name: Stop telegram-bot service
+    become: yes
+    service:
+      name: telegram-bot
+      state: stopped
+    when: current_stat.stat.exists
+    tags: bot-deploy
+
+  - name: Rename current executable, add suffix _old
+    command: mv "{{ telegrambot_working_dir }}/{{ telegrambot_executable }}" "{{ telegrambot_working_dir }}/{{ telegrambot_executable }}_old"
+    when: current_stat.stat.exists
+    tags: bot-deploy
+
+  - name: Rename new executable (just downloaded) to {{ telegrambot_executable }}
+    command: mv "{{ telegrambot_working_dir }}/{{ telegrambot_executable }}_new" "{{ telegrambot_working_dir }}/{{ telegrambot_executable }}"
+    tags: bot-deploy
+
+  - name: Make new binary {{ telegrambot_executable }} executable
+    file:
+      path: "{{ telegrambot_working_dir }}/{{ telegrambot_executable }}"
+      mode: 0755
+    tags: bot-deploy
+
+  - name: Start telegram-bot service
+    become: yes
+    service:
+      name: telegram-bot
+      state: started
+    tags: bot-deploy
+
+
+

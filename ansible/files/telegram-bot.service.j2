@@ -1,0 +1,31 @@
+# https://fabianlee.org/2017/05/21/golang-running-a-go-binary-as-a-systemd-service-on-ubuntu-16-04/
+[Unit]
+Description=Telegram Bot Service
+ConditionPathExists={{ telegrambot_working_dir }}/{{ telegrambot_executable }}
+After=network.target
+
+[Service]
+Type=simple
+User=telegram-bot
+Group=telegram-bot
+LimitNOFILE=1024
+
+Restart=on-failure
+RestartSec=10
+startLimitIntervalSec=60
+
+Environment="TELEGRAM_BOT_TOKEN={{ telegrambot_token }}" "TELEGRAM_BOT_BACKEND_URL={{ telegrambot_backend_url }}"
+WorkingDirectory={{ telegrambot_working_dir }}
+ExecStart={{ telegrambot_working_dir }}/{{ telegrambot_executable }}
+
+# make sure log directory exists and owned by syslog
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/log/telegram-bot
+ExecStartPre=/bin/chown syslog:adm /var/log/telegram-bot
+ExecStartPre=/bin/chmod 755 /var/log/telegram-bot
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=telegram-bot
+
+[Install]
+WantedBy=multi-user.target

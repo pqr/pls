@@ -45,7 +45,7 @@
 
   # Установить нужные в работе утилиты:
   - name: toolkit 6. Install tools
-    apt: name={{ item }}
+    apt: name={{ item }} state=latest
     with_items:
       - mc
       - curl

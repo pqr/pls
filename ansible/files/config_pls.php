@@ -34,6 +34,8 @@ Config::$swiftmailerSecuriy = '{{ mail_security }}';
 Config::$swiftmailerUser = '{{ mail_user }}';
 Config::$swiftmailerPassword = '{{ mail_pass }}';
 
+Config::$telegramBotToken = '{{ telegrambot_token }}';
+
 \Forward\ForwardConfig::$vinvoiceZipPass = '{{ vinvoice_zip_pass }}';
 \Forward\ForwardConfig::$onecIp = '{{ vpnbuh_onec_ip }}';
 \Forward\ForwardConfig::$onecAuthToken = '{{ onec_auth_token }}';
