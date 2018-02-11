@@ -274,7 +274,7 @@ trait TableFilterable
     public function getFiltersValues(): array
     {
         if (!$this->filters) {
-            return null;
+            return [];
         }
         return $this->filters->getValues();
     }

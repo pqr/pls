@@ -1,8 +1,11 @@
 <?php
+
 namespace Light\Traits;
 
 use Light\ApplicationAbstract;
 use Light\Config;
+use Light\Html;
+use Light\Msg;
 
 /**
  * @method getTableUserParam($name)
@@ -13,8 +16,10 @@ trait TablePaginatable
 {
     private $_page = 1;
     private $_showAll = false; //показывать все записи на одной странице?
-    private $_rowsPerPage = 50;
     private $_tableTotalRecordsFound; //общее кол-во строк на всех страницах
+
+    protected $defaultRowsPerPage = 50;
+    protected $maxRowsPerPage = 1000;
 
     protected $allowPagination = true;
 
@@ -30,40 +35,11 @@ trait TablePaginatable
             //Применим параметр ShowAll к текущему объекту
             $this->_showAll = (bool)$this->getTableUserParam('ShowAll');
 
-            //Расчитаем текущую страницу
-            if ($this->_showAll) {
-                //В режиме отображения ВСЕХ записей на самом деле отображаем какое-то максимальное кол-во
-                $this->_rowsPerPage = $this->getMaxRowsPerPage();
-            } else {
-                //В режиме отображения по страницам, оторбажаем константное значение default
-                $this->_rowsPerPage = $this->getDefaultRowsPerPage();
-            }
-
             //Прореверим, был ли передан номер страницы или номер записи с которой начать вывод
             if (isset($_POST['page'])) {
                 $this->setTablePage($_POST['page']);
             }
         }
-    }
-
-    private function getDefaultRowsPerPage()
-    {
-        static $defaultRows = -1;
-        if ($defaultRows === -1) {
-            $defaultRows = ApplicationAbstract::getParam('TableDefaultRowsPerPage');
-            $defaultRows = $defaultRows ?: 50;
-        }
-        return $defaultRows;
-    }
-
-    private function getMaxRowsPerPage()
-    {
-        static $maxRows = -1;
-        if ($maxRows === -1) {
-            $maxRows = ApplicationAbstract::getParam('TableDefaultRowsPerPage');
-            $maxRows = $maxRows ?: 1000;
-        }
-        return $maxRows;
     }
 
     protected function getTablePagesHtml()
@@ -173,7 +149,7 @@ trait TablePaginatable
     protected function getTableTotalRecordsFound()
     {
         if ($this->_tableTotalRecordsFound === null) {
-            $this->_tableTotalRecordsFound = count($this->_tableData);
+            $this->_tableTotalRecordsFound = $this->getTableDataCount();
         }
 
         return $this->_tableTotalRecordsFound;
@@ -208,7 +184,7 @@ trait TablePaginatable
 
     protected function getTableRowsPerPage()
     {
-        return $this->_rowsPerPage;
+        return $this->_showAll ? $this->maxRowsPerPage : $this->defaultRowsPerPage;
     }
 
     /**
@@ -224,27 +200,33 @@ trait TablePaginatable
         if ($this->_showAll) {
             //Находимся в режиме "вывести все строки"
             //Выведем ссылку на постраничный просмотр
-            $defaultRowsPerPage = $this->getDefaultRowsPerPage();
-            $linkText = Config::$lang === 'ru' ? "Показать $defaultRowsPerPage на страницу": "Show $defaultRowsPerPage per page";
+            $linkText = Config::$lang === 'ru' ? "Показать {$this->defaultRowsPerPage} на страницу" : "Show {$this->defaultRowsPerPage} per page";
             return "<span><a href=#0 class=table-showall-link>$linkText</a></span>";
 
         }
 
-        //Находим в режиме, когда отбражается по 50 строк на страницу
+        // Находим в режиме, когда отбражается по 50 строк на страницу
         if ($this->getTablePagesCount() > 1) {
             //Если страниц много, нужно вывести ссылку Show all
-            $maxRowsPerPage = $this->getMaxRowsPerPage();
-            if ($this->getTableDataCount() <= $maxRowsPerPage) {
-                //Выведем ссылку с текстом 'Show all', если строк _всего_ такое кол-во, что они могут уместиться max
-                $linkText = Config::$lang === 'ru' ? 'Показать все' : 'Show all';
-            } else {
-                //Если строк _всего_ больше, чем максимально допустимое значение, то текст ссылки Show all будет другим
-                $linkText = Config::$lang === 'ru' ? "Показать $maxRowsPerPage на страницу" : "Show $maxRowsPerPage per page";
-            }
-
+            $linkText = Config::$lang === 'ru' ? "Показать {$this->maxRowsPerPage} на страницу" : "Show {$this->maxRowsPerPage} per page";
             return "<span><a href=#1 class=table-showall-link>$linkText</a></span>";
         }
 
         return '';
+    }
+
+    protected function getShowAllWarning()
+    {
+        if ($this->allowPagination && $this->_showAll && $this->getTableDataCount() > $this->defaultRowsPerPage) {
+            $msg = Config::$lang === 'ru'
+                ? "Вы просматриваете таблицу в режиме \"{$this->maxRowsPerPage} записей на страницу\" - страницы могут загружаться медленно!
+                Скорее всего, вам и не нужно столько записей на одном экране, сложно смотреть одновременно на {$this->maxRowsPerPage} строк в таблице и понимать смысл происходящего.
+                <br>Рекомендуем <a href=#0 class=table-showall-link>переключиться в режим {$this->defaultRowsPerPage} на страницу</a>. Примечание: функция экспорта в Excel выгружает все найденные записи вне зависимости от выбранного режима отображения на экране и без разбивки по страницам."
+                : "You are in \"{$this->maxRowsPerPage} pre page\" mode - this might be slow. Recommend <a href=#0 class=table-showall-link>switch to {$this->defaultRowsPerPage} per page</a>.";
+            return '<div class="alert alert-warning">'.$msg.'</div>';
+        }
+
+        return '';
+
     }
 }

@@ -170,30 +170,34 @@ class Misc
      * @desc Возвращает русское название месяца по его номеру
      * @param int $number номер месяца от 1 до 12
      * @param bool $genitive если установлен в true, то название месяца будет в родительном падеже
-     * @param bool $firstCharBig если установлен в true, то название месяца с большой буквы
-     * @param bool $allCharBig если установлен в true, то все символы будут с большой буквы
      * @return string
      */
-    public static function getRusMonthName($number, $genitive = false, $firstCharBig = false, $allCharBig = false)
+    public static function getRusMonthName($number, $genitive = false)
     {
-        $FirstBig = ["Я", "Ф", "М", "А", "М", "И", "И", "А", "С", "О", "Н", "Д"];
-        $FirstSml = ["я", "ф", "м", "а", "м", "и", "и", "а", "с", "о", "н", "д"];
-        $MidBig = ["НВАР", "ЕВРАЛ", "АРТ", "ПРЕЛ", "А", "ЮН", "ЮЛ", "ВГУСТ", "ЕНТЯБР", "КТЯБР", "ОЯБР", "ЕКАБР"];
-        $MidSml = ["нвар", "еврал", "арт", "прел", "а", "юн", "юл", "вгуст", "ентябр", "ктябр", "оябр", "екабр"];
-        $EndBig = ["Ь", "Ь", "", "Ь", "Й", "Ь", "Ь", "", "Ь", "Ь", "Ь", "Ь"];
-        $EndSml = ["ь", "ь", "", "ь", "й", "ь", "ь", "", "ь", "ь", "ь", "ь"];
-        $GenBig = ["Я", "Я", "А", "Я", "Я", "Я", "Я", "А", "Я", "Я", "Я", "Я"];
-        $GenSml = ["я", "я", "а", "я", "я", "я", "я", "а", "я", "я", "я", "я"];
-        $result = '';
-        // Начинается с большой буквы
-        $result .= (($firstCharBig || $allCharBig) ? $FirstBig[$number - 1] : $FirstSml[$number - 1]);
-        // Все символы с большой буквы
-        $result .= ($allCharBig ? $MidBig[$number - 1] : $MidSml[$number - 1]);
-        // Окончание в родительном падеже
-        /** @noinspection NestedTernaryOperatorInspection */
-        $result .= ($genitive ? ($allCharBig ? $GenBig[$number - 1] : $GenSml[$number - 1]) :
-            ($allCharBig ? $EndBig[$number - 1] : $EndSml[$number - 1]));
-        return $result;
+        if ($number < 1 || $number > 12) {
+            return '';
+        }
+
+        $index = $number - 1;
+
+        $start = ["Январ", "Феврал", "Март", "Апрел", "Ма", "Июн", "Июл", "Август", "Сентябр", "Октябр", "Ноябр", "Декабр"];
+        $end = ["ь", "ь", "", "ь", "й", "ь", "ь", "", "ь", "ь", "ь", "ь"];
+        $endGen = ["я", "я", "а", "я", "я", "я", "я", "а", "я", "я", "я", "я"];
+
+        return $start[$index] . ($genitive ? $endGen[$index] : $end[$index]);
+    }
+
+    public static function getRusMonthNameYear(string $monthAsDate)
+    {
+        $monthNo = (int)substr($monthAsDate, 5, 2);
+        $monthText = self::getRusMonthName($monthNo);
+        if (!$monthText) {
+            return $monthText;
+        }
+
+        // Если получили не пустой месяц, то добавим и год
+        $year = substr($monthAsDate, 0, 4);
+        return "$monthText $year";
     }
 
     /**
@@ -432,7 +436,7 @@ class Misc
         return $outTxt;
     }
 
-    public static function procOpen($cmd, Msg $msgBuff = null, $stdInContent = null)
+    public static function procOpen($cmd, Msg $msgBuff = null, $stdInContent = null, bool $stdOutReturn = false)
     {
         $cmdEnc = File::encode($cmd);
         $descriptorspec = [];
@@ -456,9 +460,15 @@ class Misc
         }
 
         if ($stdInContent) {
-            //Пишем в stdin
+            // Пишем в stdin
             fwrite($pipes[0], $stdInContent);
             fclose($pipes[0]);
+        }
+
+        if ($stdOutReturn) {
+            // Читаем из stdOut
+            $stdOut = stream_get_contents($pipes[1]);
+            fclose($pipes[1]);
         }
 
         //Возможно ,были какие-то ошибки и мы можем прочитать их в stderr
@@ -466,9 +476,14 @@ class Misc
         fclose($pipes[2]);
 
         $result = proc_close($process);
+
         if ($errText && $msgBuff) {
             $msgBuff->addWarning($cmdEnc);
             $msgBuff->addWarning(mb_convert_encoding($errText, 'UTF-8', 'cp866'));
+        }
+
+        if ($stdOutReturn) {
+            return $stdOut;
         }
 
         return $result == 0;

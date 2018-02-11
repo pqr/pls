@@ -286,15 +286,23 @@ class Table
      */
     public function getHtmlTable($printHeadBlock = true, $printIfEmpty = false)
     {
+        return $this->getHtmlTableDivWrapper()
+            . $this->getHtmlTableForAjax($printHeadBlock, $printIfEmpty)
+            . '</div>';
+    }
+
+    protected function getHtmlTableDivWrapper()
+    {
+        $tableName = $this->getTableName();
+
+        $id = ' id="' . $tableName . '-table-div"';
+        $dataTablename = ' data-tablename="' . $tableName . '"';
         $linkmodule =
             $this->tableLinkModule ? ' data-linkmodule="' . htmlspecialchars($this->tableLinkModule) . '"' : '';
 
         $reloadurl = $this->tableReloadUrl ? ' data-reloadurl="' . htmlspecialchars($this->tableReloadUrl) . '"' : '';
 
-        return
-            '<div class="table-div" id="' . $this->getTableName() .
-            '-table-div" data-tablename="' . $this->getTableName() . '"' . $linkmodule . $reloadurl . '>' .
-            $this->getHtmlTableForAjax($printHeadBlock, $printIfEmpty) . '</div>';
+        return '<div class="table-div"' . $id . $dataTablename . $linkmodule . $reloadurl . '>';
     }
 
     /**
@@ -378,7 +386,15 @@ class Table
 
     protected function getHtmlTableHeadBlock()
     {
-        $outHtml = '<p class="table-headblock nobr">';
+        $outHtml = '';
+
+        if (method_exists($this, 'getShowAllWarning')) {
+            // Покажем предупреждение о не оптимальном режиме Show All (если у пользователя он включен - проверка внутри)
+            /** @var $this \Light\Traits\TablePaginatable */
+            $outHtml .= $this->getShowAllWarning();
+        }
+
+        $outHtml .= '<p class="table-headblock nobr">';
 
 
         if ($this->_tablePrintTotalRecordsFound) {

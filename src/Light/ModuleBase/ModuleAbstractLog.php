@@ -2,9 +2,12 @@
 
 namespace Light\ModuleBase;
 
+use Basis\Field\GeneralFields;
+use Light\Config;
 use Light\Db;
 use Light\DbLog;
 use Light\Field\CommonFields as CF;
+use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleRegister;
 use Light\Request;
@@ -94,41 +97,65 @@ class ModuleAbstractLog extends Table
 
     protected function initFilters()
     {
-        $fielIds = Db::getCol(
-            "SELECT DISTINCT(dblog.FieldID)
+        $tableAndField = Db::getAll(
+            "SELECT DISTINCT dblog.FieldID, dblog.TableID
              FROM dblog
              WHERE dblog.ModuleID=" . $this->_moduleId . "
                  AND dblog.MasterID = " . $this->_masterId
         );
 
+        $fieldIds = array_column($tableAndField, 'FieldID');
+        $tableIds = array_column($tableAndField, 'TableID');
+
         $this->addFilters(
 
-            F::createSelect('FieldID', [
-                'name' => 'Field',
-                'options' => "SELECT f.ID AS value, f.FieldDescription AS text, t.TableName AS optgroup
-                              FROM dblog_field f, dblog_table t
-                              WHERE f.TableID = t.ID
-                                  AND f.ID IN (" . (!$fielIds ? '0' : implode(',', $fielIds)) . ")
-                              ORDER BY t.TableName, f.FieldDescription"
-            ]),
-            F::createString('LogSearchText', [
-                'name' => 'Text',
-                'sqlWhere' => "ID in (SELECT dblogID FROM dblog_text WHERE Text LIKE '%{value}%'
-                                               OR OldValueFormated LIKE '%{value}%'
-                                               OR NewValueFormated LIKE '%{value}%')"
-            ]),
-            F::createSelect('CreatedBy', [
-                'name' => 'User',
-                'options' => "SELECT DISTINCT(dblog.CreatedBy) AS ID, user.Name
+            CommonFields::filterCreatedBy()
+                ->setOptions("SELECT DISTINCT(dblog.CreatedBy) AS ID, user.Name
                               FROM dblog
                                   LEFT JOIN user ON dblog.CreatedBy = user.ID
                               WHERE dblog.ModuleID=" . $this->_moduleId . "
                                   AND dblog.MasterID = " . $this->_masterId . "
-                              ORDER BY user.Name",
-                'empty' => false
-            ])
+                              ORDER BY user.Name"),
+
+            CommonFields::filterTableId()
+                ->setOptions("SELECT t.ID, t.TableName
+                              FROM dblog_table t
+                              WHERE t.ID IN (" . (!$tableIds ? '0' : implode(',', $tableIds)) . ")
+                              ORDER BY t.TableName"),
+
+            CommonFields::filterFieldId()
+                ->setOptions("SELECT f.ID AS value, f.FieldDescription AS text, t.TableName AS optgroup
+                              FROM dblog_field f, dblog_table t
+                              WHERE f.TableID = t.ID
+                                  AND f.ID IN (" . (!$fieldIds ? '0' : implode(',', $fieldIds)) . ")
+                              ORDER BY t.TableName, f.FieldDescription"),
+
+            F::createString('FilterName', [
+                'name' => Config::$lang === 'ru' ? 'Текст' : 'Text',
+                'editWidth' => 'default',
+                'sqlWhere' => "ID in (SELECT dblogID FROM dblog_text WHERE Text LIKE '%{value}%'
+                                               OR OldValueFormated LIKE '%{value}%'
+                                               OR NewValueFormated LIKE '%{value}%')"
+            ]),
+
+            CommonFields::filterRecordId()
 
         );
+
+        $this->addFiltersDatesFromUntil('CreatedDateTime', ['name' => Config::$lang === 'ru' ? 'Дата' : 'Date']);
+
+        $this->filtersLayout = [
+            [
+                'CreatedBy',
+                'TableID',
+                'FieldID',
+                'FilterName'
+            ],
+            [
+                'CreatedDateTime',
+                'RecordID'
+            ]
+        ];
     }
 
     protected function getExcelFilename()
@@ -152,14 +179,10 @@ class ModuleAbstractLog extends Table
                     RecordID,
                     FieldID
                     FROM dblog
-                 WHERE ModuleID= {$this->_moduleId}
-                     AND MasterID={$this->_masterId}";
-
-        $filtersWhere = $this->getFiltersSqlWhere();
-        if ($filtersWhere) {
-            $query .= " AND $filtersWhere";
-        }
-        $query .= " ORDER BY ID DESC";
+                 WHERE ModuleID={$this->_moduleId}
+                     AND MasterID={$this->_masterId}
+                     AND " . $this->getFiltersSqlWhere()
+            ." ORDER BY ID DESC";
 
         $tableData = Db::getAll($query);
         if ($tableData) {

@@ -1725,6 +1725,15 @@ var Table = /** @class */ (function () {
         // Возвращаем JQueryXHR
         return this.currentReloadXhr;
     };
+    Table.prototype.isLoading = function () {
+        return !!this.currentReloadXhr;
+    };
+    Table.prototype.cancelReload = function () {
+        // Если уже есть какой-то запрос на обновление этой таблицы, то его нужно прервать
+        if (this.currentReloadXhr) {
+            this.currentReloadXhr.abort();
+        }
+    };
     /**
              * Возвращает массив из значений заключённых внутри чекбоксов в таблице table-tableName-table
              */
@@ -2622,6 +2631,22 @@ if (state === "edit" || state === "addnew") {
 }
 else if (state === "list") {
     initListListeners();
+    // В самом начел загрузки обновим таблицу в режиме List отдельным ajax запросом
+    try {
+        var tableName = Light_1.getModule();
+        var listTable = table.get(tableName);
+        var findid = Light_1.getPageParam('listInitialFindid');
+        var page = Light_1.getPageParam('listInitialPage');
+        // В массив отправляемых данных поставляе начальную страницу с которой нужно начат рендеринг
+        var data = { page: page };
+        if (findid) {
+            data[tableName + "_findid"] = findid;
+        }
+        listTable.reload(data);
+    }
+    catch (e) {
+        console.log(e);
+    }
 }
 
 
@@ -3996,6 +4021,11 @@ var Filters = /** @class */ (function () {
             }
         };
         this.onResetClick = function () {
+            if (_this.table.isLoading()) {
+                // Если в момент нажатия RESET уже происходила какая-то загрузка данных, то её нужно прервать,
+                _this.table.cancelReload();
+                _this.afterStopFiltering();
+            }
             _this.reset();
             _this.resetHandlers.forEach(function (handler) { return handler(); });
         };
@@ -4255,21 +4285,25 @@ var Filters = /** @class */ (function () {
             page: 1
         };
         this.table.reload(reloadParams, function () {
-            _this.$form.removeClass("loading-opacity");
-            $form.find(".btn-filter").prop("disabled", false);
             var hiddenInput = _this.table.getDivNode().find("input[name=filterValues]");
             if (hiddenInput.length > 0) {
                 var newValues = Light_1.parseJson(hiddenInput.val());
                 for (var fieldKey in newValues) {
                     _this.setValue(fieldKey, newValues[fieldKey]);
                 }
-                //Подсветим активные фильтры жирным и семеним иконку у кнопки Filter, если нужно
+                // Подсветим активные фильтры жирным и семеним иконку у кнопки Filter, если нужно
                 _this.highlightActive();
                 // Запустим механизм скрытия скрытых фильтров заново
                 // это нужно чтобы отобразить те фильтры, у которых значение отличается от значения по умолчанию
                 _this.refreshInvisibleClasses();
             }
+            _this.afterStopFiltering();
         });
+    };
+    Filters.prototype.afterStopFiltering = function () {
+        this.$form
+            .removeClass("loading-opacity")
+            .find(".btn-filter").prop("disabled", false);
     };
     Filters.prototype.showWidget = function (clickTarget) {
         var _this = this;

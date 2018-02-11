@@ -2,11 +2,11 @@
   "config" : {
     "optimize-autoloader": true,
     "platform": {
-      "php": "7.1"
+      "php": "7.2"
     }
   },
   "require": {
-    "php": "7.1.* || 7.2.*",
+    "php": "7.2.*",
     "ext-gd": "*",
     "ext-mbstring": "*",
     "ext-curl": "*",

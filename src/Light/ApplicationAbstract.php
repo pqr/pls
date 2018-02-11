@@ -244,22 +244,27 @@ abstract class ApplicationAbstract
         Db::connect();
     }
 
+    public static function getAutolaunchFullClassName(string $cliName)
+    {
+        if (strpos($cliName, 'Light/') === 0) {
+            // Если имя Autolaunch скприта начинается с Light/, значит будем искать соответсвующий класс в папке движке
+            return 'Light\\Autolaunch\\' . str_replace('Light/', '', $cliName);
+        }
+
+        // Это какой-то Autolaunch из проекта
+        return PROJECT_NAMESPACE . "\\Autolaunch\\$cliName";
+    }
+
     public function runAutolaunchCli()
     {
         //Попробуем запустить этот Autolaunch скрипт
-        $autolaunchName = $GLOBALS['argv'][1] ?? null;
-        if (!$autolaunchName) {
+        $autolaunchCliName = $GLOBALS['argv'][1] ?? null;
+        if (!$autolaunchCliName) {
             print "Autolaunch name not provided";
             exit(1);
         }
 
-        if (strpos($autolaunchName, 'Light/') === 0) {
-            // Если имя Autolaunch скприта начинается с Light/, значит будем искать соответсвующий класс в папке движке
-            $className = 'Light\\Autolaunch\\' . str_replace('Light/', '', $autolaunchName);
-        } else {
-            // Это какой-то Autolaunch из проекта
-            $className = PROJECT_NAMESPACE . "\\Autolaunch\\$autolaunchName";
-        }
+        $className = self::getAutolaunchFullClassName($autolaunchCliName);
 
         /** @var AutolaunchAbstract $autolaunchObj */
         $autolaunchObj = new $className;

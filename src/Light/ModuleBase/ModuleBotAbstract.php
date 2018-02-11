@@ -118,7 +118,7 @@ abstract class ModuleBotAbstract
             'TelegramID' => $this->telegramId,
             'Query' => $_GET['text'] ?? '',
             'Response' => $message
-        ], 'telegramlog');
+        ], 'log_telegram');
         Response::json(['basis_message' => $message], $status);
     }
 

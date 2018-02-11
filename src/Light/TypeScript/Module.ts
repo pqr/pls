@@ -431,4 +431,20 @@ if (state === "edit" || state === "addnew") {
     $("input[name=Name]").focus();
 } else if (state === "list") {
     initListListeners();
+
+    // В самом начел загрузки обновим таблицу в режиме List отдельным ajax запросом
+    try {
+        const tableName = getModule();
+        const listTable = table.get(tableName);
+        const findid = getPageParam('listInitialFindid');
+        const page = getPageParam('listInitialPage');
+        // В массив отправляемых данных поставляе начальную страницу с которой нужно начат рендеринг
+        let data:any = {page: page};
+        if (findid) {
+            data[`${tableName}_findid`] = findid;
+        }
+        listTable.reload(data);
+    } catch (e) {
+        console.log(e);
+    }
 }

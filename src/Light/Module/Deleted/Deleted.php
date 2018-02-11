@@ -2,7 +2,9 @@
 
 namespace Light\Module\Deleted;
 
+use Light\Config;
 use Light\Db;
+use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
 use Light\Img;
 use Light\Js;
@@ -31,66 +33,129 @@ class Deleted extends ModuleAbstract
     protected function initFilters()
     {
         $this->addFilters(
-            F::createSelect('TableName', [
-                'name' => 'Table Name',
-                'options' => "SELECT DISTINCT(TableName) FROM deleted ORDER BY TableName"
+            CommonFields::filterCreatedBy(),
+
+            CommonFields::filterModuleId(),
+
+            CommonFields::filterTableId(),
+
+            F::createString('FilterName', [
+                'name' => Config::$lang === 'ru' ? 'Текст' : 'Text',
+                'sqlWhere' => "ID in (SELECT deletedID FROM deleted_text WHERE JSON LIKE '%{value}%')"
             ]),
-            F::createSelect('CreatedBy', ['name' => 'Deleted By', 'options' => 'user']),
-            F::createInt('RecordID', ['name' => 'Record ID', 'editAlign' => 'left']),
-            F::createString('Query', ['name' => 'SQL Query']),
-            F::createString('JSON', ['name' => 'JSON Data', 'title' => 'Usage: "ID": "12345"'])
+
+            CommonFields::filterMasterId(),
+
+            CommonFields::filterRecordId(),
+
+            F::createInt('TraceID', ['name' => 'Trace ID', 'editAlign' => 'left', 'editWidth' => 'medium'])
         );
+
         $this->addFiltersDatesFromUntil($this->getField('CreatedDateTime'));
+
+        $this->filtersLayout = [
+            [
+                'CreatedBy',
+                'ModuleID',
+                'TableID',
+                'FilterName'
+            ],
+            [
+                'CreatedDateTime',
+                'MasterID',
+                'RecordID',
+                'TraceID'
+            ]
+        ];
 
     }
 
     public function initViewSubmenu()
     {
-        $this->addSubmenuItemViewFuncPost('Restore', Img::icon('fa-undo icon-green'), 'Restore');
-        $this->addSubmenuItemViewFunc('Find Relations', Img::iconSearch(), 'FindRelations');
+        $textRestore = Config::$lang === 'ru' ? 'Восстановить' : 'Restore';
+        $this->addSubmenuItemViewFuncPost($textRestore, Img::icon('fa-undo icon-green'), 'Restore');
+
+        $textFindRelated = Config::$lang === 'ru' ? 'Найти удалённые одновременно' : 'Find deleted the same time';
+        $this->addSubmenuItemViewFunc($textFindRelated, Img::iconSearch(), 'FindRelations');
     }
 
     public function viewGetFindRelations()
     {
-        $from = new \DateTime($this->_obj['CreatedDateTime'] . ' - 5 seconds');
-        $until = new \DateTime($this->_obj['CreatedDateTime'] . ' + 5 seconds');
+        if ($this->_obj['TraceID']) {
 
-        $filterValues = [
-            'CreatedBy' => $this->_obj['CreatedBy'],
-            'CreatedDateTimeFrom' => $from->format('Y-m-d H:i:s'),
-            'CreatedDateTimeUntil' => $until->format('Y-m-d H:i:s'),
-        ];
+            $filterValues = [
+                'TraceID' => $this->_obj['TraceID'],
+            ];
+
+        } else {
+
+            $from = new \DateTime($this->_obj['CreatedDateTime'] . ' - 5 seconds');
+            $until = new \DateTime($this->_obj['CreatedDateTime'] . ' + 5 seconds');
+
+            $filterValues = [
+                'CreatedBy' => $this->_obj['CreatedBy'],
+                'CreatedDateTimeFrom' => $from->format('Y-m-d H:i:s'),
+                'CreatedDateTimeUntil' => $until->format('Y-m-d H:i:s'),
+            ];
+
+        }
 
         Response::redirect('Deleted', ['filterValues' => json_encode($filterValues)]);
     }
 
     public function viewPostRestore()
     {
-        $this->restore($this->_obj->getData(), $this->_obj->getId());
+        $this->restore($this->_obj->getId());
         Response::redirect('Deleted', ['id' => $this->_obj->getId()]);
     }
 
     public function massactionRestore(array $ids)
     {
-        $data = Db::getAssoc("SELECT ID, JSON, TableName FROM deleted WHERE ID IN (@a)", $ids);
-
-        foreach ($data as $deleteId => $rowData) {
-            $this->restore($rowData, $deleteId);
+        foreach ($ids as $id) {
+            $this->restore($id);
         }
         Response::redirect('Deleted');
     }
 
-    private function restore($data, $deleteId)
+    private function restore(int $deleteId)
     {
-        $dataRow = json_decode($data['JSON'], true);
-        $insertId = Db::insertRow($dataRow, $data['TableName']);
-
-        if ($insertId) {
-            $deletedObj = new DeletedObj();
-            $deletedObj->setId($deleteId);
-            $deletedObj->updateDb(['Restored' => 1]);
-            Session::flashInfo('Restored as ' . $insertId);
+        $tableId = Db::getOne("SELECT TableID FROM deleted WHERE ID = $deleteId");
+        if (!$tableId) {
+            $msg = Config::$lang === 'ru' ? "Не удалось найти восстанавливаемую запись ID $deleteId" : "Failed to restore, because deleted record ID = $deleteId not exists any more";
+            Session::flashError($msg);
+            return 0;
         }
+        $tableName = Db::getOne("SELECT TableName FROM dblog_table WHERE ID = $tableId");
+        if (!$tableName) {
+            $msg = Config::$lang === 'ru' ? "Не удалось найти имя таблицы по TableID $tableId" : "Failed to restore, because unknown Table ID $tableId";
+            Session::flashError($msg);
+            return 0;
+        }
+        $json = Db::getOne("SELECT `JSON` FROM deleted_text WHERE deletedID = $deleteId");
+        if (!$json) {
+            $msg = Config::$lang === 'ru' ? "Не удалось найти восстанавливаемые данные ID $deleteId" : "Failed to restore, unable to fetch data to restore ID $deleteId";
+            Session::flashError($msg);
+            return 0;
+        }
+
+        try {
+            $data = json_decode($json, true);
+            $insertId = Db::insertRow($data, $tableName);
+            if (!$insertId) {
+                $msg = Config::$lang === 'ru' ? "Не удалось восстановить ID $deleteId" : "Failed to restore ID $deleteId";
+                Session::flashError($msg);
+                return 0;
+            }
+        } catch (\Throwable $e) {
+            Session::flashError($e->getMessage());
+            return 0;
+        }
+
+        $deletedObj = new DeletedObj();
+        $deletedObj->setId($deleteId);
+        $deletedObj->updateDb(['Restored' => 1]);
+        $msg = Config::$lang === 'ru' ? 'Восстановлено' : 'Restored';
+        Session::flashInfo("$msg ID $insertId");
 
         return $insertId;
     }
@@ -102,111 +167,4 @@ class Deleted extends ModuleAbstract
         }
         return '';
     }
-
-    /**
-     * Переопределяем метод Deleted, чтобы отключить пажинацию и ускорить поиск/загрузку
-     */
-    protected function tableLoadData()
-    {
-        if (isset($_GET['excelIds']) && $this->isStateListExcel()) {
-
-            $idsString = implode(',', array_map('intval', explode(',', $_GET['excelIds'])));
-            $sqlOrderBy = [];
-            $sortField = $this->getSortField();
-            if ($sortField) {
-                $sqlOrderBy[] = $sortField->tableOrderBy . ' ' . $this->getSortOrder();
-            }
-
-            if ($this->tableDefaultOrderBy) {
-                $sqlOrderBy[] = $this->tableDefaultOrderBy;
-            }
-
-            $sqlOrderBy = implode(', ', $sqlOrderBy);
-
-        } else {
-
-            //Сделаем некую оптимизацию: сначала вынем все ID записей, которые должны в итоге попасть в таблицу
-            //После этого достанем все поля, указав в условии WHERE ID IN (...)
-            //Это значительно ускорит запрос, т.к. сортировка сначала LIMIT будут производиться на лёгком наборе ID
-            //При выборке остальных колонок объём данных будет уже меньше за счёт ограниченного набора WHERE ID IN (...)
-
-            $queryIds = "SELECT ID";
-
-            //Проверим поле по которому идёт сортировка. Если оно вычисляемое, его тоже придётся добавить в этот запрос
-            //Причём у этого вычисляемого поля могут быть зависимости, поэтому используем $this->getFieldset()->getSqlSelect()
-            $sortField = $this->getSortField();
-            if ($sortField && $sortField->getSqlSelect()) {
-                $queryIds .= ', ' . $this->getFieldset()->getSqlSelect([$sortField->key]);
-            }
-
-            $queryIds .= " FROM " . Db::quote($this->getDbTable());
-
-            $sqlWhere = $this->getFiltersSqlWhere();
-            if ($sqlWhere) {
-                $queryIds .= " WHERE $sqlWhere";
-            }
-
-            //Cформируем условие сортировки.
-            //Оно может состоять из сортировки указанной в trait TableSortable и из tableDefaultOrderBy
-            //Сначала соберём всё в массив, потом из него склеим строку
-            $sqlOrderBy = [];
-            if ($sortField) {
-                $sqlOrderBy[] = $sortField->tableOrderBy . ' ' . $this->getSortOrder();
-            }
-
-            if ($this->tableDefaultOrderBy) {
-                $sqlOrderBy[] = $this->tableDefaultOrderBy;
-            }
-
-            $sqlOrderBy = implode(', ', $sqlOrderBy);
-
-            if ($sqlOrderBy) {
-                $queryIds .= " ORDER BY $sqlOrderBy";
-            }
-
-            if ($this->isStateListExcel()) {
-                $queryIds .= ' LIMIT ' . $this->getTableExcelMaxRows();
-            } elseif ($this->allowPagination) {
-                $page = $this->getTablePage();
-                $rowsPerPage = $this->getTableRowsPerPage();
-                $queryIds .= ' LIMIT ' . ($page - 1) * $rowsPerPage . ', ' . $rowsPerPage;
-            }
-
-            //Получим все ID из базы
-            $res = Db::query($queryIds);
-            if ($res->num_rows) {
-                $idsString = '0';
-                while ($row = $res->fetch_row()) {
-                    $idsString .= ',' . $row[0];
-                }
-            } else {
-                $idsString = false;
-            }
-            $res->free();
-        }
-
-        if ($idsString) {
-
-
-            //Сразу посчитаем общее количество строк, если это не режим экспорта в Excel
-            $this->setTableTotalRecordsFound(1000);
-
-            //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->_tableData
-            $query = "SELECT ";
-
-            $selectFieldKeys = $this->getFieldsetShowed()->getKeys();
-            $query .= $this->getFieldset()->getSqlSelect($selectFieldKeys);
-
-            $query .= " FROM " . Db::quote($this->getDbTable());
-            $query .= " WHERE ID IN (" . $idsString . ")";
-
-            if ($sqlOrderBy) {
-                $query .= " ORDER BY " . $sqlOrderBy;
-            }
-
-            $this->_tableQueryRes = Db::query($query);
-        }
-    }
-
-
 }

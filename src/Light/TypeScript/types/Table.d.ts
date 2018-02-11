@@ -1,4 +1,3 @@
-/// <reference types="jquery" />
 export declare type FilterChangeHandler = (newValue: string, $node: JQuery) => void;
 export declare type SelectRowHandler = (selected: boolean, $tr: JQuery) => void;
 export declare type SelectAllHandler = (allSelected: boolean) => void;
@@ -44,6 +43,8 @@ export declare class Table {
              */
     selectAll(allSelected: boolean): void;
     reload(data?: ReloadParams, callback?: () => void): JQueryXHR;
+    isLoading(): boolean;
+    cancelReload(): void;
     /**
              * Возвращает массив из значений заключённых внутри чекбоксов в таблице table-tableName-table
              */

@@ -209,7 +209,7 @@ class Email extends AutolaunchAbstract
             }
             $this->_msgBuff->addHtml('Body: ' . Html::getTruncatedText($record['Body'], 0));
 
-            // Если отправить удалось, то перемещаем запись из queue_email в emaillog
+            // Если отправить удалось, то перемещаем запись из queue_email в log_email
             $this->moveToLog($record);
 
         } else {
@@ -244,7 +244,7 @@ class Email extends AutolaunchAbstract
         unset($record['ID']);
         unset($record['PID']);
         $record['RetryCount']++;
-        $logId = Db::insertRow($record, 'emaillog');
+        $logId = Db::insertRow($record, 'log_email');
 
         // Переместим все файлы вложений в отдельную папку log
         $attachementsDir = Mailer::getAttachementsDir($recordId);

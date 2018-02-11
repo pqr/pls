@@ -329,6 +329,7 @@ abstract class ObjAbstract implements \ArrayAccess
      * Устанавилвает id этого объекта и загружает его из базы. Возвращает true в случае удачной загрузки
      * @param array $fieldKeys
      * @return bool
+     * @throws \Exception
      */
     public function loadData(array $fieldKeys = [])
     {
@@ -448,7 +449,8 @@ abstract class ObjAbstract implements \ArrayAccess
     {
         $nameFieldKey = $this->getNameFieldKey();
         if (array_key_exists($nameFieldKey, $this->_data) && $this->hasField($nameFieldKey)) {
-            $description = $this->getFieldHtml($nameFieldKey);
+            // Получаем HTML представление поля в режиме forLog
+            $description = $this->getField($nameFieldKey)->getHtml($this->_data[$nameFieldKey], $this->_data, false, true);
         } else {
             $description = 'Unknown';
         }
@@ -465,6 +467,7 @@ abstract class ObjAbstract implements \ArrayAccess
      * @param array $fieldsData
      * @param string $dbLogMsg
      * @return int $id вставленного объекта
+     * @throws \Exception
      */
     public function insertDb(array $fieldsData, $dbLogMsg = '')
     {
@@ -486,7 +489,7 @@ abstract class ObjAbstract implements \ArrayAccess
         //Запишем логи о вставке, в качестве oldData передаём пустой массив
         $newData = $this->_data;
 
-        $msg = '<span class="good">Created</span>';
+        $msg = '<span class="good">' . (Config::$lang === 'ru' ? 'Создан' : 'Created') . '</span>';
         if ($dbLogMsg) {
             $msg .= ' ' . $dbLogMsg;
         }
@@ -497,11 +500,16 @@ abstract class ObjAbstract implements \ArrayAccess
 
     public function deleteDb($dbLogMsg = '')
     {
-        //Безопасное удаление в "корзину" (данные сериализуются в JSON и сохраняются в таблицу deleted)
-        Db::deleteRow($this->getDbTable(), 'ID', $this->_id);
+        $masterModule = (string)$this->getMasterModuleForDbLog();
+        $masterId = (int)($this->_masterIdForDbLog ?: $this->_id);
+        $tableName = (string)$this->getDbTable();
+        $recordId = (int)$this->_id;
 
-        //запишем в базу логов
-        $msg = $this->getDescriptionHtml() . ' <span class="bad">deleted</span>';
+        //Безопасное удаление в "корзину" (данные сериализуются в JSON и сохраняются в таблицу deleted)
+        Db::deleteRow($tableName, $recordId, $masterModule, $masterId);
+
+        // запишем в базу логов
+        $msg = $this->getDescriptionHtml() . ' <span class="bad">' . (Config::$lang === 'ru' ? 'удалён' : 'deleted') . '</span>';
         if ($dbLogMsg) {
             $msg .= ' ' . $dbLogMsg;
         }

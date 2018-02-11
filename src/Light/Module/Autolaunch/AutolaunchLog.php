@@ -18,7 +18,7 @@ class AutolaunchLog extends Table
 
     public function __construct(string $className)
     {
-        parent::__construct('autolaunchlog');
+        parent::__construct('AutolaunchLog');
 
         $this->className = $className;
         $this->tableLinkModule = 'Autolaunch';
@@ -61,7 +61,7 @@ class AutolaunchLog extends Table
                     , CreatedBy
                     , ShortMessage
                     , WorkTime
-                   FROM autolaunchlog
+                   FROM log_autolaunch
                    WHERE ClassName=@s
                    ORDER BY ID DESC";
 

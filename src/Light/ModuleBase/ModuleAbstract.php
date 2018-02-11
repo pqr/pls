@@ -506,6 +506,21 @@ abstract class ModuleAbstract extends Table
         return $tdataSubtables;
     }
 
+    private $_alertSaveButton = [];
+
+    protected function setAlertSaveButton(
+        ?string $text,
+        bool $hidden = false,
+        string $icon = 'fa-exclamation-triangle',
+        string $color = '#b35900'
+    ) {
+        if ($text) {
+            $this->_alertSaveButton = [$text, $hidden, $icon, $color];
+        } else {
+            $this->_alertSaveButton = [];
+        }
+    }
+
     private function getFormactionsHtml()
     {
         // Кнопку "Save" специально делаем button type="button"
@@ -513,7 +528,14 @@ abstract class ModuleAbstract extends Table
         $textSave = Config::$lang === 'ru' ? 'Сохранить' : 'Save';
         $textCancel = Config::$lang === 'ru' ? 'Отмена' : 'Cancel';
         $textObjectName = $this->_textObjectNameGen ?: $this->_textObjectName;
+        $alertSaveButton = '';
+        if ($this->_alertSaveButton) {
+            [$text, $hidden, $icon, $color] = $this->_alertSaveButton;
+            $alertSaveButton = '<div class="alert-save-button ' . ($hidden ? 'display-none' : '') . '" style="color: ' . $color . ';"><i class="fa ' . $icon . '"></i> ' . $text . '</div>';
+        }
+
         $contentHtml = '<div class="formactions_fixed">'
+            . $alertSaveButton
             . '<button type="button" class="waves-effect waves-light btn btn-save bgcolor-btn-primary" title="Ctrl + S">'
             . "$textSave $textObjectName"
             . '</button>'
@@ -793,7 +815,7 @@ abstract class ModuleAbstract extends Table
         Response::redirect($this->getModule(), $urlParams);
     }
 
-    private function proceedViewFunc()
+    protected function proceedViewFunc()
     {
         $this->_state = self::STATE_VIEW_FUNC;
 
@@ -1151,7 +1173,7 @@ abstract class ModuleAbstract extends Table
         //Проверим права на запись текущего объекта
         if (!$this->allowEdit || !User::hasWriteAccess() || !$this->hasWriteAccessRightToObj($this->_obj)) {
             //При обычном запросе сделаем редирект на режим просмотра с flash сообщенеим
-            Session::flashError('No acces to edit');
+            Session::flashError('No access to edit');
             $this->redirectToView();
         }
 
@@ -1164,6 +1186,7 @@ abstract class ModuleAbstract extends Table
         $this->initEditJsData();
         $this->addModuleSessionNextPrevLinks($this->_obj, 'editid');
         $this->initEditSubmenu();
+        $this->initEdit();
 
         $formActionUrlParams = ['submitid' => $this->_obj->getId()] + $this->getModuleSessionUrlParams() + $this->getSubtablesFindidUrlParams();
         $tdata = [
@@ -1190,6 +1213,13 @@ abstract class ModuleAbstract extends Table
                 'moduleSessionParams' => $this->getModuleSessionUrlParams()
             ]
         );
+    }
+
+    /**
+     * Метод для переопределения в классах потоках
+     */
+    protected function initEdit()
+    {
     }
 
     /**
@@ -1647,8 +1677,7 @@ abstract class ModuleAbstract extends Table
         array $oldData,
         Msg $msgBuff,
         $fromMultipleUpdate
-    )
-    {
+    ) {
     }
 
     /**
@@ -1669,8 +1698,7 @@ abstract class ModuleAbstract extends Table
         array $oldData,
         Msg $msgBuff,
         $fromMultipleUpdate
-    )
-    {
+    ) {
     }
 
     /**
@@ -1876,8 +1904,7 @@ abstract class ModuleAbstract extends Table
         $className,
         $description,
         $countLinkedIds
-    )
-    {
+    ) {
         $outHtml = $description . ': <strong>' . $countLinkedIds . '</strong> ';
         $link = $this->whileDeleteGetErrorMessageLinkViewMore($oldId, $className);
         if ($link) {
@@ -1927,6 +1954,20 @@ abstract class ModuleAbstract extends Table
         ])->getHtmlInput('');
     }
 
+    private $_alertDeleteButton = [];
+
+    protected function setAlertDeleteButton(
+        ?string $text,
+        string $icon = 'fa-exclamation-triangle',
+        string $color = '#b35900'
+    ) {
+        if ($text) {
+            $this->_alertDeleteButton = [$text, $icon, $color];
+        } else {
+            $this->_alertDeleteButton = [];
+        }
+    }
+
     protected function getDeleteConfirmationDialogHtml()
     {
         $oldId = $this->_obj->getId();
@@ -1957,9 +1998,15 @@ abstract class ModuleAbstract extends Table
             return $outHtml;
         }
 
+        $alertDeleteButton = '';
+        if ($this->_alertDeleteButton) {
+            [$text, $icon, $color] = $this->_alertDeleteButton;
+            $alertDeleteButton = '<div class="alert-delete-button" style="color: ' . $color . ';"><i class="fa ' . $icon . '"></i> ' . $text . '</div>';
+        }
+
         $textDelete = Config::$lang === 'ru' ? 'Удалить' : 'Delete';
 
-        return $textDelete . ' <strong>' . $this->_obj->getDescriptionHtml() . '</strong>?';
+        return $alertDeleteButton . '<div>' . $textDelete . ' <strong>' . $this->_obj->getDescriptionHtml() . '</strong>?</div>';
     }
 
     /**
@@ -2084,7 +2131,8 @@ abstract class ModuleAbstract extends Table
             $this->_state = self::STATE_LIST;
         }
 
-        //Параметр из класса Table: имя модуля на который автоматически делать ссылки в таблице
+        // Параметр из класса Table: имя модуля на который автоматически делать ссылки в таблице
+        // Этот параметр также определяем модуль для перехода при двойном клике
         $this->tableLinkModule = $this->tableLinkModule ?: $this->getModule();
 
         $this->initCssJs();
@@ -2128,18 +2176,22 @@ abstract class ModuleAbstract extends Table
         //Метод initList() переопределяется в классх потоках - там добавляются поля необходимые только для режима List
         $this->initList();
 
-        $this->tableLoadData();
-
         if ($this->isStateListExcel()) {
 
             //Запрос через кнопку Export to Excel
+            $this->tableLoadData();
             $this->sendExcel();
 
         } elseif (Request::isAjax()) {
 
+            $this->tableLoadData();
             print $this->getHtmlTableForAjax();
 
         } else {
+
+            // При первоначальном рендеринге не загружаем данные
+            // Данные появятся на экране пользователя в результате ajax запроса, который произойдёт сразу после загрузки
+            // страницы
 
             $moduleName = ModuleRegister::getModuleName($this->getModule());
             Response::setPageHeadHtml('<strong>' . $moduleName . '</strong>');
@@ -2151,7 +2203,7 @@ abstract class ModuleAbstract extends Table
 
             //Это обычный запрос на рендринг таблицы в режиме List
             $tdata = [
-                'table' => $this->getHtmlTable(),
+                'table' => $this->getHtmlTableDivWrapper(). '</div>',
                 'buttons' => $this->getListButtons(),
                 'filters' => $this->getFiltersHtml()
             ];
@@ -2164,7 +2216,9 @@ abstract class ModuleAbstract extends Table
     {
         Response::addJsData([
             'state' => 'list',
-            'tableTotalRowCalcFieldsKeys' => $this->_tableTotalRowCalcFieldsKeys
+            'listInitialFindid' => $this->getTableFindIdFromRequest(),
+            'listInitialPage' => $this->getTablePage(),
+            'tableTotalRowCalcFieldsKeys' => $this->_tableTotalRowCalcFieldsKeys,
         ]);
     }
 
@@ -2284,8 +2338,7 @@ abstract class ModuleAbstract extends Table
         ?array $urlParams = [],
         $blank = false,
         $urlHash = ''
-    )
-    {
+    ) {
         $urlParams['id'] = $this->_obj->getId();
         $urlParams['func'] = $viewFunc;
         $urlParams += $this->getModuleSessionUrlParams();
@@ -2305,8 +2358,7 @@ abstract class ModuleAbstract extends Table
         $imgHtml,
         $viewFunc,
         array $urlParams = []
-    )
-    {
+    ) {
         $this->addSubmenuItemViewFunc($text, $imgHtml, $viewFunc, $urlParams, false, 'post');
     }
 
@@ -2315,8 +2367,7 @@ abstract class ModuleAbstract extends Table
         $imgHtml,
         $viewFunc,
         array $urlParams = []
-    )
-    {
+    ) {
         $this->addSubmenuItemViewFunc($text, $imgHtml, $viewFunc, $urlParams, false, 'ajax');
     }
 
@@ -2891,8 +2942,7 @@ abstract class ModuleAbstract extends Table
         string $optgroup = '',
         string $class = null,
         bool $blank = false
-    )
-    {
+    ) {
         //Если передан флаг blank, значит нужно откывать новое окно браузера при сабмите massaction
         //Это происходит в js окружении, поэтому нужно как-то передать информацию в js окружение, что данный massaction
         //следует открывать в новом окне. Используем для этого css class

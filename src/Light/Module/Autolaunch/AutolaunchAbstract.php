@@ -52,7 +52,7 @@ abstract class AutolaunchAbstract
             'CreatedBy' => User::getId()
         ];
 
-        $this->_logId = Db::insertRow($initialLogData, 'autolaunchlog');
+        $this->_logId = Db::insertRow($initialLogData, 'log_autolaunch');
     }
 
     protected function saveLog()
@@ -75,7 +75,7 @@ abstract class AutolaunchAbstract
             'WorkTime' => $workTime
         ];
 
-        Db::updateRow($fieldsData, 'autolaunchlog', $this->_logId);
+        Db::updateRow($fieldsData, 'log_autolaunch', $this->_logId);
     }
 
     private function saveLogToFile($workTime)

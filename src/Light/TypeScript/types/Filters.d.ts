@@ -22,6 +22,7 @@ export declare class Filters {
     private reset();
     private onResetClick;
     private submit();
+    private afterStopFiltering();
     private showWidget(clickTarget);
     private hideWidget();
     private onWidgetLikeResetClick;

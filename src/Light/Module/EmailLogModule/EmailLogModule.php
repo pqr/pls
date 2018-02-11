@@ -14,7 +14,7 @@ class EmailLogModule extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->setDbTable('emaillog');
+        $this->setDbTable('log_email');
 
         $this->setNameFieldKey('ID');
 
@@ -37,7 +37,8 @@ class EmailLogModule extends ModuleAbstract
             F::createString('Subject'),
             F::createString('Body', ['modes' => F::MODE_VIEW]),
             F::createString('ContentType'),
-            F::createInt('RetryCount', ['tableAlign' => 'center', 'cssClassZero' => 'bad'])
+            F::createInt('RetryCount', ['tableAlign' => 'center', 'cssClassZero' => 'bad']),
+            F::createText('Attachements')
 
         );
 

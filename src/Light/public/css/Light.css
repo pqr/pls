@@ -957,6 +957,15 @@ td.col-right table.form > tbody > tr > td {
     z-index: 1;
 }
 
+.alert-save-button, .alert-delete-button {
+    padding: 0 0 10px 5px;
+    opacity: 0.8;
+}
+
+.alert-save-button i, .alert-delete-button i {
+    margin-right: 0.5em;
+}
+
 .buttonsbar {
     margin: 12px 0;
 }

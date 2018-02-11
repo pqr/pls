@@ -144,7 +144,7 @@ abstract class ReportAbstract extends Table
         //Регистрируем поля по месяцам
         for ($m = 1; $m <= 12; $m++) {
             $fieldKey = "Month$m";
-            $name = Config::$lang === 'ru' ? Misc::getRusMonthName($m, false, true) : date('M', mktime(0, 0, 0, $m));
+            $name = Config::$lang === 'ru' ? Misc::getRusMonthName($m) : date('M', mktime(0, 0, 0, $m));
             $params['name'] = $name;
             $this->addField(F::create($fieldKey, $type, $params));
             $this->_tableTotalRowCalcFieldsKeys[] = $fieldKey;

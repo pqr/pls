@@ -9,7 +9,7 @@ class AutolaunchLogObj extends ObjAbstract
 {
     public function __construct()
     {
-        $this->setDbTable('autolaunchlog');
+        $this->setDbTable('log_autolaunch');
 
         $this->addFields(
             CF::id(),

@@ -1,4 +1,5 @@
 <?php
+
 namespace Light;
 /**
  * Класс содержащий все настройки в виде статических свойст - для переопределения в проекте
@@ -14,6 +15,7 @@ class Config
     public static $encryptPasswords = false;
 
     public static $localUrl = 'http://localhost';
+    public static $localUrlNetIp = 'http://192.168.20.251';
 
     /** @var string дополнительное слово для строки заголовка, на development компьютере удобно установить в 'DEV' */
     public static $title;
@@ -51,6 +53,9 @@ class Config
 
     /** @var string путь к исполняемому файлу утилиты wkhtmltopdf, используемой для генерации PDF */
     public static $wkhtmltopdfPath = 'wkhtmltopdf';
+
+    /** @var string путь к исполняемому файлу утилиты Athena, используемой для генерации PDF */
+    public static $athenaPath = 'docker run --security-opt seccomp:unconfined --rm -v $(pwd):/converted/ arachnysdocker/athenapdf athenapdf';
 
     /** @var string путь к исполняемому файлу gswin64c.exe - используется для разбивки PDF на маленькие файлы и для перевода PDF в PNG */
     public static $ghostScriptPath = 'gs';
@@ -90,5 +95,8 @@ class Config
     public static $useInputTypeDate = false;
 
     public static $telegramBotToken = '';
+
+    // Использовать Athena вместо Wkhtmltopdf
+    public static $useAthena = false;
 
 }

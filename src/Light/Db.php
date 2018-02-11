@@ -15,8 +15,10 @@ class Db
     /** @var \mysqli */
     public static $mysqli;
 
-    public static function connect() {
-        self::$mysqli = new \mysqli(Config::$mysqlHost, Config::$mysqlUser, Config::$mysqlPassword, Config::$mysqlDb, Config::$mysqlPort);
+    public static function connect()
+    {
+        self::$mysqli = new \mysqli(Config::$mysqlHost, Config::$mysqlUser, Config::$mysqlPassword, Config::$mysqlDb,
+            Config::$mysqlPort);
         if (\mysqli_connect_errno()) {
             die(\mysqli_connect_errno() . ' ' . \mysqli_connect_error());
         }
@@ -287,6 +289,7 @@ class Db
      * @param $query
      * @param array ...$params
      * @return array
+     * @throws \Exception
      */
     public static function getRow($query, ...$params): array
     {
@@ -308,6 +311,7 @@ class Db
      * @param $query
      * @param array ...$params
      * @return array
+     * @throws \Exception
      */
     public static function getRowValues($query, ...$params): array
     {
@@ -406,6 +410,7 @@ class Db
      * @param string $table
      * @param bool $useReplace
      * @return int
+     * @throws \Exception
      */
     public static function insertRows(array $rows, $table, $useReplace = false)
     {
@@ -438,6 +443,7 @@ class Db
      * @param  string $table
      * @param  $id
      * @return int affected rows
+     * @throws \Exception
      */
     public static function updateRow(array $fieldValues, string $table, $id)
     {
@@ -454,48 +460,45 @@ class Db
         return self::getAffectedRows();
     }
 
-    /**
-     * Безопасное удаление записей в базе - удалённая запись сериализуется и записывается в таблицу deleted
-     * @param string $tableName записывается в поле deleted.TableName
-     * @param string $keyField
-     * @param $keyValue
-     * @param bool|string $fullQuery можно переопределить запрос на удаление своим собственным (если нужны хитрые условия)
-     *               тогда первые два параметра записываются в табилцу deleted только для справки (не влияют на запрос DELETE)
-     * @return bool
-     */
-    public static function deleteRow(string $tableName, string $keyField, $keyValue, $fullQuery = false)
+    public static function deleteRow(string $tableName, int $id, string $masterModule = '', int $masterId = 0)
     {
-        //Используем либо явно переданный запрос на удаление, либо генерируем свой запрос на основе переданных параметров
-        if ($fullQuery) {
-            $delQuery = $fullQuery;
-        } else {
-            $delQuery = "DELETE
-                         FROM " . self::quote($tableName) . "
-                         WHERE " . self::quote($keyField) . " = '" . self::$mysqli->real_escape_string($keyValue) . "'";
+        static $traceId;
+
+        if (!$traceId) {
+            // Зарегистрируем запись в таблице deleted_trace, чтобы получить уникальный autoncrement
+            // далее полученный TraceID будем добавлять ко всем удаляемым записям
+            $traceId = Db::insertRow(['CreatedBy' => User::getId()], 'deleted_trace');
         }
 
         //Сформируем запрос на выборку данных удаляемой записи(ей)
-        $selectQuery = "SELECT * " . substr($delQuery, 6);
+        $selectQuery = "SELECT * FROM " . self::quote($tableName) . " WHERE ID = $id";
         $data = self::getAll($selectQuery);
         if ($data) {
+            $tableId = DbLog::getTableId($tableName);
+            $moduleId = DbLog::getModuleId($masterModule);
             //Если были найдены какие-то данные в базе, сериализуем их!
             foreach ($data as $row) {
-                $json = json_encode($row);
-
-                $insertData = [
+                // Сохраняем метаинформацию в таблицу deleted
+                $logId = self::insertRow([
                     'CreatedBy' => User::getId(),
-                    'TableName' => $tableName,
-                    'RecordID' => $keyValue,
-                    'Query' => $delQuery,
-                    'JSON' => $json
-                ];
+                    'ModuleID' => $moduleId,
+                    'MasterID' => $masterId,
+                    'TableID' => $tableId,
+                    'RecordID' => $id,
+                    'TraceID' => $traceId,
+                ], 'deleted');
 
-                //Сохраняем сериализованные данные в таблице deleted
-                self::insertRow($insertData, 'deleted');
+                // Сохраняем JSON данные в отдельную таблицу deleted_text
+                $json = json_encode($row, JSON_UNESCAPED_UNICODE);
+                self::insertRow([
+                    'deletedID' => $logId,
+                    'JSON' => $json
+                ], 'deleted_text');
             }
         }
 
         //Физически удаляем требуюемую запись
+        $delQuery = "DELETE FROM " . self::quote($tableName) . " WHERE ID = $id";
         return self::query($delQuery);
     }
 

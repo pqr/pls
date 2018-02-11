@@ -44,15 +44,24 @@ class Migrate extends AutolaunchAbstract
             }
 
             $this->_msgBuff->addEmptyLine();
-            $this->_msgBuff->addInfo('<strong>'.htmlspecialchars($file).'</strong>');
+            $this->_msgBuff->addInfo('<strong>' . htmlspecialchars($file) . '</strong>');
 
             $msgBuff = new Msg();
             $queries = array_filter(array_map('trim', explode(';', $content)));
-            foreach($queries as $query) {
+            foreach ($queries as $query) {
                 try {
-                    Db::query($query);
-                    $msgBuff->addSuccess($query);
-                    $msgBuff->addSuccess("Affected rows: " . Db::getAffectedRows());
+                    if (strpos($query, '-- AUTOLAUNCH') === 0) {
+
+                        $autolaunchCliName = trim(str_replace('-- AUTOLAUNCH', '', $query));
+                        $out = shell_exec('php ' . LIGHT_DIR_PUBLIC . '/index.php ' . $autolaunchCliName);
+                        $msgBuff->addInfo("<strong>Autolaunch: " . htmlspecialchars($autolaunchCliName) . "</strong>");
+                        $msgBuff->addInfo($out);
+
+                    } else {
+                        Db::query($query);
+                        $msgBuff->addSuccess($query);
+                        $msgBuff->addSuccess("Affected rows: " . Db::getAffectedRows());
+                    }
                     $success++;
                 } catch (\Throwable $e) {
                     $msgBuff->addError($e->getMessage());

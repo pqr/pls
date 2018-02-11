@@ -311,4 +311,60 @@ class CommonFields
             }
         ]);
     }
+
+    public static function filterCreatedBy()
+    {
+        return F::createSelect('CreatedBy', [
+            'name' => Config::$lang === 'ru' ? 'Автор' : 'Author',
+            'select2' => true,
+            'editWidth' => 'default',
+            'options' => "SELECT ID, Name, IF(Active, '', 'Inactive') AS optgroup FROM user ORDER BY Active DESC, Name",
+            'empty' => false
+        ]);
+    }
+
+    public static function filterModuleId()
+    {
+        return F::createSelect('ModuleID', [
+            'name' => Config::$lang === 'ru' ? 'Модуль' : 'Module',
+            'select2' => true,
+            'editWidth' => 'default',
+            'options' => "SELECT ID, ModuleName FROM dblog_module ORDER BY ModuleName",
+            'empty' => true
+        ]);
+    }
+
+    public static function filterTableId()
+    {
+        return F::createSelect('TableID', [
+            'name' => Config::$lang === 'ru' ? 'Таблица' : 'Table',
+            'select2' => true,
+            'editWidth' => 'default',
+            'options' => "SELECT ID, TableName FROM dblog_table ORDER BY TableName",
+            'empty' => true
+        ]);
+    }
+
+    public static function filterFieldId()
+    {
+        return F::createSelect('FieldID', [
+            'name' => Config::$lang === 'ru' ? 'Поле' : 'Field',
+            'select2' => true,
+            'editWidth' => 'default',
+            'options' => "SELECT f.ID AS value, IF(f.FieldDescription = '', f.FieldKey, f.FieldDescription) AS text, t.TableName AS optgroup
+                                      FROM dblog_field f, dblog_table t
+                                      WHERE f.TableID = t.ID
+                                      ORDER BY t.TableName, f.FieldDescription"
+        ]);
+    }
+
+    public static function filterMasterId()
+    {
+        return F::createInt('MasterID', ['name' => 'Master ID', 'editAlign' => 'left', 'editWidth' => 'medium']);
+    }
+
+    public static function filterRecordId()
+    {
+        return F::createInt('RecordID', ['name' => 'Record ID', 'editAlign' => 'left', 'editWidth' => 'medium']);
+    }
 }

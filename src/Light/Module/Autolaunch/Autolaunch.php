@@ -177,7 +177,7 @@ class Autolaunch
         // Сформируем параметры ссылки обратно на форму и таблицу с логами
         $backUrlParams = [
             'class' => $className,
-            'autolaunchlog_findid' => $logId
+            'AutolaunchLog_findid' => $logId
         ];
 
         if (isset($_GET['msid'])) {

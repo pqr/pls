@@ -12,7 +12,7 @@ class Pdf
      * @param Msg $msgBuff
      * @return bool
      */
-    public static function save($html, $filepathAbs, $landscape = false, Msg $msgBuff = null)
+    public static function save($html, $filepathAbs, $landscape = false, Msg $msgBuff = null, bool $recall = false)
     {
         //Создадим директорию, если её ещё нет
         //$filepathAbs = File::encode($filepathAbs);
@@ -21,13 +21,15 @@ class Pdf
 
         //Обработаем html содержимое - заменим все относительные ссылки на абсолютные пути в файловой системе
         //$replacement = [' src="' => ' src="' . Config::$localUrl . '/', ' href="' => ' href="' . Config::$localUrl . '/'];
-        $isHttp = strpos(Config::$wkhtmltopdfPath, 'http://') === 0;
-
-        if ($isHttp) {
-            $replacementBase = Config::$localUrl;
-
+        if (Config::$useAthena) {
+            $replacementBase = Config::$localUrlNetIp;
         } else {
-            $replacementBase = LIGHT_DIR_PUBLIC;
+            $isHttp = strpos(Config::$wkhtmltopdfPath, 'http://') === 0;
+            if ($isHttp) {
+                $replacementBase = Config::$localUrl;
+            } else {
+                $replacementBase = LIGHT_DIR_PUBLIC;
+            }
         }
 
         $replacement = [
@@ -38,11 +40,33 @@ class Pdf
 
         $html = str_replace(array_keys($replacement), array_values($replacement), $html);
 
-        if ($isHttp) {
-            return self::runHttp($html, $filepathAbs, $msgBuff);
+        if (Config::$useAthena) {
+
+            $flagSuccess = self::runAthena($html, $filepathAbs, $landscape, $msgBuff);
+
         } else {
-            return self::runLocal($html, $filepathAbs, $landscape, $msgBuff);
+            if ($isHttp) {
+                $flagSuccess = self::runHttp($html, $filepathAbs, $msgBuff);
+            } else {
+                $flagSuccess = self::runLocal($html, $filepathAbs, $landscape, $msgBuff);
+            }
         }
+
+        // проверим, не пустой ли файл сгенерировался
+        $filepathAbsEnc = File::encode($filepathAbs);
+        if ($flagSuccess && !trim(file_get_contents($filepathAbsEnc))) {
+            // удалим файл и повторно попробуем сгенерировать pdf
+            unlink($filepathAbsEnc);
+            if (!$recall) {
+                self::save($html, $filepathAbs, $landscape, $msgBuff, true);
+            } else {
+                // если файл и повторно не смог сгенерироваться - выведем ошибку
+                $msgBuff->addError("Не удалось сгенерировать PDF файл");
+                $flagSuccess = false;
+            }
+        }
+
+        return $flagSuccess;
     }
 
     private static function runHttp($html, $filepathAbs, Msg $msgBuff = null)
@@ -147,6 +171,43 @@ class Pdf
         //Переименуем временный файл в реальный
         $filepathAbsEnc = File::encode($filepathAbs);
         rename($tmpfilepathAbs, $filepathAbsEnc);
+        @chmod($filepathAbsEnc, 0666);
+
+        return true;
+    }
+
+    private static function runAthena($html, $filepathAbs, $landscape = false, Msg $msgBuff = null)
+    {
+        //Путь к исполняемому файлу Athena должен быть в конфиге
+        $cmd = Config::$athenaPath;
+
+        if ($landscape) {
+            $cmd .= " --no-portrait";
+        }
+
+        // Вывод результата через stdOut
+        $cmd .= " --stdout";
+
+        // Создадим временный файл, так как при stdIn не работает кодировка
+        // Использовать будем текущую папку, так как из другой Athena не сможет подтянуть
+        $tmpFilename = User::getId() . '_' . time() . '.html';
+        file_put_contents($tmpFilename, $html);
+        @chmod($tmpFilename, 0666);
+        $cmd .= ' "' . $tmpFilename . '"';
+
+        $content = Misc::procOpen($cmd, $msgBuff, $html, true);
+
+        // Удалим временный файл
+        unlink($tmpFilename);
+
+        if (!$content) {
+            $msgBuff->addError('PDF content is empty');
+            return false;
+        }
+
+        // Сохраним stdOut в файл
+        $filepathAbsEnc = File::encode($filepathAbs);
+        file_put_contents($filepathAbsEnc, $content);
         @chmod($filepathAbsEnc, 0666);
 
         return true;

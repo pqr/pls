@@ -87,7 +87,7 @@ class DbLog
 
         $stmtInsert->close();
 
-        //После вставки основных данных и получения всех ID, можем вставить текстовые данные одним запросом
+        // После вставки основных данных и получения всех ID, можем вставить текстовые данные одним запросом
         $queryArr = [];
 
         foreach (self::$_buffer as $index => $item) {
@@ -123,6 +123,13 @@ class DbLog
             Db::query($query);
         }
 
+        // Наконец, запомним ID всех событий записанных в dblog в специальную таблицу dblog_trace
+        // чтобы позже можно было получить объединённую картину по всем сделанным за раз измененениям
+        Db::insertRow([
+            'CreatedBy' => User::getId(),
+            'DbLogIDs' => implode(',', $dblogIds)
+        ], 'dblog_trace');
+
         Db::commit();
 
         if ($timer->get() > 1) {
@@ -133,7 +140,7 @@ class DbLog
         self::$_buffer = [];
     }
 
-    private static function getModuleId(string $moduleName)
+    public static function getModuleId(string $moduleName)
     {
         static $modules;
         if ($modules === null) {

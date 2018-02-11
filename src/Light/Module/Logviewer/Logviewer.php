@@ -1,9 +1,12 @@
 <?php
+
 namespace Light\Module\Logviewer;
 
 use Light\ApplicationAbstract;
+use Light\Config;
 use Light\Db;
 use Light\Field\CommonFields as CF;
+use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
 use Light\Request;
 use Light\Response;
@@ -36,68 +39,61 @@ class Logviewer extends Table
 
             CF::id(),
 
-            F::createSelect(
-                'ModuleID',
-                ['name' => 'Module', 'tableWidthExcel' => 15, 'options' => "SELECT ID, ModuleName FROM dblog_module"]
-            ),
-
-            F::createInt('MasterID', ['name' => 'Master ID', 'tableAlign' => 'left']),
-
-            F::createSelect(
-                'TableID',
-                ['name' => 'Table', 'tableWidthExcel' => 15, 'options' => "SELECT ID, TableName FROM dblog_table"]
-            ),
-
-            F::createInt('RecordID', ['name' => 'Record ID', 'tableAlign' => 'left']),
-
-            F::createSelect(
-                'FieldID',
-                [
-                    'name' => 'Field',
-                    'tableWidthExcel' => 30,
-                    'options' => "SELECT ID, FieldDescription FROM dblog_field"
+            F::createSelect('ModuleID', [
+                    'name' => 'Module',
+                    'tableWidthExcel' => 15,
+                    'options' => "SELECT ID, ModuleName FROM dblog_module"
                 ]
             ),
 
-            F::createHtml(
-                'OldValueFormated',
-                [
-                    'name' => 'Old Value',
-                    F::PARAM_TEXTTRUNCATE => F::TEXTTRUNCATE_PART,
-                    'getExcelFunction' => $formatExcel,
-                    'sqlSelect' => ''
-                ]
-            ),
+            F::createInt('MasterID', [
+                'name' => 'Master ID',
+                'tableAlign' => 'left'
+            ]),
 
-            F::createHtml(
-                'NewValueFormated',
-                [
-                    'name' => 'New Value',
-                    F::PARAM_TEXTTRUNCATE => F::TEXTTRUNCATE_PART,
-                    'getExcelFunction' => $formatExcel,
-                    'sqlSelect' => ''
-                ]
-            ),
+            F::createSelect('TableID', [
+                'name' => 'Table',
+                'tableWidthExcel' => 15,
+                'options' => "SELECT ID, TableName FROM dblog_table"
+            ]),
 
-            F::createHtml(
-                'Text',
-                [
-                    'name' => 'Message',
-                    'tableWidthExcel' => 80,
-                    'getExcelFunction' => $formatExcel,
-                    'sqlSelect' => ''
-                ]
-            ),
+            F::createInt('RecordID', [
+                'name' => 'Record ID',
+                'tableAlign' => 'left'
+            ]),
 
-            F::createHtml(
-                'ObjectDescription',
-                [
-                    'name' => 'Object Description',
-                    'getExcelFunction' => $formatExcel,
-                    'sqlSelect' => ''
-                ]
-            )
+            F::createSelect('FieldID', [
+                'name' => 'Field',
+                'tableWidthExcel' => 30,
+                'options' => "SELECT ID, FieldDescription FROM dblog_field"
+            ]),
 
+            F::createHtml('OldValueFormated', [
+                'name' => 'Old Value',
+                F::PARAM_TEXTTRUNCATE => F::TEXTTRUNCATE_PART,
+                'getExcelFunction' => $formatExcel,
+                'sqlSelect' => ''
+            ]),
+
+            F::createHtml('NewValueFormated', [
+                'name' => 'New Value',
+                F::PARAM_TEXTTRUNCATE => F::TEXTTRUNCATE_PART,
+                'getExcelFunction' => $formatExcel,
+                'sqlSelect' => ''
+            ]),
+
+            F::createHtml('Text', [
+                'name' => 'Message',
+                'tableWidthExcel' => 80,
+                'getExcelFunction' => $formatExcel,
+                'sqlSelect' => ''
+            ]),
+
+            F::createHtml('ObjectDescription', [
+                'name' => 'Object Description',
+                'getExcelFunction' => $formatExcel,
+                'sqlSelect' => ''
+            ])
 
         );
 
@@ -122,80 +118,43 @@ class Logviewer extends Table
     {
         $this->addFilters(
 
+            CommonFields::filterCreatedBy(),
+
+            CommonFields::filterModuleId(),
+
+            CommonFields::filterTableId(),
+
+            CommonFields::filterFieldId(),
+
             F::createString('FilterName', [
-                'name' => 'Search Text',
+                'name' => Config::$lang === 'ru' ? 'Текст' : 'Text',
                 'sqlWhere' => "ID in (SELECT dblogID FROM dblog_text WHERE (Text LIKE '%{value}%'
                                             OR OldValueFormated LIKE '%{value}%'
                                             OR NewValueFormated LIKE '%{value}%'))"
             ]),
 
-            F::createSelect(
-                'CreatedBy',
-                [
-                    'name' => 'User',
-                    'editWidth' => 'medium',
-                    'options' => 'user',
-                    'empty' => false
-                ]
-            ),
+            CommonFields::filterMasterId(),
 
-            F::createSelect(
-                'UserGroupID',
-                [
-                    'name' => 'Group',
-                    'editWidth' => 'medium',
-                    'options' => 'usergroup|OrderID',
-                    'empty' => false,
-                    'sqlWhere' => function ($value) {
-                        $userIds = Db::getCol("SELECT ID FROM user WHERE GroupID = " . $value);
-                        if ($userIds) {
-                            return "CreatedBy IN (" . implode(',', $userIds) . ")";
-                        } else {
-                            return 'FALSE';
-                        }
-                    }
-                ]
-            ),
+            CommonFields::filterRecordId()
 
-            F::createSelect(
-                'ModuleID',
-                [
-                    'name' => 'Module',
-                    'editWidth' => 'medium',
-                    'options' => "SELECT ID, ModuleName FROM dblog_module ORDER BY ModuleName",
-                    'empty' => true
-                ]
-            ),
-
-            F::createInt('MasterID', ['name' => 'Master ID', 'editAlign' => 'left']),
-
-            F::createSelect(
-                'TableID',
-                [
-                    'name' => 'Table',
-                    'editWidth' => 'medium',
-                    'options' => "SELECT ID, TableName FROM dblog_table ORDER BY TableName",
-                    'empty' => true
-                ]
-            ),
-
-            F::createInt('RecordID', ['name' => 'Record ID', 'editAlign' => 'left']),
-
-            F::createSelect(
-                'FieldID',
-                [
-                    'name' => 'Field',
-                    'editWidth' => 'default',
-                    'select2' => true,
-                    'options' => "SELECT f.ID AS value, f.FieldDescription AS text, t.TableName AS optgroup
-                                      FROM dblog_field f, dblog_table t
-                                      WHERE f.TableID = t.ID
-                                      ORDER BY t.TableName, f.FieldDescription"
-                ]
-            )
         );
 
-        $this->addFiltersDatesFromUntil('CreatedDateTime', ['name' => 'Date']);
+        $this->addFiltersDatesFromUntil('CreatedDateTime', ['name' => Config::$lang === 'ru' ? 'Дата' : 'Date']);
+
+        $this->filtersLayout = [
+            [
+                'CreatedBy',
+                'ModuleID',
+                'TableID',
+                'FieldID',
+                'FilterName'
+            ],
+            [
+                'CreatedDateTime',
+                'MasterID',
+                'RecordID'
+            ]
+        ];
     }
 
     protected function isListExcelAction()

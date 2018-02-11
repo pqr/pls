@@ -346,6 +346,17 @@ export class Table {
         return this.currentReloadXhr;
     }
 
+    isLoading() {
+        return !!this.currentReloadXhr;
+    }
+
+    cancelReload() {
+        // Если уже есть какой-то запрос на обновление этой таблицы, то его нужно прервать
+        if (this.currentReloadXhr) {
+            this.currentReloadXhr.abort();
+        }
+    }
+
     /**
              * Возвращает массив из значений заключённых внутри чекбоксов в таблице table-tableName-table
              */

@@ -10,7 +10,7 @@ use Light\Module\Autolaunch\AutolaunchAbstract;
 class DailyMaintainance extends AutolaunchAbstract
 {
     protected static $_title = 'System: Daily Database Maintainance';
-    protected static $_description = 'Очищает modulesession, удаляет autolaunchlog > 3000шт, очищает папку FilesFolder_copyToTmpDirAndRename, очищает папки *_pdfs и *_massaction, зипует старые логи';
+    protected static $_description = 'Очищает modulesession, удаляет log_autolaunch > 3000шт, очищает папку FilesFolder_copyToTmpDirAndRename, очищает папки *_pdfs и *_massaction, зипует старые логи';
 
     public function run(array $params)
     {
@@ -33,14 +33,14 @@ class DailyMaintainance extends AutolaunchAbstract
     private function clearAutolaunchLog()
     {
         $deleted = 0;
-        $classes = Db::getCol("SELECT DISTINCT(ClassName) FROM autolaunchlog");
+        $classes = Db::getCol("SELECT DISTINCT(ClassName) FROM log_autolaunch");
         foreach ($classes as $className) {
             // Найдём минимальный ID среди последних 3000 записей
-            $minKeepId = Db::getOne("SELECT min(ID) FROM (SELECT ID FROM autolaunchlog WHERE ClassName = @s ORDER BY ID DESC LIMIT 3000) AS log",
+            $minKeepId = Db::getOne("SELECT min(ID) FROM (SELECT ID FROM log_autolaunch WHERE ClassName = @s ORDER BY ID DESC LIMIT 3000) AS log",
                 $className);
             // Удалим все записи, у которых ID меньше этого порога
             if ($minKeepId) {
-                Db::query("DELETE FROM autolaunchlog WHERE ClassName = @s AND ID < $minKeepId", $className);
+                Db::query("DELETE FROM log_autolaunch WHERE ClassName = @s AND ID < $minKeepId", $className);
                 $deleted += Db::getAffectedRows();
             }
         }

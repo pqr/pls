@@ -125,8 +125,18 @@ export class Filters {
     }
 
     private onResetClick = () => {
+
+        if (this.table.isLoading()) {
+
+            // Если в момент нажатия RESET уже происходила какая-то загрузка данных, то её нужно прервать,
+            this.table.cancelReload();
+            this.afterStopFiltering();
+
+        }
+
         this.reset();
         this.resetHandlers.forEach(handler => handler());
+
     };
 
     private submit() {
@@ -138,8 +148,7 @@ export class Filters {
             page: 1
         };
         this.table.reload(reloadParams, () => {
-            this.$form.removeClass("loading-opacity");
-            $form.find(".btn-filter").prop("disabled", false);
+
             const hiddenInput = this.table.getDivNode().find("input[name=filterValues]");
             if (hiddenInput.length > 0) {
                 const newValues = parseJson(<string>hiddenInput.val());
@@ -147,14 +156,24 @@ export class Filters {
                     this.setValue(fieldKey, newValues[fieldKey]);
                 }
 
-                //Подсветим активные фильтры жирным и семеним иконку у кнопки Filter, если нужно
+                // Подсветим активные фильтры жирным и семеним иконку у кнопки Filter, если нужно
                 this.highlightActive();
 
                 // Запустим механизм скрытия скрытых фильтров заново
                 // это нужно чтобы отобразить те фильтры, у которых значение отличается от значения по умолчанию
                 this.refreshInvisibleClasses();
             }
+
+            this.afterStopFiltering();
+
         });
+    }
+
+    private afterStopFiltering()
+    {
+        this.$form
+            .removeClass("loading-opacity")
+            .find(".btn-filter").prop("disabled", false);
     }
 
     private showWidget(clickTarget: HTMLElement): JQuery {
