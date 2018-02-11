@@ -188,6 +188,7 @@ class Bot extends ModuleBotAbstract
 
             $shipments = Db::getAll("
                 SELECT SQL_CALC_FOUND_ROWS ID
+                  , Name
                   , (SELECT Name FROM customer WHERE ID = shipment.CustomerID) AS CustomerName
                   , MAWBNumber
                   , ETD 
@@ -239,7 +240,7 @@ class Bot extends ModuleBotAbstract
     {
         $lines = [];
         foreach ($shipments as $shipment) {
-            $lines[] = "/file" . $shipment['ID']
+            $lines[] = "/file" . $shipment['Name']
                 . " " . $shipment['CustomerName']
                 . " " . $shipment['MAWBNumber']
                 . ", ETD " . FieldDate::beautify($shipment['ETD']);
