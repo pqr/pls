@@ -14,6 +14,7 @@ class VInvoices extends InvoicesAbstract
         parent::__construct('VInvoices', $shipmentObj['Name']);
 
         $this->tableLinkModule = 'VInvoice';
+        $this->folderBaseDir = 'VInvoice';
 
         $this->addField(CostSheetFields::vStatusIco());
 
@@ -35,11 +36,4 @@ class VInvoices extends InvoicesAbstract
         $this->_tableData = CommonDataProvider::getVInvoices($shipmentObj['Name']);
     }
 
-    /**
-     * Возвращает название базовой директории к которой потом будет добавлено имя папки конкретного объекта
-     */
-    protected function getFolderBaseDir()
-    {
-        return 'VInvoice';
-    }
 } 

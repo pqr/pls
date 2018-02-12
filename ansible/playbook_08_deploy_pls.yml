@@ -59,6 +59,13 @@
       path: "{{ project_dir_pls }}/public/lightpublic"
     tags: dirs
 
+  - name: Create symlink files/ShipmentAccounting -> files/Shipment
+    file:
+      state: link
+      src: "{{ filesfolder_pls }}/Shipment"
+      path: "{{ filesfolder_pls }}/ShipmentAccounting"
+    tags: dirs
+
   - name: Run Sentry Deploy script
     shell: "{{ project_dir_pls }}/sentry.sh"
     args:
@@ -119,7 +126,16 @@
       job: "php {{ project_dir_pls }}/public/index.php Light/Email"
     tags: cron
 
-  - name: deploy pls 13. Cron EmailPendingQuotations14days at 16:30 working days
+  - name: deploy pls 13. Cron Light/Backup at 6:15
+    become: false
+    cron:
+      name: "pls Light/Backup"
+      minute: "15"
+      hour: "6"
+      job: "php {{ project_dir_pls }}/public/index.php Light/Backup"
+    tags: cron
+
+  - name: deploy pls 14. Cron EmailPendingQuotations14days at 16:30 working days
     become: false
     cron:
       name: "pls EmailPendingQuotations14days"

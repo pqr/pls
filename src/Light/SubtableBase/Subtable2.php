@@ -77,8 +77,6 @@ abstract class Subtable2
      */
     protected $_cacheFieldsPrefix = '';
 
-    protected $folderBaseDir;
-
     /**
      * Системные поля, которые должны быть в начале таблицы, не выводятся в Excel
      * @var Fieldset|\Light\Field\FieldAbstract[]
@@ -118,11 +116,6 @@ abstract class Subtable2
             $this->_obj->setMasterModuleForDbLog($masterModule);
         }
 
-    }
-
-    protected function getFolderBaseDir()
-    {
-        return $this->folderBaseDir;
     }
 
     /**

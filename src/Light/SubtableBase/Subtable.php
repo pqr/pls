@@ -94,9 +94,6 @@ abstract class Subtable extends Table
     //По умолчанию имя папки строится так же как <dbTableName>/<id>
     //Но для подтаблиц ссылающихся на объекты из других модулей как многие-ко-многим это не верно
 
-    //Во-первых, нужно указать базовую папку внутри которой искать подпапки - имя модуля
-    protected $folderBaseDir;
-
     protected $_viewTableLayout;
     protected $_editTableLayout;
     protected $_printHeadBlock = true;
@@ -216,11 +213,6 @@ abstract class Subtable extends Table
 
     protected function initCssJs()
     {
-    }
-
-    protected function getFolderBaseDir()
-    {
-        return $this->folderBaseDir;
     }
 
     /**

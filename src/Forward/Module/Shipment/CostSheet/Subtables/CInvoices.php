@@ -15,6 +15,7 @@ class CInvoices extends InvoicesAbstract
         parent::__construct('CInvoices', $shipmentObj['Name']);
 
         $this->tableLinkModule = 'CInvoice';
+        $this->folderBaseDir = 'CInvoice';
 
         $this->addField(CostSheetFields::cStatusIco());
 
@@ -33,13 +34,5 @@ class CInvoices extends InvoicesAbstract
 
         //Сразу загрузим данные
         $this->_tableData = CommonDataProvider::getCInvoices($shipmentObj['Name']);
-    }
-
-    /**
-     * Возвращает название базовой директории к которой потом будет добавлено имя папки конкретного объекта
-     */
-    protected function getFolderBaseDir()
-    {
-        return 'CInvoice';
     }
 } 

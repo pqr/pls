@@ -137,11 +137,6 @@ class ShipmentAccounting extends ModuleAbstract
 
     }
 
-    protected function getFolderBaseDir()
-    {
-        return 'Shipment';
-    }
-
     protected function initFilters()
     {
         $compnayIdsSql = implode(',', array_keys(Constant::$onecCompany));

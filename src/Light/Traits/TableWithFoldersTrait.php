@@ -15,13 +15,9 @@ trait TableWithFoldersTrait
 
     // Во-вторых, нужно указать ключ поля, которое искать в массиве $data - там должно храниться id внешнего элемента
     protected $folderNameFieldKey = 'ID';
+    protected $folderBaseDir;
 
     protected $_cacheNotEmptyFolderIds;
-
-    /**
-     * Возвращает название базовой директории к которой потом будет добавлено имя папки конкретного объекта
-     */
-    abstract protected function getFolderBaseDir();
 
     /**
      * Контракт на класс Table - должен существовать метод getFieldsetFirst()
@@ -48,12 +44,15 @@ trait TableWithFoldersTrait
 
     protected function getFolderRelativePath(array $data)
     {
+        if (!$this->folderBaseDir) {
+            return null;
+        }
         $folder = $this->getFolderName($data);
-        if ($folder !== null) {
-            return $this->getFolderBaseDir() . '/' . $folder;
+        if ($folder === null) {
+            return null;
         }
 
-        return null;
+        return $this->folderBaseDir . '/' . $folder;
     }
 
     protected function createFolder(array $data)
@@ -86,14 +85,15 @@ trait TableWithFoldersTrait
                         return '';
                     }
 
-                    $folderBaseDir = $this->getFolderBaseDir();
-                    if (!$folderBaseDir) {
+                    if (!$this->folderBaseDir) {
                         return '';
                     }
+
                     $folderRelativePath = $this->getFolderRelativePath($data);
                     if ($folderRelativePath === null) {
                         return '';
                     }
+
                     //При выводе иконок папок в таблицу проверим по массиву закешированных ID по которым папки точно
                     //не пустые
                     if (isset($this->_cacheNotEmptyFolderIds[$data[$this->folderNameFieldKey]])) {
@@ -101,7 +101,7 @@ trait TableWithFoldersTrait
                     } else {
                         //Для текущей строки в кеше непустых ничего нет, значит запустим проверку на пустоту вручную,
                         //сохраним в базу
-                        $isNotEmpty = FilesFolder::updateCacheNotEmpty($folderRelativePath, $folderBaseDir,
+                        $isNotEmpty = FilesFolder::updateCacheNotEmpty($folderRelativePath, $this->folderBaseDir,
                             $data[$this->folderNameFieldKey]);
                     }
 
@@ -225,13 +225,13 @@ trait TableWithFoldersTrait
 
     protected function loadCacheNotEmptyFolderIds($idsString)
     {
-        if ($this->folders && $idsString) {
+        if ($this->folders && $this->folderBaseDir && $idsString) {
             //подгрузим заранее все значения из кэширующей таблицы с данными о заполненности папок
             $this->_cacheNotEmptyFolderIds = Db::getAssoc(
                 "SELECT RecordID, 1
                  FROM `cache_notemptyfilesfolder`
                  WHERE `ModuleName` = @s AND RecordID IN ($idsString)",
-                $this->getFolderBaseDir()
+                $this->folderBaseDir
             );
         }
     }

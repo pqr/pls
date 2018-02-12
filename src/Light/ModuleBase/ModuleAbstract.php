@@ -104,9 +104,11 @@ abstract class ModuleAbstract extends Table
 
     public function __construct()
     {
-        parent::__construct($this->getModule());
+        $module = $this->getModule();
+        parent::__construct($module);
 
-        $this->tableReloadUrl = '?a=' . $this->getModule();
+        $this->tableReloadUrl = "?a=$module";
+        $this->folderBaseDir = $module;
     }
 
     private function getModule()
@@ -1040,26 +1042,6 @@ abstract class ModuleAbstract extends Table
             $out[] = [
                 'html' => $this->fieldFolder()->getHtml('', $this->_obj->getData())
             ];
-
-            /*
-            $folderRelativePath = $this->getFolderRelativePath($this->_obj->getData());
-            if ($folderRelativePath) {
-                $isNotEmpty = FilesFolder::isNotEmpty($folderRelativePath);
-                $moduleName = $this->getFolderBaseDir();
-                $recordId = $this->_obj[$this->folderNameFieldKey];
-                if ($isNotEmpty) {
-                    Db::insertRow(['ModuleName' => $moduleName, 'RecordID' => $recordId], 'cache_notemptyfilesfolder',
-                        true);
-                } else {
-                    Db::query("DELETE FROM cache_notemptyfilesfolder WHERE ModuleName = @s AND RecordID = @i",
-                        $moduleName, $recordId);
-                }
-                $out[] = [
-                    'html' => FilesFolder::getLink($folderRelativePath,
-                        FilesFolder::getImgHtml($isNotEmpty) . ' Folder')
-                ];
-            }
-            */
         }
 
         // Добавим ссылки на различные режимы копирования
@@ -2302,11 +2284,6 @@ abstract class ModuleAbstract extends Table
     final protected function isMultipleupdateSubmitState()
     {
         return $this->_state == self::STATE_MULTIPLEUPDATESUBMIT;
-    }
-
-    protected function getFolderBaseDir()
-    {
-        return $this->getModule();
     }
 
     protected function getExcelFilename()

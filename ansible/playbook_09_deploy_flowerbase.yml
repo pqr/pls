@@ -24,7 +24,7 @@
   # Проверить папки logs и temp и права 777 на них:
   - name: deploy flowerbase 3. Check logs and temp folders and mode
     file:
-      path: {{ item }}
+      path: "{{ item }}"
       state: directory
       mode: u=rwX,g=rwX,o=rwX
       recurse: yes
@@ -108,4 +108,13 @@
       name: "flowerbase Light/Email"
       minute: "*"
       job: "php {{ project_dir_flowerbase }}/public/index.php Light/Email"
+    tags: cron
+
+  - name: deploy flowerbase 13. Cron Light/Backup at 6:20
+    become: false
+    cron:
+      name: "flowerbase Light/Backup"
+      minute: "20"
+      hour: "6"
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/Backup"
     tags: cron
