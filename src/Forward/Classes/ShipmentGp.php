@@ -85,7 +85,7 @@ class ShipmentGp
         $csIncomeLines = self::loadCsLines($shipmentId, 'income');
         $csExpensesLines = self::loadCsLines($shipmentId, 'expenses');
 
-        if (self::isOneCurrency($customerInvoices, $customerInvoices)) {
+        if (self::isOneCurrency($customerInvoices, $vendorInvoices)) {
 
             $minDocDate = self::minDocDate($customerInvoices, $vendorInvoices);
 
