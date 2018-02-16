@@ -1,0 +1,243 @@
+<?php
+
+namespace Light;
+
+
+class InvStatus
+{
+
+    // Open process
+    const DRAFT = 14;
+    const OPEN = 11;
+    const DISPUTE = 12;
+    const ACCEPTED = 13;
+
+    // Part Cleated/Cleared
+    const CLEARED_DRAFT = 23;
+    const PARTCLEARED = 21;
+    const CLEARED = 22;
+
+    // Canceled/Deleted
+    const CREDITNOTED = 31;
+    const DELETED = 32;
+
+    // Something Strange
+    const OPENTOXIC = 41;
+    const ACCEPTED_NOTFORPAYMENT = 42;
+
+    const DOCTYPE_INVOICE = 1;
+    const DOCTYPE_CREDITNOTE = -1;
+
+    public static $docType = [
+        self::DOCTYPE_INVOICE => 'Счёт',
+        self::DOCTYPE_CREDITNOTE => 'Кредти-нота'
+    ];
+
+    public static $cinvStatuses = [
+        self::DRAFT => [
+            'text' => 'Черновик',
+            'cssClass' => 'invstatus14',
+            'Active' => 1
+        ],
+        self::OPEN => [
+            'text' => 'Заявка на счёт',
+            'cssClass' => 'invstatus11',
+            'Active' => 1
+        ],
+        self::ACCEPTED => [
+            'text' => 'Выпущен',
+            'cssClass' => 'invstatus13',
+            'Active' => 1
+        ],
+        self::PARTCLEARED => [
+            'text' => 'Недоплата',
+            'cssClass' => 'invstatus21',
+            'Active' => 0
+        ],
+        self::CLEARED => [
+            'text' => 'Оплачен',
+            'cssClass' => 'invstatus22',
+            'Active' => 0
+        ],
+        self::OPENTOXIC => [
+            'text' => 'Токсичный',
+            'cssClass' => 'invstatus41',
+            'Active' => 1,
+            'optgroup' => '---'
+        ],
+        self::CREDITNOTED => [
+            'text' => 'Отменён кредит-нотой',
+            'cssClass' => 'invstatus31',
+            'Active' => 0,
+            'optgroup' => '---'
+        ],
+        self::DELETED => [
+            'text' => 'Удалён',
+            'cssClass' => 'invstatus32',
+            'Active' => 1,
+            'optgroup' => '---'
+        ]
+    ];
+
+    public static $vinvStatuses = [
+        self::OPEN => [
+            'text' => 'На проверке',
+            'cssClass' => 'invstatus11',
+            'Active' => 1
+        ],
+        self::DISPUTE => [
+            'text' => 'Сомнительный',
+            'cssClass' => 'invstatus12',
+            'Active' => 1
+        ],
+        self::ACCEPTED => [
+            'text' => 'Принят',
+            'cssClass' => 'invstatus13',
+            'Active' => 1
+        ],
+        self::CLEARED_DRAFT => [
+            'text' => 'Черновик оплаты',
+            'cssClass' => 'invstatus23',
+            'Active' => 0
+        ],
+        self::PARTCLEARED => [
+            'text' => 'Недоплата',
+            'cssClass' => 'invstatus21',
+            'Active' => 0
+        ],
+        self::CLEARED => [
+            'text' => 'Оплачен',
+            'cssClass' => 'invstatus22',
+            'Active' => 0
+        ],
+
+        self::ACCEPTED_NOTFORPAYMENT => [
+            'text' => 'Не для оплаты',
+            'cssClass' => 'invstatus42',
+            'Active' => 1,
+            'optgroup' => '---'
+        ],
+        self::CREDITNOTED => [
+            'text' => 'Отменён кредит-нотой',
+            'cssClass' => 'invstatus31',
+            'Active' => 0,
+            'optgroup' => '---'
+        ],
+        self::DELETED => [
+            'text' => 'Удалён',
+            'cssClass' => 'invstatus32',
+            'Active' => 1,
+            'optgroup' => '---'
+        ]
+    ];
+
+    // Хеш таблицы открытых статусов, чтобы быстрее делать проверки
+    public static $cinvOpen = [
+        self::OPEN => self::OPEN,
+        self::ACCEPTED => self::ACCEPTED,
+        self::PARTCLEARED => self::PARTCLEARED
+    ];
+
+    public static $vinvOpen = [
+        self::OPEN => self::OPEN,
+        self::DISPUTE => self::DISPUTE,
+        self::ACCEPTED => self::ACCEPTED,
+        self::PARTCLEARED => self::PARTCLEARED,
+        self::CLEARED_DRAFT => self::CLEARED_DRAFT
+    ];
+
+    public static function getOpenStatusesSql(string $firstLetter): string
+    {
+        $openStatuses = $firstLetter === 'C' ? self::$cinvOpen: self::$vinvOpen;
+        return implode(',', $openStatuses);
+    }
+
+    public static function isOpenStatus(string $firstLetter, int $status): bool
+    {
+        $openStatuses = $firstLetter === 'C' ? self::$cinvOpen: self::$vinvOpen;
+        return isset($openStatuses[$status]);
+    }
+
+    public static function getIconHtml(string $firstLetter, int $status): string
+    {
+        $statuses = $firstLetter === 'C' ? self::$cinvStatuses : self::$vinvStatuses;
+        if (!isset($statuses[$status])) {
+            return '';
+        }
+
+        $title = $statuses[$status]['text'];
+
+        $iconColorClass = "invicon$status";
+        $title = ' title="' . htmlspecialchars($title) . '"';
+
+        if ($status === self::DRAFT) {
+            return "<i class=\"fa fa-question-circle-o $iconColorClass\"$title></i>";
+        }
+
+        if ($status === self::OPEN) {
+            return "<i class=\"fa fa-exclamation-triangle $iconColorClass\"$title></i>";
+        }
+
+        if ($status === self::DISPUTE) {
+            return "<i class=\"fa fa-times-circle $iconColorClass\"$title></i>";
+        }
+
+        if ($status === self::ACCEPTED) {
+            return "<i class=\"fa fa-check $iconColorClass\"$title></i>";
+        }
+
+        if ($status === self::CLEARED) {
+            return "<i class=\"$iconColorClass\"$title></i>";
+        }
+
+        if ($status === self::CLEARED_DRAFT) {
+            return "<i class=\"$iconColorClass\"$title></i>";
+        }
+
+        if ($status === self::PARTCLEARED) {
+            return "<span class=\"nobr $iconColorClass\"$title><i></i><i></i></span>";
+        }
+
+        if ($status === self::CREDITNOTED) {
+            return "<i class=\"fa fa-minus-circle $iconColorClass\"$title></i>";
+        }
+
+        if ($status === self::DELETED) {
+            return "<i class=\"fa fa-trash $iconColorClass\"$title></i>";
+        }
+
+        if ($status == self::OPENTOXIC) {
+            return "<i class=\"fa fa-exclamation-triangle $iconColorClass\"$title></i>";
+        }
+
+        if ($status === self::ACCEPTED_NOTFORPAYMENT) {
+            return "<i class=\"fa fa-check $iconColorClass\"$title></i>";
+        }
+
+        return '';
+    }
+
+    /**
+     * Возвращает подходящий cssClass для полей Overdue и DueDate. Используется в VInvoiceObj, CInvoiceObj
+     * @param string $firstLetter
+     * @param int $status
+     * @param int $overdue
+     * @return string
+     */
+    public static function getOverdueViewCssClass(string $firstLetter, int $status, int $overdue)
+    {
+        if (!self::isOpenStatus($firstLetter, $status)) {
+            return '';
+        }
+
+        if ($overdue > 0) {
+            return 'bad';
+        }
+
+        if ($overdue >= -3) {
+            return 'warning';
+        }
+
+        return '';
+    }
+}
