@@ -1,12 +1,12 @@
 import { isLangRu, toastError } from "./Light";
 
-const $body:JQuery = $("body");
+const $body: JQuery = $("body");
 
 const textFail = isLangRu ? "Не удалось изменить" : "Update failed";
 const textSave = isLangRu ? "Сохранить" : "Save";
 const textCancel = isLangRu ? "Отмена" : "Cancel";
 
-$body.on("click", "a.ajax-checkbox", function(this: HTMLAnchorElement, e:JQuery.Event) {
+$body.on("click", "a.ajax-checkbox", function(this: HTMLAnchorElement, e: JQuery.Event) {
     e.preventDefault();
     const $link = $(this);
 
@@ -30,7 +30,7 @@ $body.on("click", "a.ajax-checkbox", function(this: HTMLAnchorElement, e:JQuery.
 
     //Отправим сам запрос!
     $.post(url)
-        .done(newHtml => {
+        .done((newHtml: string) => {
             // Замещаем изображение загрузки на новую ссылку, пришедшую от сервера
             $(newHtml).insertAfter($img);
             $img.remove();
@@ -66,7 +66,7 @@ $body.on("click", "a.ajax-input", function(this: HTMLAnchorElement, e: JQuery.Ev
     $.ajax(url)
         .done((inputHtml: string) => {
             // Полученный html код поля для ввода вставляем после ссылки на редактирование
-            const $input:JQuery = $(inputHtml);
+            const $input: JQuery = $(inputHtml);
             $input.insertAfter($link);
             // Саму ссылку удаляем из DOM (при этом она сохраняется в переменной $link на случай cancel)
             $link.remove();

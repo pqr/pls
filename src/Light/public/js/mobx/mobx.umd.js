@@ -1386,6 +1386,7 @@ var ComputedValue = (function () {
         this.value = new CaughtException(null);
         this.isComputing = false; // to check for cycles
         this.isRunningSetter = false;
+        this.isTracing = TraceMode.NONE;
         this.name = name || "ComputedValue@" + getNextId();
         if (setter)
             this.setter = createAction(name + "-setter", setter);
@@ -1408,8 +1409,13 @@ var ComputedValue = (function () {
             // The computedValue is accessed outside of any mobx stuff. Batch observing should be enough and don't need
             // tracking as it will never be called again inside this batch.
             startBatch();
-            if (shouldCompute(this))
+            if (shouldCompute(this)) {
+                if (this.isTracing !== TraceMode.NONE) {
+                    console.log("[mobx.trace] '" + this
+                        .name + "' is being read outside a reactive context and doing a full recompute");
+                }
                 this.value = this.computeValue(false);
+            }
             endBatch();
         }
         else {
@@ -1454,7 +1460,8 @@ var ComputedValue = (function () {
             });
         }
         var oldValue = this.value;
-        var wasSuspended = this.dependenciesState === exports.IDerivationState.NOT_TRACKING;
+        var wasSuspended = 
+        /* see #1208 */ this.dependenciesState === exports.IDerivationState.NOT_TRACKING;
         var newValue = (this.value = this.computeValue(true));
         return (wasSuspended ||
             isCaughtException(oldValue) ||
@@ -2663,6 +2670,91 @@ function resetGlobalState() {
     globalState.allowStateChanges = !globalState.strictMode;
 }
 
+function getAtom(thing, property) {
+    if (typeof thing === "object" && thing !== null) {
+        if (isObservableArray(thing)) {
+            invariant(property === undefined, getMessage("m036"));
+            return thing.$mobx.atom;
+        }
+        if (isObservableMap(thing)) {
+            var anyThing = thing;
+            if (property === undefined)
+                return getAtom(anyThing._keys);
+            var observable = anyThing._data[property] || anyThing._hasMap[property];
+            invariant(!!observable, "the entry '" + property + "' does not exist in the observable map '" + getDebugName(thing) + "'");
+            return observable;
+        }
+        // Initializers run lazily when transpiling to babel, so make sure they are run...
+        runLazyInitializers(thing);
+        if (property && !thing.$mobx)
+            thing[property]; // See #1072 // TODO: remove in 4.0
+        if (isObservableObject(thing)) {
+            if (!property)
+                return fail("please specify a property");
+            var observable = thing.$mobx.values[property];
+            invariant(!!observable, "no observable property '" + property + "' found on the observable object '" + getDebugName(thing) + "'");
+            return observable;
+        }
+        if (isAtom(thing) || isComputedValue(thing) || isReaction(thing)) {
+            return thing;
+        }
+    }
+    else if (typeof thing === "function") {
+        if (isReaction(thing.$mobx)) {
+            // disposer function
+            return thing.$mobx;
+        }
+    }
+    return fail("Cannot obtain atom from " + thing);
+}
+function getAdministration(thing, property) {
+    invariant(thing, "Expecting some object");
+    if (property !== undefined)
+        return getAdministration(getAtom(thing, property));
+    if (isAtom(thing) || isComputedValue(thing) || isReaction(thing))
+        return thing;
+    if (isObservableMap(thing))
+        return thing;
+    // Initializers run lazily when transpiling to babel, so make sure they are run...
+    runLazyInitializers(thing);
+    if (thing.$mobx)
+        return thing.$mobx;
+    invariant(false, "Cannot obtain administration from " + thing);
+}
+function getDebugName(thing, property) {
+    var named;
+    if (property !== undefined)
+        named = getAtom(thing, property);
+    else if (isObservableObject(thing) || isObservableMap(thing))
+        named = getAdministration(thing);
+    else
+        named = getAtom(thing); // valid for arrays as well
+    return named.name;
+}
+
+function getDependencyTree(thing, property) {
+    return nodeToDependencyTree(getAtom(thing, property));
+}
+function nodeToDependencyTree(node) {
+    var result = {
+        name: node.name
+    };
+    if (node.observing && node.observing.length > 0)
+        result.dependencies = unique(node.observing).map(nodeToDependencyTree);
+    return result;
+}
+function getObserverTree(thing, property) {
+    return nodeToObserverTree(getAtom(thing, property));
+}
+function nodeToObserverTree(node) {
+    var result = {
+        name: node.name
+    };
+    if (hasObservers(node))
+        result.observers = getObservers(node).map(nodeToObserverTree);
+    return result;
+}
+
 function hasObservers(observable) {
     return observable.observers && observable.observers.length > 0;
 }
@@ -2781,8 +2873,12 @@ function propagateChanged(observable) {
     var i = observers.length;
     while (i--) {
         var d = observers[i];
-        if (d.dependenciesState === exports.IDerivationState.UP_TO_DATE)
+        if (d.dependenciesState === exports.IDerivationState.UP_TO_DATE) {
+            if (d.isTracing !== TraceMode.NONE) {
+                logTraceInfo(d, observable);
+            }
             d.onBecomeStale();
+        }
         d.dependenciesState = exports.IDerivationState.STALE;
     }
     // invariantLOS(observable, "changed end");
@@ -2817,10 +2913,31 @@ function propagateMaybeChanged(observable) {
         var d = observers[i];
         if (d.dependenciesState === exports.IDerivationState.UP_TO_DATE) {
             d.dependenciesState = exports.IDerivationState.POSSIBLY_STALE;
+            if (d.isTracing !== TraceMode.NONE) {
+                logTraceInfo(d, observable);
+            }
             d.onBecomeStale();
         }
     }
     // invariantLOS(observable, "maybe end");
+}
+function logTraceInfo(derivation, observable) {
+    console.log("[mobx.trace] '" + derivation.name + "' is invalidated due to a change in: '" + observable.name + "'");
+    if (derivation.isTracing === TraceMode.BREAK) {
+        var lines = [];
+        printDepTree(getDependencyTree(derivation), lines, 1);
+        // prettier-ignore
+        new Function("debugger;\n/*\nTracing '" + derivation.name + "'\n\nYou are entering this break point because derivation '" + derivation.name + "' is being traced and '" + observable.name + "' is now forcing it to update.\nJust follow the stacktrace you should now see in the devtools to see precisely what piece of your code is causing this update\nThe stackframe you are looking for is at least ~6-8 stack-frames up.\n\n" + (derivation instanceof ComputedValue ? derivation.derivation.toString() : "") + "\n\nThe dependencies for this derivation are:\n\n" + lines.join("\n") + "\n*/\n    ")();
+    }
+}
+function printDepTree(tree, lines, depth) {
+    if (lines.length >= 1000) {
+        lines.push("(and many more)");
+        return;
+    }
+    lines.push("" + new Array(depth).join("\t") + tree.name); // MWE: not the fastest, but the easiest way :)
+    if (tree.dependencies)
+        tree.dependencies.forEach(function (child) { return printDepTree(child, lines, depth + 1); });
 }
 
 (function (IDerivationState) {
@@ -2842,6 +2959,12 @@ function propagateMaybeChanged(observable) {
     // will need to recompute when it's needed next.
     IDerivationState[IDerivationState["STALE"] = 2] = "STALE";
 })(exports.IDerivationState || (exports.IDerivationState = {}));
+var TraceMode;
+(function (TraceMode) {
+    TraceMode[TraceMode["NONE"] = 0] = "NONE";
+    TraceMode[TraceMode["LOG"] = 1] = "LOG";
+    TraceMode[TraceMode["BREAK"] = 2] = "BREAK";
+})(TraceMode || (TraceMode = {}));
 var CaughtException = (function () {
     function CaughtException(cause) {
         this.cause = cause;
@@ -3030,6 +3153,47 @@ function changeDependenciesStateTo0(derivation) {
         obs[i].lowestObserverState = exports.IDerivationState.UP_TO_DATE;
 }
 
+function log(msg) {
+    console.log(msg);
+    return msg;
+}
+function whyRun(thing, prop) {
+    deprecated("`whyRun` is deprecated in favor of `trace`");
+    thing = getAtomFromArgs(arguments);
+    if (!thing)
+        return log(getMessage("m024"));
+    if (isComputedValue(thing) || isReaction(thing))
+        return log(thing.whyRun());
+    return fail(getMessage("m025"));
+}
+function trace() {
+    var args = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        args[_i] = arguments[_i];
+    }
+    var enterBreakPoint = false;
+    if (typeof args[args.length - 1] === "boolean")
+        enterBreakPoint = args.pop();
+    var derivation = getAtomFromArgs(args);
+    if (!derivation) {
+        return fail("'trace(break?)' can only be used inside a tracked computed value or a Reaction. Consider passing in the computed value or reaction explicitly");
+    }
+    if (derivation.isTracing === TraceMode.NONE) {
+        console.log("[mobx.trace] '" + derivation.name + "' tracing enabled");
+    }
+    derivation.isTracing = enterBreakPoint ? TraceMode.BREAK : TraceMode.LOG;
+}
+function getAtomFromArgs(args) {
+    switch (args.length) {
+        case 0:
+            return globalState.trackingDerivation;
+        case 1:
+            return getAtom(args[0]);
+        case 2:
+            return getAtom(args[0], args[1]);
+    }
+}
+
 var Reaction = (function () {
     function Reaction(name, onInvalidate) {
         if (name === void 0) { name = "Reaction@" + getNextId(); }
@@ -3046,6 +3210,7 @@ var Reaction = (function () {
         this._isScheduled = false;
         this._isTrackPending = false;
         this._isRunning = false;
+        this.isTracing = TraceMode.NONE;
     }
     Reaction.prototype.onBecomeStale = function () {
         this.schedule();
@@ -3158,6 +3323,10 @@ var Reaction = (function () {
             ? " (... or any observable accessed during the remainder of the current run)"
             : "") + "\n\t" + getMessage("m038") + "\n";
     };
+    Reaction.prototype.trace = function (enterBreakPoint) {
+        if (enterBreakPoint === void 0) { enterBreakPoint = false; }
+        trace(this, enterBreakPoint);
+    };
     return Reaction;
 }());
 function registerErrorHandler(handler) {
@@ -3265,68 +3434,6 @@ var computed = function computed(arg1, arg2, arg3) {
 };
 computed.struct = computedStructDecorator;
 computed.equals = createComputedDecorator;
-
-function getAtom(thing, property) {
-    if (typeof thing === "object" && thing !== null) {
-        if (isObservableArray(thing)) {
-            invariant(property === undefined, getMessage("m036"));
-            return thing.$mobx.atom;
-        }
-        if (isObservableMap(thing)) {
-            var anyThing = thing;
-            if (property === undefined)
-                return getAtom(anyThing._keys);
-            var observable = anyThing._data[property] || anyThing._hasMap[property];
-            invariant(!!observable, "the entry '" + property + "' does not exist in the observable map '" + getDebugName(thing) + "'");
-            return observable;
-        }
-        // Initializers run lazily when transpiling to babel, so make sure they are run...
-        runLazyInitializers(thing);
-        if (property && !thing.$mobx)
-            thing[property]; // See #1072 // TODO: remove in 4.0
-        if (isObservableObject(thing)) {
-            if (!property)
-                return fail("please specify a property");
-            var observable = thing.$mobx.values[property];
-            invariant(!!observable, "no observable property '" + property + "' found on the observable object '" + getDebugName(thing) + "'");
-            return observable;
-        }
-        if (isAtom(thing) || isComputedValue(thing) || isReaction(thing)) {
-            return thing;
-        }
-    }
-    else if (typeof thing === "function") {
-        if (isReaction(thing.$mobx)) {
-            // disposer function
-            return thing.$mobx;
-        }
-    }
-    return fail("Cannot obtain atom from " + thing);
-}
-function getAdministration(thing, property) {
-    invariant(thing, "Expecting some object");
-    if (property !== undefined)
-        return getAdministration(getAtom(thing, property));
-    if (isAtom(thing) || isComputedValue(thing) || isReaction(thing))
-        return thing;
-    if (isObservableMap(thing))
-        return thing;
-    // Initializers run lazily when transpiling to babel, so make sure they are run...
-    runLazyInitializers(thing);
-    if (thing.$mobx)
-        return thing.$mobx;
-    invariant(false, "Cannot obtain administration from " + thing);
-}
-function getDebugName(thing, property) {
-    var named;
-    if (property !== undefined)
-        named = getAtom(thing, property);
-    else if (isObservableObject(thing) || isObservableMap(thing))
-        named = getAdministration(thing);
-    else
-        named = getAtom(thing); // valid for arrays as well
-    return named.name;
-}
 
 function isComputed(value, property) {
     if (value === null || value === undefined)
@@ -3482,52 +3589,6 @@ function getMemoizationId(object) {
         addHiddenProp(object, "$transformId", tid);
     }
     return tid;
-}
-
-function log(msg) {
-    console.log(msg);
-    return msg;
-}
-function whyRun(thing, prop) {
-    switch (arguments.length) {
-        case 0:
-            thing = globalState.trackingDerivation;
-            if (!thing)
-                return log(getMessage("m024"));
-            break;
-        case 2:
-            thing = getAtom(thing, prop);
-            break;
-    }
-    thing = getAtom(thing);
-    if (isComputedValue(thing))
-        return log(thing.whyRun());
-    else if (isReaction(thing))
-        return log(thing.whyRun());
-    return fail(getMessage("m025"));
-}
-
-function getDependencyTree(thing, property) {
-    return nodeToDependencyTree(getAtom(thing, property));
-}
-function nodeToDependencyTree(node) {
-    var result = {
-        name: node.name
-    };
-    if (node.observing && node.observing.length > 0)
-        result.dependencies = unique(node.observing).map(nodeToDependencyTree);
-    return result;
-}
-function getObserverTree(thing, property) {
-    return nodeToObserverTree(getAtom(thing, property));
-}
-function nodeToObserverTree(node) {
-    var result = {
-        name: node.name
-    };
-    if (hasObservers(node))
-        result.observers = getObservers(node).map(nodeToObserverTree);
-    return result;
 }
 
 function interceptReads(thing, propOrHandler, handler) {
@@ -3696,6 +3757,7 @@ exports.expr = expr;
 exports.toJS = toJS;
 exports.createTransformer = createTransformer;
 exports.whyRun = whyRun;
+exports.trace = trace;
 exports.isArrayLike = isArrayLike;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})

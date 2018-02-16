@@ -87,6 +87,11 @@ class Img
         return self::icon('fa-print');
     }
 
+    public static function iconPdf()
+    {
+        return self::icon('fa-file-pdf-o');
+    }
+
     public static function iconMail()
     {
         return self::icon('fa-envelope-o icon-mail');

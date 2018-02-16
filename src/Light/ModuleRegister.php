@@ -40,6 +40,12 @@ class ModuleRegister
             'hidden' => false,
             'section' => 'User Management'
         ],
+        'ProductionCalendar' => [
+            'name' => 'Производственный календарь',
+            'order' => 102,
+            'hidden' => false,
+            'section' => 'System'
+        ],
         'Logviewer' => [
             'name' => 'Logs',
             'order' => 103,

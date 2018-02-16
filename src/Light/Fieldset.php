@@ -206,7 +206,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess
 
         $this->addField(
             F::createDateTime('CreatedDateTime', [
-                'name' => Config::$lang === 'ru' ? 'Дата и время создания' : 'Creation Date, Time',
+                'name' => Config::$lang === 'ru' ? 'Дата создания' : 'Created At',
                 'modes' => F::MODE_READONLY,
             ])
         );

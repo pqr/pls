@@ -11,6 +11,7 @@ use Light\Request;
 use Light\Response;
 use Light\Timer;
 use Light\XlsWriter;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 
 /**
  * @method getTableDataCount()
@@ -36,25 +37,25 @@ trait TableExcelExportable
     protected function getXlsWriter($sheetname)
     {
         $xls = new XlsWriter();
-        $sheet = $xls->getPhpExcelObj()->getActiveSheet();
+        $sheet = $xls->getSpreadsheet()->getActiveSheet();
         // В имени листа не могут быть различные символы, которые запрещены в именах файлов
         $sheet->setTitle(File::getValidFilename($sheetname));
         $sheet->setPrintGridlines(true);
         $sheet->getPageSetup()
             ->setRowsToRepeatAtTopByStartAndEnd(1, 1)
-            ->setOrientation(\PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE)
+            ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
             ->setFitToWidth(1)
             ->setFitToHeight(0);
 
         $xls->writeTableData(
+            1,
+            1,
             $this->getTableData(),
             $this->getFieldsetShowed(),
-            0,
-            1,
-            true,
             function (array $rowData, $rowNum) {
                 return $this->getTableRowDataExcelParams($rowData, $rowNum);
-            }
+            },
+            XlsWriter::ALLOPTS
         );
 
         return $xls;
@@ -62,12 +63,9 @@ trait TableExcelExportable
 
     public function sendExcel($filename = null, $sheetname = null)
     {
-        ini_set('display_errors', 0);
-        error_reporting(0);
         $timer = new Timer();
 
         list($filename, $sheetname) = $this->normalizeFilenameSheetname($filename, $sheetname);
-        //Получим специальный объект типа XlsWriter, в котором содержится PHPExcel с заполненными данными
         if (isset($_GET['json'])) {
 
             $json = json_encode($this->getTableData(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -91,7 +89,6 @@ trait TableExcelExportable
     public function saveExcel($filename = null, $sheetname = null)
     {
         list($filename, $sheetname) = $this->normalizeFilenameSheetname($filename, $sheetname);
-        //Получим специальный объект типа XlsWriter, в котором содержится PHPExcel с заполненными данными
         $xls = $this->getXlsWriter($sheetname);
         //Отправляем в поток
         $xls->send($filename);

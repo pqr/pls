@@ -5,6 +5,7 @@ use Light\Config;
 use Light\Css;
 use Light\Db;
 use Light\Js;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class FieldDateTime extends FieldInputAbstract
 {
@@ -61,7 +62,7 @@ class FieldDateTime extends FieldInputAbstract
                 $out = FieldDateTime::beautify($value);
             } else {
                 $date = new \DateTime($value);
-                $out = \PHPExcel_Shared_Date::PHPToExcel($date);
+                $out = Date::PHPToExcel($date);
             }
         }
 

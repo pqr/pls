@@ -91,10 +91,10 @@ $.datepicker.setDefaults({
 var img = new Image();
 img.src = "lightpublic/i/circle.gif";
 function getLang() {
-    return window['_lightLang'];
+    return window["_lightLang"];
 }
 exports.getLang = getLang;
-exports.isLangRu = window['_lightLang'] === "ru";
+exports.isLangRu = window["_lightLang"] === "ru";
 function initSelectChild($root) {
     $root.find("select.select-child").each(function () {
         var $child = $(this);
@@ -524,8 +524,8 @@ $body.on("focus", "input[type=text].input-datetime:not(.hasDatepicker)", functio
         allowTimes: false,
         step: 1,
         dayOfWeekStart: 1,
-        format: window['_lightDateTimeFormat'],
-        lang: window['_lightLang']
+        format: window["_lightDateTimeFormat"],
+        lang: window["_lightLang"]
     });
     //$input.blur();
     //$input.focus();
@@ -1110,7 +1110,7 @@ function getNodeValue($node, type) {
             break;
         case "Date":
         case "DateTime":
-            if ($node.prop('type') === 'date') {
+            if ($node.prop("type") === "date") {
                 // это нативное поле даты, возвращаем значение как есть, оно уже в формате YYYY-MM-DD
                 value = $node.val();
             }
@@ -1189,7 +1189,7 @@ function setNodeValue($node, newValue, type, triggerChange) {
             break;
         case "Date":
         case "DateTime":
-            if ($node.prop('type') === 'date') {
+            if ($node.prop("type") === "date") {
                 // Это нативное поле input type=date, присваиваем значение в формате YYYY-MM-DD
                 $node.val(newValue);
             }

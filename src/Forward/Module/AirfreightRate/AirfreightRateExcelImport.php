@@ -5,43 +5,46 @@ use Light\Db;
 use Light\Field\FieldDate;
 use Light\Msg;
 use Light\Timer;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\BaseReader;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class AirfreightRateExcelImport
 {
-    const VENDOR = 0;
-    const DEPARTUREIATA = 1;
-    const ARRIVALIATA = 2;
-    const AIRLINE = 3;
-    const TRANSITTIME = 4;
-    const CONTRACT = 5;
-    const VALIDFROM = 6;
-    const VALIDUNTIL = 7;
-    const MIN = 8;
-    const N = 9;
-    const AMOUNT45 = 10;
-    const AMOUNT100 = 11;
-    const AMOUNT200 = 12;
-    const AMOUNT300 = 13;
-    const AMOUNT500 = 14;
-    const AMOUNT750 = 15;
-    const AMOUNT1000 = 16;
-    const AMOUNT2000 = 17;
-    const FSC = 18;
-    const SSC = 19;
-    const CURRENCY = 20;
-    const COMMENTS = 21;
+    const VENDOR = 1;
+    const DEPARTUREIATA = 2;
+    const ARRIVALIATA = 3;
+    const AIRLINE = 4;
+    const TRANSITTIME = 5;
+    const CONTRACT = 6;
+    const VALIDFROM = 7;
+    const VALIDUNTIL = 8;
+    const MIN = 9;
+    const N = 10;
+    const AMOUNT45 = 11;
+    const AMOUNT100 = 12;
+    const AMOUNT200 = 13;
+    const AMOUNT300 = 14;
+    const AMOUNT500 = 15;
+    const AMOUNT750 = 16;
+    const AMOUNT1000 = 17;
+    const AMOUNT2000 = 18;
+    const FSC = 19;
+    const SSC = 20;
+    const CURRENCY = 21;
+    const COMMENTS = 22;
 
     public function __invoke($filepath, Msg $msgBuff)
     {
         $timer = new Timer();
 
-        $reader = \PHPExcel_IOFactory::createReaderForFile($filepath);
-        /** @var \PHPExcel_Reader_Abstract $reader */
+        /** @var BaseReader $reader */
+        $reader = IOFactory::createReaderForFile($filepath);
         $reader->setReadDataOnly(true);
-        /** @var \PHPExcel $excel */
-        $excel = $reader->load($filepath);
+        $spreadsheet = $reader->load($filepath);
 
-        $sheet = $excel->getSheet(0);
+        $sheet = $spreadsheet->getSheet(0);
 
         //Пройдёмся по всем ячейкам
         if (!$msgBuff->isEmpty()) {
@@ -83,16 +86,16 @@ class AirfreightRateExcelImport
     /**
      * Проходит по всему листу и возвращает двумерный массив с данными
      * Каждая строка при этом имеет дополнительный элемент с ключём '_excelRowNum' - оригинальный номер строки
-     * @param \PHPExcel_Worksheet $sheet
+     * @param Worksheet $sheet
      * @return array
-     * @throws \PHPExcel_Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
-    private function getSheetRawData(\PHPExcel_Worksheet $sheet)
+    private function getSheetRawData(Worksheet $sheet)
     {
         $sheetRawData = [];
 
         $highestRowNum = $sheet->getHighestRow(); // e.g. 10
-        $highestColNum = \PHPExcel_Cell::columnIndexFromString($sheet->getHighestColumn()); // e.g. 5
+        $highestColNum = Coordinate::columnIndexFromString($sheet->getHighestColumn()); // e.g. 5
 
         //Начинаем чтение со второй строки - оттуда начинаются данные
         for ($rowNum = 2; $rowNum <= $highestRowNum; $rowNum++) {
@@ -101,7 +104,7 @@ class AirfreightRateExcelImport
             //Этот номер пригодится в сообщениях для логов
             $sheetRawData[$rowNum] = ['_excelRowNum' => $rowNum];
 
-            for ($colNum = 0; $colNum <= $highestColNum; $colNum++) {
+            for ($colNum = 1; $colNum <= $highestColNum; $colNum++) {
 
                 if ($sheet->cellExistsByColumnAndRow($colNum, $rowNum)) {
                     $cell = $sheet->getCellByColumnAndRow($colNum, $rowNum);

@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 
-declare var window:any;
+declare var window: any;
 
 export const listener = new window.keypress.Listener();
 
@@ -25,10 +25,10 @@ let img = new Image();
 img.src = "lightpublic/i/circle.gif";
 
 export function getLang() {
-    return window['_lightLang'];
+    return window["_lightLang"];
 }
 
-export const isLangRu = window['_lightLang'] === "ru";
+export const isLangRu = window["_lightLang"] === "ru";
 
 function initSelectChild($root: JQuery) {
     $root.find("select.select-child").each(function(this: HTMLSelectElement) {
@@ -41,14 +41,14 @@ function initSelectChild($root: JQuery) {
         // С сервера может прийти объект relations в котором числовые данные, однако значения атрибута value
         // в теге option всегда будет строковое - из-за этого lodash filter не сможет сопоставить
         // Заранее переведём все значения в relations в
-        const relations: Array<{ [key: string]: string | number }> = JSON.parse(
-            $child.attr("data-relations")!
-        ).map((relation: { [key: string]: string | number }) => {
-            for (let parentKey in relation) {
-                relation[parentKey] = relation[parentKey].toString();
+        const relations: Array<{ [key: string]: string | number }> = JSON.parse($child.attr("data-relations")!).map(
+            (relation: { [key: string]: string | number }) => {
+                for (let parentKey in relation) {
+                    relation[parentKey] = relation[parentKey].toString();
+                }
+                return relation;
             }
-            return relation;
-        });
+        );
 
         // элемент от которого зависит данный select должен находиться в той же форме
         let $form = $child.closest("form");
@@ -519,8 +519,8 @@ $body.on("focus", "input[type=text].input-datetime:not(.hasDatepicker)", functio
         allowTimes: false,
         step: 1,
         dayOfWeekStart: 1,
-        format: window['_lightDateTimeFormat'],
-        lang: window['_lightLang']
+        format: window["_lightDateTimeFormat"],
+        lang: window["_lightLang"]
     });
     //$input.blur();
     //$input.focus();
@@ -855,7 +855,7 @@ export function buildMapFromObj(obj: { [key: string]: any }): Map<string, any> {
 }
 
 export function buildObjFromMap(m: Map<string, any>): { [key: string]: any } {
-    const obj:{ [key: string]: any } = {};
+    const obj: { [key: string]: any } = {};
     m.forEach((val, key) => {
         obj[key] = val;
     });
@@ -1199,7 +1199,7 @@ export function getNodeValue($node: JQuery, type?: string): string | number {
 
         case "Date":
         case "DateTime":
-            if ($node.prop('type') === 'date') {
+            if ($node.prop("type") === "date") {
                 // это нативное поле даты, возвращаем значение как есть, оно уже в формате YYYY-MM-DD
                 value = $node.val();
             } else {
@@ -1286,7 +1286,7 @@ export function setNodeValue($node: JQuery, newValue: any, type?: string, trigge
 
         case "Date":
         case "DateTime":
-            if ($node.prop('type') === 'date') {
+            if ($node.prop("type") === "date") {
                 // Это нативное поле input type=date, присваиваем значение в формате YYYY-MM-DD
                 $node.val(newValue);
             } else {

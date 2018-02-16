@@ -160,6 +160,7 @@ gulp.task('buildcss', function () {
         'public/css/jquery-ui.min.css',
         'node_modules/font-awesome/css/font-awesome.min.css',
         'public/css/Light.css',
+        'public/css/InvStatus.css',
         'public/css/Table.css'
     ];
 

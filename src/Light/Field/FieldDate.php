@@ -4,6 +4,7 @@ namespace Light\Field;
 
 use Light\Config;
 use Light\Db;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 /**
  * @param string $cssClassFuture
@@ -106,8 +107,12 @@ class FieldDate extends FieldInputAbstract
                 //Нужно записать прямым текстом
                 $out = FieldDate::beautify($value);
             } else {
-                $date = new \DateTime($value);
-                $out = \PHPExcel_Shared_Date::PHPToExcel($date);
+                try {
+                    $date = new \DateTime($value);
+                    $out = Date::PHPToExcel($date);
+                } catch (\Exception $e) {
+                    $out = FieldDate::beautify($value);
+                }
             }
         }
 

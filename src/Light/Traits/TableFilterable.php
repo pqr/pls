@@ -248,6 +248,10 @@ trait TableFilterable
             'any' => false
         ]);
 
+        if ($dateField) {
+            $filterYear->setSqlWhere("YEAR(`$dateField`) = {value}");
+        }
+
         $this->addFilter($filterYear);
 
         return $filterYear;

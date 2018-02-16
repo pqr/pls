@@ -204,13 +204,16 @@ class PrintForm
 
     protected function getDataForExcel(ObjAbstract $obj)
     {
-        return array_merge($obj->getExcelData(), $this->getDialogDataFromRequest());
+        // Используем простой метод $obj->getData(), чтобы получить данные ещё не преобразованные в формат Excel
+        // (например, даты чисто в текстовом формате)
+        // Преобразование в Excel форматы будет позже на этапе writeCellData()
+        return array_merge($obj->getData(), $this->getDialogDataFromRequest());
     }
 
     protected function writeToActiveSheet(XlsWriter $xls, ObjAbstract $obj, $title = null)
     {
         if ($title) {
-            $sheet = $xls->getPhpExcelObj()->getActiveSheet();
+            $sheet = $xls->getSpreadsheet()->getActiveSheet();
             $sheet->setTitle($title);
         }
         $dataForExcel = $this->getDataForExcel($obj);
@@ -317,25 +320,30 @@ class PrintForm
                 break;
 
             case self::FORMAT_EXCEL:
-                // Обнаружил ситуацию, когда в Excel выдается output о php-ошибках. Пока не нашел причину, но решил отключить,
-                //   т.т. в любом случае эти ошибки не должны попадать в excel
-                error_reporting(0);
                 $xls = new XlsWriter(Template::findfile($this->getTemplate($obj)));
                 $this->writeToActiveSheet($xls, $obj);
                 if ($this->out & self::OUT_SAVE) {
-                    $xls->save($destFilepathAbsEnc);
-                    @chmod($destFilepathAbsEnc, 0666);
+                    $this->excelSave($xls, $destFilepathAbsEnc);
                 }
                 if ($this->out & self::OUT_STREAM) {
-                    $xls->send($filename);
+                    $this->excelSend($xls, $filename);
                 }
-                // после вывода Excel - включаем вывод ошибок обратно
-                error_reporting(1);
                 break;
         }
 
         Metric::record(Request::getModule() . '::proceedPrint ' . $this->key, $timer->getMs(), 'ID: ' . $obj->getId());
 
+    }
+
+    protected function excelSave(XlsWriter $xls, string $destFilepathAbsEnc)
+    {
+        $xls->save($destFilepathAbsEnc);
+        @chmod($destFilepathAbsEnc, 0666);
+    }
+
+    protected function excelSend(XlsWriter $xls, $filename)
+    {
+        $xls->send($filename);
     }
 
     public function proceedPrintMultiple(array $objectsAndPaths)
@@ -350,9 +358,9 @@ class PrintForm
 
         if ($this->format === self::FORMAT_EXCEL) {
             $xls = new XlsWriter(Template::findfile($this->getTemplate()));
-            $phpExcelObj = $xls->getPhpExcelObj();
-            $sheetTemplate = $phpExcelObj->getActiveSheet()->copy();
-            $phpExcelObj->removeSheetByIndex(0);
+            $spreadsheet = $xls->getSpreadsheet();
+            $sheetTemplate = $spreadsheet->getActiveSheet()->copy();
+            $spreadsheet->removeSheetByIndex(0);
             $sheetIndex = -1;
         }
 
@@ -432,12 +440,12 @@ class PrintForm
                 case self::FORMAT_EXCEL:
                     $sheet = $sheetTemplate->copy();
                     $sheetIndex++;
-                    $phpExcelObj->addSheet($sheet, $sheetIndex);
-                    $phpExcelObj->setActiveSheetIndex($sheetIndex);
+                    $spreadsheet->addSheet($sheet, $sheetIndex);
+                    $spreadsheet->setActiveSheetIndex($sheetIndex);
                     $title = $obj->getFieldText($obj->getNameFieldKey());
                     $this->writeToActiveSheet($xls, $obj, $title);
                     if ($this->out & self::OUT_SAVE) {
-                        $xls->save($destFilepathAbsEnc);
+                        $this->excelSave($xls, $destFilepathAbsEnc);
                         @chmod($destFilepathAbsEnc, 0666);
                     }
                     break;
@@ -482,7 +490,7 @@ class PrintForm
                     break;
 
                 case self::FORMAT_EXCEL:
-                    $xls->send($filename);
+                    $this->excelSend($xls, $filename);
                     break;
             }
         }
@@ -494,6 +502,11 @@ class PrintForm
     public function isLinkBlank()
     {
         return ($this->out & self::OUT_STREAM) && $this->format === self::FORMAT_HTML;
+    }
+
+    public function getIcon()
+    {
+        return $this->format === PrintForm::FORMAT_EXCEL ? Img::iconExcel() : Img::iconPrint();
     }
 
 }

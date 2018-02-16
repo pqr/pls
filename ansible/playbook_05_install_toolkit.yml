@@ -93,6 +93,7 @@
     - goss
 
   - name: toolkit 9. Sentry-cli
+    become: false
     shell: "curl -sL https://sentry.io/get-cli/ | bash"
     tags: sentry
 
@@ -100,6 +101,6 @@
     become: false
     template:
       src: files/.sentryclirc
-      dest: /home/ubuntu/.sentryclirc"
+      dest: /home/ubuntu/.sentryclirc
       mode: 0600
     tags: sentry

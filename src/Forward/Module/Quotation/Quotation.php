@@ -21,6 +21,7 @@ use Light\Msg;
 use Light\ObjAbstract;
 use Light\Response;
 use Light\XlsWriter;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 class Quotation extends ModuleAbstract
 {
@@ -438,7 +439,7 @@ class Quotation extends ModuleAbstract
         }
 
         $xls = new XlsWriter(__DIR__ . "/quotation_{$companySuffix}_{$lang}.xlsx");
-        $sheet = $xls->getPhpExcelObj()->getActiveSheet();
+        $sheet = $xls->getSpreadsheet()->getActiveSheet();
 
         $excelData = $this->_obj->getExcelData();
         $excelData['CompanyID'] = str_replace(['(USD)', '(EUR)', 'new'], '', $excelData['CompanyID']);
@@ -464,7 +465,7 @@ class Quotation extends ModuleAbstract
                 $sheet->setCellValueExplicit(
                     'A' . $rowNum,
                     $addressLine,
-                    \PHPExcel_Cell_DataType::TYPE_STRING
+                    DataType::TYPE_STRING
                 );
 
                 $rowNum++;
@@ -483,11 +484,11 @@ class Quotation extends ModuleAbstract
                 $sheet->insertNewRowBefore($rowNum);
                 $insertedRows++;
             }
-            $sheet->setCellValueExplicit('C' . $rowNum, $cargoLine['Length'], \PHPExcel_Cell_DataType::TYPE_NUMERIC);
-            $sheet->setCellValueExplicit('D' . $rowNum, $cargoLine['Width'], \PHPExcel_Cell_DataType::TYPE_NUMERIC);
-            $sheet->setCellValueExplicit('E' . $rowNum, $cargoLine['Height'], \PHPExcel_Cell_DataType::TYPE_NUMERIC);
-            $sheet->setCellValueExplicit('F' . $rowNum, $cargoLine['Pieces'], \PHPExcel_Cell_DataType::TYPE_NUMERIC);
-            $sheet->setCellValueExplicit('G' . $rowNum, $cargoLine['Volume'], \PHPExcel_Cell_DataType::TYPE_NUMERIC);
+            $sheet->setCellValueExplicit('C' . $rowNum, $cargoLine['Length'], DataType::TYPE_NUMERIC);
+            $sheet->setCellValueExplicit('D' . $rowNum, $cargoLine['Width'], DataType::TYPE_NUMERIC);
+            $sheet->setCellValueExplicit('E' . $rowNum, $cargoLine['Height'], DataType::TYPE_NUMERIC);
+            $sheet->setCellValueExplicit('F' . $rowNum, $cargoLine['Pieces'], DataType::TYPE_NUMERIC);
+            $sheet->setCellValueExplicit('G' . $rowNum, $cargoLine['Volume'], DataType::TYPE_NUMERIC);
             $rowNum++;
         }
 
@@ -496,12 +497,12 @@ class Quotation extends ModuleAbstract
             $sheet->setCellValueExplicit(
                 'F' . $rowNum,
                 '=SUM(F' . self::EXCEL_CARGO_STARTROW . ':F' . ($rowNum - 1) . ')',
-                \PHPExcel_Cell_DataType::TYPE_FORMULA
+                DataType::TYPE_FORMULA
             );
             $sheet->setCellValueExplicit(
                 'G' . $rowNum,
                 '=SUM(G' . self::EXCEL_CARGO_STARTROW . ':G' . ($rowNum - 1) . ')',
-                \PHPExcel_Cell_DataType::TYPE_FORMULA
+                DataType::TYPE_FORMULA
             );
         }
 
@@ -528,15 +529,15 @@ class Quotation extends ModuleAbstract
                 $sheet->insertNewRowBefore($rowNum);
             }
             $sheet->mergeCells('A' . $rowNum . ':C' . $rowNum);
-            $sheet->setCellValueExplicit('A' . $rowNum, $detailLine['Name'], \PHPExcel_Cell_DataType::TYPE_STRING);
-            $sheet->setCellValueExplicit('D' . $rowNum, $detailLine['Price'], \PHPExcel_Cell_DataType::TYPE_NUMERIC);
-            $sheet->setCellValueExplicit('E' . $rowNum, $detailLine['Per'], \PHPExcel_Cell_DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('A' . $rowNum, $detailLine['Name'], DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('D' . $rowNum, $detailLine['Price'], DataType::TYPE_NUMERIC);
+            $sheet->setCellValueExplicit('E' . $rowNum, $detailLine['Per'], DataType::TYPE_STRING);
             $sheet->setCellValueExplicit(
                 'F' . $rowNum,
                 $detailLine['MinAmount'],
-                \PHPExcel_Cell_DataType::TYPE_NUMERIC
+                DataType::TYPE_NUMERIC
             );
-            $sheet->setCellValueExplicit('G' . $rowNum, $detailLine['Amount'], \PHPExcel_Cell_DataType::TYPE_NUMERIC);
+            $sheet->setCellValueExplicit('G' . $rowNum, $detailLine['Amount'], DataType::TYPE_NUMERIC);
             $rowNum++;
         }
 
@@ -545,13 +546,13 @@ class Quotation extends ModuleAbstract
             $sheet->setCellValueExplicit(
                 'G' . $rowNum,
                 '=SUM(G' . $detailsStartRow . ':G' . ($rowNum - 1) . ')',
-                \PHPExcel_Cell_DataType::TYPE_FORMULA
+                DataType::TYPE_FORMULA
             );
         }
 
         //Вставим комментарии с разбиением по строкам в Excel
         if ($this->_obj['CommentsCustomer']) {
-            $xls->insertTextPerRows(0, $rowNum + 2, $this->_obj['CommentsCustomer']);
+            $xls->writeTextPerRows(1, $rowNum + 2, $this->_obj['CommentsCustomer']);
         }
 
         //Имя файла - это имя клиента + описание котировки

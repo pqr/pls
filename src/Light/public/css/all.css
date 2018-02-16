@@ -1995,6 +1995,200 @@ button.btn-floating {
     text-overflow: ellipsis;
 }
 
+/* статусы счетов */
+*[class^="invstatus"] {
+    white-space: nowrap;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+#select2-Status-results .select2-results__option {
+    padding: 0;
+}
+
+#select2-Status-results .select2-results__options--nested .select2-results__option {
+    padding: 6px;
+}
+
+#select2-Status-results .select2-results__option span {
+    padding: 6px;
+    display: block;
+    border-radius: 0;
+}
+
+.select2-selection__choice *[class^="invstatus"] {
+    white-space: normal;
+    border-radius: 0;
+    padding: 0;
+}
+
+/* DRAFT */
+.invstatus14 {
+    color: silver;
+}
+
+.invicon14 {
+    width: 20px;
+    vertical-align: bottom;
+}
+
+/* OPEN */
+.invstatus11 {
+    color: #636330;
+    background-color: #ffffd4;
+}
+
+.invicon11 {
+    color: #fe8601;
+    width: 20px;
+    vertical-align: bottom;
+}
+
+/* DISPUTE */
+.invstatus12 {
+    color: #b94a48;
+    background-color: #ffe3e3;
+}
+
+.invicon12 {
+    color: #b94a48;
+    width: 20px;
+    vertical-align: bottom;
+}
+
+/* ACCEPTED */
+.invstatus13 {
+    color: #006633;
+    background-color: #f1f5ec;
+}
+
+.invicon13 {
+    color: #006633;
+    font-weight: bold;
+    width: 20px;
+    vertical-align: bottom;
+}
+
+/* CLEARED_DRAFT */
+.invstatus23 {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: #fe8601;
+    margin-left: 1px;
+    margin-right: 5px;
+    vertical-align: bottom;
+}
+
+.invicon23 {
+    color: #fe8601;
+}
+
+/* PARTCLEARED */
+.invstatus21 {
+    color: #f9ffef;
+    background-color: #64992c;
+}
+
+.invicon21 {
+    width: 20px;
+    vertical-align: bottom;
+}
+
+.invicon21 i {
+    display: inline-block;
+    width: 7px;
+    height: 14px;
+    border-radius: 7px 0 0 7px;
+    background-color: #64992c;
+}
+
+.invicon21 i + i {
+    display: inline-block;
+    width: 7px;
+    height: 14px;
+    border-radius: 0 7px 7px 0;
+    background-color: darkgray;
+}
+
+/* CLEARED */
+.invstatus22,
+.invstatus22 a,
+.invstatus22 a:visited {
+    color: #f1f5ec;
+    background-color: #006633;
+}
+
+.invicon22 {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: #006633;
+    margin-left: 1px;
+    margin-right: 5px;
+    vertical-align: bottom;
+}
+
+/* CREDITNOTED */
+.invstatus31 {
+    color: gray;
+    background-color: lightgrey;
+}
+
+.invicon31 {
+    color: gray;
+    width: 20px;
+    vertical-align: bottom;
+}
+
+tr.invrow31 {
+    text-decoration: none;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+/* DELETED */
+.invstatus32 {
+    color: gray;
+    background-color: silver;
+}
+
+.invicon32 {
+    width: 20px;
+    vertical-align: bottom;
+}
+
+tr.invrow32 {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+/* OPENTOXIC */
+.invstatus41 {
+    color: gray;
+    background-color: silver;
+}
+
+.invicon41 {
+    color: darkgray;
+    width: 20px;
+    vertical-align: bottom;
+}
+
+/* ACCEPTED_NOTFORPAYMENT */
+.invstatus42 {
+    color: #005e66;
+    background-color: #b5eaf5;
+}
+
+.invicon42 {
+    color: darkgray;
+    width: 20px;
+    vertical-align: bottom;
+}
+
 .table-div {
     /* хитрый трюк, чтобы все div элементы внутри .table-div по ширине были как таблица, а не как окно браузера */
     /* https://stackoverflow.com/questions/33904792/cannot-make-div-width-100-with-scrollbar */

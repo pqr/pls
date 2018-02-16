@@ -687,7 +687,7 @@ abstract class ModuleAbstract extends Table
         }
     }
 
-    private function proceedViewElfinder()
+    protected function proceedViewElfinder()
     {
         $this->_state = self::STATE_VIEW_ELFINDER;
 
@@ -933,6 +933,7 @@ abstract class ModuleAbstract extends Table
         $this->addModuleSessionNextPrevLinks($this->_obj, 'id');
         $this->initViewSubmenu();
         $this->initViewIntro();
+        $this->initViewFlash();
         $this->initPrintForms();
 
         $tdata = [
@@ -985,6 +986,13 @@ abstract class ModuleAbstract extends Table
      * Метод для переопределения в классах потоках. Здесь нужно последовательно вызывать метод $this->addIntro()
      */
     protected function initViewIntro()
+    {
+    }
+
+    /**
+     * Метод для переопределения в классах потоках. Здесь нужно последовательно вызывать метод Session::flash()
+     */
+    protected function initViewFlash()
     {
     }
 
@@ -1073,7 +1081,7 @@ abstract class ModuleAbstract extends Table
                 foreach ($this->printForms as $printFormName => $printForm) {
                     if ($printForm->testForObj($this->_obj)) {
                         $out[] = [
-                            'text' => ($printForm->getFormat() == PrintForm::FORMAT_EXCEL ? Img::iconExcel() : Img::iconPrint()) . ' ' . $printForm->getTitle(),
+                            'text' => $printForm->getIcon() . ' ' . $printForm->getTitle(),
                             'url' => $printFormUrlStart . $printFormName . ($printForm->getFieldset()->count() ? '#ajax' : '#post'),
                             // Делаем ссылку с открытием нового окна только в том случае, если эта форма настроена
                             // на вывод HTML в браузер
