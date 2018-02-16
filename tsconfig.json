@@ -19,10 +19,14 @@
     "newLine": "LF",
     "declaration": false,
     "outDir": "public/js",
-    "rootDir": "src/Forward"
+    "rootDir": "src/Forward",
+    "lib": [
+      "dom",
+      "es2017"
+    ]
   },
   "files": [
-    "src/Light/public/js/lightbuild.d.ts"
+    "src/Light/TypeScript/types/lightbuild.d.ts"
   ],
   "include": [
     "src/Forward/**/*"

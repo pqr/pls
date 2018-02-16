@@ -1,24 +1,34 @@
 dependencies:
-  '@types/jquery': 3.2.12
-  '@types/lodash': 4.14.74
-  '@types/react': 16.0.5
-  '@types/react-dom': 15.5.4
+  '@types/jquery': 3.3.0
+  '@types/lodash': 4.14.104
+  '@types/react': 16.0.38
+  '@types/react-dom': 16.0.4
 packages:
-  /@types/jquery/3.2.12:
+  /@types/jquery/3.3.0:
+    dev: false
     resolution:
-      integrity: sha512-xZzTbUju6AYFE/088UcH2+dB7yTLHlujDju9pfncD1WLl2LWa6Mn+WzKjFfhn8YA+he53j5K0Rfdw89BN0kDug==
-  /@types/lodash/4.14.74:
+      integrity: sha512-szaKV2OQgwxYTGTY6qd9eeBfGGCaP7n2OGit4JdbOcfGgc9VWjfhMhnu5AVNhIAu8WWDIB36q9dfPVba1fGeIQ==
+  /@types/lodash/4.14.104:
+    dev: false
     resolution:
-      integrity: sha512-BZknw3E/z3JmCLqQVANcR17okqVTPZdlxvcIz0fJiJVLUCbSH1hK3zs9r634PVSmrzAxN+n/fxlVRiYoArdOIQ==
-  /@types/react-dom/15.5.4:
+      integrity: sha512-ufQcVg4daO8xQ5kopxRHanqFdL4AI7ondQkV+2f+7mz3gvp0LkBx2zBRC6hfs3T87mzQFmf5Fck7Fi145Ul6NQ==
+  /@types/node/9.4.6:
+    dev: false
+    resolution:
+      integrity: sha512-CTUtLb6WqCCgp6P59QintjHWqzf4VL1uPA27bipLAPxFqrtK1gEYllePzTICGqQ8rYsCbpnsNypXjjDzGAAjEQ==
+  /@types/react-dom/16.0.4:
     dependencies:
-      '@types/react': 16.0.5
+      '@types/node': 9.4.6
+      '@types/react': 16.0.38
+    dev: false
     resolution:
-      integrity: sha512-70jxjspCatgOXpRptyp/T8bag5prWMvd/rjc5trY3xiKQJOFfWMxGI8pSEJMHi9KQRAhpiLCbJLzcbVFX/nw2w==
-  /@types/react/16.0.5:
+      integrity: sha512-sbz9kOF/1aFlJ+322BLrOhc/ek3G3ADlRtGOjEOhO7c8Z2IVnI4haDGAD/LFwv35e0so+JLe6ovAZ6O0El9n2Q==
+  /@types/react/16.0.38:
+    dev: false
     resolution:
-      integrity: sha512-Wo/JT6Cpl7XuLA1Ov2M2Rso4Tep7rX6h1csbqhNDaSxqeY8nxUbrDkT6vJrKVu+7tw7vmJP9libZSReV9GsG9A==
+      integrity: sha512-t0XJHNrlzLiVAKCWxS9zzAadoQO8zGFpHsrvNVk7QmrDXnm3cPFy2wFcHGNbKjntBiXznL6qQkh+a1Wxu21+dA==
 registry: 'https://registry.npmjs.org/'
+shrinkwrapMinorVersion: 4
 shrinkwrapVersion: 3
 specifiers:
   '@types/jquery': latest

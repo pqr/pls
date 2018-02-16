@@ -1,4 +1,6 @@
 namespace CostSheet {
+    declare var Light:any;
+
     //Заранее узнаем id первозки и сохраним в переменную - пригодится много где
     var shipmentId = Light.getPageParam("shipmentId");
     var dataForSearchAirfreigthRate = Light.getPageParam("DataForSearchAirfreigthRate");
@@ -611,9 +613,12 @@ namespace CostSheet {
     //При нажатии на ссылку "Copy to Selling", которая находится в блоке Buying нужно скопировать
     $("#copy-to-selling-link").on("click", function(e) {
         e.preventDefault();
-        var expensesSubtable = Light.subtables.get("ExpensesEdit");
-        var incomeSubtable = Light.subtables.get("IncomeEdit");
-        var data = expensesSubtable.getData();
+        const expensesSubtable = Light.subtables.get("ExpensesEdit");
+        const incomeSubtable = Light.subtables.get("IncomeEdit");
+        const data = expensesSubtable.getData().map((rowData:any) => {
+            rowData['InvNum'] = '';
+            return rowData;
+        });
         incomeSubtable.empty();
         incomeSubtable.addRows(data);
     });

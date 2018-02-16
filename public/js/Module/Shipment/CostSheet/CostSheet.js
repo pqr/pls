@@ -499,7 +499,10 @@ var CostSheet;
         e.preventDefault();
         var expensesSubtable = Light.subtables.get("ExpensesEdit");
         var incomeSubtable = Light.subtables.get("IncomeEdit");
-        var data = expensesSubtable.getData();
+        var data = expensesSubtable.getData().map(function (rowData) {
+            rowData['InvNum'] = '';
+            return rowData;
+        });
         incomeSubtable.empty();
         incomeSubtable.addRows(data);
     });
