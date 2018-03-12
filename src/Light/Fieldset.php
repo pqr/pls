@@ -2,6 +2,7 @@
 
 namespace Light;
 
+use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
 
 class Fieldset implements \Iterator, \Countable, \ArrayAccess
@@ -194,21 +195,9 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess
     public function addFieldsCreatedBy()
     {
         //Специально выставляем Read Only, чтобы поле автоматически не превращалось в Input в режиме Edit
-        $this->addField(
-            F::createSelect('CreatedBy', [
-                'name' => Config::$lang === 'ru' ? 'Автор' : 'Created By',
-                'modes' => F::MODE_READONLY,
-                'nobr' => true,
-                'tableWidthExcel' => 18,
-                'options' => 'user'
-            ])
-        );
-
-        $this->addField(
-            F::createDateTime('CreatedDateTime', [
-                'name' => Config::$lang === 'ru' ? 'Дата создания' : 'Created At',
-                'modes' => F::MODE_READONLY,
-            ])
+        $this->addFields(
+            CommonFields::createdBy(),
+            CommonFields::createdDateTime()
         );
 
         return $this;

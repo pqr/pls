@@ -3,6 +3,7 @@
 namespace Light\Field;
 
 use Light\Config;
+use Light\Misc;
 
 /**
  * @method string getAllYear()
@@ -29,6 +30,7 @@ class FieldMonth extends FieldInputAbstract
         $this->yearUntil = (int)date('Y') + 1;
         $this->inputPattern = '(\d{1,2})?/?(\d{4})?';
         $this->tableWidthHtml = 50;
+        $this->tableAlign = 'center';
         $this->name = Config::$lang === 'ru' ? 'Месяц' : 'Month';
     }
 
@@ -40,8 +42,12 @@ class FieldMonth extends FieldInputAbstract
             $out = '';
         } else {
             try {
-                $date = new \DateTime($value);
-                $out = $date->format("M'y");
+                if (Config::$lang === 'ru') {
+                    $out = Misc::getRusMonthNameYear($value, true);
+                } else {
+                    $date = new \DateTime($value);
+                    $out = $date->format("M'y");
+                }
             } catch (\Exception $e) {
                 $out = '';
             }

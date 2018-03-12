@@ -187,7 +187,7 @@ class Misc
         return $start[$index] . ($genitive ? $endGen[$index] : $end[$index]);
     }
 
-    public static function getRusMonthNameYear(string $monthAsDate)
+    public static function getRusMonthNameYear(string $monthAsDate, $short = false)
     {
         $monthNo = (int)substr($monthAsDate, 5, 2);
         $monthText = self::getRusMonthName($monthNo);
@@ -197,6 +197,13 @@ class Misc
 
         // Если получили не пустой месяц, то добавим и год
         $year = substr($monthAsDate, 0, 4);
+
+        if ($short) {
+            $monthTextShort = mb_substr($monthText, 0, 3);
+            $yearShort = substr($year, 2);
+            return "$monthTextShort'$yearShort";
+        }
+
         return "$monthText $year";
     }
 

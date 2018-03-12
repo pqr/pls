@@ -113,7 +113,7 @@ abstract class ModuleAbstract extends Table
 
     private function getModule()
     {
-        return Request::getModule() ?: Misc::getClass($this);
+        return Misc::getClass($this) ?: Request::getModule();
     }
 
     /**
@@ -457,6 +457,10 @@ abstract class ModuleAbstract extends Table
      */
     protected function getTplData()
     {
+        if (!$this->allowEdit || !User::hasWriteAccess() || ($this->_obj->getId() && !$this->hasWriteAccessRightToObj($this->_obj))) {
+            $this->disableAllFieldsEdit();
+        }
+
         //Если есть поле Color и режим View - добавим ему параметр source
         if ($this->_state === self::STATE_VIEW && $this->hasField('Color')) {
             $this->getField('Color')->setParam(
@@ -913,10 +917,6 @@ abstract class ModuleAbstract extends Table
     {
         $this->_state = self::STATE_VIEW;
 
-        if (!$this->allowEdit || !User::hasWriteAccess() || !$this->hasWriteAccessRightToObj($this->_obj)) {
-            $this->disableAllFieldsEdit();
-        }
-
         //Наконец, это обычный режим view
         $this->initCssJs();
 
@@ -1097,6 +1097,11 @@ abstract class ModuleAbstract extends Table
         return $out;
     }
 
+    protected function isViewDialog()
+    {
+        return Request::isAjax() && Request::isGet() && isset($_GET['func']) && $_GET['func'] === 'Dialog';
+    }
+
     /**
      * Удобная фнуция, которую можно вызвать сделав ajax get запрос по адресу ?a=<module>&id=...&func=Dialog#ajax
      * В итоге движок покажет диалоговое окно как бы из режима View
@@ -1131,10 +1136,9 @@ abstract class ModuleAbstract extends Table
 
         // Формируем HTML код страницы в режиме view
         // Чтобы работали ajax ссылки на изменение полей, обернём в дополнительный div с параметрами для ajax запросов
-        $html .= '<div data-ajaxchangefieldurl="?a=' . $module . '&func=ChangeField&id=">';
-        $tdata = $this->getTplData();
-        $html .= Template::parseTpl("$module.tpl.php", $tdata);
-        $html .= '<div>';
+        $html .= '<div data-ajaxchangefieldurl="?a=' . $module . '&func=ChangeField&id=">'
+            . $this->getViewEditContentHtml()
+            . '<div>';
 
         // Отправляем в диалоговом окне
         Response::showDialog($html
@@ -1318,7 +1322,7 @@ abstract class ModuleAbstract extends Table
         }
 
         //Были ли другие ошибки? Если были, нажал ли пользователь кнопку Save Anyway?
-        if (!isset($_GET['saveanyway']) && count($this->_saveErrors) > 0) {
+        if (!isset($_REQUEST['saveanyway']) && count($this->_saveErrors) > 0) {
             $this->abortInsertUpdate(400);
         }
 
@@ -1333,7 +1337,6 @@ abstract class ModuleAbstract extends Table
             $this->createFolder($this->_obj->getData());
         }
 
-
         if ($this->_justInserted) {
             $this->afterInsert($this->_obj, $dataFromPost, $msgBuff);
         } else {
@@ -1344,8 +1347,8 @@ abstract class ModuleAbstract extends Table
 
         Db::commit();
 
-
-        $msg = '<strong>' . $this->_obj->getDescriptionHtml() . '</strong> saved';
+        $textSaved = Config::$lang === 'ru' ? 'сохранён' : 'saved';
+        $msg = "<strong>{$this->_obj}</strong> $textSaved";
         if ($timer->get() > 3) {
             $msg .= ' (' . $timer->getHtml() . ')';
         }
@@ -1355,7 +1358,6 @@ abstract class ModuleAbstract extends Table
 
         $this->redirectAfterSubmit();
     }
-
 
     protected function redirectAfterSubmit()
     {
@@ -2189,11 +2191,11 @@ abstract class ModuleAbstract extends Table
 
             $this->initListJsData();
             $this->initListIntro();
-            $this->initListFlashMessagess();
+            $this->initListFlash();
 
             //Это обычный запрос на рендринг таблицы в режиме List
             $tdata = [
-                'table' => $this->getHtmlTableDivWrapper(). '</div>',
+                'table' => $this->getHtmlTableDivWrapper() . '</div>',
                 'buttons' => $this->getListButtons(),
                 'filters' => $this->getFiltersHtml()
             ];
@@ -2224,7 +2226,7 @@ abstract class ModuleAbstract extends Table
      * не запускается при ajax обновлении таблицы, не запускается при экспорте в Excel)
      * Внутри нужно вызывать Session::flashSuccess(...)
      */
-    protected function initListFlashMessagess()
+    protected function initListFlash()
     {
     }
 

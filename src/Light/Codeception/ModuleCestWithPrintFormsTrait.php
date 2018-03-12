@@ -2,6 +2,7 @@
 namespace Light\Codeception;
 
 use Codeception\Example;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 trait ModuleCestWithPrintFormsTrait
 {
@@ -15,7 +16,7 @@ trait ModuleCestWithPrintFormsTrait
      */
     private function printHtmlInternal($I, Example $example)
     {
-        list($id, $form) = $example;
+        [$id, $form] = $example;
 
         $I->wantTo('Print HTML for ID ' . $id . ' with form: ' . $form);
 
@@ -29,10 +30,40 @@ trait ModuleCestWithPrintFormsTrait
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
      * @param \Codeception\Example $example
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     */
+    private function printExcelInternal($I, Example $example)
+    {
+        [$id, $form] = $example;
+
+        $I->wantTo('Print Excel for ID ' . $id . ' with form: ' . $form);
+
+        $I->sendPOST('?a='.$this->getModule().'&id=' . $id . '&func=Print&form=' . $form);
+
+        $I->expect('See Content-Type application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $I->canSeeHttpHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $responseBody = $I->grabResponse();
+        $I->assertNotContainsSqlError($responseBody);
+        $I->assertNotContainsXdebugError($responseBody);
+
+        $filepath = LIGHT_DIR_ROOT . '/tests/_output/' . $form . '.xlsx';
+        file_put_contents($filepath, $responseBody);
+
+        // Попробуем прочитать весь Excle файл, чтобы убедиться, что нет Exception
+        $spreadsheet = IOFactory::load($filepath);
+        // Попробуем прочитать первый лист, чтобы убедиться, что нет Exception
+        $spreadsheet->getSheet(0);
+    }
+
+    /**
+     * @param \AcceptanceTester | \FunctionalTester $I
+     * @param \Codeception\Example $example
      */
     private function printPdfInternal($I, Example $example)
     {
-        list($id, $form) = $example;
+        [$id, $form] = $example;
 
         $I->wantTo('Print PDF for ID ' . $id . ' with form: ' . $form);
 
@@ -53,7 +84,7 @@ trait ModuleCestWithPrintFormsTrait
     private function testPrintButtonsInternal($I, Example $example)
     {
         /** @var array $forms */
-        list($id, $forms) = $example;
+        [$id, $forms] = $example;
         if ($forms) {
             $forms = explode('|', $forms);
         } else {
@@ -89,7 +120,7 @@ trait ModuleCestWithPrintFormsTrait
     private function testPrintButtonsMultipleInternal($I, Example $example)
     {
         /** @var array $forms */
-        list($idsString, $forms) = $example;
+        [$idsString, $forms] = $example;
         if ($forms) {
             $forms = explode('|', $forms);
         } else {

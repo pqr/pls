@@ -110,22 +110,22 @@ th {
 #mainmenu__avatar {
     /*margin: 5px auto 0.5em;*/
     margin: -0.5em auto 0.5em;
+    cursor: pointer;
 }
 
 #mainmenu__avatar .santa-hat {
     position: absolute;
     width: 50px;
-    top: 0px;
+    top: 0;
     left: 26%;
     transform: rotate(340deg) scale(-1, 1);
     cursor: pointer;
 }
 
-#mainmenu__avatarimg {
+.avatar {
     width: 50px;
     height: 50px;
     border-radius: 25px;
-    cursor: pointer;
 }
 
 #mainmenu__avatarinputfile {
@@ -137,6 +137,35 @@ th {
     display: block;
     padding-left: 190px;
     padding-bottom: 100px;
+}
+
+.march8-poster-fixed {
+    position: fixed;
+    overflow: auto;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.march8-poster-modal {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -300px;
+    margin-top: -300px;
+    cursor: pointer;
+}
+
+.march8-poster-container {
+    width: 600px;
+    height: 600px;
+}
+
+.march8-poster-container img {
+    width: 100%;
 }
 
 .global-menu-unfix #global-content {
@@ -2071,6 +2100,11 @@ button.btn-floating {
 
 /* CLEARED_DRAFT */
 .invstatus23 {
+    color: #f9ffef;
+    background-color: #fe8601;
+}
+
+.invicon23 {
     display: inline-block;
     width: 14px;
     height: 14px;
@@ -2079,10 +2113,6 @@ button.btn-floating {
     margin-left: 1px;
     margin-right: 5px;
     vertical-align: bottom;
-}
-
-.invicon23 {
-    color: #fe8601;
 }
 
 /* PARTCLEARED */
@@ -2389,7 +2419,7 @@ div.filters input[type=text].input-default {
 .filters-save,
 .filters-layout,
 .filters-layout-cancel,
-.filters-layout-reset,
+.filters-layout-reset-sort,
 .filters-layout-allvisible,
 .filters-layout-allinvisible {
     font-size: 1.2em;
@@ -2419,7 +2449,7 @@ div.filters input[type=text].input-default {
     color: #594C05;
 }
 
-.filters-layout-reset:hover {
+.filters-layout-reset-sort:hover {
     color: #6B4C86;
 }
 

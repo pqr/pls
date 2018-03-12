@@ -2,12 +2,12 @@ import {setUserParam, toastError} from "./Light";
 
 $(function () {
     //Навесим обработчики на пункты меню
-    const $mainmenu:JQuery = $("#mainmenu");
+    const $mainmenu: JQuery = $("#mainmenu");
     //$("ul[data-status=closed]").hide();
-    $mainmenu.on("click", ".mainmenu__sectionhead", function (this:HTMLElement) {
-        const $clikedHeader:JQuery = $(this);
-        const sectionText:string = $clikedHeader.attr("data-name")!;
-        const $ul:JQuery = $clikedHeader.next('ul');
+    $mainmenu.on("click", ".mainmenu__sectionhead", function (this: HTMLElement) {
+        const $clikedHeader: JQuery = $(this);
+        const sectionText: string = $clikedHeader.attr("data-name")!;
+        const $ul: JQuery = $clikedHeader.next('ul');
         //Узнаем текущее состояние этой секции
         const newState = $ul.attr("data-status") === 'closed' ? 'open' : 'closed';
         $ul.attr("data-status", newState);
@@ -19,12 +19,27 @@ $(function () {
         setUserParam("Mainmenu/" + sectionText, newState);
     });
 
-    const $body:JQuery = $("body");
-    const $layout:JQuery = $("#global-layout");
-    const $menu:JQuery = $(".global-menu");
-    const $menuBut:JQuery = $(".hideshow-menu-button");
-    const $pinBut:JQuery = $(".pin-menu-button");
+    const $body: JQuery = $("body");
+    const $layout: JQuery = $("#global-layout");
+    const $menu: JQuery = $(".global-menu");
+    const $menuBut: JQuery = $(".hideshow-menu-button");
+    const $pinBut: JQuery = $(".pin-menu-button");
 
+    $body.on("click", ".march8", function () {
+        $body.append('<div class="march8-poster-fixed"><div class="march8-poster-modal"><div class="march8-poster-container"><img src="lightpublic/i/march8.png"></div></div></div>');
+    });
+
+    $body.on("click", ".march8-poster-fixed", function () {
+        $body.find(".march8-poster-fixed").remove();
+    });
+
+    $(document).on("keydown", function(e: any) {
+        const $marchh8poster = $body.find(".march8-poster-fixed");
+        if ($marchh8poster.length != 0 && e.keyCode === 27) {
+            e.preventDefault();
+            $marchh8poster.remove();
+        }
+    });
 
     const showMenu = function () {
         $menu.addClass("global-menu-show");
@@ -38,7 +53,7 @@ $(function () {
 
     $menuBut.on("click", showMenu);
 
-    $body.on("click", (e:JQuery.Event) => {
+    $body.on("click", (e: JQuery.Event) => {
         if ($menu.hasClass("global-menu-show")
             && !$(e.target).closest('.hideshow-menu-button').length
             && !$(e.target).closest('.global-menu').length) {
@@ -57,7 +72,7 @@ $(function () {
     });
 
     let fileuploadInited = false;
-    $("#mainmenu__avatarimg").on('click', function(){
+    $("#mainmenu__avatar").on('click', function () {
 
         if (!fileuploadInited) {
 
@@ -76,11 +91,12 @@ $(function () {
                     imageMaxWidth: 800,
                     imageMaxHeight: 800,
                     imageCrop: true,
-                    done: function (_:any, data:any) {
+                    done: function (_: any, data: any) {
                         if (data.result.error) {
                             toastError(data.result.text);
                         } else {
-                            $("#mainmenu__avatarimg").attr('src', data.result.imgUrl);
+                            const newSrc = `index.php?a=Core&ps=GetUserAvatar&time=${Date.now()}`;
+                            $("#mainmenu__avatar").find("img").attr('src', newSrc);
                         }
                     }
                 });

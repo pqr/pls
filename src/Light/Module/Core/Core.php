@@ -11,6 +11,7 @@ use Light\Db;
 use Light\DbLog;
 use Light\Field\FieldDate;
 use Light\File;
+use Light\FilesFolder;
 use Light\Metric;
 use Light\Misc;
 use Light\ModuleRegister;
@@ -405,15 +406,15 @@ class Core
             return;
         }
 
-        if (!isset($_POST['Layout'], $_POST['Invisible'])) {
-            Response::abort(400, 'No POST Layout or Invisible');
+        if (!isset($_POST['Layout'])) {
+            Response::abort(400, 'No POST Layout');
             return;
         }
 
         $tableId = (int)DbLog::getTableId($_GET['TableName']);
         $data = [
             'Sort' => json_encode($_POST['Layout']),
-            'Invisible' => json_encode($_POST['Invisible'])
+            'Invisible' => json_encode($_POST['Invisible'] ?? [])
         ];
 
         $existSettingsId = $id = Db::getOne(
@@ -465,29 +466,51 @@ class Core
         }
 
         if (!$image) {
-            print json_encode(['error' => true, 'text' => 'Не опознано расширение (jpg)']);
+            print json_encode(['error' => true, 'text' => 'Не опознано расширение']);
             ApplicationAbstract::terminate();
         }
 
-        File::mkdir(LIGHT_DIR_PUBLIC . "/i/employees/users/avatar");
+        $relativePath = FilesFolder::getModuleRelative('User', User::getId());
+        FilesFolder::mkdir($relativePath);
 
-        $userId = User::getId();
-        $destImg = LIGHT_DIR_PUBLIC . "/i/employees/users/$userId.jpg";
-        $destAvatar = LIGHT_DIR_PUBLIC . "/i/employees/users/avatar/$userId.jpg";
+        $photoFileAbs = FilesFolder::getAbsolutePath("$relativePath/Photo.jpg");
+        $avatarFileAbs = FilesFolder::getAbsolutePath("$relativePath/Avatar.jpg");
 
-        move_uploaded_file($tmpFileName, $destImg);
+        move_uploaded_file($tmpFileName, $photoFileAbs);
 
         // обрежем фотографию до размера 500x500 px
-        $img = Misc::resizeImage($destImg, $image, 500, 500, true);
+        $img = Misc::resizeImage($photoFileAbs, $image, 500, 500, true);
 
         // сделаем также уменьшенную фотографию для аватарки
-        $avatar = Misc::resizeImage($destImg, $image, 100, 100, true);
+        $avatar = Misc::resizeImage($photoFileAbs, $image, 100, 100, true);
 
         // сохраним фотографии
-        imagejpeg($img, $destImg, 90);
-        imagejpeg($avatar, $destAvatar, 90);
+        imagejpeg($img, $photoFileAbs, 90);
+        imagejpeg($avatar, $avatarFileAbs, 90);
 
-        echo json_encode(['imgUrl' => "i/employees/users/$userId.jpg" . "?" . filemtime($destImg)]);
+        Response::json(['success' => true]);
+
+        ApplicationAbstract::terminate();
+
+        //echo json_encode(['imgUrl' => "i/employees/users/$userId.jpg" . "?" . filemtime($photoFile)]);
+    }
+
+    public static function proceedGetUserAvatar()
+    {
+        $userId = $_GET['UserID'] ?? User::getId();
+        $relativePath = FilesFolder::getModuleRelative('User', $userId);
+        $avatarFileAbs = FilesFolder::getAbsolutePath("$relativePath/Avatar.jpg");
+        if (file_exists($avatarFileAbs)) {
+
+            Response::header('Content-Type: image/jpg');
+            print file_get_contents($avatarFileAbs);
+            ApplicationAbstract::terminate();
+
+        }
+
+        Response::header('Content-Type: image/png');
+        print file_get_contents(LIGHT_DIR_LIGHTPUBLIC .'/i/user.png');
+        ApplicationAbstract::terminate();
     }
 
     public static function proceedGetCurrRate()

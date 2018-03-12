@@ -26,7 +26,7 @@ class OceanCarrier extends ModuleAbstract
 
     protected function initFilters()
     {
-        $this->filtersNoSettings = true;
+        $this->allowFiltersLayoutChange = false;
         $this->addFilterName();
     }
 }

@@ -48,7 +48,7 @@ class FilesFolder
     {
         // Если задана переменная Config::$filesfolder и текущее окружение пользователя позволяет открывать ссылки
         // в проводнике - тогда сформируем ссылку для проводника
-        if (Config::$filesfolder && self::isWindowsSharedFolderAllowed()) {
+        if (Config::$filesfolder) {
 
             // Когда url передаётся в браузер под видом ссылки file:// важно чтобы имена папок и файлов
             // были закодированы с помощью rawurlencode
@@ -56,14 +56,14 @@ class FilesFolder
 
             // Разрешены нативные папки. Чтобы сформировать правильный url, нужно определить операционную систему клиента
             if (self::isUserAgentNix()) {
-
                 // Пользователь работает через OS X или Linux - делаем для него ссылку на smb
                 return 'smb://' . str_replace(['\\\\', '\\'], ['', '/'], Config::$filesfolder) . '/' . $relativePath;
-
             }
 
-            // Пользователь работает из Windows, для него делаем ссылки типа file:///
-            return 'file:///' . Config::$filesfolder . '/' . $relativePath;
+            if (self::isWindowsSharedFolderAllowed()) {
+                // Пользователь работает из Windows, для него делаем ссылки типа file:///
+                return 'file:///' . Config::$filesfolder . '/' . $relativePath;
+            }
 
         }
 
@@ -110,6 +110,18 @@ class FilesFolder
     {
         $url = self::getUrl($relativePath);
         return '<a href="' . $url . '" target="_blank">' . $innerHtml . '</a>';
+    }
+
+    public static function getModuleLinkWithIcon(string $module, int $id, string $innerHtml = '')
+    {
+        $relativePath = self::getModuleRelative($module, $id);
+        return self::getLinkWithIcon($relativePath, $innerHtml);
+    }
+
+    public static function getModuleLink(string $module, int $id, string $innerHtml)
+    {
+        $relativePath = self::getModuleRelative($module, $id);
+        self::getLink($relativePath, $innerHtml);
     }
 
     public static function isDir(string $relativePath): bool
@@ -325,6 +337,18 @@ class FilesFolder
     public static function getAbsolutePath(string $relativePath)
     {
         return Config::$filesfolderLocal . '/' . $relativePath;
+    }
+
+    public static function getModuleRelative(string $module, int $id)
+    {
+        $sub = floor($id / 1000);
+        return "$module/$sub/$id";
+    }
+
+    public static function getModuleAbsolute(string $module, int $id)
+    {
+        $relativePath = self::getModuleRelative($module, $id);
+        return self::getAbsolutePath($relativePath);
     }
 
     /**

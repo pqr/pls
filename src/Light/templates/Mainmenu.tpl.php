@@ -6,11 +6,21 @@ $activeModule = \Light\Request::getModule();
         <div style="text-align: right">
             <a class="pin-menu-button"><i class="fa fa-thumb-tack"></i></a>
         </div>
-        <div id="mainmenu__avatar">
-<!--            <img src="lightpublic/i/santa-hat.png" class="santa-hat">-->
-            <img id="mainmenu__avatarimg" src="<?= \Light\Img::getUserAvatarUrl(\Light\User::getId()) ?>">
-            <input id="mainmenu__avatarinputfile" type="file" name="avatar">
-        </div>
+        <?php if (date('m-d') === '03-07' && \Light\User::getFieldData('Sex') === 'f'): ?>
+            <div style="margin: 0 auto 1em;">
+                <?php
+                $files = glob('lightpublic/i/march8_gifs/*.gif');
+                $file = array_rand($files);
+                ?>
+                <img src="<?= $files[$file] ?>" style="width: 120px; cursor: pointer;" class="march8">
+            </div>
+        <?php else: ?>
+            <div id="mainmenu__avatar">
+                <!--            <img src="lightpublic/i/santa-hat.png" class="santa-hat">-->
+                <img class="avatar" src="index.php?a=Core&ps=GetUserAvatar">
+                <input id="mainmenu__avatarinputfile" type="file" name="avatar">
+            </div>
+        <?php endif; ?>
 
         <div id="mainmenu__username" title="Username"><?= htmlspecialchars(\Light\User::getName()) ?></div>
         <div id="mainmenu__usergroup" title="Usergroup"><?= htmlspecialchars(\Light\User::getGroupName()) ?></div>

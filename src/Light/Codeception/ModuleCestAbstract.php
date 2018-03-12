@@ -123,7 +123,7 @@ abstract class ModuleCestAbstract
         if ($I instanceof \AcceptanceTester) {
 
             $I->canSeeInCurrentUrl('?a=' . $this->getModule() . '&id=' . $this->getTestObjId());
-            $I->canSee('saved', '.alert-success');
+            $I->canSeeElement('.alert-success');
 
         } elseif ($I instanceof \FunctionalTester) {
 

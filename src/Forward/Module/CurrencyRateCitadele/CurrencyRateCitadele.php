@@ -20,7 +20,7 @@ class CurrencyRateCitadele extends ModuleAbstract
 
     protected function initFilters()
     {
-        $this->filtersNoSettings = true;
+        $this->allowFiltersLayoutChange = false;
         $this->addFiltersDatesFromUntil('ValidDate', ['name' => 'Valid']);
     }
 

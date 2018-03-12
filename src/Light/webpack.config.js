@@ -16,12 +16,14 @@ DtsBundlePlugin.prototype.apply = function (compiler) {
 };
 
 module.exports = {
+    mode: 'production',
     devtool: "source-map",
     entry: './TypeScript/index.ts',
     output: {
-        filename: './public/js/build/lightbuild.js',
+        filename: 'lightbuild.js',
+        path: __dirname + '/public/js/build',
         library: 'Light',
-        libraryTarget: 'window',
+        libraryTarget: 'window'
     },
     resolve: {
         extensions: ['.ts']

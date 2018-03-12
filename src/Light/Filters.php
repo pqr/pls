@@ -433,13 +433,13 @@ class Filters
     }
 
     /**
-     * @param bool $noSettings
+     * @param bool $allowLayoutChange
      * @param array $filtersLayout - это массив настроек заданный внутри метода $this->initFilters(), он имеет не совсем верную стуктуру с числовыми ключами
      * @param array $doNotReset
      * @return string
      * @throws \Exception
      */
-    public function getHtml(bool $noSettings, array $filtersLayout, array $doNotReset): string
+    public function getHtml(bool $allowLayoutChange, array $filtersLayout, array $doNotReset): string
     {
         if ($this->fieldset->isEmpty()) {
             return '';
@@ -475,7 +475,7 @@ class Filters
         $defaultLayoutForJs = null;
         $invisibleArray = [];
 
-        if (!$noSettings) {
+        if ($allowLayoutChange) {
 
             // Текущий массив $layout сохраним в отдельную структуру для вывода в js окружение
             $defaultLayoutForJs = $this->getDefaultLayoutForJs($layout);
@@ -515,7 +515,7 @@ class Filters
 
             if ($colIndex === 0) {
                 // В конце первой колонки добавляем строку с кнопками Filter и Reset
-                $content .= Template::filtersButtonsRow();
+                $content .= Template::filtersButtonsRow($allowLayoutChange);
             }
 
             $content .= '</table></td>';
@@ -527,7 +527,7 @@ class Filters
 
         $fieldsAttr = ' data-fields="' . htmlspecialchars(json_encode($fieldsForJs)) . '"';
         $defaultLayoutAttr = $defaultLayoutForJs ? ' data-defaultlayout="' . htmlspecialchars(json_encode($defaultLayoutForJs)) . '"' : '';
-        $noSettingsAttr = ' data-nosettings="' . ($noSettings ? '1' : '0') . '"';
+        $allowLayoutChangeAttr = ' data-allowlayoutchange="' . ($allowLayoutChange ? '1' : '0') . '"';
 
         return '
         <div class="filters">
@@ -535,7 +535,7 @@ class Filters
                   onsubmit="return false;"
                   ' . $fieldsAttr . '
                   ' . $defaultLayoutAttr . '
-                  ' . $noSettingsAttr . '
+                  ' . $allowLayoutChangeAttr . '
             >
                 ' . $content . '
             </form>

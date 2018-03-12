@@ -1,4 +1,5 @@
 <?php
+
 namespace Light;
 
 //Проверим, задан ли конфиг для rollbar - там обяхательно должен быть access token
@@ -63,6 +64,9 @@ function reportException(\Exception $e)
 {
     if (Config::$rollbar) {
         Rollbar::log(Level::ERROR, $e);
+    } elseif (Config::$sentry && Config::$sentry['dns']) {
+        // TODO: сделать отправку в Sentry
+        errorHandlerCsvLog($e->getCode(), $e->getMessage(), $e->getFile(), $e->getLine());
     } else {
         errorHandlerCsvLog($e->getCode(), $e->getMessage(), $e->getFile(), $e->getLine());
     }

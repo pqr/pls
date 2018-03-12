@@ -407,7 +407,11 @@ $(document)
     .ajaxSend((_, XMLHttpRequest, ajaxOptions) => {
         ajaxCounter++;
         // Отображаем глобальный прогресс бар (если его ещё нет)
-        if (!document.getElementById("globalprogress")) {
+        if (
+            !document.getElementById("globalprogress") &&
+            (ajaxOptions.headers === undefined ||
+                (ajaxOptions.headers !== undefined && ajaxOptions.headers["X-No-Loading-Ajax"] === undefined))
+        ) {
             $('<div id="globalprogress"><div></div></div>').appendTo("body");
         }
         if (ajaxOptions.type === "POST") {
@@ -480,10 +484,7 @@ $(document)
 const $body = $(document.body);
 
 $body.on("focus", "input[type=text].input-date:not(.hasDatepicker)", function(this: HTMLInputElement) {
-    $(this)
-        .datepicker()
-        .blur()
-        .focus();
+    $(this).datepicker();
 });
 
 $body.on("change", "input[type=date]", function(this: HTMLInputElement) {

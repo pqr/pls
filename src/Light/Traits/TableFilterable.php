@@ -23,7 +23,7 @@ trait TableFilterable
     protected $filtersDoNotReset = [];
 
     /** @var bool выключает возможность пользовательской настройки */
-    protected $filtersNoSettings = false;
+    protected $allowFiltersLayoutChange = true;
 
     /**
      * @var array Шаблон фильтров как массив из трёх колонок
@@ -316,7 +316,7 @@ trait TableFilterable
 
     public function getFiltersHtml()
     {
-        return $this->filters->getHtml($this->filtersNoSettings, $this->filtersLayout, $this->filtersDoNotReset);
+        return $this->filters->getHtml($this->allowFiltersLayoutChange, $this->filtersLayout, $this->filtersDoNotReset);
     }
 
     public function getFiltersSqlWhere()

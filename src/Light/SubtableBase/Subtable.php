@@ -63,7 +63,7 @@ abstract class Subtable extends Table
      * @var array поля из списка $_groupconcatFieldKeys будут добавлены в мастер-модуль для режима List, причём
      * их значения будут вычисляться на лету с помощью GROUP_CONCAT подзапроса
      */
-    protected $_groupconcatFieldKeys = [];
+    public $_groupconcatFieldKeys = [];
     /**
      * @var array поля из списка $_cacheFieldsKeys будут добавлены в мастер-модуль для режима List, их значения будут
      * браться из базы из полей с такими же ключами с префиксом Cache.
@@ -128,6 +128,7 @@ abstract class Subtable extends Table
         $this->_tablePrintTotalRecordsFound = false;
         $this->allowSort = false;
         $this->allowTableLayouts = false;
+        $this->nosticky = true;
 
         $this->textAddLink = Config::$lang === 'ru' ? 'Добавить строку' : 'Add Line';
 

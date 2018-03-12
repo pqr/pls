@@ -74,6 +74,11 @@
 
 /* CLEARED_DRAFT */
 .invstatus23 {
+    color: #f9ffef;
+    background-color: #fe8601;
+}
+
+.invicon23 {
     display: inline-block;
     width: 14px;
     height: 14px;
@@ -82,10 +87,6 @@
     margin-left: 1px;
     margin-right: 5px;
     vertical-align: bottom;
-}
-
-.invicon23 {
-    color: #fe8601;
 }
 
 /* PARTCLEARED */

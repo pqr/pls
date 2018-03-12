@@ -6,7 +6,7 @@ export declare class Filters {
     private $form;
     private table;
     private $layer;
-    private noSettings;
+    private allowLayoutChange;
     private $widget;
     resetHandlers: (() => void)[];
     private layoutForCancel;

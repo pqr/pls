@@ -27,7 +27,7 @@ class ModuleAbstractLog extends Table
         parent::__construct(Request::getModule() . 'Log');
 
         $this->tableReloadUrl = '?a=' . Request::getModule() . "&logid=$masterId";
-        $this->filtersNoSettings = true;
+        $this->allowFiltersLayoutChange = false;
 
         $this->_moduleId = (int)Db::getOne(
             "SELECT ID FROM dblog_module WHERE ModuleName = " . Db::escString(Request::getModule())

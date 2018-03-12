@@ -13,6 +13,7 @@ class PrintForm
     const FORMAT_PDF = 'pdf';
     const FORMAT_DOC = 'doc';
     const FORMAT_EXCEL = 'xlsx';
+    const FORMAT_DOCX = 'docx';
 
     const OUT_SAVE = 0b01;
     const OUT_STREAM = 0b10;

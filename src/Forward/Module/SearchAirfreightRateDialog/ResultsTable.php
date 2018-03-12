@@ -142,7 +142,7 @@ class ResultsTable extends Table
 
     protected function initFilters()
     {
-        $this->filtersNoSettings = true;
+        $this->allowFiltersLayoutChange = false;
 
         $this->addFilters(
             GeneralFields::vendorId(false, true),

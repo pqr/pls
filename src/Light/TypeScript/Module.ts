@@ -141,7 +141,7 @@ function updateMassactionDiv() {
     }
 }
 
-function initListListeners() {
+export function initListListeners() {
     try {
         const listTable = table.get(getModule());
         listTable.onSelectRow(updateMassactionDiv);
@@ -306,7 +306,7 @@ export function setValidationHandler(handler: () => boolean): void {
 
 //Обработчик сохранения
 const $body = $("body");
-$body.on("click", "#edit-form .btn-save", function(e) {
+$body.on("click", "#edit-form .btn-save", function(e:any) {
     if ($(e.currentTarget).hasClass("disabled")) {
         return;
     }
@@ -390,7 +390,7 @@ $body.on("change", "#massaction-select", function(this: HTMLSelectElement, e: an
     }
 });
 
-$body.on("click", "a.mushowhide", function(this: HTMLAnchorElement, e) {
+$body.on("click", "a.mushowhide", function(this: HTMLAnchorElement, e:any) {
     e.preventDefault();
     const $link = $(this);
 

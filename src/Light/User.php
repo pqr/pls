@@ -232,6 +232,26 @@ class User
         return (bool)$userSpecialAccess;
     }
 
+    public static function getUserIdsBySpecialAccess(string $accessKey): array
+    {
+        $userIds = [];
+        $activeUsers = Db::getAll("SELECT u.ID, u.SpecialAccessJSON, g.SpecialAccessJSON AS GroupSpecialAccessJSON FROM user u, usergroup g WHERE u.GroupID = g.ID AND Active = 1");
+        if ($activeUsers) {
+            foreach ($activeUsers as $activeUser) {
+                $specialAccess = json_decode($activeUser['GroupSpecialAccessJSON'], true);
+                if (isset($specialAccess[$accessKey]) && $specialAccess[$accessKey] == 1) {
+                    $userIds[] = $activeUser['ID'];
+                } elseif (!isset($specialAccess[$accessKey]) || $specialAccess[$accessKey] == -1) {
+                    $groupSpecialAccess = json_decode($activeUser['SpecialAccessJSON'], true);
+                    if (isset($groupSpecialAccess[$accessKey]) && $groupSpecialAccess[$accessKey] == 1) {
+                        $userIds[] = $activeUser['ID'];
+                    }
+                }
+            }
+        }
+        return $userIds;
+    }
+
     public static function getParam(string $name, int $userId = null)
     {
         return Db::getOne(

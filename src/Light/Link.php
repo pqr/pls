@@ -36,7 +36,8 @@ class Link
     ) {
         if ($filterValues) {
             $urlParams = $urlParams ?? [];
-            $urlParams = self::mergeUrlParams($urlParams, ['filterValues' => json_encode($filterValues)]);
+            $filterValuesUrlParam = self::filterValuesUlrParam($filterValues);
+            $urlParams = self::mergeUrlParams($urlParams, $filterValuesUrlParam);
         }
 
         return self::module($innerHtml, $urlParams, $module, $title, $tagParams, $blank);
@@ -129,5 +130,10 @@ class Link
             $urlParams = ['a' => $module];
         }
         return '?' . http_build_query($urlParams);
+    }
+
+    public static function filterValuesUlrParam(array $filterValues)
+    {
+        return ['filterValues' => json_encode($filterValues)];
     }
 }

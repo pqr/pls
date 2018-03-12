@@ -367,4 +367,23 @@ class CommonFields
     {
         return F::createInt('RecordID', ['name' => 'Record ID', 'editAlign' => 'left', 'editWidth' => 'medium']);
     }
+
+    public static function createdBy()
+    {
+        return F::createSelect('CreatedBy', [
+            'name' => Config::$lang === 'ru' ? 'Автор' : 'Created By',
+            'modes' => F::MODE_READONLY,
+            'nobr' => true,
+            'tableWidthExcel' => 18,
+            'options' => 'user'
+        ]);
+    }
+
+    public static function createdDateTime()
+    {
+        return F::createDateTime('CreatedDateTime', [
+            'name' => Config::$lang === 'ru' ? 'Дата создания' : 'Created At',
+            'modes' => F::MODE_READONLY,
+        ]);
+    }
 }

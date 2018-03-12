@@ -33,7 +33,7 @@ abstract class ReportAbstract extends Table
 
         $this->tableReloadUrl = '?a=Reportmenu&class=' . Misc::getClass($this);;
         $this->allowSort = false;
-        $this->filtersNoSettings = true;
+        $this->allowFiltersLayoutChange = false;
     }
 
     /**

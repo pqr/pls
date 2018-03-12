@@ -368,7 +368,7 @@ class Template
         return $html;
     }
 
-    public static function filtersButtons()
+    public static function filtersButtons($allowLayoutChange = true)
     {
         $isLangRu = Config::$lang === 'ru';
         $textHistory = $isLangRu ? 'История фильтров' : 'Filters history';
@@ -381,14 +381,14 @@ class Template
                 <nobr><div><div class="filters-buttons-icons">
                     <span class="btn-flat waves-effect toggle-tooltip filters-history" title="' . $textHistory . '"><i class="fa fa-history"></i></span>
                     <span class="btn-flat waves-effect toggle-tooltip filters-save" title="' . $textSaved . '"><i class="fa fa-save"></i></span>
-                    ' . (!(static::issetvar('noSettings') && static::variable('noSettings')) ? '<span class="btn-flat waves-effect toggle-tooltip filters-layout" title="' . $textSettings . '"><i class="fa fa-cog"></i></span>' : '') . '
+                    ' . ($allowLayoutChange ? '<span class="btn-flat waves-effect toggle-tooltip filters-layout" title="' . $textSettings . '"><i class="fa fa-cog"></i></span>' : '') . '
                 </div></div></nobr>
                 </div>';
     }
 
-    public static function filtersButtonsRow()
+    public static function filtersButtonsRow($allowLayoutChange = true)
     {
-        return '<tr><th></th><td style="padding-top:1em;">' . static::filtersButtons() . '</td></tr>';
+        return '<tr><th></th><td style="padding-top:1em;">' . static::filtersButtons($allowLayoutChange) . '</td></tr>';
     }
 
     public static function filterImport()

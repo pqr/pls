@@ -595,14 +595,24 @@ class XlsWriter
                 $ws->getStyle($coordinate)->getNumberFormat()->setFormatCode($format);
             }
 
-        } elseif ($noNewLine && $type === F::TYPE_MONEY_WITH_CURRENCY) {
+        } elseif ($type === F::TYPE_MONEY_WITH_CURRENCY) {
             if ($excelVal) {
-                [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($excelVal);
-                $format = '# ### ##0.00 [$' . $currencyIso . ']';
-                $ws->getStyle($coordinate)->getNumberFormat()->setFormatCode(
-                    $format
-                );
-                $ws->setCellValue($coordinate, $amount);
+                if ($noNewLine) {
+                    [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($excelVal);
+                    $format = '# ### ##0.00 [$' . $currencyIso . ']';
+                    $ws->getStyle($coordinate)->getNumberFormat()->setFormatCode(
+                        $format
+                    );
+                    $ws->setCellValue($coordinate, $amount);
+                } else {
+                    $lines = explode("\n", $excelVal);
+                    foreach($lines as &$lineText) {
+                        $lineText = strip_tags(FieldMoneyWithCurrency::beautify($lineText));
+                    }
+                    unset($lineText);
+                    $beautyVal = implode("\n", $lines);
+                    $ws->setCellValue($coordinate, $beautyVal);
+                }
             }
         } else {
             // Во всех остальных случаях явно укажем, что это строка, чтобы предотвратить перевод в число

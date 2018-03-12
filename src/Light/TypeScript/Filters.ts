@@ -12,7 +12,7 @@ export class Filters {
     private $layer:JQuery;
 
     // Описание схемы
-    private noSettings: boolean;
+    private allowLayoutChange: boolean;
 
     private $widget: JQuery | undefined;
 
@@ -45,8 +45,8 @@ export class Filters {
         $form.find(".filters-history").on("click", this.onHistoryClick);
         $form.find(".filters-save").on("click", this.onSaveClick);
 
-        this.noSettings = $form.attr("data-nosettings") === "1";
-        if (!this.noSettings) {
+        this.allowLayoutChange = $form.attr("data-allowlayoutchange") === "1";
+        if (this.allowLayoutChange) {
             $form.find(".filters-layout").on("click", this.onShowLayoutClick);
             $form.on("click", ".filters-layout-cancel", this.onLayoutCancelClick);
             $form.on("click", ".filters-layout-save", this.onLayoutSaveClick);
@@ -490,7 +490,7 @@ export class Filters {
      */
     private addInvisibleClasses(invisibleTemplateKeys: Set<string>) {
 
-        if (this.noSettings) {
+        if (!this.allowLayoutChange) {
             // Если для данного модуля в целом отключена система настроек layout,
             // то и скрывать ничего не будем
             return;
@@ -513,7 +513,7 @@ export class Filters {
 
     private refreshInvisibleClasses()
     {
-        if (!this.noSettings) {
+        if (this.allowLayoutChange) {
             this.addInvisibleClasses(this.getInvisibleFromMakrup());
         }
     }
@@ -569,7 +569,7 @@ export class Filters {
 
         const $layoutButtons = $(`<div class="filters-layout-buttons">
                                              <span class="btn waves-effect waves-light bgcolor-btn-green filters-layout-save"><i class="fa fa-save" aria-hidden="true"></i></span>       
-                                             <span class="btn-flat waves-effect filters-layout-reset toggle-tooltip" title="${textResetSort}"><i class="fa fa-random" aria-hidden="true"></i></span>
+                                             <span class="btn-flat waves-effect filters-layout-reset-sort toggle-tooltip" title="${textResetSort}"><i class="fa fa-random" aria-hidden="true"></i></span>
                                              <span class="btn-flat waves-effect filters-layout-allvisible toggle-tooltip" title="${textShowAll}"><i class="fa fa-eye" aria-hidden="true"></i></span>
                                              <span class="btn-flat waves-effect filters-layout-allinvisible toggle-tooltip" title="${textHideAll}"><i class="fa fa-eye-slash" aria-hidden="true"></i></span>
                                              <span class="btn-flat waves-effect filters-layout-cancel toggle-tooltip" title="${textCancel}"><i class="fa fa-ban" aria-hidden="true"></i></span>

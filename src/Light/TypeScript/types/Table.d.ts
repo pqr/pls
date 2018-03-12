@@ -1,3 +1,4 @@
+/// <reference types="jquery" />
 export declare type FilterChangeHandler = (newValue: string, $node: JQuery) => void;
 export declare type SelectRowHandler = (selected: boolean, $tr: JQuery) => void;
 export declare type SelectAllHandler = (allSelected: boolean) => void;

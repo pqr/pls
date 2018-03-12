@@ -87,6 +87,11 @@ class Img
         return self::icon('fa-print');
     }
 
+    public static function iconWord()
+    {
+        return self::icon('fa-file-word-o');
+    }
+
     public static function iconPdf()
     {
         return self::icon('fa-file-pdf-o');

@@ -17,10 +17,16 @@ class Db
 
     public static function connect()
     {
-        self::$mysqli = new \mysqli(Config::$mysqlHost, Config::$mysqlUser, Config::$mysqlPassword, Config::$mysqlDb,
-            Config::$mysqlPort);
-        if (\mysqli_connect_errno()) {
-            die(\mysqli_connect_errno() . ' ' . \mysqli_connect_error());
+        try {
+            self::$mysqli = new \mysqli(Config::$mysqlHost, Config::$mysqlUser, Config::$mysqlPassword,
+                Config::$mysqlDb,
+                Config::$mysqlPort);
+            if (self::$mysqli->connect_error) {
+                echo self::$mysqli->connect_error;
+                exit();
+            }
+        } catch (\Throwable $e) {
+            die($e->getMessage());
         }
 
         self::$_queriesCount = 0;
@@ -185,6 +191,10 @@ class Db
 
             //Создаём Exception и отправяем его в логи rollbar - таким образом в логах будет backtrace!
             Rollbar::log(Level::ERROR, new \Exception($msg));
+
+        } elseif (Config::$sentry && Config::$sentry['dns']) {
+
+            throw new \Exception($msg);
 
         } else {
 

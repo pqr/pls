@@ -32,7 +32,7 @@ class Port extends ModuleAbstract
 
     protected function initFilters()
     {
-        $this->filtersNoSettings = true;
+        $this->allowFiltersLayoutChange = false;
         $this->addFilterName(F::TYPE_STRING, ['name' => 'Name', 'sqlWhere' => "Name LIKE '%{value}%' OR NameRu LIKE '%{value}%'"]);
     }
 

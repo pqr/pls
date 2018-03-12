@@ -26,7 +26,7 @@ class ItemList extends ModuleAbstract
 
     protected function initFilters()
     {
-        $this->filtersNoSettings = true;
+        $this->allowFiltersLayoutChange = false;
         $this->addFilterName(F::TYPE_STRING, ['sqlWhere' => "Name LIKE '%{value}%' OR NameRu LIKE '%{value}%'"]);
     }
 }
