@@ -7,7 +7,7 @@ var Forward = {
         var subtable = Light.subtables.getByNode($mawbInput);
         if (subtable.hasField('FileNumber')) {
             //Теперь можем использовать методы подтаблицы, чтобы заполнить поле с номером файла
-            var rowNum = Light.subtables.Subtable.getRowNum($mawbInput);
+            var rowNum = Light.subtables.getRowNum($mawbInput);
             subtable.setFieldValue(rowNum, 'FileNumber', item.FileNumber);
         }
     },
@@ -19,7 +19,7 @@ var Forward = {
         var subtable = Light.subtables.getByNode($fileNumberInput);
         if (subtable.hasField('MAWBNumber')) {
             //Теперь можем использовать методы подтаблицы, чтобы заполнить поле с номером контейнера
-            var rowNum = Light.subtables.Subtable.getRowNum($fileNumberInput);
+            var rowNum = Light.subtables.getRowNum($fileNumberInput);
             subtable.setFieldValue(rowNum, 'MAWBNumber', item.MAWBNumber);
         }
     },
