@@ -63,7 +63,7 @@ TRUNCATE deleted;
 TRUNCATE deleted_text;
 TRUNCATE deleted_trace;
 
-TRUNCATE importoneclog;
+TRUNCATE log_onecimport;
 
 DELETE FROM list_chargedescription
 WHERE ID != 2;

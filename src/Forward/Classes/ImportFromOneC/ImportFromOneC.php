@@ -24,7 +24,7 @@ class ImportFromOneC
 
     public function __invoke()
     {
-        Db::query("INSERT INTO importoneclog () VALUES ()");
+        Db::query("INSERT INTO log_onecimport () VALUES ()");
         $this->importId = Db::getInsertId();
 
         $authErr = null;
@@ -38,14 +38,14 @@ class ImportFromOneC
             }
         }
         if ($authErr) {
-            Db::updateRow(['Log' => htmlspecialchars($authErr)], 'importoneclog', $this->importId);
+            Db::updateRow(['Log' => htmlspecialchars($authErr)], 'log_onecimport', $this->importId);
             Response::abort(403, $authErr);
             return;
         }
 
         $text = file_get_contents('php://input');
 
-        $relativePath = "importoneclog/" . (floor($this->importId / 1000)) . "/$this->importId";
+        $relativePath = "log_onecimport/" . (floor($this->importId / 1000)) . "/$this->importId";
         FilesFolder::mkdir($relativePath);
         $filepathAbs = FilesFolder::getAbsolutePath($relativePath) . "/" . time() . ".txt";
         file_put_contents($filepathAbs, $text);
@@ -54,7 +54,7 @@ class ImportFromOneC
         $data = $this->parseJson($text);
         if (!$data) {
             $log = $this->msgBuff->getText();
-            Db::updateRow(['Log' => $log], 'importoneclog', $this->importId);
+            Db::updateRow(['Log' => $log], 'log_onecimport', $this->importId);
             Response::abort(400, $log);
             return;
         }
@@ -65,14 +65,14 @@ class ImportFromOneC
             'Type' => $data['type'] ?? '',
             'CompanyID' => $data['CompanyID'] ?? 0,
         ];
-        Db::updateRow($logData, 'importoneclog', $this->importId);
+        Db::updateRow($logData, 'log_onecimport', $this->importId);
 
         $knownTypes = '"cinvoice", "cact", "cpayment", "vinvoice", "vpayment"';
 
         if (!isset($data['type'])) {
             $this->msgBuff->addError("Отсутствует обязательное поле type ($knownTypes)");
             $log = $this->msgBuff->getText();
-            Db::updateRow(['Log' => $log], 'importoneclog', $this->importId);
+            Db::updateRow(['Log' => $log], 'log_onecimport', $this->importId);
             Response::abort(400, $log);
             return;
         }
@@ -104,7 +104,7 @@ class ImportFromOneC
         if (!$importer) {
             $this->msgBuff->addError('Неизвестный тип документа ' . ($data['type'] ?? '') . ', должно быть ' . $knownTypes);
             $log = $this->msgBuff->getText();
-            Db::updateRow(['Log' => $log], 'importoneclog', $this->importId);
+            Db::updateRow(['Log' => $log], 'log_onecimport', $this->importId);
             Response::abort(400, $log);
             return;
         }
@@ -112,7 +112,7 @@ class ImportFromOneC
         /** @var ImporterAbstract $importer */
         $successId = $importer->import($data);
         $log = $this->msgBuff->getHtml();
-        Db::updateRow(['SuccessID' => $successId, 'Log' => $log], 'importoneclog', $this->importId);
+        Db::updateRow(['SuccessID' => $successId, 'Log' => $log], 'log_onecimport', $this->importId);
 
         if (!$successId) {
             // Что-то пошло не так

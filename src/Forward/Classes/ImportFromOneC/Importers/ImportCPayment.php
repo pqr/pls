@@ -102,14 +102,10 @@ class ImportCPayment extends ImporterAbstract
 
         }
 
-        // Теперь обновим все строки
-        $existLineIds = Db::getCol("SELECT ID FROM cpayment_cinvoice WHERE CPaymentID = @i", $cpaymentObj->getId());
-
         if (isset($data['Lines']) && $data['Lines']) {
             $this->importLinesFromJson(
                 $data['Lines'],
                 $cpaymentObj,
-                $existLineIds,
                 $dbLogMsg
             );
 
@@ -163,20 +159,25 @@ class ImportCPayment extends ImporterAbstract
      * (массив Lines в JSON не пуст), чтобы не стересть случайно вручную разнесённые оплаты
      * @param array $linesFromJson
      * @param CPaymentObj $cpaymentObj
-     * @param array $existLineIds
      * @param string $dbLogMsg
      * @return int
      */
     private function importLinesFromJson(
         array $linesFromJson,
         CPaymentObj $cpaymentObj,
-        array $existLineIds,
         string $dbLogMsg
     ) {
         $affectedRows = 0;
 
         $lineObjBase = new CInvoicesObj();
         $lineObjBase->setMasterIdForDbLog($cpaymentObj->getId());
+
+        // Загрузим строки которые уже раньше были в этой оплате
+        $existLineIds = Db::getCol("SELECT ID FROM cpayment_cinvoice WHERE CPaymentID = @i", $cpaymentObj->getId());
+
+        // Заготовим отдельный массив ID строк, которые были затронуты этим импортом из 1С
+        // (пригодится для удаления строк)
+        $lineIdsFromOneC = [];
 
         foreach ($linesFromJson as $indexFromJson => $lineFromJson) {
 
@@ -190,7 +191,8 @@ class ImportCPayment extends ImporterAbstract
                 'CInvoiceName' => $cinvoice['Name'] ?? $lineFromJson['CInvoiceName'],
                 'ClearingAmountInPaymentCurrency' => $lineFromJson['Amount'],
                 'ClearingAmountInInvoiceCurrency' => $lineFromJson['AmountInCurrency'],
-                'RateToInvoiceCurrency' => $lineFromJson['CurrencyRate']
+                'RateToInvoiceCurrency' => $lineFromJson['CurrencyRate'],
+                'FromOneC' => 1,
             ];
 
             if ($cinvoice) {
@@ -219,15 +221,33 @@ class ImportCPayment extends ImporterAbstract
                 $existLineId = $existLineIds[$indexFromJson];
                 $lineObj->setId($existLineId);
                 $affectedRows += $lineObj->updateDb($lineUpdateData, $dbLogMsg);
+                $lineIdsFromOneC[] = $existLineId;
             } else {
-                $lineObj->insertDb($lineUpdateData, $dbLogMsg);
+                $insertedLineId = $lineObj->insertDb($lineUpdateData, $dbLogMsg);
+                $lineIdsFromOneC[] = $insertedLineId;
                 $affectedRows++;
             }
 
         }
 
-        // Удаление лишних строк из базы делать не будем,
-        // т.к. пользоатель мог сам доразнести оплату в базе, не хотим это потерять
+        // Теперь удалим из оплаты те строки, которые не были затронуты этим обновлением из 1С
+        // причём выберем из базы только те, которые когда-то изначально приходили или обновлялись из 1С
+        // (вручную добавленные в конец оплаты строки трогать не будем)
+        $toBeDeletedIds = Db::getCol(
+            "SELECT ID 
+            FROM cpayment_cinvoice
+            WHERE CPaymentID = @i 
+                AND FromOneC = 1 
+                AND ID NOT IN(@a)"
+            , $cpaymentObj->getId()
+            , $lineIdsFromOneC
+        );
+        foreach ($toBeDeletedIds as $toBeDeletedId) {
+            $lineObj = clone $lineObjBase;
+            $lineObj->setId($toBeDeletedId);
+            $lineObj->loadData();
+            $lineObj->deleteDb($dbLogMsg);
+        }
 
         return $affectedRows;
 

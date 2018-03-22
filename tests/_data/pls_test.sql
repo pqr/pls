@@ -1321,13 +1321,13 @@ LOCK TABLES `deleted_trace` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `importoneclog`
+-- Table structure for table `log_onecimport`
 --
 
-DROP TABLE IF EXISTS `importoneclog`;
+DROP TABLE IF EXISTS log_onecimport;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `importoneclog` (
+CREATE TABLE `log_onecimport` (
   `ID` int(11) NOT NULL AUTO_INCREMENT,
   `CreatedBy` int(11) NOT NULL,
   `CreatedDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -1343,69 +1343,12 @@ CREATE TABLE `importoneclog` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `importoneclog`
+-- Dumping data for table `log_onecimport`
 --
 
-LOCK TABLES `importoneclog` WRITE;
-/*!40000 ALTER TABLE `importoneclog` DISABLE KEYS */;
-/*!40000 ALTER TABLE `importoneclog` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `incoterm`
---
-
-DROP TABLE IF EXISTS `incoterm`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `incoterm` (
-  `ID` int(10) NOT NULL AUTO_INCREMENT,
-  `CreatedBy` int(10) NOT NULL,
-  `CreatedDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
-  `Name` char(3) NOT NULL,
-  `Description` varchar(50) NOT NULL,
-  `OrderID` int(11) NOT NULL,
-  PRIMARY KEY (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `incoterm`
---
-
-LOCK TABLES `incoterm` WRITE;
-/*!40000 ALTER TABLE `incoterm` DISABLE KEYS */;
-INSERT INTO `incoterm` VALUES (1,0,'2012-01-10 18:46:09','EXW','Ex Works',1),(2,0,'2012-01-10 18:46:09','FCA','Free Carrier',2),(3,0,'2012-01-10 18:46:09','FAS','Free Alongside Ship',3),(4,0,'2012-01-10 18:46:09','FOB','Free On Board',4),(5,0,'2012-01-10 18:46:09','CFR','Cost and Freight',5),(6,0,'2012-01-10 18:46:09','CIF','Cost, Insurance and Freight ',6),(7,0,'2012-01-10 18:46:09','CPT','Carriage Paid To',7),(8,0,'2012-01-10 18:46:09','CIP','Carriage and Insurance Paid to',8),(9,0,'2012-01-10 18:46:09','DAT','Delivered At Terminal',9),(10,0,'2012-01-10 18:46:09','DAP','Delivered At Point',10),(13,0,'2012-01-10 18:46:09','DDP','Delivered Duty Paid',11);
-/*!40000 ALTER TABLE `incoterm` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `jsmetrics`
---
-
-DROP TABLE IF EXISTS `jsmetrics`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `jsmetrics` (
-  `ID` int(11) NOT NULL AUTO_INCREMENT,
-  `CreatedBy` int(11) NOT NULL,
-  `CreatedDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
-  `ActionType` varchar(50) NOT NULL,
-  `Microtime` int(11) NOT NULL DEFAULT 0,
-  `Payload` text NOT NULL,
-  PRIMARY KEY (`ID`),
-  KEY `ActionType` (`ActionType`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `jsmetrics`
---
-
-LOCK TABLES `jsmetrics` WRITE;
-/*!40000 ALTER TABLE `jsmetrics` DISABLE KEYS */;
-INSERT INTO `jsmetrics` VALUES (1,9,'2015-09-16 21:30:28','subtablepaste',51,'{\"lines\":\"39\",\"module\":\"VInvoice\",\"subtable\":\"Lines\",\"text\":\"176-78042510\\t105104\\tProfit Share\\tFreight\\t1\\t71,89\\n580-07856365\\t105094\\tProfit Share\\tFreight\\t1\\t19,30\\n580-07481412\\t105093\\tProfit Share\\tFreight\\t1\\t27,01\\n390-93168681\\t105091\\tProfit Share\\tFreight\\t1\\t57,40\\n618-93853830\\t105078\\tProfit Share\\tFreight\\t1\\t41,57\\n580-07481401\\t105059\\tProfit Share\\tFreight\\t1\\t19,97\\n514-02274893\\t200456\\tProfit Share\\tFreight\\t1\\t21,15\\n131-01913796\\t105051\\tProfit Share\\tFreight\\t1\\t36,35\\n580-06568262\\t105042\\tProfit Share\\tFreight\\t1\\t16,18\\n176-78042414\\t105003\\tProfit Share\\tFreight\\t1\\t74,99\\n580-06530694\\t105002\\tProfit Share\\tFreight\\t1\\t32,15\\n020-28259114\\t104964\\tProfit Share\\tFreight\\t1\\t23,90\\n580-06530683\\t104959\\tProfit Share\\tFreight\\t1\\t42,42\\n580-06530672\\t104931\\tProfit Share\\tFreight\\t1\\t1,00\\n176-78042366\\t104930\\tProfit Share\\tFreight\\t1\\t-9,63\\n580-06568063\\t104924\\tProfit Share\\tFreight\\t1\\t15,91\\n555-66523752\\t104915\\tProfit Share\\tFreight\\t1\\t54,98\\n618-92218265\\t104899\\tProfit Share\\tFreight\\t1\\t21,20\\n724-47211452\\t104895\\tProfit Share\\tFreight\\t1\\t17,92\\n020-68459635\\t104874\\tProfit Share\\tFreight\\t1\\t49,53\\n580-06530661\\t104871\\tProfit Share\\tFreight\\t1\\t35,44\\n580-06567013\\t104855\\tProfit Share\\tFreight\\t1\\t16,32\\n512-46265446\\t104852\\tProfit Share\\tFreight\\t1\\t30,46\\n176-74205095\\t104849\\tProfit Share\\tFreight\\t1\\t22,10\\n580-07229191\\t104835\\tProfit Share\\tFreight\\t1\\t41,18\\n580-07014475\\t104812\\tProfit Share\\tFreight\\t1\\t302,23\\n580-06566910\\t104802\\tProfit Share\\tFreight\\t1\\t16,51\\n580-07014162\\t104799\\tProfit Share\\tFreight\\t1\\t93,25\\n580-07014136\\t104798\\tProfit Share\\tFreight\\t1\\t222,20\\n580-83090792\\t200413\\tProfit Share\\tFreight\\t1\\t80,15\\n580-07013963\\t104786\\tProfit Share\\tFreight\\t1\\t100,65\\n580-07010673\\t104778\\tProfit Share\\tFreight\\t1\\t27,10\\n160-74385920\\t200411\\tProfit Share\\tFreight\\t1\\t61,32\\n580-07229246\\t104767\\tProfit Share\\tFreight\\t1\\t36,22\\n580-06566873\\t104756\\tProfit Share\\tFreight\\t1\\t13,06\\n580-07009236\\t104753\\tProfit Share\\tFreight\\t1\\t57,44\\n580-07010356\\t104742\\tProfit Share\\tFreight\\t1\\t120,50\\n555-65667652\\t104740\\tProfit Share\\tFreight\\t1\\t69,60\\n580-06566744\\t104713\\tProfit Share\\tFreight\\t1\\t131,94\"}'),(2,8,'2015-11-11 13:10:13','subtablepaste',29,'{\"lines\":\"14\",\"module\":\"Quotation\",\"subtable\":\"Income\",\"text\":\"Pick Up of Dominique Cabinet (25 cb.m. truck) incliding extra power 1 2 380.00 2 380.00 EUR  \\n Packing costs of Dominique Cabinet including insurance 1 2 830.00 2 830.00 EUR  \\n Warehouse fee of Dominique Cabinet 1 475.00 475.00 EUR  \\n Export Customs Clearance of Dominique Cabinet 1 60.00 60.00 EUR  \\n Pick Up of EDET goods 1 1 750.00 1 750.00 EUR  \\n Warehouse fee of EDET goods 1 460.00 460.00 EUR  \\n Export Docs DROUOT 1 60.00 60.00 EUR  \\n AWB Fee 1 50.00 50.00 EUR  \\n Pick up exw truck 25m3 DROUOT 1 3 480.00 3 480.00 EUR  \\n Packing costs of DROUOT 1 6 585.00 6 585.00 EUR  \\n Warehouse fee of DROUOT 1 585.00 585.00 EUR  \\n Airport transfer charges of DROUOT 2000 0.25 500.00 EUR  \\n Airport X-Ray Fee of DROUOT 2000 0.27 540.00 EUR  \\n Delivery Lecler & Millon toSpain 1 1 950.00 1 950.00 EUR \\n\"}'),(3,9,'2015-11-24 13:49:03','subtablepaste',31,'{\"lines\":\"20\",\"module\":\"VInvoice\",\"subtable\":\"Lines\",\"text\":\"580-07387380\\t105447\\tComission\\tFreight\\t1\\t  19,60\\n176-78042661\\t105397\\tComission\\tFreight\\t1\\t  30,00\\n580-07856866\\t105392\\tComission\\tFreight\\t1\\t  18,00\\n580-07966755\\t105364\\tComission\\tFreight\\t1\\t  20,00\\n657-12020072\\t105356\\tComission\\tFreight\\t1\\t  48,31\\n176-78042646\\t105351\\tComission\\tFreight\\t1\\t  5,68\\n618-95485493\\t105348\\tComission\\tFreight\\t1\\t  22,00\\n074-38140303\\t401042\\tComission\\tFreight\\t1\\t  19,50\\n580-07442750\\t105312\\tComission\\tFreight\\t1\\t  21,24\\n125-21080942\\t105309\\tComission\\tFreight\\t1\\t  31,56\\n555-62755781\\t105278\\tComission\\tFreight\\t1\\t  28,80\\n580-07856660\\t105273\\tComission\\tFreight\\t1\\t  16,20\\n880-31322443\\t105268\\tComission\\tFreight\\t1\\t  21,90\\n988-04794635\\t105233\\tComission\\tFreight\\t1\\t  106,85\\n580-06530775\\t105202\\tComission\\tFreight\\t1\\t  32,55\\n176-78042576\\t105193\\tComission\\tFreight\\t1\\t  47,21\\n176-78042565\\t105155\\tComission\\tFreight\\t1\\t  71,69\\n580-07856494\\t105152\\tComission\\tFreight\\t1\\t  15,22\\n988-08101262\\t105117\\tComission\\tFreight\\t1\\t  18,69\\n580-07685473\\t105114\\tComission\\tFreight\\t1\\t  100,00\"}'),(4,9,'2016-04-14 15:07:28','subtablepaste',79,'{\"lines\":\"31\",\"module\":\"VInvoice\",\"subtable\":\"Lines\",\"text\":\"580-08044256\\t105802\\tComission\\tFreight\\t1\\t  15,98\\n580-07858900\\t105800\\tComission\\tFreight\\t1\\t  16,59\\n580-07858841\\t105795\\tComission\\tFreight\\t1\\t  15,53\\n074-41544834\\t105790\\tComission\\tFreight\\t1\\t  14,99\\n580-08984032\\t105788\\tComission\\tFreight\\t1\\t  24,00\\n880-31520440\\t105779\\tComission\\tFreight\\t1\\t  15,00\\n580-83095596\\t200574\\tComission\\tFreight\\t1\\t  47,82\\n580-08339715\\t105766\\tComission\\tFreight\\t1\\t  20,00\\n580-07442842\\t105747\\tComission\\tFreight\\t1\\t  163,60\\n580-07858561\\t105741\\tComission\\tFreight\\t1\\t  11,59\\n580-08984091\\t105733\\tComission\\tFreight\\t1\\t  16,00\\n580-08382102\\t105678\\tComission\\tFreight\\t1\\t  23,09\\n580-07857975\\t105670\\tComission\\tFreight\\t1\\t  8,55\\n390-93523791\\t105667\\tComission\\tFreight\\t1\\t  20,50\\n580-07858163\\t105653\\tComission\\tFreight\\t1\\t  20,09\\n580-08382150\\t105642\\tComission\\tFreight\\t1\\t  21,44\\n105-41803462\\t401063\\tComission\\tFreight\\t1\\t  21,50\\n580-08006272\\t105626\\tComission\\tFreight\\t1\\t  21,43\\n580-07857916\\t105616\\tComission\\tFreight\\t1\\t  11,18\\n618-97210481\\t105613\\tComission\\tFreight\\t1\\t  20,91\\n580-08339656\\t105608\\tComission\\tFreight\\t1\\t  20,00\\n176-17380650\\t105605\\tComission\\tFreight\\t1\\t  47,04\\n580-08382043\\t105602\\tComission\\tFreight\\t1\\t  16,88\\n580-06530952\\t105568\\tComission\\tFreight\\t1\\t  15,60\\n580-08103001\\t105552\\tComission\\tFreight\\t1\\t  71,25\\n580-06530893\\t105512\\tComission\\tFreight\\t1\\t  15,56\\n580-08104062\\t105509\\tComission\\tFreight\\t1\\t  31,35\\n176-78042720\\t105493\\tComission\\tFreight\\t1\\t  24,13\\n580-06530860\\t105444\\tComission\\tFreight\\t1\\t  23,47\\n580-07793855\\t105416\\tComission\\tFreight\\t1\\t  16,35\\n988-05806986\\t105334\\tComission\\tFreight\\t1\\t  103,59\"}'),(5,9,'2016-05-10 08:58:15','subtablepaste',37,'{\"lines\":\"10\",\"module\":\"VInvoice\",\"subtable\":\"Lines\",\"text\":\"880-31608566\\t106029\\tCommission\\tFreight\\t1\\t  29,00\\n618-31379132\\t200615\\tCommission\\tFreight\\t1\\t  40,00\\n784-49670445\\t106005\\tCommission\\tFreight\\t1\\t  43,00\\n555-80487470\\t200609\\tCommission\\tFreight\\t1\\t  13,40\\n125-26273391\\t105940\\tCommission\\tFreight\\t1\\t  33,59\\n580-09255396\\t105939\\tCommission\\tFreight\\t1\\t  19,05\\n580-08339844\\t105937\\tCommission\\tFreight\\t1\\t  20,00\\n580-09278275\\t105887\\tCommission\\tFreight\\t1\\t  27,30\\n580-09277671\\t105877\\tCommission\\tFreight\\t1\\t  25,66\\n580-08729991\\t105853\\tCommission\\tFreight\\t1\\t  72,00\"}'),(6,9,'2016-05-10 08:58:50','subtablepaste',36,'{\"lines\":\"11\",\"module\":\"VInvoice\",\"subtable\":\"Lines\",\"text\":\"580-09256225\\t106040\\tCommission\\tFreight\\t1\\t  17,00\\n880-31608566\\t106029\\tCommission\\tFreight\\t1\\t  29,00\\n618-31379132\\t200615\\tCommission\\tFreight\\t1\\t  40,00\\n784-49670445\\t106005\\tCommission\\tFreight\\t1\\t  43,00\\n555-80487470\\t200609\\tCommission\\tFreight\\t1\\t  13,40\\n125-26273391\\t105940\\tCommission\\tFreight\\t1\\t  33,59\\n580-09255396\\t105939\\tCommission\\tFreight\\t1\\t  19,05\\n580-08339844\\t105937\\tCommission\\tFreight\\t1\\t  20,00\\n580-09278275\\t105887\\tCommission\\tFreight\\t1\\t  27,30\\n580-09277671\\t105877\\tCommission\\tFreight\\t1\\t  25,66\\n580-08729991\\t105853\\tCommission\\tFreight\\t1\\t  72,00\"}');
-/*!40000 ALTER TABLE `jsmetrics` ENABLE KEYS */;
+LOCK TABLES log_onecimport WRITE;
+/*!40000 ALTER TABLE log_onecimport DISABLE KEYS */;
+/*!40000 ALTER TABLE log_onecimport ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
