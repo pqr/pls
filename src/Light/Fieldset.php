@@ -227,6 +227,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess
     /**
      * Удобный метод - принимает переменное число параметров объектов Field
      * @param F[] $fields
+     * @return Fieldset
      */
     public function addFields(...$fields)
     {
@@ -238,6 +239,8 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess
         foreach ($fields as $field) {
             $this->addField($field);
         }
+
+        return $this;
     }
 
     /**

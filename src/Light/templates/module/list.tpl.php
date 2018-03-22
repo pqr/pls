@@ -3,13 +3,13 @@
         <?php foreach ($buttons as $button): ?>
 
             <?php if ($button['text'] === 'Add New'): ?>
-                <a href="<?= $button['url'] ?>" class="btn-floating btn waves-effect waves-light"
+                <a href="<?= $button['url'] ?>" class="btn-floating btn waves-effect"
                    style="font-size: 30px">
                     +
                 </a>
             <?php else: ?>
                 <a href="<?= $button['url'] ?>"
-                   class="btn-flat waves-effect waves-light<?= isset($button['linkCssClass']) ? ' ' . $button['linkCssClass'] : '' ?>"><?= $button['text'] ?></a>
+                   class="btn-flat waves-effect<?= isset($button['linkCssClass']) ? ' ' . $button['linkCssClass'] : '' ?>"><?= $button['text'] ?></a>
             <?php endif ?>
 
         <?php endforeach; ?>

@@ -42,10 +42,18 @@ trait TableWithFoldersTrait
         return "$sub/" . $data[$this->folderNameFieldKey];
     }
 
-    protected function getFolderRelativePath(array $data)
+    /**
+     * @param array|null $data опционально можно передать какие-то данные отличные от $this->_obj
+     * Это нужно для вывода в режиме таблицы
+     * @return null|string
+     */
+    protected function getFolderRelativePath(array $data = null)
     {
         if (!$this->folderBaseDir) {
             return null;
+        }
+        if ($data === null) {
+            $data = $this->_obj->getData();
         }
         $folder = $this->getFolderName($data);
         if ($folder === null) {
@@ -55,10 +63,27 @@ trait TableWithFoldersTrait
         return $this->folderBaseDir . '/' . $folder;
     }
 
-    protected function createFolder(array $data)
+    /**
+     * Возвращает асболютный путь к папке текущего объекта $this->_obj
+     * @return null|string
+     */
+    protected function getFolderAbsolutePath()
     {
-        if ($folderRelativePath = $this->getFolderRelativePath($data)) {
-            FilesFolder::mkdir($folderRelativePath);
+        $relative = $this->getFolderRelativePath();
+        if (!$relative) {
+            return null;
+        }
+        return FilesFolder::getAbsolutePath($relative);
+    }
+
+    /**
+     * Создаёт папку для текущего объекта (для $this->_obj)
+     */
+    protected function createFolder()
+    {
+        $relative = $this->getFolderRelativePath();
+        if ($relative) {
+            FilesFolder::mkdir($relative);
         }
     }
 

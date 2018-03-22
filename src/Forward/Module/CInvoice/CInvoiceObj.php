@@ -36,16 +36,16 @@ class CInvoiceObj extends InvoiceObjAbstract
                 'sqlSelectMandatory' => true
             ]),
             InvoiceFields::cStatusIco(),
-            F::createText('InvoiceTo', ['name' => 'Invoice To', 'rows' => 5, 'submitToupper' => true]),
+            F::createText('InvoiceTo', ['name' => 'Invoice To', 'rows' => 5, 'upper' => true]),
             InvoiceFields::shippingDocument(),
-            F::createString('ShipmentReference', ['name' => 'Shipment Reference', 'submitToupper' => true]),
+            F::createString('ShipmentReference', ['name' => 'Shipment Reference', 'upper' => true]),
             GeneralFields::consigneeReference(),
-            F::createString('PaymentTerms', ['name' => 'Payment Terms', 'submitToupper' => true]),
+            F::createString('PaymentTerms', ['name' => 'Payment Terms', 'upper' => true]),
             F::createInt('Pieces'),
-            GeneralFields::incoterms(),
-            GeneralFields::incotermsLocationName(),
-            F::createString('DepartureLocationName', ['name' => 'Departure', 'submitToupper' => true]),
-            F::createString('ArrivalLocationName', ['name' => 'Arrival', 'submitToupper' => true]),
+            CF::incoterms(),
+            GeneralFields::incotermsLocation(),
+            F::createString('DepartureLocationName', ['name' => 'Departure', 'upper' => true]),
+            F::createString('ArrivalLocationName', ['name' => 'Arrival', 'upper' => true]),
             CF::grossWeight(),
             CF::chargeableWeight(),
             F::createMoney('Amount', ['modes' => F::MODE_READONLY | F::MODE_LOG]),
@@ -224,7 +224,7 @@ class CInvoiceObj extends InvoiceObjAbstract
             || $oldData['Amount'] != $this->_data['Amount']
             || $oldData['CurrencyISO'] != $this->_data['CurrencyISO']
         ) {
-            Finance::updateInvoiceCacheClearingFields($this->getId(), 'cinvoice');
+            Finance::updateInvoiceCacheClearingFields('C', $this->getId());
         }
 
         //Обновим таблицу cinvoice_file_amount в которой каждому счёту+файлу сопоставлена сумма

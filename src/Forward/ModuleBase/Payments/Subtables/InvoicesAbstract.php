@@ -26,7 +26,7 @@ abstract class InvoicesAbstract extends Subtable
 
         $this->setDbTable(strtolower($firstLetter . 'payment_' . $firstLetter . 'invoice'));
         $this->_title = $customerOrVendor . ' Invoices';
-        $this->_allowPaste = false;
+        $this->allowPaste = false;
         $this->allowExportToExcel = true;
         $this->allowTableLayouts = false;
         $this->_tablePrintTotalRecordsFound = false;
@@ -45,7 +45,7 @@ abstract class InvoicesAbstract extends Subtable
 
         $commonFields = $firstLetter . 'InvoiceName|InvoiceAmount|InvoiceOutstandingAmount|ClearingAmountInInvoiceCurrency|RateToInvoiceCurrency|ClearingAmountInPaymentCurrency';
         $this->_viewTableLayout = 'StatusIco|' . $commonFields;
-        $this->_editTableLayout = 'StatusIco|' . $firstLetter . 'InvoiceID|' . $commonFields . '|ChangeInvoiceStatusTo';
+        $this->_editTableLayout = 'StatusIco|' . $firstLetter . 'InvoiceID|' . $commonFields;
 
         $this->_tableTotalRowData = [$firstLetter . 'InvoiceName' => 'Total'];
         $this->_tableTotalRowCalcFieldsKeys = ['ClearingAmountInPaymentCurrency'];
@@ -61,10 +61,7 @@ abstract class InvoicesAbstract extends Subtable
         $this->addField($statusIcoField->setParam('sqlSelect', ''));
         $this->addField(PaymentInvoiceFields::invoiceAmount()->setParam('sqlSelect', ''));
         $this->addField(PaymentInvoiceFields::invoiceOutstandingAmount()->setParam('sqlSelect', ''));
-        $this->addField(PaymentInvoiceFields::changeInvoiceStatusTo()->setParams(
-            ['sqlSelect' => '', 'changeAll' => true]
-        )
-        );
+
     }
 
     /**
@@ -123,58 +120,12 @@ abstract class InvoicesAbstract extends Subtable
                       , pi.ClearingAmountInPaymentCurrency
                       , i.ID AS RealInvoiceID
                       , i.Status AS StatusIco
-                      , 'auto' AS ChangeInvoiceStatusTo
                       , '$masterCurrencyIso' AS PaymentCurrencyISO
                   FROM {$firstLetterLower}payment_{$firstLetterLower}invoice AS pi
                       LEFT JOIN " . $firstLetterLower . "invoice i ON pi.{$firstLetter}InvoiceID = i.ID
                   WHERE pi.{$firstLetter}PaymentID = $masterId
                       AND pi.{$firstLetter}PaymentID != 0
                   ORDER BY pi.ID";
-    }
-
-    protected function afterSubmit(
-        array $dataFromPost,
-        $affectedRows,
-        array $oldData,
-        Msg $msgBuff
-    )
-    {
-        $firstLetter = $this->getFirstLetter();
-        $invObjBase = $firstLetter === 'C' ? new CInvoiceObj() : new VInvoiceObj();
-
-        //Обновим статусы в инвойсах, напротив которых была выбрана опция markcleared или markpartcleared
-        foreach ($this->getNotDeletedDataFromReqeust() as $rowDataFromPost) {
-            $fieldsData = $rowDataFromPost['fieldsData'];
-            $invId = $fieldsData[$firstLetter . 'InvoiceID'];
-            if ($invId) {
-
-                //Определим, нужно ли менять Status у этого счёта?
-                $newStatus = false;
-
-                if ($fieldsData['ChangeInvoiceStatusTo'] === 'markcleared') {
-                    $newStatus = Finance::INVOICESTATUS_CLEARED;
-                } elseif ($fieldsData['ChangeInvoiceStatusTo'] === 'markpartcleared') {
-                    $newStatus = Finance::INVOICESTATUS_PARTCLEARED;
-                }
-
-                if ($newStatus) {
-
-                    $invObj = clone $invObjBase;
-                    $invObj->setId($invId);
-
-                    $updateData = ['Status' => $newStatus];
-                    $invObj->updateDb(
-                        $updateData,
-                        'Update from Payment ' .
-                        Link::moduleView(
-                            $this->_masterObj->getDescriptionHtml(),
-                            $this->_masterObj->getId(),
-                            $firstLetter . 'Payment'
-                        )
-                    );
-                }
-            }
-        }
     }
 
     /**

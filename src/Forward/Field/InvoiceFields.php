@@ -324,7 +324,7 @@ class InvoiceFields
     {
         return F::createString('ShippingDocument', [
             'name' => 'Shipping Document',
-            'submitToupper' => true,
+            'upper' => true,
             'tableWidthExcel' => 15
         ]);
     }

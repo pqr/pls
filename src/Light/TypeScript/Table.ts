@@ -24,7 +24,7 @@ export class Table {
     private currentPage: number;
     private currentReloadXhr: JQueryXHR | null;
 
-    private filters: Filters;
+    private filters: Filters | undefined;
 
     private selectRowHandlers: SelectRowHandler[] = [];
     private selectAllHandlers: SelectAllHandler[] = [];
@@ -219,6 +219,12 @@ export class Table {
             this.filters.form.onFieldChange(fieldKey, handler);
         }
         return this;
+    }
+
+    filtersSubmit() {
+        if (this.filters !== undefined) {
+            this.filters.submit();
+        }
     }
 
     onSelectAll(handler: SelectAllHandler): Table {

@@ -46,7 +46,7 @@
                     client: {
                         javascript: {
                             source_map_enabled: true,
-                            code_version: <?= \Light\ApplicationAbstract::getVersion() ?>,
+                            code_version: "<?= \Light\ApplicationAbstract::getVersion() ?>",
                             guess_uncaught_frames: true
                         }
                     }

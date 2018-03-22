@@ -40,13 +40,8 @@ class InvStatus
             'Active' => 1
         ],
         self::OPEN => [
-            'text' => 'Заявка на счёт',
+            'text' => 'Не оплачен',
             'cssClass' => 'invstatus11',
-            'Active' => 1
-        ],
-        self::ACCEPTED => [
-            'text' => 'Выпущен',
-            'cssClass' => 'invstatus13',
             'Active' => 1
         ],
         self::PARTCLEARED => [

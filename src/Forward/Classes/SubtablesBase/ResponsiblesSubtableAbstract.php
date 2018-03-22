@@ -19,7 +19,7 @@ abstract class ResponsiblesSubtableAbstract extends Subtable
         $this->allowExportToExcel = false;
         $this->allowTableLayouts = false;
         $this->_printHeadBlock = false;
-        $this->_allowPaste = false;
+        $this->allowPaste = false;
 
         $this->textAddLink = 'Add Responsible';
         $this->_tableMsgIfEmpty = 'No responsibles';

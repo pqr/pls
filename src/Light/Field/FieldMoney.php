@@ -53,7 +53,7 @@ class FieldMoney extends FieldFloat
         return $outHtml;
     }
 
-    protected function getExcelInner($value, array $data)
+    protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         $value = (double)$value;
         if ($this->zeroEmptyExcel && $value == 0) {

@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\ModuleBase\Payments;
 
 use Forward\Classes\Finance;
@@ -28,7 +29,6 @@ abstract class PaymentObjAbstract extends ObjAbstract
         array $oldData,
         Msg $msgBuff = null,
         $updateShipmentsGpAndCriteria = true,
-        $invoiceIdsAutoClear = null,
         $dbLogMsg = ''
     ) {
         if (isset($oldData['InvoiceIds'])) {
@@ -43,7 +43,7 @@ abstract class PaymentObjAbstract extends ObjAbstract
         //Объединим оба массива с ID счетов
         $allInvoiceIds = array_filter(array_unique(array_merge($oldInvoiceIds, $newInvoiceIds)));
         if ($allInvoiceIds) {
-            $this->updateInvoicesCache($allInvoiceIds, $invoiceIdsAutoClear);
+            $this->updateInvoicesCache($allInvoiceIds);
         }
 
         //После обновления кеширующей таблицы cinvoice_file_amount или vinvoice_file_amount
@@ -60,28 +60,22 @@ abstract class PaymentObjAbstract extends ObjAbstract
      * В случае вызова из updateCacheAfterSubmit() получаем также второй параметр - массив счетов по которым нужно
      * обновить статус Open / Part Cleared, Cleared
      * @param array $invoicesIds
-     * @param array $invoiceIdsAutoClear
      */
-    protected function updateInvoicesCache(array $invoicesIds, array $invoiceIdsAutoClear = null)
+    protected function updateInvoicesCache(array $invoicesIds)
     {
-        $invoiceTable = $this->getFirstLetter() === 'C' ? 'cinvoice' : 'vinvoice';
+        $firstLetter = $this->getFirstLetter();
         //Пройдёмся по всем счетам, обнвляя их кеш
         foreach ($invoicesIds as $invId) {
             //Обновим кеширующие поля связанные с оплатой и оставшейся задолженностью
             //CacheLastPaymentDate, CachePaymentsReference, CachePaymentsTotalAmount, CacheOutstandingAmount
-            Finance::updateInvoiceCacheClearingFields($invId, $invoiceTable);
+            Finance::updateInvoiceCacheClearingFields($firstLetter, $invId);
 
-            //Проверим, есть ли текущий счёт в массиве $invoiceIdsAutoClear. Если есть - там должно стоять auto
-            //для автоматического калькулирования нового статуса. Если текущего счёта там нет, то также запускаем
-            //автоматическое калькулирование
-            if (!is_array($invoiceIdsAutoClear) || in_array($invId, $invoiceIdsAutoClear)) {
-                //Автоматически переведём счёт в статус Part Cleared, Cleared или Open Accepted на основе сумм оплат
-                Finance::autoClearInvoice($invId, $invoiceTable);
-            }
+            //Автоматически переведём счёт в статус Part Cleared, Cleared или Open Accepted на основе сумм оплат
+            Finance::autoClearInvoice($firstLetter, $invId);
 
             //Обновим таблицу сinvoice_file_amount или vinvoice_file_amount в которой каждому счёту+файлу сопоставлена сумма
             //Внутри используется дата CacheLastPaymentDate, которая могла измениться в предыдущей строке
-            $invObj = $this->getFirstLetter() === 'C' ? new CInvoiceObj() : new VInvoiceObj();
+            $invObj = $firstLetter === 'C' ? new CInvoiceObj() : new VInvoiceObj();
             $invObj->setId($invId);
             if ($invObj->loadData()) {
                 $invObj->updateCacheAfterPaymentSubmitOrDelete();

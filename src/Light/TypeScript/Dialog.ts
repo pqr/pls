@@ -1,4 +1,4 @@
-import { addStandardListeners, parseJson } from "./Light";
+import { addStandardListeners, isLangRu, parseJson, toastError } from "./Light";
 import * as form from "./Form";
 import * as table from "./Table";
 import * as subtable from "./Subtable";
@@ -62,8 +62,17 @@ export class Dialog {
 
         //Для начала вставим кнопку cancel (если только она не была принудительно отключена значением  null)
         if (options.buttonCancelText !== null) {
+            let buttonCancelText = options.buttonCancelText;
+            if (typeof buttonCancelText === "undefined") {
+                // Если в buttonCancelText пусто, то вставим стандартное слово
+                if (options.buttonOkText) {
+                    buttonCancelText = isLangRu ? "Отмена" : "Cancel";
+                } else {
+                    buttonCancelText = isLangRu ? "Закрыть" : "Close";
+                }
+            }
             $('<a href="#cancel" class="lightdialog__button waves-effect grey lighten-5 btn-flat"></a>')
-                .html(options.buttonCancelText || (options.buttonOkText ? "Cancel" : "Close"))
+                .html(buttonCancelText)
                 .on("click", (e: any) => {
                     e.preventDefault();
                     // обрабатываем клик, только если кнопка уже не заблокирована
@@ -76,9 +85,9 @@ export class Dialog {
 
         //Далее вставим кнопку Ok, если она была определена
         if (options.buttonOkText) {
-            $('<a href="#ok" class="lightdialog__button waves-effect waves-light btn bgcolor-btn-primary"></a>')
+            $('<a href="#ok" class="lightdialog__button waves-effect btn bgcolor-btn-primary"></a>')
                 .html(options.buttonOkText)
-                .on("click", (e:any) => {
+                .on("click", (e: any) => {
                     e.preventDefault();
                     // обрабатываем клик, только если кнопка уже не заблокирована
                     if (!$(e.currentTarget).hasClass("disabled")) {
@@ -113,7 +122,7 @@ export class Dialog {
                     //Пользовательских классов не было, добавим стандартные классы
                     if (button.isPrimary) {
                         //Если это Primary кнопка, то делаем её синим цветом с тенью
-                        $btn.addClass("waves-light btn bgcolor-btn-primary");
+                        $btn.addClass("btn bgcolor-btn-primary");
                     } else {
                         //Для прочих кнопок (не Primary) делаем плоский стиль
                         $btn.addClass("btn-flat waves-green");
@@ -142,7 +151,26 @@ export class Dialog {
             if (!this.defaultSubmitHandler) {
                 //Если есть форма и к этому моменту не сформировался какой-то defaultSubmitHandler, то сделаем его
                 //в виде отпарвки формы
-                this.defaultSubmitHandler = () => $form.submit();
+                this.defaultSubmitHandler = () => {
+                    // Функция отправки по умолчанию дополнительно проверяет заполненность всех полей типа file
+                    let hasErrors = false;
+                    const $files = $form.find("input[type=file]");
+                    if ($files.length > 0) {
+                        $files.each((_: any, file: HTMLInputElement) => {
+                            if (file.value === "") {
+                                $(file).addClass("input-error");
+                                const msg = isLangRu ? "Выберите файл" : "Choose file";
+                                toastError(msg);
+                                this.unblockButtons();
+                                hasErrors = true;
+                            }
+                        });
+                    }
+
+                    if (!hasErrors) {
+                        $form.submit();
+                    }
+                };
 
                 // Проверим, нужно ли отправлять эту форму через ajax?
                 const action = $form.attr("action");

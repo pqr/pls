@@ -4,6 +4,8 @@ namespace Light\Field;
 
 use Light\Config;
 use Light\Field\FieldAbstract as F;
+use Light\Incoterms;
+use Light\Misc;
 
 class CommonFields
 {
@@ -29,16 +31,13 @@ class CommonFields
     public static function active(array $params = []): FieldSelect
     {
         $defaultParams = [
-            'name' => 'Active / Inactive',
-            'nameDbLog' => 'Active / Inactive',
-            'nameTable' => "Active /\nInactive",
-            'nameTableSettings' => 'Active / Inactive',
+            'name' => Config::$lang === 'ru' ? 'Активный?' : 'Active?',
             'tableAlign' => 'center',
             'empty' => false,
             'editWidth' => 'small',
             'options' => [
-                1 => ['text' => 'Active', 'cssClass' => 'label-active'],
-                0 => ['text' => 'Inactive', 'cssClass' => 'label-inactive']
+                1 => ['text' => Config::$lang === 'ru' ? 'Активный' : 'Active', 'cssClass' => 'label-active'],
+                0 => ['text' => Config::$lang === 'ru' ? 'Неактивный' : 'Inactive', 'cssClass' => 'label-inactive']
             ]
         ];
 
@@ -384,6 +383,36 @@ class CommonFields
         return F::createDateTime('CreatedDateTime', [
             'name' => Config::$lang === 'ru' ? 'Дата создания' : 'Created At',
             'modes' => F::MODE_READONLY,
+        ]);
+    }
+
+    public static function incoterms()
+    {
+        return F::createSelect('Incoterms', [
+            'name' => Config::$lang === 'ru' ? 'Условия поставки' : 'Incoterms',
+            'options' => Incoterms::getOptions(),
+            'editWidth' => 'mini',
+        ]);
+    }
+
+    public static function incotermsLocation()
+    {
+        return F::createString('IncotermsLocation', [
+            'name' => Config::$lang === 'ru' ? 'Место забора' : 'Incoterms Location',
+            'editWidth' => 'medium',
+        ]);
+    }
+
+    public static function mawb()
+    {
+        return F::createString('MAWB', [
+            'name' => 'MAWB',
+            'getDataFromRequestFunction' => function ($value) {
+                if ($value) {
+                    $value = Misc::normalizeMawb((string)$value);
+                }
+                return $value;
+            }
         ]);
     }
 }

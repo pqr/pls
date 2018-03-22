@@ -139,7 +139,7 @@ export class Filters {
 
     };
 
-    private submit() {
+    submit() {
         const $form = this.$form;
         $form.find(".btn-filter").prop("disabled", true);
         $form.addClass("loading-opacity");
@@ -568,7 +568,7 @@ export class Filters {
         const textCancel = isLangRu ? "Отмена" : "Cancel";
 
         const $layoutButtons = $(`<div class="filters-layout-buttons">
-                                             <span class="btn waves-effect waves-light bgcolor-btn-green filters-layout-save"><i class="fa fa-save" aria-hidden="true"></i></span>       
+                                             <span class="btn waves-effect bgcolor-btn-green filters-layout-save"><i class="fa fa-save" aria-hidden="true"></i></span>       
                                              <span class="btn-flat waves-effect filters-layout-reset-sort toggle-tooltip" title="${textResetSort}"><i class="fa fa-random" aria-hidden="true"></i></span>
                                              <span class="btn-flat waves-effect filters-layout-allvisible toggle-tooltip" title="${textShowAll}"><i class="fa fa-eye" aria-hidden="true"></i></span>
                                              <span class="btn-flat waves-effect filters-layout-allinvisible toggle-tooltip" title="${textHideAll}"><i class="fa fa-eye-slash" aria-hidden="true"></i></span>

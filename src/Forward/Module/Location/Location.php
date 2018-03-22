@@ -25,9 +25,9 @@ class Location extends ModuleAbstract
 
             F::createString('NameRu', 'Name (ru)'),
 
-            F::createString('IATA', ['maxLength' => 3, 'editWidth' => 'small', 'submitToupper' => true]),
+            F::createString('IATA', ['maxLength' => 3, 'editWidth' => 'small', 'upper' => true]),
 
-            F::createString('CountryCode', ['name' => 'Country Code', 'maxLength' => 2, 'editWidth' => 'small', 'submitToupper' => true])
+            F::createString('CountryCode', ['name' => 'Country Code', 'maxLength' => 2, 'editWidth' => 'small', 'upper' => true])
 
         );
     }

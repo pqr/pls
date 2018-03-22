@@ -35,7 +35,7 @@
     </table>
 
     <div class="formactions">
-        <button class="waves-effect waves-light btn bgcolor-btn-primary btn-save" type="submit">Save E-Mail Notice Settings</button>
+        <button class="waves-effect btn bgcolor-btn-primary btn-save" type="submit">Save E-Mail Notice Settings</button>
     </div>
 </form>
 

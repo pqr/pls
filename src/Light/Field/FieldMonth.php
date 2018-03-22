@@ -56,7 +56,7 @@ class FieldMonth extends FieldInputAbstract
         return $out;
     }
 
-    public function getExcelInner($value, array $data)
+    public function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         if (!$value) {
             $out = '';

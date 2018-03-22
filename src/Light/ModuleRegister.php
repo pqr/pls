@@ -41,7 +41,7 @@ class ModuleRegister
             'section' => 'User Management'
         ],
         'ProductionCalendar' => [
-            'name' => 'Производственный календарь',
+            'name' => 'Производств.календарь',
             'order' => 102,
             'hidden' => false,
             'section' => 'System'

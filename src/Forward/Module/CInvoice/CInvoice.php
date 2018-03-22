@@ -557,13 +557,12 @@ class CInvoice extends InvoiceModuleAbstract
             $this->_obj->updateDb(['Status' => Finance::INVOICESTATUS_OPEN],
                 'При попытке отправить счёт в 1С пришел ответ со снятой пометкой на удаление');
             // Возможно, этот счёт должен быть Cleared на основе суммы оплат?
-            Finance::autoClearInvoice($cinvObj->getId(), 'cinvoice');
+            Finance::autoClearInvoice('C', $cinvObj->getId());
             Session::flashInfo('Снята пометка на удаление');
         }
 
-        $this->createFolder($this->_obj->getData());
-        $folderpath = $this->getFolderRelativePath($this->_obj->getData());
-        $folderpathAbs = FilesFolder::getAbsolutePath($folderpath);
+        $this->createFolder();
+        $folderpathAbs = $this->getFolderAbsolutePath();
 
         if (empty($resData['Data'])) {
 

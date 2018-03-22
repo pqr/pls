@@ -287,7 +287,7 @@ class ImportCPayment extends ImporterAbstract
         $paymentDate = $cpaymentObj->getFieldText('PaymentDate');
         $paymentCurrencyIso = $cpaymentObj['CurrencyISO'];
 
-        $subject = "$overpay $overpayAmount $paymentCurrencyIso от $customerAccountName в платёжке №ё$paymentName $paymentDate";
+        $subject = "$overpay $overpayAmount $paymentCurrencyIso от $customerAccountName в платёжке №$paymentName $paymentDate";
 
         $paymentLink = '<a href="' . Config::$localUrl . '/?a=CPayment&id=' . $cpaymentId . '">№' . htmlspecialchars($paymentName) . ' ' . $paymentDate . '</a>';
         $customerAccountNameHtml = htmlspecialchars($customerAccountName);

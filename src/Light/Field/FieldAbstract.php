@@ -34,7 +34,7 @@ use Light\Html;
  * @method $this setPlaceholder(string $value)
  * @method $this setNobr(bool $value)
  * @method $this setClickable(bool $value)
- * @method $this setSubmitToupper(bool $value)
+ * @method $this setUpper(bool $value)
  * @method $this setGroupconcat(bool $value)
  * @method $this setGroupconcatRemoveEmpty(bool $value)
  * @method $this setGroupconcatTruncate(bool $value)
@@ -52,6 +52,14 @@ use Light\Html;
  * @method $this setAjax(bool $ajax)
  * @method $this setChangeAll(bool $changeAll)
  *
+ * @method $this setAcReadonly(bool $value)
+ * @method $this setAcSource(string $value)
+ * @method $this setAcSourceJsFunction(string $value)
+ * @method $this setAcDelimChar(string $value)
+ * @method $this setAcWidth(int $value)
+ * @method $this setAcResultFormatterJsFunction(string $value)
+ * @method $this setAcOnSelectJsFunction(string $value)
+ * @method $this setAcFormatValueOnSaveFunction(string $value)
  *
  * @method string getTitle()
  * @method int getModes()
@@ -65,7 +73,7 @@ use Light\Html;
  * @method string getEditAlign()
  * @method bool|string getEditMandatory()
  * @method string getPlaceholder()
- * @method bool getSubmitToupper()
+ * @method bool getUpper()
  * @method callable getGetHtmlFunction()
  * @method callable getGeExcelFunction()
  * @method callable getGetHtmlInputFunction()
@@ -136,8 +144,6 @@ abstract class FieldAbstract
     const TYPE_SELECT2_MULTIPLE = 'Select2Multiple';
     const TYPE_YES_NO = 'YesNo';
     const TYPE_MONTH = 'Month';
-
-    const PARAM_SUBMITTOUPPER = 'submitToupper';
 
     const PARAM_AC_READONLY = 'acReadonly';
     const PARAM_AC_SOURCE = 'acSource';
@@ -312,7 +318,7 @@ abstract class FieldAbstract
     /**
      * @var bool
      */
-    public $submitToupper = false;
+    public $upper = false;
 
     /**
      * Специально делаем public, чтобы иметь быстрый доступ из внешних классов
@@ -733,12 +739,14 @@ abstract class FieldAbstract
         //Проверим, возможно значение $value состоит из нескольких, которые необходимо разбить через перевод строки
         if ($this->groupconcat) {
             $lines = explode("\n", $value);
+
+            $groupconcatLinesCount = count($lines);
             //Если число линий больше 1 - будем рекурсивно обрабатывать каждую линию
-            if (count($lines) > 1) {
+            if ($groupconcatLinesCount > 1) {
                 //Обработаем каждую строку через метод $this->getExcelOneLine() и соберём все строки в текст
                 //через перевод строки
                 foreach ($lines as &$lineValue) {
-                    $lineValue = $this->getExcelOneLine(trim($lineValue), $data);
+                    $lineValue = $this->getExcelOneLine(trim($lineValue), $data, $groupconcatLinesCount);
                 }
                 unset($lineValue);
                 return implode("\n", $lines);
@@ -748,9 +756,9 @@ abstract class FieldAbstract
         return $this->getExcelOneLine($value, $data);
     }
 
-    private function getExcelOneLine($value, array $data = [])
+    private function getExcelOneLine($value, array $data, int $groupconcatLinesCount = null)
     {
-        $out = $this->getExcelInner($value, $data);
+        $out = $this->getExcelInner($value, $data, $groupconcatLinesCount);
 
         if ($this->getExcelFunction) {
             $function = $this->getExcelFunction;
@@ -760,7 +768,7 @@ abstract class FieldAbstract
         return $out;
     }
 
-    protected function getExcelInner($value, array $data)
+    protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         return $value;
     }
@@ -843,7 +851,7 @@ abstract class FieldAbstract
 
             $value = $request[$this->key];
 
-            if ($this->submitToupper) {
+            if ($this->upper) {
                 $value = mb_strtoupper($value, 'UTF-8');
             }
 

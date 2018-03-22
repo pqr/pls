@@ -17,7 +17,7 @@ class Airline extends ModuleAbstract
 
         $this->addFields(
 
-            F::createString('Name', ['submitToupper' => true]),
+            F::createString('Name', ['upper' => true]),
 
             //используем string, чтобы не стирались лидирующие нули
             F::createString('DigitalCode', [
@@ -31,7 +31,7 @@ class Airline extends ModuleAbstract
             F::createString('AlphaCode', [
                 'name' => 'Alpha Code',
                 'tableAlign' => 'center',
-                'submitToupper' => true,
+                'upper' => true,
                 'editMaxLength' => 2,
                 'editWidth' => 'mini',
                 'editMandatory' => true

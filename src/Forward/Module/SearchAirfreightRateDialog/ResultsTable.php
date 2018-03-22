@@ -6,7 +6,6 @@ use Forward\Classes\Constant;
 use Forward\Field\GeneralFields;
 use Light\Currency;
 use Light\Db;
-use Light\Field\CommonFields;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\Link;
@@ -150,12 +149,15 @@ class ResultsTable extends Table
             GeneralFields::departureIata(),
             GeneralFields::arrivalIata(),
 
-            //поля incoterms нет в таблице airfreightrate - на него не нужно накладывать where условия в sql запросе
-            GeneralFields::incoterms()->setEmpty(false)->setSqlWhere(''),
+            // поля incoterms нет в таблице airfreightrate - на него не нужно накладывать where условия в sql запросе
+            CF::incoterms()
+                ->setEmpty(false)
+                ->setSqlWhere(''),
 
             F::createDate('ValidDate')->setName('Validity')->setSqlWhere("ValidFrom <= '{value}' AND ValidUntil >= '{value}'"),
 
-            CommonFields::chargeableWeight()->setSqlWhere('')
+            CF::chargeableWeight()
+                ->setSqlWhere('')
         );
 
         $this->filtersLayout = [

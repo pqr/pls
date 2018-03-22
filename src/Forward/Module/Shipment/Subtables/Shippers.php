@@ -31,7 +31,7 @@ class Shippers extends Subtable
                 'tableWidthHtml' => 204,
                 F::PARAM_AC_SOURCE => 'list_shipper',
                 'width' => 200,
-                'submitToupper' => true,
+                'upper' => true,
                 'editCssClass' => 'shippers-Name',
                 'getHtmlFunction' => function ($value, array $data, $outHtml) {
                     if ($value) {
@@ -50,14 +50,14 @@ class Shippers extends Subtable
             F::createString('Reference', [
                 'name' => 'Ref. #',
                 'tableWidthHtml' => 154,
-                'submitToupper' => true,
+                'upper' => true,
                 'editCssClass' => 'shippers-Reference'
             ]),
 
             F::createString('HAWBNumber', [
                 'name' => 'HAWB Number',
                 'tableWidthHtml' => 104,
-                'submitToupper' => true,
+                'upper' => true,
                 'editCssClass' => 'shippers-HAWBNumber'
             ]),
 

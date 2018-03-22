@@ -14,7 +14,7 @@ class FieldString extends FieldInputAbstract
         return htmlspecialchars($value);
     }
 
-    protected function getExcelInner($value, array $data)
+    protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         return (string)$value;
     }

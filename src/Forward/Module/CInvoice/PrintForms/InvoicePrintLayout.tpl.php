@@ -25,7 +25,7 @@
                     <td class="bordered"><?= t::text('Pieces') ?></td>
                     <td class="bordered"><?= t::text('GrossWeight') ?></td>
                     <td class="bordered"><?= t::text('ChargeableWeight') ?></td>
-                    <td colspan="2" class="bordered"><?= t::text('Incoterms') ?> <?= t::text('IncotermsLocationName') ?></td>
+                    <td colspan="2" class="bordered"><?= t::text('Incoterms') ?> <?= t::text('IncotermsLocation') ?></td>
                 </tr>
                 <tr>
                     <td colspan="2">Departure</td>

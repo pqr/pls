@@ -21,7 +21,7 @@ class Currency extends ModuleAbstract
                 'name' => 'ISO code (3 char)',
                 'editMaxLength' => 3,
                 'editWidth' => 'small',
-                'submitToupper' => true
+                'upper' => true
             ]),
 
             F::createString('Symbol', [

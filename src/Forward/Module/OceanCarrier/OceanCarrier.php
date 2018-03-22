@@ -20,7 +20,7 @@ class OceanCarrier extends ModuleAbstract
         $this->allowTableLayouts = false;
 
         $this->addFields(
-            F::createString('Name', ['submitToupper' => true])
+            F::createString('Name', ['upper' => true])
         );
     }
 

@@ -27,7 +27,7 @@ class Quotation extends ModuleAbstract
 {
     private const EXCEL_CARGO_STARTROW = 15;
     private const EXCEL_DETAILS_STARTROW = 20;
-    
+
     public function __construct()
     {
         parent::__construct();
@@ -59,26 +59,22 @@ class Quotation extends ModuleAbstract
             QuotationFields::commentsCustomer(),
             GeneralFields::airlineAlphaCode(),
             GeneralFields::transitTime(),
-            GeneralFields::incoterms(),
-            GeneralFields::incotermsLocationName(),
+            CF::incoterms(),
+            GeneralFields::incotermsLocation(),
             QuotationFields::status(),
-            F::create(
-                'MergedQuotationID',
-                F::TYPE_INT,
-                [
-                    'name' => 'Merged Quotation ID',
-                    'editAlign' => 'left',
-                    'zeroEmpty' => true,
-                    'modes' => F::MODE_ALL & ~F::MODE_LIST,
-                    'getHtmlFunction' => function ($value, array $data, $outHtml, $forTable, $field) {
-                        if ($value) {
-                            $outHtml = Link::moduleView($outHtml, $value);
-                        }
-
-                        return $outHtml;
+            F::createInt('MergedQuotationID', [
+                'name' => 'Merged Quotation ID',
+                'editAlign' => 'left',
+                'zeroEmpty' => true,
+                'modes' => F::MODE_ALL & ~F::MODE_LIST,
+                'getHtmlFunction' => function ($value, array $data, $outHtml, $forTable, $field) {
+                    if ($value) {
+                        $outHtml = Link::moduleView($outHtml, $value);
                     }
-                ]
-            ),
+
+                    return $outHtml;
+                }
+            ]),
             QuotationFields::cacheGp(),
             F::create(
                 'DensityKgPerM3',
@@ -562,7 +558,7 @@ class Quotation extends ModuleAbstract
 
 
         // Сначала сохраним файл в папке
-        $filepathAbs = FilesFolder::getAbsolutePath($this->getFolderRelativePath($this->_obj->getData())) . '/' . $fileName;
+        $filepathAbs = $this->getFolderAbsolutePath() . '/' . $fileName;
         $xls->save($filepathAbs);
 
         // Затем отправим пользотвателю

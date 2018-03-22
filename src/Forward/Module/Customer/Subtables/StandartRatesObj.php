@@ -29,8 +29,8 @@ class StandartRatesObj extends ObjAbstract
             QuotationFields::commentsCustomer(),
             GeneralFields::airlineAlphaCode(),
             GeneralFields::transitTime(),
-            GeneralFields::incoterms(),
-            GeneralFields::incotermsLocationName(),
+            CF::incoterms(),
+            GeneralFields::incotermsLocation(),
             GeneralFields::vendorId(false, false),
 
             RateFields::minAmount('Selling'),

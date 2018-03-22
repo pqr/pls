@@ -376,7 +376,7 @@ class Template
         $textSettings = $isLangRu ? 'Настройка фильтров' : 'Filters layout';
         $textReset = $isLangRu ? 'СБРОС' : 'RESET';
         return '<div class="filters-buttons">
-                <button class="btn waves-effect waves-light btn-filter" type="submit">' . Img::iconSearch() . '</button>
+                <button class="btn waves-effect btn-filter" type="submit">' . Img::iconSearch() . '</button>
                 <button class="btn-flat waves-effect filters-reset" type="button">' . $textReset . '</button>
                 <nobr><div><div class="filters-buttons-icons">
                     <span class="btn-flat waves-effect toggle-tooltip filters-history" title="' . $textHistory . '"><i class="fa fa-history"></i></span>

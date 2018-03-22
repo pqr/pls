@@ -66,7 +66,7 @@ trait PipeSeparatedIdsTrait
         return implode($separator, $outHtmlArr);
     }
 
-    protected function getExcelInner($value, array $data)
+    protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         $options = $this->getEvaluatedOptions();
         $valueArr = $this->parseValue($value);

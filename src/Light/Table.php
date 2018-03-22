@@ -831,7 +831,7 @@ class Table
                         if (!isset($amountPerCurrency[$currencyIso])) {
                             $amountPerCurrency[$currencyIso] = 0;
                         }
-                        $amountPerCurrency[$currencyIso] += $amount;
+                        $amountPerCurrency[$currencyIso] += round($amount, 2);
                     }
                 }
             }
@@ -846,7 +846,12 @@ class Table
             return implode("\n", $resultAmountsWithCurrency);
         }
 
-        return array_sum($amounts);
+        $totalAmount = 0;
+        foreach ($amounts as $amount) {
+            $totalAmount += round($amount, 2);
+        }
+
+        return $totalAmount;
     }
 
     protected function getTableTotalRecordsFound()

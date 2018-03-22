@@ -61,7 +61,7 @@ class ImportCInvoice extends ImporterAbstract
         $link = Link::moduleViewBlank($cinvObj->getDescriptionHtml(), $cinvObj->getId(), null, 'CInvoice');
 
         // Запишем файл PDF файл и Excel файл в папку
-        $folderpath = 'CInvoice/' . (floor($cinvObj->getId()/1000)) . '/' . $cinvObj->getId();
+        $folderpath = 'CInvoice/' . (floor($cinvObj->getId() / 1000)) . '/' . $cinvObj->getId();
         FilesFolder::mkdir($folderpath);
         $folderpathAbs = FilesFolder::getAbsolutePath($folderpath);
 
@@ -156,13 +156,15 @@ class ImportCInvoice extends ImporterAbstract
         // сделать Cleared или Part Cleared
         if (isset($updateData['Status']) && $updateData['Status'] == Finance::INVOICESTATUS_OPEN) {
             //Автоматически переведём счёт в статус Part Cleared, Cleared или Open Accepted на основе сумм оплат
-            Finance::autoClearInvoice($cinvObj->getId(), 'cinvoice');
+            Finance::autoClearInvoice('C', $cinvObj->getId());
         }
 
         $cinvObj->updateCacheAfterSubmit($cinvOldData, $this->msgBuff, true, $dbLogMsg);
         Db::commit();
 
-        $cinvObj->writeDbLogText($this->msgBuff->getHtml(), '1С', '1С');
+        if ($this->msgBuff->getCount() > 0) {
+            $cinvObj->writeDbLogText($this->msgBuff->getHtml(), '1С', '1С');
+        }
 
         return $cinvObj->getId();
     }

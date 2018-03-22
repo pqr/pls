@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Module\AirfreightSurcharge;
 
 use Forward\Field\GeneralFields;
@@ -11,18 +12,17 @@ class AirfreightSurchargeObj extends ObjAbstract
 {
     public function __construct()
     {
-
         $this->addFields(
-            F::createString(
-                'Name',
-                [F::PARAM_AC_SOURCE => 'list_chargedescription', F::PARAM_AC_READONLY => true]
-            ),
+            F::createString('Name', [
+                F::PARAM_AC_SOURCE => 'list_chargedescription',
+                F::PARAM_AC_READONLY => true
+            ]),
             GeneralFields::vendorId(),
             GeneralFields::locationIata('IATA'),
             GeneralFields::locationName('LocationName'),
             GeneralFields::airlineAlphaCode(),
-            GeneralFields::incoterms(),
-            GeneralFields::incotermsLocationName(),
+            CF::incoterms(),
+            GeneralFields::incotermsLocation(),
             CF::validFrom(),
             CF::validUntil(),
             CF::comments(),
@@ -31,8 +31,6 @@ class AirfreightSurchargeObj extends ObjAbstract
             RateFields::maxAmount(),
             RateFields::perKgAmount(),
             CF::currency()
-
         );
-
     }
 }

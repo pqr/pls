@@ -509,7 +509,38 @@ class Core
         }
 
         Response::header('Content-Type: image/png');
-        print file_get_contents(LIGHT_DIR_LIGHTPUBLIC .'/i/user.png');
+        print file_get_contents(LIGHT_DIR_LIGHTPUBLIC . '/i/user.png');
+        ApplicationAbstract::terminate();
+    }
+
+    public static function proceedGetUserPhoto()
+    {
+        $userId = $_GET['UserID'] ?? User::getId();
+        $relativePath = FilesFolder::getModuleRelative('User', $userId);
+        $avatarFileAbs = FilesFolder::getAbsolutePath("$relativePath/Photo.jpg");
+        if (file_exists($avatarFileAbs)) {
+
+            Response::header('Content-Type: image/jpg');
+            print file_get_contents($avatarFileAbs);
+            ApplicationAbstract::terminate();
+
+        }
+
+        $defaultImages = [];
+        foreach (scandir(LIGHT_DIR_LIGHTPUBLIC . "/i/user") as $file) {
+            if ($file[0] !== '.') {
+                $defaultImages[] = $file;
+            }
+        }
+
+        $defaultCount = count($defaultImages);
+        // Выбираем номер картинки как остаток от деления ID пользователя на число доступных картинок
+        $randomDefaultImageIndex = $userId % $defaultCount;
+
+        $randomFile = $defaultImages[$randomDefaultImageIndex];
+
+        Response::header('Content-Type: image/jpg');
+        print file_get_contents(LIGHT_DIR_LIGHTPUBLIC . "/i/user/$randomFile");
         ApplicationAbstract::terminate();
     }
 

@@ -1406,9 +1406,19 @@ export function getBeautyValue(value: any, type: string): string {
             break;
 
         case "MoneyWithCurrency":
-            if (value) {
-                const parts = value.split(" ");
-                beauty = getBeautyMoney(parts[1], false, parts[0]);
+            if (value instanceof Map) {
+                // Map с разбивкой по валютам
+                const beautyLines: string[] = [];
+                value.forEach((amount: number, currencyIso: string) => {
+                    if (amount != 0) {
+                        beautyLines.push(getBeautyMoney(amount, false, currencyIso));
+                    }
+                });
+                beauty = beautyLines.join("<br>");
+            }
+            else if (value) {
+                const [currencyIso, amount] = value.split(" ");
+                beauty = getBeautyMoney(amount, false, currencyIso);
             } else {
                 beauty = "";
             }
@@ -1444,6 +1454,26 @@ export function iconExcel() {
 
 export function iconFolderFull() {
     return '<i class="fa fa-folder icon-folderfull"></i>';
+}
+
+export function calcTotalPerCurrency(values: string[]): Map<string, number>
+{
+    const totalPerCurrency = new Map<string, number>();
+    values.forEach((value:string) => {
+        const [currencyIso, amount] = getMoneyWithCurrencyAsTouple(value);
+        if (amount == 0) {
+            return;
+        }
+        if (!totalPerCurrency.has(currencyIso)) {
+            // Нашли какую-то новую валюту, которая не встречалась ранее
+            totalPerCurrency.set(currencyIso, amount);
+        } else {
+            // Эта валюта уже есть в Map totalPerCurrency, прибавляем текующую сумму amount
+            totalPerCurrency.set(currencyIso, totalPerCurrency.get(currencyIso)! + amount);
+        }
+    });
+
+    return totalPerCurrency;
 }
 
 export function addStandardListeners($root: JQuery) {

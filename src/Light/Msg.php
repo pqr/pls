@@ -1,4 +1,5 @@
 <?php
+
 namespace Light;
 
 class Msg implements \Countable
@@ -7,7 +8,7 @@ class Msg implements \Countable
 
     public function addPrefxToAll(string $prefix)
     {
-        foreach($this->messages as &$message) {
+        foreach ($this->messages as &$message) {
             $message['msg'] = $prefix . $message['msg'];
         }
         unset($message);
@@ -131,6 +132,15 @@ class Msg implements \Countable
         return $outHtml;
     }
 
+    public function getHtmlAlertList()
+    {
+        $outHtml = '';
+        foreach ($this->messages as $msginfo) {
+            $outHtml .= self::getMessageAlertHtml($msginfo['type'], $msginfo['msg']);
+        }
+        return $outHtml;
+    }
+
     /**
      * Сохраняет все сообщения в Session::flash
      */
@@ -147,5 +157,10 @@ class Msg implements \Countable
     public static function getMessageHtmlList($type, $msg)
     {
         return '<li class="msg-' . $type . '">' . $msg . '</li>';
+    }
+
+    public static function getMessageAlertHtml($type, $msg)
+    {
+        return '<div class="alert alert-' . ($type === "error" ? "danger" : $type) . '">' . $msg . '</div>';
     }
 }

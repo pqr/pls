@@ -30,7 +30,7 @@ class CInvoiceCommon
                  shipment.ChargeableWeight,
                  shipment.GrossWeight,
                  shipment.Incoterms,
-                 shipment.IncotermsLocationName,
+                 shipment.IncotermsLocation,
                  shipment.ConsigneeReference,
                  shipment.MAWBNumber AS ShippingDocument,
                     (SELECT GROUP_CONCAT(DISTINCT Reference SEPARATOR ', ')
@@ -134,7 +134,7 @@ class CInvoiceCommon
         $lineData['Name'] = "Транспортно-экспедиторское обслуживание по маршруту: ";
 
         // Загрузим информацию по всем локациям
-        $shipment = Db::getRow("SELECT TrafficID, IncotermsLocationName, POLID, PODID, DepartureLocationName, ArrivalLocationName FROM shipment WHERE ID = @i",
+        $shipment = Db::getRow("SELECT TrafficID, IncotermsLocation, POLID, PODID, DepartureLocationName, ArrivalLocationName FROM shipment WHERE ID = @i",
             $shipmentId);
         if ($shipment) {
             $locations = [];
@@ -156,13 +156,13 @@ class CInvoiceCommon
     private static function getIncomtermsLocationRu(array $shipment)
     {
         $incotermsNameRu = Db::getOne("SELECT NameRu FROM location WHERE Name = @s AND NameRu != ''",
-            $shipment['IncotermsLocationName']);
+            $shipment['IncotermsLocation']);
 
         if (!$incotermsNameRu) {
-            return $shipment['IncotermsLocationName'];
+            return $shipment['IncotermsLocation'];
         }
 
-        return $incotermsNameRu . ' (' . $shipment['IncotermsLocationName'] . ')';
+        return $incotermsNameRu . ' (' . $shipment['IncotermsLocation'] . ')';
     }
 
     private static function getDepartureNameRu(array $shipment) {

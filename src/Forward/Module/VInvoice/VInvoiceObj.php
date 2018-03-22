@@ -142,7 +142,7 @@ class VInvoiceObj extends InvoiceObjAbstract
         //Однако, они могут измениться в двух случаях:
         //1. у счёта изменилась валюта: влияет на CachePaymentsTotalAmount
         //2. или у счёиа измениолась сумма: влияет на CacheOutstandingAmount
-        Finance::updateInvoiceCacheClearingFields($this->getId(), 'vinvoice');
+        Finance::updateInvoiceCacheClearingFields('V', $this->getId());
 
         //Обновим таблицу vinvoice_file_amount в которой каждому счёту+файлу сопоставлена сумма
         $this->updateAmountPerFile();

@@ -81,7 +81,7 @@ class FieldColor extends FieldAbstract
         return $this->getHtmlImg($data);
     }
 
-    protected function getExcelInner($value, array $data)
+    protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         return (int)$value;
     }

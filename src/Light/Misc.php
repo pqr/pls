@@ -863,4 +863,20 @@ class Misc
     {
         return (new \ReflectionClass($obj))->getShortName();
     }
+
+    /**
+     * Проверим, если пользователь ввёл что-то похожее на номер MAWB (а именно 11 цифр с неважно какими разделителями)
+     * То этот номер MAWB нужно отформатировать по образцу XXX-XXXX XXXX
+     * @param string $mawb
+     * @return string
+     */
+    public static function normalizeMawb(string $mawb): string
+    {
+        $testMawb = str_replace(['-', ' '], '', trim($mawb));
+        if (is_numeric($testMawb) && strlen($testMawb) === 11) {
+            return substr($testMawb, 0, 3) . '-' . substr($testMawb, 3, 4) . ' ' . substr($testMawb, 7);
+        }
+
+        return $mawb;
+    }
 }

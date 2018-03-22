@@ -109,11 +109,9 @@ abstract class ObjAbstract implements \ArrayAccess
             }
         }
 
-        $query = "SELECT " . $fieldset->getSqlSelect($correctKeys);
-        $query .= " FROM " . Db::quote($this->getDbTable());
-        $query .= " WHERE ID = " . (int)$this->_id;
-
-        return $query;
+        return "SELECT {$fieldset->getSqlSelect($correctKeys)}
+                FROM " . Db::quote($this->getDbTable()) . "
+                WHERE ID = " . (int)$this->_id;
     }
 
     public function getFieldData($fieldKey)
@@ -450,7 +448,8 @@ abstract class ObjAbstract implements \ArrayAccess
         $nameFieldKey = $this->getNameFieldKey();
         if (array_key_exists($nameFieldKey, $this->_data) && $this->hasField($nameFieldKey)) {
             // Получаем HTML представление поля в режиме forLog
-            $description = $this->getField($nameFieldKey)->getHtml($this->_data[$nameFieldKey], $this->_data, false, true);
+            $description = $this->getField($nameFieldKey)->getHtml($this->_data[$nameFieldKey], $this->_data, false,
+                true);
         } else {
             $description = 'Unknown';
         }

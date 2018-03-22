@@ -29,7 +29,7 @@
             </div>
 
             <div class="formactions cs-save-div display-none">
-                <input type="button" class="waves-effect waves-light btn btn-save bgcolor-btn-primary" value="Save Cost-sheet">
+                <input type="button" class="waves-effect btn btn-save bgcolor-btn-primary" value="Save Cost-sheet">
                 <a href="#" class="cs-cancel-link inner">Cancel</a>
             </div>
 

@@ -96,23 +96,24 @@
 }
 
 .invicon21 {
-    width: 20px;
+    display: inline-block;
     vertical-align: bottom;
+    width: 20px;
 }
 
 .invicon21 i {
     display: inline-block;
-    width: 7px;
-    height: 14px;
-    border-radius: 7px 0 0 7px;
+    width: 6px;
+    height: 12px;
+    border-radius: 6px 0 0 6px;
     background-color: #64992c;
 }
 
 .invicon21 i + i {
     display: inline-block;
-    width: 7px;
-    height: 14px;
-    border-radius: 0 7px 7px 0;
+    width: 6px;
+    height: 12px;
+    border-radius: 0 6px 6px 0;
     background-color: darkgray;
 }
 
@@ -126,12 +127,11 @@
 
 .invicon22 {
     display: inline-block;
-    width: 14px;
-    height: 14px;
-    border-radius: 7px;
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
     background-color: #006633;
-    margin-left: 1px;
-    margin-right: 5px;
+    margin-right: 8px;
     vertical-align: bottom;
 }
 

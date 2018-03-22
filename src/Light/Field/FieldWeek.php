@@ -61,7 +61,7 @@ class FieldWeek extends FieldInputAbstract
         return $outHtml;
     }
 
-    protected function getExcelInner($value, array $data)
+    protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         $out = '';
         list($week, $year) = $this->getAsTouple($value);

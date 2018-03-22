@@ -4,7 +4,6 @@
         <?= t::label('Incoterms') ?>
     </th>
     <td>
-        <?= t::html('Incoterms') ?> <?= t::html('IncotermsLocationName') ?>
+        <?= t::html('Incoterms') ?> <?= t::html('IncotermsLocation') ?>
     </td>
 </tr>
- 

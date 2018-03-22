@@ -6,6 +6,7 @@ use Forward\Application;
 use Forward\Classes\BuAccess;
 use Forward\Classes\Constant;
 use Light\Db;
+use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
 use Light\Template;
 use Light\User;
@@ -185,7 +186,7 @@ class GeneralFields
             F::PARAM_AC_SOURCE => '?a=Core&ac=SearchLocationIata',
             F::PARAM_AC_ONSELECTJSFUNCTION => 'Forward.onLocationIATASelect',
             F::PARAM_AC_RESULTFORMATTERJSFUNCTION => 'Forward.acLocationIATANameFormatter',
-            'submitToupper' => true,
+            'upper' => true,
             'sqlWhere' => "{fieldKey} = '{value}'"
         ];
 
@@ -203,7 +204,7 @@ class GeneralFields
             F::PARAM_AC_SOURCE => '?a=Core&ac=SearchLocationName',
             F::PARAM_AC_ONSELECTJSFUNCTION => 'Forward.onLocationNameSelect',
             F::PARAM_AC_RESULTFORMATTERJSFUNCTION => 'Forward.acLocationIATANameFormatter',
-            'submitToupper' => true,
+            'upper' => true,
             'sqlWhere' => "{fieldKey} = '{value}'"
         ];
 
@@ -269,16 +270,11 @@ class GeneralFields
         );
     }
 
-    public static function incotermsLocationName()
+    public static function incotermsLocation()
     {
-        return F::createString(
-            'IncotermsLocationName',
-            [
-                'name' => 'Incoterms Location',
-                F::PARAM_AC_SOURCE => '?a=Core&ac=SearchIncotermsLocationName',
-                'submitToupper' => true
-            ]
-        );
+        return CommonFields::incotermsLocation()
+            ->setUpper(true)
+            ->setAcSource('?a=Core&ac=SearchIncotermsLocation');
     }
 
     public static function airlineAlphaCode()
@@ -436,7 +432,7 @@ class GeneralFields
 
     public static function natureOfGoods()
     {
-        return F::createString('NatureOfGoods', ['name' => 'Nature of Goods', 'submitToupper' => true]);
+        return F::createString('NatureOfGoods', ['name' => 'Nature of Goods', 'upper' => true]);
     }
 
     public static function transitTime()
@@ -485,31 +481,31 @@ class GeneralFields
     public static function shipmentRequestZip()
     {
         return F::createString('ShipmentRequestZIP',
-            ['name' => 'Индекс', 'nameTable' => 'Заявка: Индекс', 'editMaxLength' => 20, 'submitToupper' => true]);
+            ['name' => 'Индекс', 'nameTable' => 'Заявка: Индекс', 'editMaxLength' => 20, 'upper' => true]);
     }
 
     public static function shipmentRequestStreet()
     {
         return F::createString('ShipmentRequestStreet',
-            ['name' => 'Улица', 'nameTable' => 'Заявка: Улица', 'submitToupper' => true]);
+            ['name' => 'Улица', 'nameTable' => 'Заявка: Улица', 'upper' => true]);
     }
 
     public static function shipmentRequestCity()
     {
         return F::createString('ShipmentRequestCity',
-            ['name' => 'Город', 'nameTable' => 'Заявка: Город', 'submitToupper' => true]);
+            ['name' => 'Город', 'nameTable' => 'Заявка: Город', 'upper' => true]);
     }
 
     public static function shipmentRequestCountry()
     {
         return F::createString('ShipmentRequestCountry',
-            ['name' => 'Страна', 'nameTable' => 'Заявка: Страна', 'submitToupper' => true]);
+            ['name' => 'Страна', 'nameTable' => 'Заявка: Страна', 'upper' => true]);
     }
 
     public static function shipmentRequestPhone()
     {
         return F::createString('ShipmentRequestPhone',
-            ['name' => 'Телефон', 'nameTable' => 'Заявка: Телефон', 'submitToupper' => true]);
+            ['name' => 'Телефон', 'nameTable' => 'Заявка: Телефон', 'upper' => true]);
     }
 
     public static function cactName()

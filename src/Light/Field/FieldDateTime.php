@@ -48,15 +48,14 @@ class FieldDateTime extends FieldInputAbstract
         return $outHtml;
     }
 
-    protected function getExcelInner($value, array $data)
+    protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         if (!$value) {
             $out = '';
         } elseif (strpos($value, '0000-00-00') === 0) {
             $out = '';
         } else {
-            //К сожалению, класс \Light\Table пока не поддерживает вывод ячеек date разного формата в зависимости от $this->getGroupconcatLines() > 1
-            if ($this->groupconcat /* && $this->getGroupconcatLines() > 1 */) {
+            if ($this->groupconcat && $groupconcatLinesCount > 1) {
                 //Даты объеденённые через перевод строк не нужно переводить в нативный формат дат в Excel.
                 //Нужно записать прямым текстом
                 $out = FieldDateTime::beautify($value);

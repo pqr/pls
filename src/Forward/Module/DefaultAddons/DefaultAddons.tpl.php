@@ -36,7 +36,7 @@
     </table>
 
     <div class="formactions">
-        <button type="submit" class="waves-effect waves-light btn bgcolor-btn-primary btn-save" data-htmldisabled="Saving...">Save Default Addons
+        <button type="submit" class="waves-effect btn bgcolor-btn-primary btn-save" data-htmldisabled="Saving...">Save Default Addons
         </button>
     </div>
 </form>

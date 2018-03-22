@@ -1,9 +1,9 @@
 import {
     addStandardListeners,
+    calcTotalPerCurrency,
     getBeautyValue,
     getFieldNode,
     getModule,
-    getMoneyWithCurrencyAsTouple,
     getNodeValue,
     isLangRu,
     myParseFloat,
@@ -14,8 +14,8 @@ import {
     round,
     setNodeValue
 } from "./Light";
-import { getObjectId } from "./Module";
-import { Dialog } from "./Dialog";
+import {getObjectId} from "./Module";
+import {Dialog} from "./Dialog";
 
 export interface Field {
     mode: string; //'view' или 'edit'
@@ -319,7 +319,7 @@ export class Subtable {
         const dialog = new Dialog('<textarea class="paste-textarea" rows="24"></textarea>', {
             width: "560px",
             buttonOkText: isLangRu ? "Вставить" : "Paste",
-            buttonOkHandler: function(dialog: Dialog) {
+            buttonOkHandler: function (dialog: Dialog) {
                 const startMs = performance.now();
 
                 //Переберём все строки из вставленного текста
@@ -367,7 +367,7 @@ export class Subtable {
 
         const $textarea = dialog.$div!.find("textarea");
         $textarea.focus();
-        $textarea.on("keydown", function(e: any) {
+        $textarea.on("keydown", function (e: any) {
             const key = e.keyCode,
                 st = $textarea.prop("scrollTop"),
                 selStart = $textarea.prop("selectionStart"),
@@ -413,40 +413,17 @@ export class Subtable {
         });
     }
 
-    getTotalValue(fieldKey: string): any {
+    getTotalValue(fieldKey: string): number | Map<string, number> {
         const fieldValues = this.getFieldValues(fieldKey);
-
-        if (fieldValues.length === 0) {
-            return 0;
-        }
-
-        const len = fieldValues.length;
-        let total = 0;
 
         // Если это тип MoneyWithCurrency, то считать нужно особым образом
         const isMoneyWithCurrency = this.fields[fieldKey].type === "MoneyWithCurrency";
         if (isMoneyWithCurrency) {
-            const firstCurrency = (<string>fieldValues[0]).substring(0, 3);
-
-            for (let i = 0; i < len; i++) {
-                const [currencyIso, amount] = getMoneyWithCurrencyAsTouple(<string>fieldValues[i]);
-                if (currencyIso !== firstCurrency) {
-                    // Нашли валюту отличную от первой - значит набор валют содержит более одного уникального
-                    // значения и мы не можем посчитать общую сумму
-                    return false;
-                }
-                total += amount;
-            }
-
-            // Вернуть надо вместе с валютой в виде строки
-            return firstCurrency + " " + total;
+            return calcTotalPerCurrency(<string[]>fieldValues);
         }
 
         // Обычное числовое поле (не MoneyWithCurrency)
-        for (let i = 0; i < len; i++) {
-            total += myParseFloat(fieldValues[i]);
-        }
-        return total;
+        return fieldValues.map(myParseFloat).reduce((total, value) => total + value, 0);
     }
 
     calcTotal(fieldKey: string) {
@@ -455,27 +432,32 @@ export class Subtable {
         }
 
         //Посчитаем total в столбик по всем значениям
-        const total = this.getTotalValue(fieldKey);
+        const totalValue = this.getTotalValue(fieldKey);
         //Запишем total в специально подготовленную ячейку
         const $totalTd = this.getTotalTdNode(fieldKey);
         if ($totalTd.length > 0) {
             let totalHtml: string;
 
-            if (total === false) {
+            if (totalValue === 0) {
                 totalHtml = "";
             } else {
-                //Если это тип Money или MoneyWithCurrency - нужно привести к красивому виду перед записью в таблицу
+
+                // Если это тип Money или MoneyWithCurrency - нужно привести к красивому виду перед записью в таблицу
                 const type = this.fields[fieldKey].type;
                 if (type === "Money" || type === "MoneyWithCurrency") {
-                    totalHtml = getBeautyValue(total, type);
+
+                    totalHtml = getBeautyValue(totalValue, type);
+
                 } else {
+
                     //Это не деньги, значит простой числовой тип (вес или объём)
                     //Округлим до того количества знаков после запятой, которое указано в параметре precision
                     let precision = this.fields[fieldKey].precision;
                     if (precision === undefined) {
                         precision = 2;
                     }
-                    totalHtml = round(total, precision).toString();
+                    totalHtml = round(<number>totalValue, precision).toString();
+
                 }
             }
 
@@ -486,7 +468,7 @@ export class Subtable {
         if (this.fieldCalcTotalHandlers[fieldKey] !== undefined) {
             const handlers = this.fieldCalcTotalHandlers[fieldKey];
             for (let i = 0; i < handlers.length; ++i) {
-                handlers[i].call(this, total);
+                handlers[i].call(this, totalValue);
             }
         }
     }
@@ -647,7 +629,7 @@ export class Subtable {
             this.onAddHandlers[i].call(this, newRowNum, $newRow);
         }
 
-        return { newRowNum: newRowNum, newRowNode: $newRow };
+        return {newRowNum: newRowNum, newRowNode: $newRow};
     }
 
     setRowData(rowNum: RowNum, data: RowData) {
@@ -681,7 +663,7 @@ export class Subtable {
                     //Проверим наличие option с таким же текстом, как value
                     if (field._optionsHash === undefined) {
                         field._optionsHash = {};
-                        $fieldNode.find("option").each(function(this: HTMLOptionElement) {
+                        $fieldNode.find("option").each(function (this: HTMLOptionElement) {
                             field._optionsHash![this.innerHTML] = this.value;
                         });
                     }
@@ -837,7 +819,7 @@ export class Subtable {
         } else {
             // Для поля находящегося в режиме edit, записываем значение в поле ввода
             // но только если это поле не находится в состоянии disabled
-            if (!$node.prop('disabled')) {
+            if (!$node.prop("disabled")) {
                 setNodeValue($node, newValue, field.type, triggerChange && this.calcTotalEnabled);
             }
         }
@@ -935,7 +917,7 @@ export class Subtable {
 const subtablesStore: { [key: string]: Subtable } = {};
 
 export function init($root: JQuery) {
-    $root.find("div.subtable-div").each(function(this: HTMLElement) {
+    $root.find("div.subtable-div").each(function (this: HTMLElement) {
         // Проверим, есть ли в этом div атрибут data-fields с описанием полей? Если есть, создадим объект Subtable
         const $div = $(this);
         // Проверим, что эта таблица находится в режиме редактирования по атрибуту data-fields

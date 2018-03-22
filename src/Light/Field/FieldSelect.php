@@ -83,7 +83,7 @@ class FieldSelect extends FieldOptionsAbstract
         return $this->getOptionHtml($option, $value, $forTable);
     }
 
-    protected function getExcelInner($value, array $data)
+    protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         $option = $this->getOption($value);
         return $this->getOptionText($option, $value);
@@ -239,7 +239,7 @@ class FieldSelect extends FieldOptionsAbstract
         if ($this->addNew && $value === '+') {
 
             $valueText = $request[$this->key . 'New'];
-            if ($this->submitToupper) {
+            if ($this->upper) {
                 $valueText = mb_strtoupper($valueText, 'UTF-8');
             }
 

@@ -17,7 +17,7 @@ class Shipper extends ModuleAbstract
 
         $this->addFields(
 
-            F::createString('Name', ['name' => 'Shipper', 'submitToUpper' => true]),
+            F::createString('Name', ['name' => 'Shipper', 'upper' => true]),
 
             GeneralFields::shipmentRequestZip(),
 

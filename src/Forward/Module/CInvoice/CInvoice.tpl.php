@@ -235,7 +235,7 @@ if ($csLineIds) {
                 <td class="bordered"><?= t::html('GrossWeight') ?></td>
                 <td class="bordered"><?= t::html('ChargeableWeight') ?></td>
                 <td colspan="2"
-                    class="bordered"><?= t::html('Incoterms') ?> <?= t::html('IncotermsLocationName') ?></td>
+                    class="bordered"><?= t::html('Incoterms') ?> <?= t::html('IncotermsLocation') ?></td>
             </tr>
             <tr>
                 <td colspan="2">Departure</td>

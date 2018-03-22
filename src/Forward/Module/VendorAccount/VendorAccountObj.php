@@ -18,9 +18,9 @@ class VendorAccountObj extends ObjAbstract
 
             GeneralFields::companyId(),
 
-            F::createString('Name', ['name' => 'Account Name', 'submitToupper' => true]),
+            F::createString('Name', ['name' => 'Account Name', 'upper' => true]),
 
-            F::createText('InvoiceAddress', ['name' => 'Invoice Address', 'submitToupper' => true]),
+            F::createText('InvoiceAddress', ['name' => 'Invoice Address', 'upper' => true]),
 
             F::createString('OneCName', 'Название в 1С'),
 

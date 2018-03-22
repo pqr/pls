@@ -1,10 +1,10 @@
-var webpack = require('webpack');
-
 module.exports = {
+    mode: 'production',
     devtool: 'source-map',
-    entry: './source/index.tsx',
+    entry: './src/index.tsx',
     output: {
-        filename: '../../public/js/build/UserModuleBuild.js',
+        filename: 'UserModuleBuild.js',
+        path: __dirname + '/../../public/js/build/'
     },
     resolve: {
         extensions: ['.ts', '.tsx', '.js']
@@ -18,25 +18,6 @@ module.exports = {
         'mobx-react': 'mobxReact',
         'serializr': 'serializr'
     },
-    plugins: [
-        new webpack.DefinePlugin({
-            'process.env': {
-                'NODE_ENV': JSON.stringify('production'),
-                'BABEL_ENV': JSON.stringify('production')
-            }
-        }),
-        new webpack.optimize.ModuleConcatenationPlugin(),
-        new webpack.optimize.UglifyJsPlugin({
-            sourceMap: true,
-            compressor: {
-                screw_ie8: true,
-                warnings: false
-            },
-            mangle: {
-                screw_ie8: true
-            }
-        })
-    ],
     module: {
         rules: [
             {

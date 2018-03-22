@@ -103,7 +103,7 @@ trait ModuleSessionTrait
                     $additionalUrlParams
                 );
                 if ($linkParams) {
-                    $linksHtml .= '<a class="prev-link waves-effect waves-light btn-floating btn-small" title="' .
+                    $linksHtml .= '<a class="prev-link waves-effect btn-floating btn-small" title="' .
                         htmlspecialchars($linkParams['title']) .
                         ' (← Ctrl)" href="' . $linkParams['url'] . '">←</a>';
                 }
@@ -114,7 +114,7 @@ trait ModuleSessionTrait
                     $additionalUrlParams
                 );
                 if ($linkParams) {
-                    $linksHtml .= '<a class="next-link waves-effect waves-light btn-floating btn-small" title="' .
+                    $linksHtml .= '<a class="next-link waves-effect btn-floating btn-small" title="' .
                         htmlspecialchars($linkParams['title']) .
                         ' (Ctrl →)" href="' . $linkParams['url'] . '">→</a>';
                 }

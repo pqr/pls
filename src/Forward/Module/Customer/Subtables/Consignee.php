@@ -19,7 +19,7 @@ class Consignee extends Subtable
 
         $this->addFields(
 
-            F::createString('Name', ['name' => 'Получатель', 'editWidth' => 'medium', 'submitToupper' => true]),
+            F::createString('Name', ['name' => 'Получатель', 'editWidth' => 'medium', 'upper' => true]),
 
             GeneralFields::shipmentRequestZip()->setEditWidth('small')->setNameTable(null),
 

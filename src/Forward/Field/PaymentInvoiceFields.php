@@ -2,6 +2,7 @@
 namespace Forward\Field;
 
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldMoney;
 
 /**
  * Описание полея для подтаблиц внутри модулей оплат (CPayment и VPayment)
@@ -36,28 +37,6 @@ class PaymentInvoiceFields
         return InvoiceFields::invoiceName($fieldKey, $params);
     }
 
-    public static function changeInvoiceStatusTo()
-    {
-        $changeStatusOptions = [
-            'donotchange' => 'Do not change',
-            'auto' => 'Auto',
-            'markpartcleared' => ['text' => 'Partially Cleared', 'cssClass' => 'invpartcleared'],
-            'markcleared' => ['text' => 'Cleared', 'cssClass' => 'invcleared']
-        ];
-
-        return F::create(
-            'ChangeInvoiceStatusTo',
-            F::TYPE_SELECT,
-            [
-                'name' => 'Change Invoice Status',
-                'default' => 'auto',
-                'options' => $changeStatusOptions,
-                'empty' => false,
-                'modes' => F::MODE_LIST | F::MODE_EDIT
-            ]
-        );
-    }
-
     public static function invoiceAmount()
     {
         return F::create(
@@ -77,6 +56,9 @@ class PaymentInvoiceFields
         );
     }
 
+    /**
+     * @return FieldMoney
+     */
     public static function invoiceOutstandingAmount()
     {
         return InvoiceFields::cacheOutstandingAmount()->getClone(

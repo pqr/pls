@@ -6,6 +6,6 @@
         <?php endfor ?>
     </table>
     <div class="formactions">
-        <button type="submit" class="waves-effect waves-light btn bgcolor-btn-primary btn-save">Save Color Hints</button>
+        <button type="submit" class="waves-effect btn bgcolor-btn-primary btn-save">Save Color Hints</button>
     </div>
 </form>

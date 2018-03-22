@@ -12,6 +12,7 @@ class FieldMoneyWithCurrency extends FieldMoney
     {
         parent::initDefaultParams();
         $this->tableWidthExcel = 18;
+        $this->tableOrderBy = 'CAST(`' . $this->key . '` AS DECIMAL)';
     }
 
     /**
@@ -102,7 +103,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         return FieldMoney::beautify($amount, $this->short, $currencyIso, $this->useSymbol);
     }
 
-    protected function getExcelInner($value, array $data)
+    protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         list(, $amount) = self::getAsTouple($value);
 

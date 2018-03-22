@@ -29,7 +29,7 @@ class Many2ManyAbstract extends Subtable
         $this->allowExportToExcel = false;
         $this->allowTableLayouts = false;
         $this->_printHeadBlock = false;
-        $this->_allowPaste = false;
+        $this->allowPaste = false;
     }
 
     /**

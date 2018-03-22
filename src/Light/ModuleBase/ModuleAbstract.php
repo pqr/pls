@@ -542,7 +542,7 @@ abstract class ModuleAbstract extends Table
 
         $contentHtml = '<div class="formactions_fixed">'
             . $alertSaveButton
-            . '<button type="button" class="waves-effect waves-light btn btn-save bgcolor-btn-primary" title="Ctrl + S">'
+            . '<button type="button" class="waves-effect btn btn-save bgcolor-btn-primary" title="Ctrl + S">'
             . "$textSave $textObjectName"
             . '</button>'
             . '<a href="javascript: history.back()" class="btn-flat waves-effect cancel-link">'
@@ -701,7 +701,7 @@ abstract class ModuleAbstract extends Table
         }
 
         // На всякий случай создадим папку, если её ещё нет на сервере
-        $this->createFolder($this->_obj->getData());
+        $this->createFolder();
         $module = $this->getModule();
         $id = $this->_obj->getId();
 
@@ -927,7 +927,7 @@ abstract class ModuleAbstract extends Table
         $this->initViewJsData();
 
         if ($this->folders) {
-            $this->createFolder($this->_obj->getData());
+            $this->createFolder();
         }
 
         $this->addModuleSessionNextPrevLinks($this->_obj, 'id');
@@ -1334,7 +1334,7 @@ abstract class ModuleAbstract extends Table
         $affectedRows = $this->proceedInsertUpdateObj($dataFromPost, $msgBuff);
 
         if ($this->folders) {
-            $this->createFolder($this->_obj->getData());
+            $this->createFolder();
         }
 
         if ($this->_justInserted) {

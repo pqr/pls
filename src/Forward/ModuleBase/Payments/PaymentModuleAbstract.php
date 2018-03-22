@@ -133,42 +133,10 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
         $fromMultipleUpdat
     ) {
         //Обновим все кеширюущие поля связанные с изменением или созданием оплаты
-        //Ещё один параметр, который нужно добавить в метод $obj->updateAllCache() - пользовательский выбор в подтаблице
-        //с инвойсами - стоит ли менять их статус: Do not change / Auto / Partially Cleared / Cleared
-        $invoiceIdsAutoClear = $this->getInvoiceIdsAutoClearFromRequest();
-        //Добавим в к этому массиву все счета, которые были удалены из подтаблицы
         /** @var $obj PaymentObjAbstract */
-        $newInvoiceIds = $obj->getInvoiceIds();
-        $deletedCInvoiceIds = array_diff($oldData['InvoiceIds'], $newInvoiceIds);
-        $invoiceIdsAutoClear = array_merge($invoiceIdsAutoClear, $deletedCInvoiceIds);
-
         $dbLogMsg = 'Save ' . $this->getCustomerOrVendor() . ' Payment ' . $obj->getDescriptionHtml();
-        $obj->updateCacheAfterSubmit($oldData, $msgBuff, true, $invoiceIdsAutoClear, $dbLogMsg);
+        $obj->updateCacheAfterSubmit($oldData, $msgBuff, true, $dbLogMsg);
         $msgBuff->putIntoSessionFlash();
-    }
-
-    /**
-     * Возвращает массив VInvoiceID напротив которых в подтаблице VInvoices было проставлено Auto
-     * Нужно для правильного запуска Finance::autoClearInvoice() внутри VPayment::updateAllCache()
-     * @return array
-     */
-    private function getInvoiceIdsAutoClearFromRequest()
-    {
-        $invoiceIdsAutoClear = [];
-        $firstLetter = $this->getFirstLetter();
-        $subtableObj = $this->getSubtableObject($this->_obj, $firstLetter . 'Invoices');
-        //Теперь найдём ID тех счетов, напротив которых было проставлено auto и сохраним их в массиве $invoiceIdsAutoClear
-        foreach ($subtableObj->getNotDeletedDataFromReqeust() as $subtableRowDataFromRequest) {
-            $fieldsData = $subtableRowDataFromRequest['fieldsData'];
-            $invoiceId = $fieldsData[$firstLetter . 'InvoiceID'];
-            if ($invoiceId) {
-                if ($fieldsData['ChangeInvoiceStatusTo'] === 'auto') {
-                    $invoiceIdsAutoClear[] = $invoiceId;
-                }
-            }
-        }
-
-        return $invoiceIdsAutoClear;
     }
 
     protected function afterDelete(ObjAbstract $obj, array $oldData, Msg $msgBuff)

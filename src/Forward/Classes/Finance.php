@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Classes;
 
 use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
@@ -72,7 +73,7 @@ class Finance
             return '<i class="invicon__cleared" title="' . htmlspecialchars($title) . '"></i>';
         } elseif ($status === self::INVOICESTATUS_PARTCLEARED) {
             return '<i class="invincon__partclearedleft" title="' . htmlspecialchars($title) . '"></i>'
-            . '<i class="invincon__partclearedright" title="' . htmlspecialchars($title) . '"></i>';
+                . '<i class="invincon__partclearedright" title="' . htmlspecialchars($title) . '"></i>';
         } elseif ($status === self::INVOICESTATUS_CREDITNOTED) {
             return '<i class="fa fa-minus-circle invicon__creditnoted" title="' . htmlspecialchars($title) . '"></i>';
         } elseif ($status === self::INVOICESTATUS_DELETED) {
@@ -224,82 +225,75 @@ class Finance
     /**
      * Обновляет кеширующие поля CacheLastPaymentDate, CachePaymentsReference, CachePaymentsTotalAmount, CacheOutstandingAmount
      * в таблице cinvoice или vinvoice
+     * @param string $firstLetter
      * @param int $invId ID в таблице vinvoice или cinvoice
-     * @param string $dbTable имя таблицы vinvoice или cinvoice
      * @return void
+     * @throws \Exception
      */
-    public static function updateInvoiceCacheClearingFields($invId, $dbTable)
+    public static function updateInvoiceCacheClearingFields(string $firstLetter, int $invId)
     {
-        //Загрузим сам инвойс
-        if ($invInfo = Db::getRow(
-            "SELECT ID, Name, Amount, CurrencyISO, Status, CompanyID FROM $dbTable WHERE ID = " . (int)$invId
-        )
-        ) {
+        $firstLetterLower = strtolower($firstLetter);
+        $invInfo = Db::getRow(
+            "SELECT ID, Name, Amount, CurrencyISO, Status, CompanyID 
+                   FROM {$firstLetterLower}invoice
+                   WHERE ID = $invId"
+        );
+        if (!$invInfo) {
+            return;
+        }
 
-            $prefix = $dbTable[0];
-            $paymentTable = $prefix . 'payment'; //cpayment или vpayment
-            $paymentIdField = strtoupper($prefix) . 'PaymentID';
-            $paymentInvoiceTable = $prefix . 'payment_' . $dbTable; //cpayment_cinvoice или vpayment_vinvoice
-            //Узнаем ID всех связанных оплат (при этом делаем запрос в том числе и на таблицу cpayment/vpayment, чтобы
-            //точно привязаться по CompanyID
-            $query = "SELECT DISTINCT(" . $paymentInvoiceTable . "." . $paymentIdField . ")
-                       FROM " . $paymentInvoiceTable . ", " . $paymentTable . "
-                       WHERE " . $paymentInvoiceTable . "." . $paymentIdField . " = " . $paymentTable . ".ID";
+        //Узнаем ID всех связанных оплат (при этом делаем запрос в том числе и на таблицу cpayment/vpayment, чтобы
+        //точно привязаться по CompanyID
+        $query = "SELECT DISTINCT(pi.{$firstLetter}PaymentID)
+                       FROM {$firstLetterLower}payment_{$firstLetterLower}invoice pi, {$firstLetterLower}payment p
+                       WHERE pi.{$firstLetter}PaymentID = p.ID
+                           AND {$firstLetter}InvoiceID = $invId";
 
-            if ($dbTable === 'vinvoice') {
-                $whereInvoice = " AND VInvoiceID = '" . $invInfo['ID'] . "'";
-            } else {
-                $whereInvoice = " AND CInvoiceID = '" . $invInfo['ID'] . "'";
-            }
+        $paymentIds = Db::getCol($query);
+        if ($paymentIds) {
 
-            $query .= $whereInvoice;
+            $paymentIdsSql = implode(',', $paymentIds);
 
-            $paymentIds = Db::getCol($query);
-            if ($paymentIds) {
-
-                $paymentIdsSql = implode(',', $paymentIds);
-
-                $paymentTable = $prefix . 'payment'; //cpayment или vpayment
-                //Найдём дату последнего платежа и сконкатинируем референсы всех платежей
-                $query = "SELECT max(PaymentDate) AS LastPaymentDate, min(PaymentDate) AS FirstPaymentDate
+            // Найдём дату последнего платежа и сконкатинируем референсы всех платежей
+            $query = "SELECT max(PaymentDate) AS LastPaymentDate, min(PaymentDate) AS FirstPaymentDate
                              , GROUP_CONCAT(Name ORDER BY PaymentDate, Name SEPARATOR '\\n') AS PaymentsReference
-                          FROM $paymentTable
+                          FROM {$firstLetterLower}payment
                           WHERE ID IN ($paymentIdsSql)";
 
-                $paymentsData = Db::getRow($query);
-                $lastPaymentDate = $paymentsData['LastPaymentDate'];
-                $firstPaymentDate = $paymentsData['FirstPaymentDate'];
-                $paymentsReference = $paymentsData['PaymentsReference'];
+            $paymentsData = Db::getRow($query);
+            $lastPaymentDate = $paymentsData['LastPaymentDate'];
+            $firstPaymentDate = $paymentsData['FirstPaymentDate'];
+            $paymentsReference = $paymentsData['PaymentsReference'];
 
-                //Посчитаем общую сумму всех оплат в валюте счёта, относящихся к данному счёту
-                $query = "SELECT SUM(ClearingAmountInInvoiceCurrency)
-                                      FROM $paymentInvoiceTable
-                          WHERE $paymentIdField IN ($paymentIdsSql) " . $whereInvoice;
-                $paymentsClearingAmountInInvoiceCurrency = Db::getOne($query);
+            //Посчитаем общую сумму всех оплат в валюте счёта, относящихся к данному счёту
+            $query = "SELECT SUM(ClearingAmountInInvoiceCurrency)
+                          FROM {$firstLetterLower}payment_{$firstLetterLower}invoice
+                          WHERE {$firstLetter}PaymentID IN ($paymentIdsSql)
+                              AND {$firstLetter}InvoiceID = $invId";
+            $paymentsClearingAmountInInvoiceCurrency = Db::getOne($query);
 
-                //Отдельно расчитаем CacheOutstandingAmount - сумма задолженности по данному счёту
-                $outstandingAmount = $invInfo['Amount'] - $paymentsClearingAmountInInvoiceCurrency;
+            //Отдельно расчитаем CacheOutstandingAmount - сумма задолженности по данному счёту
+            $outstandingAmount = $invInfo['Amount'] - $paymentsClearingAmountInInvoiceCurrency;
 
-            } else {
-                //Не осталось ни одной оплаты, обнулим кеширующие поля
-                $lastPaymentDate = null;
-                $firstPaymentDate = null;
-                $paymentsReference = null;
-                $paymentsClearingAmountInInvoiceCurrency = null;
-                $outstandingAmount = $invInfo['Amount'];
-            }
-
-
-            //Запишем получившиеся данные в таблицу cinvoice или vinvoice
-            $fieldsData = [
-                'CacheLastPaymentDate' => $lastPaymentDate,
-                'CacheFirstPaymentDate' => $firstPaymentDate,
-                'CachePaymentsReference' => $paymentsReference,
-                'CachePaymentsTotalAmount' => $paymentsClearingAmountInInvoiceCurrency,
-                'CacheOutstandingAmount' => $outstandingAmount
-            ];
-            Db::updateRow($fieldsData, $dbTable, $invInfo['ID']);
+        } else {
+            //Не осталось ни одной оплаты, обнулим кеширующие поля
+            $lastPaymentDate = null;
+            $firstPaymentDate = null;
+            $paymentsReference = null;
+            $paymentsClearingAmountInInvoiceCurrency = null;
+            $outstandingAmount = $invInfo['Amount'];
         }
+
+
+        //Запишем получившиеся данные в таблицу cinvoice или vinvoice
+        $fieldsData = [
+            'CacheLastPaymentDate' => $lastPaymentDate,
+            'CacheFirstPaymentDate' => $firstPaymentDate,
+            'CachePaymentsReference' => $paymentsReference,
+            'CachePaymentsTotalAmount' => $paymentsClearingAmountInInvoiceCurrency,
+            'CacheOutstandingAmount' => $outstandingAmount
+        ];
+        Db::updateRow($fieldsData, "{$firstLetterLower}invoice", $invId);
     }
 
     /**
@@ -309,85 +303,88 @@ class Finance
      * Эта проврка на текущий статус сделана для того, чтобы случайно не закрыть Delted или Creadit Noted счёт,
      * а также чтобы не делать переход Cleared -> Part Clerared, т.к. иногда счета закрывают вручную, даже если они не полностью оплачены
      *
+     * @param string $firstLetter
      * @param int $invId ID в таблице vinvoice или cinvoice
-     * @param string $dbTable имя таблицы vinvoice или cinvoice
+     * @throws \Exception
      */
-    public static function autoClearInvoice($invId, $dbTable)
+    public static function autoClearInvoice(string $firstLetter, int $invId)
     {
+        $firstLetterLower = strtolower($firstLetter);
         //Загрузим сам инвойс
         $query = "SELECT ID
                 , CacheOutstandingAmount
                 , CachePaymentsTotalAmount
                 , Status
                 , CurrencyISO
-            FROM $dbTable
-            WHERE ID = @i";
-        if ($invInfo = Db::getRow($query, $invId)) {
+            FROM {$firstLetterLower}invoice
+            WHERE ID = $invId";
 
-            if ($invInfo['Status'] == Finance::INVOICESTATUS_CLEARED) {
-                // Счёт уже в статусе "оплачено", этот сатус сбрасывать не будем
-                return;
-            }
+        $invInfo = Db::getRow($query);
+        if (!$invInfo) {
+            return;
+        }
 
-            //Автоматически обновмм статус до Part Cleared или Cleared, если текущий статус среди открытх статуосв
-            //Если abs($outstandingAmount) < 1 руб., счёт можно автоматически закрыть
-            //Если $outstandingAmount != 0, но $paymentsTotalAmount != 0, значит Part Cleared
-            switch ($invInfo['CurrencyISO']) {
-                case 'USD':
-                    $limitForClearence = 0.04;
-                    break;
-                case 'EUR':
-                    $limitForClearence = 0.03;
-                    break;
-                case 'RUB':
-                default:
-                    $limitForClearence = 1;
-            }
-            $newStatus = null;
-            if ($invInfo['CacheOutstandingAmount'] < $limitForClearence) {
-                $newStatus = Finance::INVOICESTATUS_CLEARED;
-            } elseif ($invInfo['CachePaymentsTotalAmount'] != 0) {
-                $newStatus = Finance::INVOICESTATUS_PARTCLEARED;
+        /*
+        if ($invInfo['Status'] == Finance::INVOICESTATUS_CLEARED) {
+            // Счёт уже в статусе "оплачено", этот сатус сбрасывать не будем
+            return;
+        }
+        */
+
+        //Автоматически обновмм статус до Part Cleared или Cleared, если текущий статус среди открытх статуосв
+        //Если abs($outstandingAmount) < 1 руб., счёт можно автоматически закрыть
+        //Если $outstandingAmount != 0, но $paymentsTotalAmount != 0, значит Part Cleared
+        switch ($invInfo['CurrencyISO']) {
+            case 'USD':
+                $limitForClearence = 0.04;
+                break;
+            case 'EUR':
+                $limitForClearence = 0.03;
+                break;
+            case 'RUB':
+            default:
+                $limitForClearence = 1;
+        }
+        $newStatus = null;
+        if ($invInfo['CacheOutstandingAmount'] < $limitForClearence) {
+            $newStatus = Finance::INVOICESTATUS_CLEARED;
+        } elseif ($invInfo['CachePaymentsTotalAmount'] != 0) {
+            $newStatus = Finance::INVOICESTATUS_PARTCLEARED;
+        } else {
+            //Переводим счёт обратно в Open статус
+            if ($firstLetter === 'V') {
+                //Со счётом Vendor Invoice всё сложно, т.к. он имеет несколько open статусов, в какой переводить?
+                //Если текущий был Partially Cleared или Cleared, то переведём в статус Open Accepted.
+                //Во всех остальных случаях не будем менять статус вообще!
+                if ($invInfo['Status'] == Finance::INVOICESTATUS_CLEARED || $invInfo['Status'] == Finance::INVOICESTATUS_PARTCLEARED) {
+                    $newStatus = Finance::INVOICESTATUS_ACCEPTED;
+                }
             } else {
-                //Переводим счёт обратно в Open статус
-                if ($dbTable === 'vinvoice') {
-                    //Со счётом Vendor Invoice всё сложно, т.к. он имеет несколько open статусов, в какой переводить?
-                    //Если текущий был Partially Cleared или Cleared, то переведём в статус Open Accepted.
-                    //Во всех остальных случаях не будем менять статус вообще!
-                    if ($invInfo['Status'] == Finance::INVOICESTATUS_CLEARED || $invInfo['Status'] == Finance::INVOICESTATUS_PARTCLEARED) {
-                        $newStatus = Finance::INVOICESTATUS_ACCEPTED;
-                    }
-                } else {
-                    //Для счетов Customer Invoice всё проще - здесь только один Open статус
-                    $newStatus = Finance::INVOICESTATUS_OPEN;
-                }
-            }
-
-            if ($newStatus !== null && $newStatus != $invInfo['Status']) {
-
-                //Проверим, что статус счёта среди открытых статусов, чтобы случайно не обновить Deleted или Credit Noted до Cleared
-                //Добавим к открытым статусам и Cleared - например, из оплаты удаляется какой-то счёт, который ранее блы Cleared
-                //соответсвенно его нужно пересчитать и он должен стать Partially Cleared
-                if ($dbTable === 'vinvoice') {
-                    $openStatuses = Finance::$vinvoiceOpenStatuses;
-                } else {
-                    $openStatuses = Finance::$cinvoiceOpenStatuses;
-                }
-                if ($invInfo['Status'] == Finance::INVOICESTATUS_CLEARED || isset($openStatuses[$invInfo['Status']])) {
-
-                    //Подготовим объект соответсвующего типа, чтобы сделать обновление с записью логов
-                    if ($dbTable === 'vinvoice') {
-                        $invObj = new VInvoiceObj();
-                    } else {
-                        $invObj = new CInvoiceObj();
-                    }
-
-                    $invObj->setId($invInfo['ID']);
-                    $invObj->updateDb(['Status' => $newStatus], 'Обновлено автоматически на основе суммы оплат');
-
-                }
+                //Для счетов Customer Invoice всё проще - здесь только один Open статус
+                $newStatus = Finance::INVOICESTATUS_OPEN;
             }
         }
+
+        if ($newStatus !== null && $newStatus != $invInfo['Status']) {
+
+            //Проверим, что статус счёта среди открытых статусов, чтобы случайно не обновить Deleted или Credit Noted до Cleared
+            //Добавим к открытым статусам и Cleared - например, из оплаты удаляется какой-то счёт, который ранее блы Cleared
+            //соответсвенно его нужно пересчитать и он должен стать Partially Cleared
+            if ($firstLetter === 'V') {
+                $openStatuses = Finance::$vinvoiceOpenStatuses;
+            } else {
+                $openStatuses = Finance::$cinvoiceOpenStatuses;
+            }
+            if ($invInfo['Status'] == Finance::INVOICESTATUS_CLEARED || isset($openStatuses[$invInfo['Status']])) {
+
+                //Подготовим объект соответсвующего типа, чтобы сделать обновление с записью логов
+                $invObj = ($firstLetter === 'V') ? new VInvoiceObj() : new CInvoiceObj();
+                $invObj->setId($invInfo['ID']);
+                $invObj->updateDb(['Status' => $newStatus], 'Обновлено автоматически на основе суммы оплат');
+
+            }
+        }
+
     }
 
     /**

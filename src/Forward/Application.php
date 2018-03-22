@@ -86,7 +86,6 @@ class Application extends ApplicationAbstract
         ModuleRegister::addModule('Shipper', 'Shippers', 'Lists');
         ModuleRegister::addModule('OurCompany', 'Our Company', 'Lists');
         ModuleRegister::addModule('ContainerType', 'Container Types', 'Lists');
-        ModuleRegister::addModule('Incoterm', 'Incoterms', 'Lists');
         ModuleRegister::addModule('Uom', 'UOMs', 'Lists');
         ModuleRegister::addModule('ItemList', 'Item List', 'Lists');
         ModuleRegister::addModule('Traffic', 'Traffics', 'Lists');

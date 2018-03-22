@@ -18,7 +18,7 @@ class Incoterm extends ModuleAbstract
 
         $this->addFields(
 
-            F::create('Name', F::TYPE_STRING, array('editMaxLength' => 3, 'submitToupper' => true)),
+            F::create('Name', F::TYPE_STRING, array('editMaxLength' => 3, 'upper' => true)),
 
             F::create('Description', F::TYPE_STRING),
 

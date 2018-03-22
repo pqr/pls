@@ -207,7 +207,7 @@ class Shipment extends ModuleAbstract
                 'VendorID',
                 'NatureOfGoods',
                 'Incoterms',
-                'IncotermsLocationName'
+                'IncotermsLocation'
             ],
             null
         );
@@ -857,7 +857,7 @@ class Shipment extends ModuleAbstract
                         , ChargeableWeight
                         , AirlineAlphaCode
                         , Incoterms
-                        , IncotermsLocationName
+                        , IncotermsLocation
                         , CommentsInternal AS Comments
                       FROM quotation
                       WHERE ID = " . (int)$_GET['qid'];
@@ -1321,8 +1321,7 @@ class Shipment extends ModuleAbstract
 
         $filename = File::getValidFilename($filename);
 
-        $filepathRelative = $this->getFolderRelativePath($shipmentObj->getData()) . '/' . $filename;
-        $filepathAbs = FilesFolder::getAbsolutePath($filepathRelative);
+        $filepathAbs = $this->getFolderAbsolutePath() . "/$filename";
 
         if (!isset($_GET['confirm']) && file_exists(File::encode($filepathAbs))) {
 

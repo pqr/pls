@@ -16,11 +16,11 @@ class VendorObj extends ObjAbstract
 
             CF::id(),
 
-            F::create('Name', F::TYPE_STRING, ['name' => 'Vendor Name', 'submitToupper' => true]),
+            F::create('Name', F::TYPE_STRING, ['name' => 'Vendor Name', 'upper' => true]),
 
             CF::active(),
 
-            CF::address()->setParam('submitToupper', true),
+            CF::address()->setParam('upper', true),
 
             F::create('Contacts', F::TYPE_TEXT, ['clickable' => true]),
 

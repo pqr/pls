@@ -1,10 +1,9 @@
-var webpack = require('webpack');
-
 module.exports = {
-    devtool: '#cheap-module-inline-source-map',
-    entry: './source/index.tsx',
+    mode: "development",
+    entry: './src/index.tsx',
     output: {
-        filename: '../../public/js/build/UserModuleBuild.js'
+        filename: 'UserModuleBuild.js',
+        path: __dirname + '/../../public/js/build/'
     },
     resolve: {
         extensions: ['.ts', '.tsx', '.js']
@@ -18,16 +17,6 @@ module.exports = {
         'mobx-react': 'mobxReact',
         'serializr': 'serializr'
     },
-    plugins: [
-        new webpack.DefinePlugin({
-            'process.env': {
-                'NODE_ENV': JSON.stringify('development'),
-                'BABEL_ENV': JSON.stringify('development'),
-
-            },
-            '__DEV__': true
-        })
-    ],
     module: {
         rules: [
             {

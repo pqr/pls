@@ -9,13 +9,10 @@ use Forward\Field\GeneralFields;
 use Forward\Field\ShipmentFields;
 use Forward\Module\CInvoice\CInvoiceObj;
 use Forward\Module\VInvoice\VInvoiceObj;
-use Light\Config;
 use Light\Db;
+use Light\Field\CommonFields;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
-use Light\Field\FieldDate;
-use Light\Field\FieldMoney;
-use Light\File;
 use Light\Link;
 use Light\ObjAbstract;
 use Light\User;
@@ -39,7 +36,7 @@ use Light\User;
  * @method float getVolume()
  * @method string getNatureOfGoods()
  * @method string getIncoterms()
- * @method string getIncotermsLocationName()
+ * @method string getIncotermsLocation()
  * @method string getAirlineAlphaCode()
  * @method string getPlaceOfReceipt()
  * @method string getDepartureIATA()
@@ -132,7 +129,7 @@ final class ShipmentObj extends ObjAbstract
             F::createString('Consignee', [
                 'name' => 'Consignee (old)',
                 F::PARAM_AC_SOURCE => 'list_consignee',
-                'submitToupper' => true
+                'upper' => true
             ]),
             GeneralFields::consigneeReference(),
 
@@ -151,8 +148,8 @@ final class ShipmentObj extends ObjAbstract
             CF::grossWeight(),
             CF::volume(),
             GeneralFields::natureOfGoods(),
-            GeneralFields::incoterms(),
-            GeneralFields::incotermsLocationName(),
+            CommonFields::incoterms(),
+            GeneralFields::incotermsLocation(),
             GeneralFields::airlineAlphaCode(),
             F::createSelect('OceanCarrierID', [
                 'name' => 'Ocean Carrier',
@@ -162,7 +159,7 @@ final class ShipmentObj extends ObjAbstract
             F::createString('PlaceOfReceipt', [
                 'name' => 'Place of Receipt',
                 F::PARAM_AC_SOURCE => 'list_placeofreceipt',
-                'submitToupper' => true
+                'upper' => true
             ]),
             GeneralFields::departureIata(),
             GeneralFields::departureLocationName(),
@@ -190,15 +187,15 @@ final class ShipmentObj extends ObjAbstract
             ]),
             F::createString('Destination', [
                 F::PARAM_AC_SOURCE => 'list_destination',
-                'submitToupper' => true
+                'upper' => true
             ]),
             F::createString('Vessel', [
                 F::PARAM_AC_SOURCE => 'list_vessel',
-                'submitToupper' => true
+                'upper' => true
             ]),
             F::createString('VoyageNbr', [
                 'name' => 'Voyage',
-                'submitToupper' => true
+                'upper' => true
             ]),
 
             CF::comments(),
@@ -220,7 +217,7 @@ final class ShipmentObj extends ObjAbstract
                 'nameTable' => "Container №",
                 'title' => 'Container №',
                 'tableWidthExcel' => 20,
-                'submitToupper' => true
+                'upper' => true
             ]),
             F::createSelect('ContainerType', [
                 'name' => 'Container Type',
@@ -243,7 +240,7 @@ final class ShipmentObj extends ObjAbstract
             ]),
             F::createString('TruckNumber', [
                 'name' => 'Truck №',
-                'submitToupper' => true
+                'upper' => true
             ]),
             F::createCheckbox('EmailNoticeSent', [
                 'name' => 'Email Notice sent'

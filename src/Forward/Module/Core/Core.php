@@ -36,7 +36,7 @@ class Core extends LightCore
     }
 
 
-    public static function acSearchIncotermsLocationName($value)
+    public static function acSearchIncotermsLocation($value)
     {
         //Найдём локацию и её IATA код в базе
         return Db::getAll(

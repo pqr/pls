@@ -284,7 +284,8 @@ class XlsWriter
         //Очистим ячейку от названия таблицы
         $sheet->setCellValueByColumnAndRow($col, $row, '');
 
-        $tableData = $table->getTableCalculatedData();
+        //$tableData = $table->getTableCalculatedData();
+        $tableData = $table->getTableData();
         $numRows = count($tableData);
         if ($numRows > 0 || $tableOpts & self::TABLES_WITH_HEADER) {
 

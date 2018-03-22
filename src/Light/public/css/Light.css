@@ -18,6 +18,10 @@ p {
     margin: 5px 20px 5px 10px;
 }
 
+ul {
+    margin: 0;
+}
+
 acronym {
     border-bottom: none;
 }

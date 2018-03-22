@@ -45,7 +45,6 @@ class CPaymentObj extends PaymentObjAbstract
      * @param array $oldData нужны старые данные на случай смены клиента
      * @param Msg $msgBuff
      * @param bool $updateShipmentsGpAndCriteria
-     * @param array|null $invoiceIdsAutoClear массив из ID счетов, которые нужно автоматически закрыть с помощью Finance::autoClearInvoice()
      * если этот массив не передан вообще, то все счета будут автоматически закрываться
      * @param string $dbLogMsg
      */
@@ -53,15 +52,14 @@ class CPaymentObj extends PaymentObjAbstract
         array $oldData,
         Msg $msgBuff = null,
         $updateShipmentsGpAndCriteria = true,
-        $invoiceIdsAutoClear = null,
         $dbLogMsg = ''
     ) {
         $this->autoname();
 
-        //Вызываем стандартный метод в классе предке (в абстрактном PaymentObjAbstract)
-        parent::updateCacheAfterSubmit($oldData, $msgBuff, $updateShipmentsGpAndCriteria, $invoiceIdsAutoClear, $dbLogMsg);
+        // Вызываем стандартный метод в классе предке (в абстрактном PaymentObjAbstract)
+        parent::updateCacheAfterSubmit($oldData, $msgBuff, $updateShipmentsGpAndCriteria, $dbLogMsg);
 
-        //Если изменился клиент, сначала обновим задолженность старого клиента
+        // Если изменился клиент, сначала обновим задолженность старого клиента
         if (isset($oldData['CustomerID']) && $oldData['CustomerID'] != $this->_data['CustomerID']) {
             $customerObj = new CustomerObj();
             $customerObj->setId($oldData['CustomerID']);
@@ -70,7 +68,7 @@ class CPaymentObj extends PaymentObjAbstract
             $customerObj->updateCacheOpenAndOverdueInvoicesAmount();
         }
 
-        //Обновим сумму открытых переплат и задолженностей текущего клиента
+        // Обновим сумму открытых переплат и задолженностей текущего клиента
         $customerObj = new CustomerObj();
         $customerObj->setId($this->_data['CustomerID']);
         $customerObj->loadData();
