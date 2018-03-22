@@ -73,11 +73,14 @@
 } ?>
 <script>
     window._lightModule = <?= json_encode(\Light\Request::getModule()) ?>;
-    window._lightPageParams = <?= json_encode(\Light\Response::getJsData()) ?>;
     window._lightCsrfToken = <?= json_encode($_SESSION['csrf_token']) ?>;
     window._lightDateFormat = <?= json_encode(\Light\Config::$defaultDateFormat) ?>;
     window._lightDateTimeFormat = <?= json_encode(\Light\Config::$defaultDateTimeFormat) ?>;
     window._lightLang = <?= json_encode(\Light\Config::$lang) ?>;
+    <?php if (isset($_REQUEST['scrollTop'])): ?>
+     window._lightScrollTop = <?= (int)$_REQUEST['scrollTop'] ?>;
+    <?php endif; ?>
+    window._lightPageParams = <?= json_encode(\Light\Response::getJsData()) ?>;
 </script>
 
 <?php if (\Light\Response::isMainmenuEnabled()): ?>

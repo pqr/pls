@@ -146,6 +146,7 @@ export function initListListeners() {
         const listTable = table.get(getModule());
         listTable.onSelectRow(updateMassactionDiv);
         listTable.onSelectAll(updateMassactionDiv);
+        listTable.onReload(updateMassactionDiv);
     } catch (e) {
         console.log(e);
     }
@@ -425,7 +426,14 @@ listener.simple_combo("ctrl s", function() {
     }
 });
 
-if (state === "edit" || state === "addnew") {
+if (state === "view") {
+    // В режиме просмтра найдём ссылку на редактирование и добавим к ней обработчик клика
+    $(`a[href*="editid=${objectId}"]`)
+        .on("click", (e:any) => {
+            e.currentTarget.href += `&scrollTop=${document.documentElement.scrollTop}`;
+        })
+}
+else if (state === "edit" || state === "addnew") {
     editForm = form.get("edit-form");
     // Передаём фокус на элемент Name
     $("input[name=Name]").focus();

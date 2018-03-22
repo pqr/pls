@@ -256,51 +256,60 @@ export class Table {
         return this;
     }
 
-    selectRow($tr: JQuery, selected: boolean): void {
-        //Инвертируем выделение строки специальным классом
-        $tr.toggleClass("selected", selected);
-
-        //Отмечаем чекбокс или радио-кнопку
-        $tr.find("input[type=checkbox].cb, input[type=radio].rb").prop("checked", selected);
-
-        //После выделения текущей строки, проверим, есть ли чекбокс в заголовке таблицы, нужно ли его переключить?
-        const $headCb = this._getHeadCb();
-        if ($headCb.length > 0) {
-            //Если есть хотя бы один неотмеченный чекбокс среди строк таблицы - снимаем выделение с headCb
-            const allSelected = this.$tbody.find("input[type=checkbox].cb:not(:checked)").length === 0;
-            $headCb.prop("checked", allSelected);
-        }
-
-        this.updateExcelSelectedCountSpan();
-
+    private callSelectRowHandlers($tr: JQuery, selected: boolean) {
         this.selectRowHandlers.forEach((handler: SelectRowHandler) => {
             handler(selected, $tr);
         });
     }
 
-    _getHeadCb(): JQuery {
+    selectRow($tr: JQuery, selected: boolean): void {
+        // Сделаем подствеку строки специальным классом
+        $tr.toggleClass("selected", selected);
+
+        //Отмечаем чекбокс или радио-кнопку
+        $tr.find("input[type=checkbox].cb, input[type=radio].rb").prop("checked", selected);
+
+        // После выделения текущей строки, проверим, есть ли чекбокс в заголовке таблицы, нужно ли его переключить?
+        this.updateHeadCheckbox();
+        // Обновим счётчик выделенных строк рядом со ссылкой "Export to Excel"
+        this.updateExcelSelectedCountSpan();
+
+        // Вызовем пользовательские обработчики (если такие были)
+        this.callSelectRowHandlers($tr, selected);
+    }
+
+    updateHeadCheckbox() {
+        const $headCb = this.getHeadCheckbox();
+        if ($headCb.length > 0) {
+            // Если есть хотя бы один неотмеченный чекбокс среди строк таблицы - снимаем выделение с headCb
+            const allSelected = this.$tbody.find("input[type=checkbox].cb:not(:checked)").length === 0;
+            $headCb.prop("checked", allSelected);
+        }
+    }
+
+    private getHeadCheckbox(): JQuery {
         return this.$table.children("thead").find(".cb-all");
     }
 
     /**
-             * Вспомагательная функция для обработчиков в таблицах - выделяет все строки в таблице или снимает выделение
-             * у которых есть чекбокс с классом cb
-             */
-    selectAll(allSelected: boolean): void {
+     * Вспомагательная функция для обработчиков в таблицах - выделяет все строки в таблице или снимает выделение
+     * у которых есть чекбокс с классом cb
+     */
+    selectAll(selected: boolean): void {
         this.$tbody.find("tr").each(function(this: HTMLTableRowElement) {
             const $tr = $(this);
             const $cb = $tr.find("input[type=checkbox].cb");
             if ($cb.length > 0) {
                 //Выделим строку специальным классом
-                $tr.toggleClass("selected", allSelected);
+                $tr.toggleClass("selected", selected);
                 //Выделим чекбокс
-                $cb.prop("checked", allSelected);
+                $cb.prop("checked", selected);
             }
         });
 
-        this._getHeadCb().prop("checked", allSelected);
+        this.getHeadCheckbox().prop("checked", selected);
         this.selectAllHandlers.forEach((handler: SelectAllHandler) => {
-            handler(allSelected);
+            handler(selected);
         });
     }
 
@@ -324,13 +333,34 @@ export class Table {
         // Запоминаем ссылку на текущий запрос обновления этой таблицы
         this.currentReloadXhr = $.post(this.reloadUrl, data);
 
+        // Запоминим выделенные галочками элементы, чтобы после перезагрузки таблицы вернуть выделение
+        const selectedValues = this.getSelectedValues();
+
         this.currentReloadXhr
             .done((newTableHtml: string) => {
                 this.$div.html(newTableHtml);
                 //Обновим керующие переменные
                 this.$table = this.$div.find("table.table");
                 this.$tbody = this.$table.find("tbody");
-                //Заново наложим sticky заголовки на таблицу (если только у неё нет специального класса .nosticky)
+                // Вернём отметки галочками к состоянию до перезагрузки
+                selectedValues.forEach((value) => {
+                    this.$tbody
+                        .find("input[type=checkbox].cb")
+                        .each(function(this:HTMLInputElement) {
+                            if (this.value == value) {
+                                this.checked = true;
+                                const $tr = $(this).closest('tr');
+                                $tr.toggleClass("selected", true);
+                            }
+                        });
+                });
+
+                // После выделения текущей строки, проверим, есть ли чекбокс в заголовке таблицы, нужно ли его переключить?
+                this.updateHeadCheckbox();
+                // Обновим счётчик выделенных строк рядом со ссылкой "Export to Excel"
+                this.updateExcelSelectedCountSpan();
+
+                // Заново наложим sticky заголовки на таблицу (если только у неё нет специального класса .nosticky)
                 if (!this.$table.hasClass("nosticky")) {
                     const offset = this.$table.attr("data-stickyoffset") || 0;
                     this.$table.stickyTableHeaders({ fixedOffset: offset });

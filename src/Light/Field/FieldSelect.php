@@ -34,6 +34,7 @@ class FieldSelect extends FieldOptionsAbstract
     public $emptyText = '';
 
     public $addNew = false;
+    public $addNewTable;
     public $addNewPlaceholder = 'Enter new value';
 
     public $select2 = false;
@@ -244,8 +245,12 @@ class FieldSelect extends FieldOptionsAbstract
             }
 
             //Добавляем новое значение в базу, узнаем новое ID
-            $masterTable = explode('|', $this->options, 1)[0];
-            $value = Db::insertUnique($valueText, $masterTable);
+            if ($this->addNewTable) {
+                $addNewTable = $this->addNewTable;
+            } else {
+                $addNewTable = explode('|', $this->options, 1)[0];
+            }
+            $value = Db::insertUnique($valueText, $addNewTable);
 
             // После добавления нового значения в базу очистим кеширующее поле _cacheEvaluatedOptions, чтобы при записи
             // логов все значения снова подтянулись из базы, включая только что вставленное

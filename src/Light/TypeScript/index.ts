@@ -5,7 +5,7 @@ import "./Colorpalette";
 import "./Mainmenu";
 import * as colopalette from "./Colorpalette";
 import "./MonthWidget";
-import * as currency from  "./Currency";
+import * as currency from "./Currency";
 import * as forms from "./Form";
 import * as table from "./Table";
 import * as module from "./Module";
@@ -31,5 +31,10 @@ $(function() {
             const offset = myParseInt($table.attr("data-stickyoffset")!);
             ($table as any).stickyTableHeaders({ fixedOffset: offset });
         });
+    }
+
+    const scrollTop = (window as any)._lightScrollTop;
+    if (scrollTop) {
+        document.documentElement.scrollTop = scrollTop;
     }
 });

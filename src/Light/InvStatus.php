@@ -37,7 +37,7 @@ class InvStatus
         self::DRAFT => [
             'text' => 'Черновик',
             'cssClass' => 'invstatus14',
-            'Active' => 1
+            'Active' => 0
         ],
         self::OPEN => [
             'text' => 'Не оплачен',
