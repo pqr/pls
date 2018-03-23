@@ -1423,6 +1423,7 @@ class Shipment extends ModuleAbstract
             $xls->save($filepathAbs);
             //Session::flashSuccess('Файл <strong>' . htmlspecialchars($filename) . '</strong> сохранён в папку перевозки');
             // Отправим готовый файл на экран пользователю
+            $filepathRelative = $this->getFolderRelativePath() . "/$filename";
             FilesFolder::streamFile($filepathRelative);
         } catch (\Exception $e) {
             Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($filename) . '</strong> сохранён в папку перевозки, возможно, он открыт в Excel?');
