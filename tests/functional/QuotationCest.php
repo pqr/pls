@@ -25,14 +25,10 @@ class QuotationCest extends ModuleCestAbstract
         $lang = $example[0];
 
         $I->wantTo('Download Quotation Excel ' . $lang);
+        $url = '?a=Quotation&lang=' . $lang . '&id=' . $this->getTestObjId() . '&func=Excel';
 
-        $I->sendGET('?a=Quotation&lang=' . $lang . '&id=' . $this->getTestObjId() . '&func=Excel');
-        $I->canSeeHttpHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $spreadsheet = $I->assertDownloadingExcel($url);
 
-        $filepath = __DIR__ . '/../_output/quotation_test_' . $lang . '.xlsx';
-        file_put_contents($filepath, $I->grabResponse());
-
-        $spreadsheet = IOFactory::load($filepath);
         $a2val = $spreadsheet->getSheet(0)->getCell("A2")->getValue();
         $title = $lang === 'ru' ? 'Котировка' : 'Quotation';
         $I->assertContains($title . ' #' . $this->getTestObjId(), $a2val);

@@ -1,5 +1,11 @@
 <?php
+
 namespace Light\Codeception;
+
+use Light\File;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 trait TesterTrait
 {
@@ -47,5 +53,49 @@ trait TesterTrait
         }
 
         $this->seeResponseMatchesJsonType($jsonSchema);
+    }
+
+    public function assertDownloadingExcel($url)
+    {
+        $this->sendGET($url);
+        $this->canSeeHttpHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $filepath = LIGHT_DIR_ROOT . '/tests/_output/' . File::getValidFilename($url) . '.xlsx';
+        file_put_contents($filepath, $this->grabResponse());
+
+        // Проверим, что внутри Excel нет ни одного плейсхолдера %fieldKey%
+        $spreadsheet = IOFactory::load($filepath);
+        $this->assertInstanceOf(Spreadsheet::class, $spreadsheet);
+
+        $count = $spreadsheet->getSheetCount();
+        for ($sheetIndex = 0; $sheetIndex < $count; $sheetIndex++) {
+            $sheet = $spreadsheet->getSheet($sheetIndex);
+
+            //Пройдёмся по всем ячейкам
+            $highestRow = $sheet->getHighestRow(); // e.g. 10
+            $highestColumn = $sheet->getHighestColumn(); // e.g 'F'
+
+            $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn); // e.g. 5
+
+            for ($currentRow = 1; $currentRow <= $highestRow; $currentRow++) {
+                for ($currentCol = 1; $currentCol <= $highestColumnIndex; $currentCol++) {
+
+                    $cellValue = $sheet->getCellByColumnAndRow($currentCol, $currentRow)->getValue();
+                    // Проверим, есть ли внутри ячейки что-то связанное с процентамии (типа %fieldKey%)
+                    preg_match_all("/%([\\w\\d]+)%/", $cellValue, $matches);
+                    $hasPlaceholders = isset($matches[1][0]);
+                    if ($hasPlaceholders) {
+                        // Найдены какие-то прейсхолдеры в чейке - и это плохо
+                        // Сделаем assertTrue с сообщением, чтобы тесты упали
+                        $msg = 'Found placeholder in Excel file: ' . $matches[1][0] . ", sheet $sheetIndex, column $currentCol, row $currentRow";
+                        $this->assertTrue(false, $msg);
+                    }
+
+                }
+            }
+        }
+
+        return $spreadsheet;
+
     }
 }
