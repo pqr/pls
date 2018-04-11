@@ -309,7 +309,7 @@ class Table
      * Возвращает Fieldset из всех отображаемых полей включая _fieldsetFirst и _fieldsetLast
      * @return array
      */
-    private function getAllFields(): array
+    protected function getAllFields(): array
     {
         $allFields = [];
 
