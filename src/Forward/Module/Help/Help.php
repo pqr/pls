@@ -151,12 +151,41 @@ if ($pdfs): ?>
     ?>
 </ul>
 
+<h2>Настройка Outlook для "перетягивания" файлов из письма в папки на сервере</h2>
+<p>Допустим пришло письмо (E-mail) с вложением, это вложение нужно сохранить в базу в папку перевозки или в папку счёта
+    и т.п.
+    К сожалению, в Outlook на Windows по умолчанию не работает простое перетаскивание мышкой вложения из письма в окно
+    браузера - файл просто не загружается на сервер.
+</p>
+<p>
+    Чтобы эта удобная функция заработала, нужно установить дополнение для Outlook: <a
+            href="https://github.com/tonyfederer/OutlookFileDrag">https://github.com/tonyfederer/OutlookFileDrag</a> - в
+    разделе Installation скачать по ссылке "Download for 64-bit Windows (Outlook 32-bit or 64-bit)" или "Download for
+    32-bit Windows".
+    После установки нужно перезапустить Outlook. Я тестировал это дополнение на Windows 10 и Outlook 2016.</p>
+<p>Если данное дополнение не заработает (допустим, используется какая-то более старая версия Outlook), есть аналоги, но
+    платные:
+</p>
+<ul>
+    <li><a href="https://outlook2web.com/">https://outlook2web.com/</a> - заявелна поддержка Outlook начиная с 2007 и
+        новее, и Windows начиная с Vista и
+        новее
+    </li>
+    <li><a href="https://www.outlook-drag-drop-to-browser.com/">https://www.outlook-drag-drop-to-browser.com/</a> -
+        заявелна поддержка Outlook начиная с 2010 и новее, и Windows 7 и
+        новее
+    </li>
+    <li><a href="https://www.wilutions.info/ddaddin-download.html">https://www.wilutions.info/ddaddin-download.html</a>
+        - сайт выглядит стрёмно, использовать в последнюю очередь
+    </li>
+</ul>
+
 
 <?php
 $token = \Light\Db::getOne("SELECT TelegramToken FROM user WHERE ID = @i", \Light\User::getId());
 if ($token): ?>
     <br><br>
-    Вам подключён Telegram бот!
+    <h2>Вам подключён Telegram бот!</h2>
     <p>
         Откройте в Telegram бота с именем <strong><a href="https://telegram.me/ProactiveLogisticBot" target="_blank">@ProactiveLogisticBot</a></strong>
         и выполните команду
