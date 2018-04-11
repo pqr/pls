@@ -167,12 +167,12 @@ if ($pdfs): ?>
     платные:
 </p>
 <ul>
-    <li><a href="https://outlook2web.com/">https://outlook2web.com/</a> - заявелна поддержка Outlook начиная с 2007 и
+    <li><a href="https://outlook2web.com/">https://outlook2web.com/</a> - заявлена поддержка Outlook начиная с 2007 и
         новее, и Windows начиная с Vista и
         новее
     </li>
     <li><a href="https://www.outlook-drag-drop-to-browser.com/">https://www.outlook-drag-drop-to-browser.com/</a> -
-        заявелна поддержка Outlook начиная с 2010 и новее, и Windows 7 и
+        заявлена поддержка Outlook начиная с 2010 и новее, и Windows 7 и
         новее
     </li>
     <li><a href="https://www.wilutions.info/ddaddin-download.html">https://www.wilutions.info/ddaddin-download.html</a>
