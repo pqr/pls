@@ -219,26 +219,26 @@ class Pdf
      * Для проверки, нужно ли его обновить, используется вспомагательная таблица в базе данных pdfhash, в которую сохраняется
      * md5 хэш от html контента
      * @param string $html
-     * @param string $relativePath путь и имя pdf файла относительно filesfolder (расширение .pdf тоже нужно указать)
+     * @param string $fileRelativePath путь и имя pdf файла относительно filesfolder (расширение .pdf тоже нужно указать)
      * @param Msg $msgBuff
      * @return bool обновился ли файл на файловой системе реально?
      */
-    public static function saveIntoFilesFolder($html, $relativePath, Msg $msgBuff = null)
+    public static function saveIntoFilesFolder(string $html, string $fileRelativePath, Msg $msgBuff = null)
     {
         //Для начала проверим, нужно ли перегенерировать этот pdf файл? Возможно он уже есть в папке и содержимое совпаадает?
-        if (!self::isRegenerationNeeded($html, $relativePath)) {
+        if (!self::isRegenerationNeeded($html, $fileRelativePath)) {
             //Проверка показала, что такой файл уже есть и содержимое совпадает.
             //Ничего дальше делать не будем
             return false;
         }
 
         //Определим абсолютный путь до генерируемого файла
-        $filepathAbs = FilesFolder::getAbsolutePath($relativePath);
+        $filepathAbs = FilesFolder::getAbsolutePath($fileRelativePath);
         //Сохраняем pdf файла
         $result = self::save($html, $filepathAbs, false, $msgBuff);
         if ($result) {
             //Если успешно сохранили файл в папку, нужно записать md5 хеш от html в специальную таблицу pdfhash
-            Db::replaceRow(['Filepath' => $relativePath, 'HtmlMD5' => md5($html)], 'pdfhash');
+            Db::replaceRow(['Filepath' => $fileRelativePath, 'HtmlMD5' => md5($html)], 'pdfhash');
         }
 
         return $result;

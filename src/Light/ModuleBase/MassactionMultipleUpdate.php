@@ -1,0 +1,216 @@
+<?php
+
+
+namespace Light\ModuleBase;
+
+
+use Light\Config;
+use Light\Fieldset;
+use Light\Msg;
+use Light\ObjAbstract;
+use Light\Response;
+use Light\Template;
+use Light\User;
+use Light\Field\FieldAbstract as F;
+
+/**
+ * Один из стандартных Massaction реализован в виде Trait к ModuleAbstract
+ * Trait MassactionMultipleUpdate
+ * @package Light\ModuleBase
+ */
+trait MassactionMultipleUpdate
+{
+    protected function addMassactionMultipleUpdate()
+    {
+        if ($this->allowEdit && User::hasWriteAccess()) {
+            $text = Config::$lang === 'ru' ? 'Массовое редактирование' : 'Multiple Update';
+            $this->addMassaction('MultipleUpdate', $text);
+        }
+    }
+
+    protected function massactionMultipleUpdate(array $ids)
+    {
+        $html = '<form action="?a=' . $this->getModule() . '&p=MultipleUpdateSubmit#ajax" method="post" class="multipleupdate">'
+            . MassactionUtils::getHtmlHiddenCheckedIds($ids)
+            . $this->muBodyHtml($ids)
+            . '</form>';
+
+        $buttonOkText = Config::$lang === 'ru' ? 'Массовое редактирование' : 'Multiple Update';
+        $buttonOkText .= ' (' . count($ids) . ')';
+
+        Response::showDialog($html, $buttonOkText, null, null, null, null, '95%', 10);
+    }
+
+    /**
+     * Срабатывает после отправки формы Mltiple Update через AJAX
+     * Возвращает AJAX сообщение об удачном multiple update, после закрытия котрого страница обновляется
+     * Метод вызывается напрямую, т.к. ulr формы Multiple Update содержит параметр p=MultipleUpdateSubmit
+     */
+    public function proceedMultipleUpdateSubmit()
+    {
+        if (!$this->allowDelete || !User::hasWriteAccess()) {
+            MassactionUtils::sendErrorDialog('No access to edit');
+            return;
+        }
+
+        $this->_state = self::STATE_MULTIPLEUPDATESUBMIT;
+
+        $msgBuff = new Msg();
+        $updated = 0;
+        $nothingChanged = 0;
+
+        $dataFromPost = $this->muDataFromPost();
+        if ($dataFromPost) {
+            $ids = $this->getMassactionIdsFromPost();
+            $updatedObjects = [];
+
+            /** @var ObjAbstract $objBase */
+            $objBase = $this->getObj();
+            //Поочерёдно обновим каждый id
+            foreach ($ids as $id) {
+
+                //Проверим существование объекта в базе, попробовав его загрузить
+                $obj = clone $objBase;
+                $obj->setId($id);
+                if (!$obj->loadData()) {
+                    $msgBuff->addError("Object with ID = $id not found");
+                    continue;
+                }
+
+                //Проверим, что у пользователя есть права на запись к этому объекту
+                // (права на чтение мы уже проверили в методе $this->getMassactionIdsFromPost();
+                if (!$this->hasWriteAccessRightToObj($obj)) {
+                    $msgBuff->addError("No access to edit object with ID = $id");
+                    continue;
+                }
+
+                if ($this->muUpdateObj($obj, $dataFromPost, $msgBuff)) {
+                    $updated++;
+                    $updatedObjects[] = $obj;
+                } else {
+                    $nothingChanged++;
+                }
+
+            }
+
+            $this->muAfterSubmit($updatedObjects, $dataFromPost, $msgBuff);
+
+        }
+
+        $msg = Config::$lang === 'ru' ? 'Обновлено' : 'Updated';
+        $msg .= ': ' . $updated;
+        $msgBuff->addSuccessOrInfo($msg, $updated);
+
+        //Стандратное сообщение о количесве ошибок
+        if ($nothingChanged > 0) {
+            $msg = Config::$lang === 'ru' ? 'Без изменений' : 'Nothing changed';
+            $msg .= ': ' . $nothingChanged;
+            $msgBuff->addInfo($msg);
+        }
+
+        MassactionUtils::sendSuccessDialog($msgBuff->getHtml());
+    }
+
+    /**
+     * Метод для переопределения в классах потомках
+     * Иногда к полям выводимым для редакитирования на форме Multiple Update нужно добавить какие-то особенные поля
+     * Например, поля связанные с подтаблицами
+     * @return Fieldset
+     */
+    protected function muFieldset()
+    {
+        return $this->getFieldset()->filterByMode(F::MODE_MULTIPLEUPDATE);
+    }
+
+    /**
+     * Метод для переопределения в классах потомках, если нужно добавить какие-то переменные к шаблону
+     * @return array
+     */
+    protected function muTplData()
+    {
+        return $this->muFieldset()->getTplData([], F::MODE_MULTIPLEUPDATE);
+    }
+
+    /**
+     * Для переопределения в классах потомках - возвращает HTML код формы БЕЗ ТЕГОВ form
+     * @param array $ids
+     * @return string HTML
+     */
+    protected function muBodyHtml(array $ids)
+    {
+        $tdata = $this->muTplData();
+
+        //Определим шаблон, который использовать для формы MultipleUpdate
+        $module = $this->getModule();
+        $templateFile = $module . 'MultipleUpdate.tpl.php';
+        if (!Template::findfile($templateFile)) {
+            $templateFile = LIGHT_DIR_LIGHT . '/templates/module/multipleupdate/auto.tpl.php';
+        }
+
+        return Template::parseTpl($templateFile, $tdata);
+    }
+
+    protected function muDataFromPost()
+    {
+        //Отфильтруем fieldset только теми полями, которые обозначены как доступные для Multiple Update
+        $muFieldset = $this->muFieldset();
+
+        //Дополнительно, отфильтруем только теми полями, которые были на форме отмечены как редактируемые
+        //На форме были скрытые поля со статусами 1 или 0 - все они оформлены виде массива multipleupdate
+        $allFieldKeys = $_POST['multipleupdate'];
+        $changebaleFieldKeys = array_keys(
+            array_filter(
+                $allFieldKeys,
+                function ($value) {
+                    return $value === 'showed';
+                }
+            )
+        );
+
+        if (!$changebaleFieldKeys) {
+            // Ни одно поле в диалоговом окне не было отмечено для изменения
+            return [];
+        }
+
+        $muFieldset = $muFieldset->filterByKeys($changebaleFieldKeys);
+
+        //Соберём массив с данными по полям
+        $requestData = [];
+        foreach ($changebaleFieldKeys as $fieldKey) {
+            if (isset($_POST[$fieldKey])) {
+                $requestData[$fieldKey] = $_POST[$fieldKey];
+            }
+        }
+
+        //Обработаем данные с помощью функций определённый в объектах полей
+        return $muFieldset->getDataFromRequest($requestData);
+    }
+
+    /**
+     * Выполняет обновление еденичной записи из режима MultipleUpdate
+     * Функция удобна для переопределения в классах потмоках
+     * @param ObjAbstract $obj
+     * @param array $dataFromPost
+     * @param Msg $msgBuff
+     * @return bool
+     */
+    protected function muUpdateObj(ObjAbstract $obj, array $dataFromPost, Msg $msgBuff)
+    {
+        $oldData = $this->getOldDataBeforeSubmitOrDelete($obj);
+        $affectedRows = $obj->updateDb($dataFromPost,
+            Config::$lang === 'ru' ? 'Массовое редактирование' : 'Multiple Update');
+        $this->afterUpdate($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, true);
+        $this->afterSubmit($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, true);
+        return $affectedRows;
+    }
+
+    /**
+     * Метод для переопределения в классах потомках
+     * @param array $updatedObjects - массив из объектов
+     * @param array $dataFromPost - массив данных из диалогового окна MultipleUpdate
+     * @param Msg $msgBuff
+     */
+    protected function muAfterSubmit(array $updatedObjects, array $dataFromPost, Msg $msgBuff)
+    {
+    }
+}

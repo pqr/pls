@@ -2,6 +2,7 @@
 namespace Light\Traits;
 
 use Light\Config;
+use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\Img;
@@ -160,6 +161,22 @@ trait TableSortable
         $sqlOrderBy = [];
         $sortField = $this->getSortField();
         if ($sortField) {
+            if ($sortField->tableOrderByLikeFilter) {
+                // Для этого поля поставлено условие "сортировать как в фильтре"
+                // Проверим, заполнен ли этот фильтр? (если такого фильтра вообще нет, то вернётся null)
+                $filterValue = $this->getFilterValue($sortField->tableOrderByLikeFilter);
+                if ($filterValue) {
+                    // Проверим, сколько значений разделённых через запятую или перевод строки в этом фильтре?
+                    $filterValuesSeparated = Db::explodeByComa($filterValue);
+                    if (count($filterValuesSeparated) > 1) {
+                        // Пользователь ввёл много значений, используем их для установки порядка сортировки!
+                        // Обёдиним значения в строку через запятую, попутно проэкранировав
+                        $filterValuesSql = Db::createIn($filterValuesSeparated);
+                        $sqlOrderBy[] = "FIELD({$sortField->tableOrderBy}, $filterValuesSql)";
+                    }
+                }
+            }
+
             $sqlOrderBy[] = $sortField->tableOrderBy . ' ' . $this->getSortOrder();
         }
 

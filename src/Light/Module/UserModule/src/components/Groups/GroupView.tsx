@@ -1,48 +1,47 @@
-import * as React from 'react'
-import {observer, inject} from 'mobx-react'
-import ViewFormField from '../Common/ViewFormField'
+import * as React from "react";
+import { observer, inject } from "mobx-react";
 import UserModuleStore from "../../UserModuleStore";
 
-@inject('store') @observer
-class OrderField extends React.Component<{store?: UserModuleStore}, {}> {
+interface GroupFieldProps {
+    store?: UserModuleStore;
+    fieldKey: string;
+    label: string;
+    type?: string;
+}
+
+@inject("store")
+@observer
+class GroupField extends React.Component<GroupFieldProps> {
+    static defaultProps = {
+        type: "text"
+    };
 
     handleChange = (e: any) => {
-        const selectedGroup = this.props.store!.selectedGroup;
-        if (selectedGroup) {
-            selectedGroup.onChange('OrderID', e.target.value);
-        }
+        this.props.store!.selectedGroup!.onChange(this.props.fieldKey, e.target.value);
     };
 
     render() {
-
-        const selectedGroup = this.props.store!.selectedGroup;
-        if (!selectedGroup) {
-            return null;
-        }
+        const { fieldKey, label } = this.props;
+        const value = this.props.store!.selectedGroup![fieldKey];
+        const inputId = "id" + fieldKey;
 
         return (
             <tr>
-                <th><label htmlFor="inputOrderID">Order</label></th>
+                <th>
+                    <label htmlFor={inputId}>{label}</label>
+                </th>
                 <td>
-                    <input type="number"
-                           id="inputOrderID"
-                           className="input-int input-small"
-                           value={selectedGroup.OrderID}
-                           onChange={this.handleChange}
-                    />
+                    <input type={this.props.type} onChange={this.handleChange} value={value} id={inputId} />
                 </td>
             </tr>
-        )
-
+        );
     }
-
 }
 
-@inject('store') @observer
-export default class GroupView extends React.Component<{store?: UserModuleStore}, {}> {
-
+@inject("store")
+@observer
+export default class GroupView extends React.Component<{ store?: UserModuleStore }, {}> {
     render() {
-
         const selectedGroup = this.props.store!.selectedGroup;
         if (!selectedGroup) {
             return null;
@@ -51,12 +50,10 @@ export default class GroupView extends React.Component<{store?: UserModuleStore}
         return (
             <table className="form">
                 <tbody>
-                <ViewFormField userOrGroup={selectedGroup} fieldKey="Name"/>
-                <OrderField />
+                    <GroupField fieldKey="Name" label="Name" />
+                    <GroupField fieldKey="OrderID" label="OrderID" type="number" />
                 </tbody>
             </table>
-        )
-
+        );
     }
-
 }

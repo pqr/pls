@@ -27,9 +27,9 @@ abstract class ReportAbstract extends Table
     /** @var \Light\Fieldset */
     protected $_fieldset;
 
-    public function __construct($tableName = null)
+    public function __construct()
     {
-        parent::__construct($tableName);
+        parent::__construct();
 
         $this->tableReloadUrl = '?a=Reportmenu&class=' . Misc::getClass($this);;
         $this->allowSort = false;

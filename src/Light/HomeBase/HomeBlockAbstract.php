@@ -1,9 +1,11 @@
 <?php
+
 namespace Light\HomeBase;
 
 use Light\Db;
 use Light\Misc;
 use Light\Table;
+use Light\Template;
 use Light\Traits\SubmoduleTrait;
 use Light\Traits\TableExcelExportable;
 
@@ -41,31 +43,31 @@ abstract class HomeBlockAbstract extends Table
     const CSSCLASS_PINK2 = 'pink2';
 
     /** @var string маленькая серая надпись под общим описанием, в которй указано для кого предназначено это напоминание */
-    protected $_title;
-    protected $_description;
-    protected $_informationFor;
-    protected $_width = 320;
-    protected $_showCount = true; //показывать ли в заголовке блока число элементов строк в таблице?
+    protected static $informationFor;
+
+    protected $width = 320;
+    protected $showCount = true; //показывать ли в заголовке блока число элементов строк в таблице?
     protected $_printHeadBlock = true;
-    protected $_userId;
+    protected $userId;
 
-    public function __construct($userId)
+    public function __construct(int $useId)
     {
-        $class = Misc::getClass($this);
-        parent::__construct($class);
+        parent::__construct();
 
-        $this->tableReloadUrl = '?' . $_SERVER['QUERY_STRING'] . "&class=$class";
-        $this->nosticky = true;
+        $this->userId = $useId;
+        $this->tableReloadUrl = '?' . $_SERVER['QUERY_STRING'] . "&class=" . Misc::getClass($this);
+        $this->sticky = false;
         $this->_tablePrintTotalRecordsFound = false;
-        $this->_userId = $userId;
+    }
 
-        $this->init();
-        $this->tableLoadData($userId);
+    public static function getInformationFrom()
+    {
+        return static::$informationFor;
     }
 
     protected function getExcelFilename()
     {
-        return $this->_title;
+        return self::getTitle();
     }
 
     protected function getExcelWorksheetName()
@@ -83,61 +85,62 @@ abstract class HomeBlockAbstract extends Table
         return $this->getTableDataCount();
     }
 
-    public function getTplData()
-    {
-        $tdata = [];
-
-        $rowsCount = $this->getTableDataCount();
-        if ($rowsCount) {
-            $tdata['count'] = $this->_showCount ? $this->getCountForTitle() : null;
-            $tdata['width'] = $this->_width;
-            $tdata['title'] = $this->_title;
-            $tdata['description'] = $this->_description;
-            $tdata['informationFor'] = $this->_informationFor;
-            $tdata['table'] = $this->getHtmlTable($this->_printHeadBlock);
-            $tdata['viewAllLink'] = $this->getViewAllLink($this->_userId);
-        }
-
-        return $tdata;
-    }
-
-    /**
-     * Переопределяем, чтобы использовать внутреннее свойство $this->_printHeadBlock вместо параметра функции
-     * @param bool $printHeadBlock
-     * @param bool $printIfEmpty
-     * @return string
-     */
-    public function getHtmlTableForAjax($printHeadBlock = true, $printIfEmpty = false)
-    {
-        return parent::getHtmlTableForAjax($this->_printHeadBlock, $printIfEmpty);
-    }
-
-    protected function tableLoadData($userId)
-    {
-        $query = $this->getTableQuery($userId);
-        $this->_tableData = Db::getAll($query);
-    }
-
-    /**
-     * Метод для переопредления в классах потмоках, который должен инициализировать поля черех $this->addFields()
-     */
-    abstract protected function init();
-
-    /**
-     * Единственный метод для переопределения в классах потомках
-     * @abstract
-     * @param int $userId
-     * @return mixed
-     */
-    abstract protected function getTableQuery($userId);
-
     /**
      * Метод для переопределеняи в классах потомках
      * @param int $userId
      * @return string
      */
-    protected function getViewAllLink($userId)
+    protected function getViewAllLink(int $userId)
     {
         return '';
+    }
+
+    /**
+     * метод для переопределения в классах потомках
+     * @param int $userId
+     * @return mixed
+     */
+    protected function getDataQuery(int $userId)
+    {
+        return '';
+    }
+
+    protected function tableLoadData(int $userId)
+    {
+        $query = $this->getDataQuery($userId);
+        if ($query) {
+            $this->_tableData = Db::getAll($query);
+        }
+    }
+
+    public function proceedSendExcel()
+    {
+        $this->tableLoadData($this->userId);
+        $this->sendExcel();
+    }
+
+    public function getHtmlTableForAjax($printHeadBlock = true, $printIfEmpty = false)
+    {
+        $this->tableLoadData($this->userId);
+        return parent::getHtmlTableForAjax($this->_printHeadBlock, $printIfEmpty);
+    }
+
+    public function getHtml(string $cssClass)
+    {
+        $this->tableLoadData($this->userId);
+        if (!$this->getTableDataCount()) {
+            return '';
+        }
+
+        $tdata = [
+            'count' => $this->showCount ? $this->getCountForTitle() : null,
+            'width' => $this->width,
+            'title' => self::getTitle(),
+            'description' => self::getDescription(),
+            'informationFor' => self::getInformationFrom(),
+            'table' => $this->getHtmlTable($this->_printHeadBlock),
+            'viewAllLink' => $this->getViewAllLink($this->userId),
+        ];
+        return Template::parseTpl('homeblock.tpl.php', $tdata + ['cssClass' => $cssClass]);
     }
 }

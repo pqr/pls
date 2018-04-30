@@ -59,9 +59,7 @@ class Table
     /** @var array дополнительные параметры, которые будут добавлены к ссылкам генерируемым по трём предыдущим свойствам */
     protected $tableLinkUrlParams = [];
 
-    public $nosticky = false;
-    public $stickyOffset;
-    public $nohover = false;
+    public $sticky = true;
 
     /**
      * Печатать ли сообщение "Total records found: xxx" (где xxx - результат вызова $this->getTableTotalRecordsFound())
@@ -104,6 +102,9 @@ class Table
         return $obj;
     }
 
+    /**
+     * @return ObjAbstract|SimpleObj
+     */
     public function getObj()
     {
         return $this->_obj;
@@ -196,7 +197,7 @@ class Table
 
     protected function addCheckboxCol()
     {
-        $this->getFieldsetFirst()->addField(F::createHtml('CheckBox', [
+        $checkboxField = F::createHtml('CheckBox', [
                 'tableWidthHtml' => 20,
                 'tableOrderBy' => '',
                 'tableAlign' => 'center',
@@ -209,7 +210,9 @@ class Table
                     return '';
                 }
             ]
-        ));
+        );
+        $this->getFieldsetFirst()->addField($checkboxField);
+        return $checkboxField;
     }
 
     /**
@@ -426,10 +429,9 @@ class Table
             $outHtml .= $this->getHtmlTableHeadLayoutSettingsLink();
         }
 
-        if (method_exists($this,
-                'getAdditionalHtmlTableHeadBlock') && $additionalHtml = $this->getAdditionalHtmlTableHeadBlock()) {
-            $outHtml .= $additionalHtml;
-        }
+        // Вывовем специальный метод, который может быть переопределён в классах потмоках для формирования
+        // дополнительных кнопок или сообщений над таблицей (там где пажинация)
+        $outHtml .= $this->getHtmlTableHeadBlockAdditional();
 
         /** @var $this \Light\Table */
         $outHtml .= '</p>';
@@ -437,11 +439,18 @@ class Table
         return $outHtml;
     }
 
+    /**
+     * Метод для переопределения в классах потомках, если нужно вывести что-то дополнительное рядом с пажинацией
+     */
+    protected function getHtmlTableHeadBlockAdditional(): string
+    {
+        return '';
+    }
+
     private function getHtmlTableOpenTableTag()
     {
         $dataTableName = ' data-tablename="' . $this->getTableName() . '"';
-        $class = ' class="table' . ($this->nosticky ? ' nosticky' : '') . '"';
-        $stickyOffset = $this->stickyOffset !== null ? ' data-stickyoffset="' . $this->stickyOffset . '"' : '';
+        $class = ' class="table' . ($this->sticky ? ' sticky' : '') . '"';
 
         $dataLinkUrlParams = '';
         if ($this->tableLinkUrlParams) {
@@ -449,7 +458,7 @@ class Table
             $dataLinkUrlParams = ' data-linkurlparams="' . htmlspecialchars($dataLinkUrlParams) . '"';
         }
 
-        return '<table' . $dataTableName . $class . $dataLinkUrlParams . $stickyOffset . '>';
+        return '<table' . $dataTableName . $class . $dataLinkUrlParams . '>';
     }
 
     /**
@@ -549,14 +558,25 @@ class Table
     }
 
     /**
-     * Метод для переопределения в классах потомках
+     * Метод для переопределения в классах потомках.
+     * Он вызывается на всех строках, кроме последней total строки, поэтому $rowNum указан как int
+     * (для последней total строки агрумент $rowNum был бы 'total', но этот метод не вызывается для total строки)
      * @param array $rowData
      * @param int $rowNum
      * @return string
      */
     protected function getTableRowCssClass(array $rowData, int $rowNum): string
     {
-        return '';
+        $out = '';
+        if (isset($rowData['IsSeparator'])) {
+            $out = 'separator';
+        }
+
+        if (isset($rowData['IsTotal'])) {
+            $out .= ' total';
+        }
+
+        return trim($out);
     }
 
     /**

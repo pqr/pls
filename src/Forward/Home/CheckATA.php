@@ -9,11 +9,13 @@ use Light\User;
 
 class CheckATA extends HomeBlockAbstract
 {
-    protected function init()
+    protected static $title = 'Check ATA';
+    protected static $description = 'За 1 день до наступления ETA, если ATA ещё не проставлено.';
+    protected static $informationFor = 'Информация для Shipment Responsible CS и Sales.';
+
+    public function __construct(int $userId)
     {
-        $this->_title = 'Check ATA';
-        $this->_description = 'За 1 день до наступления ETA, если ATA ещё не проставлено.';
-        $this->_informationFor = 'Информация для Shipment Responsible CS и Sales.';
+        parent::__construct($userId);
         $this->tableLinkModule = 'Shipment';
 
         $this->addFields(
@@ -23,7 +25,7 @@ class CheckATA extends HomeBlockAbstract
         );
     }
 
-    protected function getTableQuery($userId)
+    protected function getDataQuery(int $userId)
     {
         return "SELECT shipment.ID, shipment.Name, shipment.MAWBNumber, shipment.ETA
                   FROM shipment
@@ -34,7 +36,7 @@ class CheckATA extends HomeBlockAbstract
                   ORDER BY shipment.ETA";
     }
 
-    protected function tableLoadData($userId)
+    protected function tableLoadData(int $userId)
     {
         if (User::hasSpecialAccess(Application::SA_HOME_CHECKATA, $userId)) {
             parent::tableLoadData($userId);

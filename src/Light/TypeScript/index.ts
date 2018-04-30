@@ -1,4 +1,4 @@
-import { addStandardListeners, getPageParam, myParseInt } from "./Light";
+import { addStandardListeners } from "./Light";
 
 import "./AjaxFields";
 import "./Colorpalette";
@@ -23,15 +23,6 @@ $(function() {
 
     const $body = $(document.body);
     addStandardListeners($body);
-
-    // Добавим плавающие шапки таблиц в момент загрузки страницы
-    if (!getPageParam("disableTableSticky")) {
-        $body.find("table.table:not(.nosticky)").each(function(this: HTMLTableElement) {
-            const $table = $(this);
-            const offset = myParseInt($table.attr("data-stickyoffset")!);
-            ($table as any).stickyTableHeaders({ fixedOffset: offset });
-        });
-    }
 
     const scrollTop = (window as any)._lightScrollTop;
     if (scrollTop) {

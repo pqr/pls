@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Home;
 
 use Forward\Application;
@@ -12,12 +13,15 @@ use Light\User;
 
 class CInvoice extends HomeBlockAbstract
 {
-    protected function init()
+    protected static $title = 'Customer Invoices';
+    protected static $description = 'Customer Invoices в статусах Open и Partially Cleared. Сортировка по клиенту.';
+    protected static $informationFor = 'Информация для всех, у кого настроены права доступа в модуле Users::Home::Show Customer Invoices';
+
+    public function __construct(int $userId)
     {
-        $this->_title = 'Customer Invoices';
-        $this->_width = 550;
-        $this->_description = 'Customer Invoices в статусах Open и Partially Cleared. Сортировка по клиенту.';
-        $this->_informationFor = 'Информация для всех, у кого настроены права доступа в модуле Users::Home::Show Customer Invoices';
+        parent::__construct($userId);
+
+        $this->width = 550;
         $this->tableLinkModule = 'CInvoice';
         $this->tableLinkFieldKeys = ['CInvoiceName'];
 
@@ -29,7 +33,7 @@ class CInvoice extends HomeBlockAbstract
 
             InvoiceFields::cinvoiceName(),
 
-            F::create('Amount', F::TYPE_MONEY),
+            F::createMoney('Amount'),
 
             CF::currency(),
 
@@ -37,12 +41,15 @@ class CInvoice extends HomeBlockAbstract
 
             InvoiceFields::shippingDocument(),
 
-            F::create('FileNumbers', F::TYPE_TEXT, ['name' => 'File Numbers', 'tableWidthExcel' => 15])
+            F::createText('FileNumbers', [
+                'name' => 'File Numbers',
+                'tableWidthExcel' => 15
+            ])
 
         );
     }
 
-    protected function getTableQuery($userId)
+    protected function getDataQuery(int $userId)
     {
         return "SELECT ID
                   , ID AS RealCInvoiceID
@@ -60,7 +67,7 @@ class CInvoice extends HomeBlockAbstract
                   ORDER BY CustomerID, Status, DocDate";
     }
 
-    protected function tableLoadData($userId)
+    protected function tableLoadData(int $userId)
     {
         if (User::hasSpecialAccess(Application::SA_HOME_CINVOICE, $userId)) {
             parent::tableLoadData($userId);

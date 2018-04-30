@@ -65,11 +65,12 @@ trait TableWithFoldersTrait
 
     /**
      * Возвращает асболютный путь к папке текущего объекта $this->_obj
+     * @param array|null $data
      * @return null|string
      */
-    protected function getFolderAbsolutePath()
+    protected function getFolderAbsolutePath(array $data = null)
     {
-        $relative = $this->getFolderRelativePath();
+        $relative = $this->getFolderRelativePath($data);
         if (!$relative) {
             return null;
         }
@@ -78,16 +79,17 @@ trait TableWithFoldersTrait
 
     /**
      * Создаёт папку для текущего объекта (для $this->_obj)
+     * @param array|null $data
      */
-    protected function createFolder()
+    protected function createFolder(array $data = null)
     {
-        $relative = $this->getFolderRelativePath();
+        $relative = $this->getFolderRelativePath($data);
         if ($relative) {
             FilesFolder::mkdir($relative);
         }
     }
 
-    protected function deleteFolder(array $data)
+    protected function deleteFolder(array $data = null)
     {
         $folderRelativePath = $this->getFolderRelativePath($data);
         if ($folderRelativePath !== null) {

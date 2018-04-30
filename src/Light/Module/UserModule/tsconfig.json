@@ -2,7 +2,8 @@
   "compilerOptions": {
     "jsx": "react",
     "target": "es5",
-    "module": "commonjs",
+    "module": "es2015",
+    "moduleResolution": "node",
     "noImplicitAny": true,
     "removeComments": false,
     "preserveConstEnums": true,
@@ -16,5 +17,6 @@
     "noUnusedLocals": true,
     "skipLibCheck": true,
     "newLine": "LF"
-  }
+  },
+  "include": ["src/**/*"]
 }

@@ -1,30 +1,43 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: petr
- * Date: 17.08.17
- * Time: 16:35
- */
 
 namespace Light\ModuleBase;
 
 
+use Light\Config;
 use Light\Db;
 use Light\File;
 use Light\FilesFolder;
 use Light\Html;
 use Light\Request;
+use Light\Traits\TableWithFoldersTrait;
 use Light\User;
 
-class MassactionCollectPdfs
+/**
+ * Один из стандартных Massaction реализован в виде Trait к ModuleAbstract
+ * Trait MassactionCollectPdfs
+ * @package Light\ModuleBase
+ */
+trait MassactionCollectPdfs
 {
-    public static function proceedCollectPdfs(array $ids, string $dbTable, callable $getFolderRelativePath)
+    protected function addMassactionCollectPdfs()
     {
+        if ($this->folders) {
+            $this->addMassaction('CollectPdfs',
+                Config::$lang === 'ru' ? 'Собрать PDF файлы в папку' : 'Collect PDF files into one folder'
+            );
+        }
+    }
+
+    protected function massactionCollectPdfs(array $ids)
+    {
+        $dbTable = $this->getDbTable();
+
         $destFolder = Request::getModule() . '_pdfs/' . User::getId() . '_' . date('Y_m_d_H_i_s');
 
         FilesFolder::mkdir($destFolder);
         if (!FilesFolder::isDir($destFolder)) {
-            MassactionAbstract::sendErrorDialog('Не удалось создать папку ' . FilesFolder::getAbsolutePath($destFolder));
+            $msg = Config::$lang === 'ru' ? 'Не удалось создать директорию' : 'Can not create directory';
+            MassactionUtils::sendErrorDialog($msg . ' ' . FilesFolder::getAbsolutePath($destFolder));
             return;
         }
 
@@ -35,7 +48,8 @@ class MassactionCollectPdfs
 
         foreach ($records as $record) {
 
-            $srcFolder = $getFolderRelativePath($record);
+            /** @var TableWithFoldersTrait $this */
+            $srcFolder = $this->getFolderRelativePath($record);
             if (!FilesFolder::isDir($srcFolder)) {
                 continue;
             }
@@ -63,17 +77,20 @@ class MassactionCollectPdfs
             }
         }
 
-        $outHtml = 'Копируем файлы в папку ' . FilesFolder::getLinkWithIcon($destFolder, $destFolder);
+        $msg = Config::$lang === 'ru' ? 'Копируем файлы в папку' : 'Copying to directory';
+        $outHtml = $msg .' ' . FilesFolder::getLinkWithIcon($destFolder, $destFolder);
         $outHtml .= '<br>';
 
         if ($errorFiles) {
             $errorFilesText = implode("\n", $errorFiles);
             $errorFilesHtml = Html::getTruncatedList($errorFilesText, 'file');
-            $outHtml .= '<br>Не удалось скопировать ' . count($errorFiles) . ' файлов:<br>' . $errorFilesHtml;
+            $msg = Config::$lang === 'ru' ? 'Не удалось скопировать' : 'Unable to copy';
+            $outHtml .= "<br>$msg <strong>" . count($errorFiles) . "</strong>:<br>$errorFilesHtml";
         }
 
-        $outHtml .= '<br>Успешно скопировано файлов: ' . $successCount;
+        $msg = Config::$lang === 'ru' ? 'Успешно скопировано' : 'Success';
+        $outHtml .= "<br>$msg: $successCount";
 
-        MassactionAbstract::sendSuccessDialog($outHtml, false);
+        MassactionUtils::sendSuccessDialog($outHtml, false);
     }
 }

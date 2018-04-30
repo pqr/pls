@@ -80,12 +80,11 @@
 
 .invicon23 {
     display: inline-block;
-    width: 14px;
-    height: 14px;
-    border-radius: 7px;
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
     background-color: #fe8601;
-    margin-left: 1px;
-    margin-right: 5px;
+    margin-right: 8px;
     vertical-align: bottom;
 }
 

@@ -131,7 +131,15 @@ trait TableExcelExportable
      */
     public function getTableRowDataExcelParams(array $rowData, $rowNum)
     {
-        return [];
+        $out = [];
+        if (isset($rowData['IsSeparator'])) {
+            $out += XlsWriter::$rowSeparatorStyle;
+        }
+
+        if (isset($rowData['IsTotal']) || $rowNum === 'total') {
+            $out += XlsWriter::$rowTotalStyle;
+        }
+        return $out;
     }
 
 

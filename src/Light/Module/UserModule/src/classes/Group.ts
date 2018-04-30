@@ -77,8 +77,8 @@ export class Group {
         }
 
         // В списке specialAccess возможны всего два варианта: No (0), Yes (1)
-        // Вариант 2 (Write) отсутвует, поэтому нужно предваритено проверить
-        if (newAccess === 2) {
+        // Варианты 2 (Write) и 3 (Write + Delete) отсутвует, поэтому нужно предваритено проверить
+        if (newAccess > 1) {
             newAccess = 1;
         }
         for (let accessKey in this.specialAccess) {

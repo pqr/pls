@@ -6,7 +6,7 @@ import UserModuleStore from "../UserModuleStore";
 import GroupView from "./Groups/GroupView";
 import UserView from "./Users/UserView";
 
-const accessDescriptions = ['Deny', 'Read', 'Write'];
+const accessDescriptions = ['Deny', 'Read', 'Write', 'Write + Delete'];
 const specialAccessDescriptions = ['No', 'Yes'];
 
 function getAccessClassName(access: number) {
@@ -17,6 +17,8 @@ function getAccessClassName(access: number) {
             return 'read';
         case 2:
             return 'good';
+        case 3:
+            return 'good bold';
 
     }
 
@@ -91,11 +93,12 @@ class SpecialAccessDiv extends React.Component<{store?: UserModuleStore, accessK
         let currentSpecialAccess, selectClassName, inheritClassName, groupAccessDescription;
         if (store.isUsersTabActive) {
 
-            currentSpecialAccess = store.selectedUser!.specialAccess[accessKey];
-            const groupAccess = store.selectedUser!.group.specialAccess[accessKey];
-            groupAccessDescription = specialAccessDescriptions[groupAccess];
-            inheritClassName = getAccessClassName(groupAccess);
-            selectClassName = currentSpecialAccess === -1 ? inheritClassName : getSpecialAccessClassName(currentSpecialAccess);
+            const selectedUser = store.selectedUser!;
+            currentSpecialAccess = selectedUser.specialAccess[accessKey];
+            const groupSpecialAccess = store.findGroupById(selectedUser.GroupID).specialAccess[accessKey];
+            groupAccessDescription = specialAccessDescriptions[groupSpecialAccess];
+            inheritClassName = getAccessClassName(groupSpecialAccess);
+            selectClassName = currentSpecialAccess == -1 ? inheritClassName : getSpecialAccessClassName(currentSpecialAccess);
 
         } else {
 
@@ -111,7 +114,7 @@ class SpecialAccessDiv extends React.Component<{store?: UserModuleStore, accessK
                         onChange={this.handleSpecialAccessChange}>
 
                     {store.isUsersTabActive
-                    && <option value="-1" className={inheritClassName}>Inherit - {groupAccessDescription}</option>}
+                    && <option value="-1" className={inheritClassName}>Inherit: {groupAccessDescription}</option>}
 
                     <option value="0" className="no">No</option>
                     <option value="1" className="yes">Yes</option>
@@ -157,17 +160,19 @@ class ViewAccessRow extends React.Component<{store?: UserModuleStore, module: Mo
         let currentAccess, selectClassName, inheritClassName, groupAccessDescription;
         if (store.isUsersTabActive) {
 
-            currentAccess = store.selectedUser!.moduleAccess[module.key];
-            const groupAccess = store.selectedUser!.group.moduleAccess[module.key];
+            const selectedUser = store.selectedUser!;
+            currentAccess = selectedUser.moduleAccess[module.key];
+            const groupAccess = store.findGroupById(selectedUser.GroupID).moduleAccess[module.key];
             groupAccessDescription = accessDescriptions[groupAccess];
             inheritClassName = getAccessClassName(groupAccess);
-            selectClassName = currentAccess === -1 ? inheritClassName : getAccessClassName(currentAccess);
+            selectClassName = currentAccess == -1 ? inheritClassName : getAccessClassName(currentAccess);
 
         } else {
 
             currentAccess = store.selectedGroup!.moduleAccess[module.key];
             selectClassName = getAccessClassName(currentAccess);
         }
+
 
         return (
             <tr>
@@ -179,11 +184,12 @@ class ViewAccessRow extends React.Component<{store?: UserModuleStore, module: Mo
                         onChange={this.handleModuleAccessChange}>
 
                         {store.isUsersTabActive
-                        && <option value="-1" className={inheritClassName}>Inherit - {groupAccessDescription}</option>}
+                        && <option value="-1" className={inheritClassName}>Inherit: {groupAccessDescription}</option>}
 
-                        <option value="0" className="bad">Deny</option>
-                        <option value="1" style={{color: 'black'}}>Read</option>
-                        <option value="2" className="good">Write</option>
+                        <option value="0" className={getAccessClassName(0)}>{accessDescriptions[0]}</option>
+                        <option value="1" style={{color: 'black'}} className={getAccessClassName(1)}>{accessDescriptions[1]}</option>
+                        <option value="2" className={getAccessClassName(2)}>{accessDescriptions[2]}</option>
+                        <option value="3" className={getAccessClassName(3)}>{accessDescriptions[3]}</option>
 
                     </select>
                 </td>
@@ -220,9 +226,10 @@ class ViewAccessChangeAllButtons extends React.Component<{store?: UserModuleStor
                 {store.isUsersTabActive
                 &&
                 <span className="usermodule__accesschangeall" onClick={() => this.clickHandler(-1)}>All Inherit</span>}
-                <span className="usermodule__accesschangeall" onClick={() => this.clickHandler(0)}>All Deny</span>
-                <span className="usermodule__accesschangeall" onClick={() => this.clickHandler(1)}>All Read</span>
-                <span className="usermodule__accesschangeall" onClick={() => this.clickHandler(2)}>All Write</span>
+                <span className="usermodule__accesschangeall" onClick={() => this.clickHandler(0)}>All {accessDescriptions[0]}</span>
+                <span className="usermodule__accesschangeall" onClick={() => this.clickHandler(1)}>All {accessDescriptions[1]}</span>
+                <span className="usermodule__accesschangeall" onClick={() => this.clickHandler(2)}>All {accessDescriptions[2]}</span>
+                <span className="usermodule__accesschangeall" onClick={() => this.clickHandler(3)}>All {accessDescriptions[3]}</span>
             </div>
         )
 
@@ -232,8 +239,8 @@ class ViewAccessChangeAllButtons extends React.Component<{store?: UserModuleStor
 
 class ViewAccess extends React.Component<{store?: UserModuleStore}, {}> {
 
-    getRows = () => {
-        let rows: Array<any> = [];
+    getRows() {
+        let rows: any[] = [];
         modulesPerSection.forEach((sectionInfo: SectionInfo, index: number) => {
             const {section, modules} = sectionInfo;
             rows.push(<tr key={index}>

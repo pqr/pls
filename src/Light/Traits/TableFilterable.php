@@ -10,6 +10,7 @@ use Light\Field\FieldDate;
 use Light\Field\FieldInputAbstract;
 use Light\Field\FieldMonth;
 use Light\Field\FieldSelect;
+use Light\Field\FieldSelect2Multiple;
 use Light\Field\FieldText;
 use Light\Fieldset;
 use Light\Filters;
@@ -86,7 +87,22 @@ trait TableFilterable
     protected function addFilter(F $field)
     {
         //В зависимости от типа поля, навесим доп параметры
-        if ($field instanceof FieldSelect) {
+        if ($field instanceof FieldSelect2Multiple) {
+
+            if (!isset($field->initialParams['any'])) {
+                $field->any = false;
+            }
+            if (!isset($field->initialParams['empty'])) {
+                $field->empty = false;
+            }
+            if (!isset($field->initialParams['default'])) {
+                $field->default = '%';
+            }
+
+            // Принудильено отключаем возможность добавления новых элементов в выпадающий список для фильтров
+            $field->addNew = false;
+
+        } elseif ($field instanceof FieldSelect) {
 
             if (!isset($field->initialParams['any'])) {
                 $field->any = true;

@@ -7,10 +7,13 @@ use Light\HomeBase\HomeBlockAbstract;
 
 class ShipmentsWithoutCs extends HomeBlockAbstract
 {
-    protected function init()
+    protected static $title = 'New Shipments';
+    protected static $description = 'Перевозки у которых ещё не выбран Customer Service';
+
+    public function __construct(int $userId)
     {
-        $this->_title = 'New Shipments';
-        $this->_description = 'Перевозки у которых ещё не выбран Customer Service';
+        parent::__construct($userId);
+
         $this->tableLinkModule = 'Shipment';
 
         $this->getFieldset()->addFieldsCreatedBy();
@@ -18,7 +21,7 @@ class ShipmentsWithoutCs extends HomeBlockAbstract
         $this->addField(GeneralFields::customerId());
     }
 
-    protected function getTableQuery($userId)
+    protected function getDataQuery(int $userId)
     {
         return "SELECT ID
                     , CreatedBy

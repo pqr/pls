@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\IWriter;
 
 /**
@@ -39,8 +40,6 @@ class XlsWriter
     public static $cellHeaderStyle = [
         'font' => [
             'bold' => true,
-            //'color' => ['rgb' => '000000'],
-            //'size' => 12
         ],
         'alignment' => [
             'horizontal' => Alignment::HORIZONTAL_CENTER,
@@ -49,6 +48,22 @@ class XlsWriter
         ]
     ];
 
+    public static $rowSeparatorStyle = [
+        'fill' => [
+            'fillType' => Fill::FILL_SOLID,
+            'color' => ['rgb' => 'f9f9cf'],
+        ],
+        'font' => [
+            'bold' => true,
+            'size' => 14
+        ]
+    ];
+
+    public static $rowTotalStyle = [
+        'font' => [
+            'bold' => true,
+        ]
+    ];
 
     public function __construct($filenameToLoad = null)
     {
@@ -607,7 +622,7 @@ class XlsWriter
                     $ws->setCellValue($coordinate, $amount);
                 } else {
                     $lines = explode("\n", $excelVal);
-                    foreach($lines as &$lineText) {
+                    foreach ($lines as &$lineText) {
                         $lineText = strip_tags(FieldMoneyWithCurrency::beautify($lineText));
                     }
                     unset($lineText);

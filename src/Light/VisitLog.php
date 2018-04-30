@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: petr
- * Date: 19.05.17
- * Time: 16:30
- */
 
 namespace Light;
 
@@ -12,6 +6,12 @@ namespace Light;
 class VisitLog
 {
     public static function write()
+    {
+        self::writeCsv();
+        self::writeDb();
+    }
+
+    private static function writeCsv()
     {
         $header = [
             'DateTime',
@@ -42,5 +42,17 @@ class VisitLog
         ];
 
         CsvLog::write('visit', $header, $data);
+    }
+
+    private static function writeDb()
+    {
+        $insertData = [
+            'CreatedBy' => User::getId(),
+            'CreatedDate' => date('Y-m-d'),
+            'ModuleID' => DbLog::getModuleId(Request::getModule()),
+            'IsPOST' => Request::isPost(),
+            'IsAjax' => Request::isAjax(),
+        ];
+        Db::insertRow($insertData, 'log_access');
     }
 }

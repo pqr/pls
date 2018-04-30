@@ -135,8 +135,8 @@ class Msg implements \Countable
     public function getHtmlAlertList()
     {
         $outHtml = '';
-        foreach ($this->messages as $msginfo) {
-            $outHtml .= self::getMessageAlertHtml($msginfo['type'], $msginfo['msg']);
+        foreach ($this->messages as ['type' => $type, 'msg' => $msg]) {
+            $outHtml .= self::getMessageAlertHtml($type, $msg);
         }
         return $outHtml;
     }
@@ -146,7 +146,9 @@ class Msg implements \Countable
      */
     public function putIntoSessionFlash()
     {
-        Session::flashAddArr($this->messages);
+        foreach($this->messages as ['type' => $type, 'msg' => $msg]) {
+            Session::flashAdd($type, $msg);
+        }
     }
 
     public static function getMessageHtml($type, $msg)

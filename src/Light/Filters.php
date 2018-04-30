@@ -461,6 +461,11 @@ class Filters
             foreach ($filtersLayout as $colIndex => $col) {
                 foreach ($col as $key => $val) {
                     if (is_numeric($key)) {
+                        if ($val === null) {
+                            // Элемент null - пропускаем (иногда удобно задать вместо некоторых фильтров null,
+                            // когда фильтры формируются динамически в зависимости от текущего модуля
+                            continue;
+                        }
                         if (!is_string($val)) {
                             throw new \Exception("В массиве filtersLayout в колонке $colIndex задан элемент с индексом $key значение которого не является строкой - такого не должно быть!");
                         }

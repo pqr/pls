@@ -311,6 +311,17 @@ a.showhide label {
     color: silver;
 }
 
+.note-markdown {
+    font-weight: normal;
+    font-size: 9px;
+    color: silver;
+}
+
+.note-markdown a {
+    color: silver;
+    font-weight: bold;
+}
+
 .nobr {
     white-space: nowrap;
 }
@@ -377,7 +388,6 @@ div.alert:last-child {
 span.cnt {
     font-style: normal;
     font-size: 90%;
-    opacity: 0.6;
 }
 
 ul.msg {
@@ -2129,12 +2139,11 @@ button.btn-floating {
 
 .invicon23 {
     display: inline-block;
-    width: 14px;
-    height: 14px;
-    border-radius: 7px;
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
     background-color: #fe8601;
-    margin-left: 1px;
-    margin-right: 5px;
+    margin-right: 8px;
     vertical-align: bottom;
 }
 
@@ -2254,6 +2263,19 @@ table.table {
     border-spacing: 1px;
 }
 
+/* фиксация thead работает в Firefox и в Safari */
+table.table.sticky > thead {
+    position: sticky;
+    position: -webkit-sticky; /* Для Safari нужно с префисом */
+    top: 0;
+}
+
+/* Для Edge и Chome нужно фиксировать th */
+table.table.sticky > thead > tr > th {
+    position: sticky;
+    top: 0;
+}
+
 table.table > tbody > tr > td, table.table > thead > tr > th {
     padding: 5px 6px;
 }
@@ -2304,6 +2326,22 @@ table.table > tbody > tr.selected {
 
 table.table > tbody > tr.selected > td {
     color: #000000 !important;
+}
+
+table.table > tbody > tr.white {
+    background-color: #ffffff;
+}
+
+table.table > tbody > tr.separator {
+    background-color: rgba(227, 225, 16, 0.20);
+    height: 30px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+table.table > tbody > tr.separator > td {
+    border: none ;
+    border-top: 1px solid #000000;
 }
 
 table.table > thead > tr > th {

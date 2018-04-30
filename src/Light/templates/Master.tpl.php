@@ -99,7 +99,7 @@
         <?= \Light\Template::parseTpl('pagehead.tpl.php') ?>
 
         <div id="flash-messages">
-            <?php foreach (\Light\Session::flashGetAll() as $flash): ?>
+            <?php foreach (\Light\Session::flashGetAllAndClear() as $flash): ?>
                 <div
                         class="alert alert-<?= $flash['type'] === 'error' ? 'danger' : $flash['type'] ?>"><?= $flash['msg'] ?></div>
             <?php endforeach; ?>

@@ -38,7 +38,8 @@ use Light\User;
 abstract class ModuleAbstract extends Table
 {
     use TablePaginatable, TableFilterable, TableSortable, TableLayoutable, TableExcelExportable,
-        TableWithFoldersTrait, ModuleSessionTrait;
+        TableWithFoldersTrait, ModuleSessionTrait,
+        MassactionMultipleUpdate, MassactionCollectPdfs, MassactionDelete, MassactionUpload, MassactionPrint, MassactionDownloadAsZip;
 
     const STATE_LIST = 'list';
     const STATE_LIST_EXCEL = 'excel';
@@ -102,155 +103,22 @@ abstract class ModuleAbstract extends Table
 
     protected $massactions = [];
 
+    /** @var Msg */
+    protected $flash;
+
     public function __construct()
     {
         $module = $this->getModule();
         parent::__construct($module);
 
+        $this->flash = Session::getMsgBuff();
         $this->tableReloadUrl = "?a=$module";
         $this->folderBaseDir = $module;
     }
 
-    private function getModule()
+    protected function getModule()
     {
         return Misc::getClass($this) ?: Request::getModule();
-    }
-
-    /**
-     * Срабатывает после отправки формы Mltiple Update через AJAX
-     * Возвращает AJAX сообщение об удачном multiple update, после закрытия котрого страница обновляется
-     * Метод вызывается напрямую, т.к. ulr формы Multiple Update содержит параметр p=MultipleUpdateSubmit
-     */
-    public function proceedMultipleUpdateSubmit()
-    {
-        $this->_state = self::STATE_MULTIPLEUPDATESUBMIT;
-
-        $msgBuff = new Msg();
-        $updated = 0;
-        $nothingChanged = 0;
-
-        if ($this->allowEdit && User::hasWriteAccess()) {
-
-            $dataFromPost = $this->multipleUpdateGetDataFromPost($msgBuff);
-            if ($dataFromPost) {
-                $ids = MassactionAbstract::getCheckedIdsFromPost();
-                $updatedObjects = [];
-
-                //Поочерёдно обновим каждый id
-                foreach ($ids as $id) {
-
-                    //Проверим, что id числовой и больше 0
-                    $idInt = (int)$id;
-                    if ($idInt <= 0) {
-                        continue;
-                    }
-
-                    //Проверим существование объекта в базе, попробовав его загрузить
-                    $obj = clone $this->_obj;
-                    $obj->setId($idInt);
-                    if (!$obj->loadData()) {
-                        $msgBuff->addError('Object with ID = ' . $idInt . ' not found');
-                        continue;
-                    }
-
-                    //Проверим, что у пользователя есть права доступа к этому объекту
-                    if (!$this->hasAccessRightToObj($obj) || !$this->hasWriteAccessRightToObj($obj)) {
-                        $msgBuff->addError('No access to edit object with ID = ' . $idInt);
-                        continue;
-                    }
-
-                    if ($this->proceedUpdateObjFromMultipleUpdate($obj, $dataFromPost, $msgBuff)) {
-                        $updated++;
-                        $updatedObjects[] = $obj;
-                    } else {
-                        $nothingChanged++;
-                    }
-
-                }
-
-                $this->afterMultipleUpdateSubmit($updatedObjects, $dataFromPost, $msgBuff);
-
-            }
-        }
-
-        $msg = 'Updated: ' . $updated;
-        //Стандартное сообщение о числе обновлённых записей (зелёное или серое)
-        if ($updated > 0) {
-            $msgBuff->addSuccess($msg);
-        } else {
-            $msgBuff->addInfo($msg);
-        }
-
-        //Стандратное сообщение о количесве ошибок
-        if ($nothingChanged > 0) {
-            $msgBuff->addInfo('Nothing changed: ' . $nothingChanged);
-        }
-
-        MassactionAbstract::sendSuccessDialog($msgBuff->getHtml());
-    }
-
-    protected function multipleUpdateGetDataFromPost(Msg $msgBuff)
-    {
-        //Отфильтруем fieldset только теми полями, которые обозначены как доступные для Multiple Update
-        $muFieldset = $this->getMultipleUpdateFieldset();
-
-        //Дополнительно, отфильтруем только теми полями, которые были на форме отмечены как редактируемые
-        //На форме были скрытые поля со статусами 1 или 0 - все они оформлены виде массива multipleupdate
-        $allFieldKeys = $_POST['multipleupdate'];
-        $changebaleFieldKeys = array_keys(
-            array_filter(
-                $allFieldKeys,
-                function ($value) {
-                    return $value === 'showed';
-                }
-            )
-        );
-
-        if (!$changebaleFieldKeys) {
-            //Ни одно поле в диалоговом окне не было отмечено для изменения
-            return false;
-        }
-
-        $muFieldset = $muFieldset->filterByKeys($changebaleFieldKeys);
-
-        //Соберём массив с данными по полям
-        $requestData = [];
-        foreach ($changebaleFieldKeys as $fieldKey) {
-            if (isset($_POST[$fieldKey])) {
-                $requestData[$fieldKey] = $_POST[$fieldKey];
-            }
-        }
-
-        //Обработаем данные с помощью функций определённый в объектах полей
-        return $muFieldset->getDataFromRequest($requestData);
-    }
-
-    /**
-     * Метод для переопределения в классах потомках
-     * @param array $updatedObjects - массив из объектов
-     * @param array $dataFromPost - массив данных из диалогового окна MultipleUpdate
-     * @param Msg $msgBuff
-     */
-    protected function afterMultipleUpdateSubmit(array $updatedObjects, array $dataFromPost, Msg $msgBuff)
-    {
-    }
-
-    /**
-     * Выполняет обновление еденичной записи из режима MultipleUpdate
-     * Функция удобна для переопределения в классах потмоках
-     * @param ObjAbstract $obj
-     * @param array $dataFromPost
-     * @param Msg $msgBuff
-     * @return bool
-     */
-    protected function proceedUpdateObjFromMultipleUpdate(ObjAbstract $obj, array $dataFromPost, Msg $msgBuff)
-    {
-        $oldData = $this->getOldDataBeforeSubmitOrDelete($obj);
-        $affectedRows = $obj->updateDb($dataFromPost,
-            Config::$lang === 'ru' ? 'Массовое редактирование' : 'Multiple Update');
-        $this->afterUpdate($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, true);
-        $this->afterSubmit($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, true);
-        return $affectedRows;
     }
 
     /**
@@ -1032,7 +900,7 @@ abstract class ModuleAbstract extends Table
             ];
         }
 
-        if ($this->allowDelete && User::hasWriteAccess() && $this->hasDeleteAccessRightToObj($this->_obj)) {
+        if ($this->allowDelete && User::hasDeleteAccess() && $this->hasDeleteAccessRightToObj($this->_obj)) {
             $out[] = [
                 'text' => 'Delete',
                 'url' => Link::url(['delid' => $id] + $msUrlParams) . '#ajax',
@@ -1721,7 +1589,7 @@ abstract class ModuleAbstract extends Table
         //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
         $this->loadObjAndCheck($_GET['delid']);
 
-        if (!$this->allowDelete || !User::hasWriteAccess() || !$this->hasDeleteAccessRightToObj($this->_obj)) {
+        if (!$this->allowDelete || !User::hasDeleteAccess() || !$this->hasDeleteAccessRightToObj($this->_obj)) {
             Response::abort(403, 'Delete not allowed');
         }
 
@@ -2154,18 +2022,18 @@ abstract class ModuleAbstract extends Table
         $this->initLayoutable();
 
         if ($this->_state != self::STATE_LIST_EXCEL) {
-            //Инициализируем пажинацию, только если это не экспорт в Excel
+            // Инициализируем пажинацию, только если это не экспорт в Excel
             $this->initPaginatable();
+
+            // Установим номер страницы в зависимости от findid и moduleSession
+            $findid = $this->getTableFindIdFromRequest();
+            $newPage = $this->getTablePageFromModuleSession($findid);
+            if ($newPage !== null) {
+                $this->setTablePage($newPage);
+            }
         }
 
-        //Установим номер страницы в зависимости от findid и moduleSession
-        $findid = $this->getTableFindIdFromRequest();
-        $newPage = $this->getTablePageFromModuleSession($findid);
-        if ($newPage !== null) {
-            $this->setTablePage($newPage);
-        }
-
-        //Метод initList() переопределяется в классх потоках - там добавляются поля необходимые только для режима List
+        // Метод initList() переопределяется в классх потоках - там добавляются поля необходимые только для режима List
         $this->initList();
 
         if ($this->isStateListExcel()) {
@@ -2289,11 +2157,6 @@ abstract class ModuleAbstract extends Table
     final protected function isStateLog()
     {
         return $this->_state == self::STATE_LOG;
-    }
-
-    final protected function isMultipleupdateSubmitState()
-    {
-        return $this->_state == self::STATE_MULTIPLEUPDATESUBMIT;
     }
 
     protected function getExcelFilename()
@@ -2422,12 +2285,47 @@ abstract class ModuleAbstract extends Table
     }
 
     /**
+     * Метод для переопределения в классах потомках
+     * должен вернуть какое-то дополнительное SQL условие на основе которого в режиме List и в режимах View/Edit
+     * будет ограничен доступ к объекту
+     * @return string
+     */
+    protected function getAccessSqlWhere(): string
+    {
+        return '';
+    }
+
+    public function getFiltersSqlWhere()
+    {
+        $sqlWhere = $this->filters->getSqlWhere();
+
+        // Добавляем к общему запросу на получение данных для режима list
+        // дополниетельное условие ограничивающее по правам доступа
+        $accessSqlWhere = $this->getAccessSqlWhere();
+        if ($accessSqlWhere) {
+            $sqlWhere .= " AND ($accessSqlWhere)";
+        }
+        return $sqlWhere;
+    }
+
+
+    /**
      * Метод для переопределения в классах потоках - здесь проверяются права доступа к объекту в режимах View/Edit/Log/Delete
      * @param ObjAbstract $obj
      * @return bool
      */
     protected function hasAccessRightToObj(ObjAbstract $obj)
     {
+        $accessSqlWhere = $this->getAccessSqlWhere();
+        if ($accessSqlWhere) {
+            // Есть какое-то дополнительное ограничивающее SQL условие.
+            // Проверим, удовлетворяет ли текущий объект этому условию?
+            $id = $obj->getId();
+            $dbTable = $this->getDbTable();
+            return (bool)Db::getOne("SELECT ID FROM $dbTable WHERE ID = $id AND ($accessSqlWhere)");
+        }
+
+        // Если никаких дополнительных органичений в классе потомке не накладывается, то по умолчанию возвращаем true
         return true;
     }
 
@@ -2724,7 +2622,9 @@ abstract class ModuleAbstract extends Table
             $outHtml .= $this->getFiltersHiddenInput();
         }
 
-        $outHtml .= $this->getHtmlMassactionsSelectBlock();
+        if ($this->massactions && $this->getTableDataCount()) {
+            $outHtml .= MassactionUtils::getHtmlSelectMassactions($this->massactions);
+        }
 
         return $outHtml;
     }
@@ -2945,26 +2845,29 @@ abstract class ModuleAbstract extends Table
         ];
     }
 
-    final protected function addMassactionDelete()
+    /**
+     * Читает переменную $_POST['CheckedIds'] и проверяет каждый id на предмет доступа к этому объекту
+     * @return array
+     * @throws \Exception
+     */
+    protected function getMassactionIdsFromPost(): array
     {
-        if (User::hasWriteAccess() && $this->allowDelete) {
-            $this->addMassaction('delete', 'Delete', 'bad');
+        if (!isset($_POST['CheckedIds'])) {
+            return [];
         }
-    }
 
-    final protected function addMassactionCollectPdfs()
-    {
-        if ($this->folders) {
-            $this->addMassaction('CollectPdfs', 'Собрать PDF файлы в папку');
+        $ids = array_unique(array_filter(array_map('intval', explode(',', $_POST['CheckedIds']))));
+        if (!$ids) {
+            return [];
         }
-    }
 
-    final protected function addMassactionMultipleUpdate()
-    {
-        if (User::hasWriteAccess() && $this->allowEdit) {
-            $this->addMassaction('MultipleUpdate',
-                Config::$lang === 'ru' ? 'Массовое редактирование' : 'Multiple Update');
+        // На этот массив наложим банальный SQL WHERE, который проверяет на чтение
+        $accessSqlWhere = $this->getAccessSqlWhere();
+        if ($accessSqlWhere) {
+            $ids = Db::getCol("SELECT ID FROM {$this->getDbTable()} WHERE $accessSqlWhere AND ID IN (@a)", $ids);
         }
+
+        return $ids;
     }
 
     /**
@@ -2974,7 +2877,7 @@ abstract class ModuleAbstract extends Table
     {
         $this->initMassactions();
         $action = $_GET['action'];
-        $ids = MassactionAbstract::getCheckedIdsFromPost();
+        $ids = $this->getMassactionIdsFromPost();
 
         if ($action === 'Print') {
             // Особый massaction которого нет в массиве $this->massactions
@@ -3007,166 +2910,4 @@ abstract class ModuleAbstract extends Table
         }
     }
 
-    protected function massactionDelete(array $ids)
-    {
-        if (!$this->allowDelete || !User::hasWriteAccess()) {
-            MassactionAbstract::sendErrorDialog('No access to delete');
-        }
-        $msgBuff = new Msg();
-        $deleted = 0;
-
-
-        Db::begin();
-        foreach ($ids as $id) {
-
-            //Проверим, что id числовой и больше 0
-            $idInt = (int)$id;
-            if ($idInt <= 0) {
-                continue;
-            }
-
-            //Проверим существование объекта в базе, попробовав его загрузить
-            $obj = clone $this->_obj;
-            $obj->setId($idInt);
-            if (!$obj->loadData()) {
-                $msgBuff->addError("Object with ID = $idInt not found");
-                continue;
-            }
-
-            //Проверим, что у пользователя есть права доступа к этому объекту
-            if (!$this->hasAccessRightToObj($obj)
-                || !$this->hasDeleteAccessRightToObj($obj)
-            ) {
-                $msgBuff->addError("No access to delete object with ID = $idInt");
-                continue;
-            }
-
-            $oldData = $this->getOldDataBeforeSubmitOrDelete($obj);
-
-            $this->beforeDelete($obj, $msgBuff);
-            $this->proceedDeleteObj($obj, 'Multiple Delete');
-            $this->proceedDeleteSubtables($obj);
-            $this->afterDelete($obj, $oldData, $msgBuff);
-            $deleted++;
-        }
-        Db::commit();
-
-        //Стандартное сообщение о числе обновлённых записей (зелёное или серое)
-        $msg = 'Deleted: ' . $deleted;
-        if ($deleted > 0) {
-            $msgBuff->addSuccess($msg);
-        } else {
-            $msgBuff->addInfo($msg);
-        }
-
-        MassactionAbstract::sendSuccessDialog($msgBuff->getHtml());
-    }
-
-    protected function massactionCollectPdfs(array $ids)
-    {
-        $getFolderRelativePath = function (array $data) {
-            return $this->getFolderRelativePath($data);
-        };
-        MassactionCollectPdfs::proceedCollectPdfs($ids, $this->getDbTable(), $getFolderRelativePath);
-    }
-
-    protected function massactionMultipleUpdate(array $ids)
-    {
-        // Функция getHtmlMultipleUpdateForm может быть переопределена в классе потомке - именно она формирует HTML код формы
-        $html = '<form action="?a=' . $this->getModule() . '&p=MultipleUpdateSubmit#ajax" method="post" class="multipleupdate">
-                     <input type="hidden" name="CheckedIds" value="' . implode(',', $ids) . '">
-                     ' . $this->getHtmlMultipleUpdateFormBody($ids) . '
-                     </form>';
-        Response::showDialog($html, 'Multiple Update (' . count($ids) . ')', null, null, null, null, '95%', 10);
-    }
-
-    /**
-     * Метод для переопределения в классах потомках
-     * Иногда к полям выводимым для редакитирования на форме Multiple Update нужно добавить какие-то особенные поля
-     * Например, поля связанные с подтаблицами
-     * @return Fieldset
-     */
-    protected function getMultipleUpdateFieldset()
-    {
-        return $this->getFieldset()->filterByMode(F::MODE_MULTIPLEUPDATE);
-    }
-
-    /**
-     * Метод для переопределения в классах потомках, если нужно добавить какие-то переменные к шаблону
-     * @return array
-     */
-    protected function getTplDataMultipleUpdateFormBody()
-    {
-        return $this->getMultipleUpdateFieldset()->getTplData([], F::MODE_MULTIPLEUPDATE);
-    }
-
-    /**
-     * Для переопределения в классах потомках - возвращает HTML код формы БЕЗ ТЕГОВ form
-     * @param array $ids
-     * @return string HTML
-     */
-    protected function getHtmlMultipleUpdateFormBody(array $ids)
-    {
-        $tdata = $this->getTplDataMultipleUpdateFormBody();
-
-        //Определим шаблон, который использовать для формы MultipleUpdate
-        $module = $this->getModule();
-        $templateFile = $module . 'MultipleUpdate.tpl.php';
-        if (!Template::findfile($templateFile)) {
-            $templateFile = LIGHT_DIR_LIGHT . '/templates/module/multipleupdate/auto.tpl.php';
-        }
-
-        return Template::parseTpl($templateFile, $tdata);
-    }
-
-    protected function massactionPrint(array $ids)
-    {
-        $this->initPrintForms();
-        $objBase = $this->_obj;
-
-        if (isset($_GET['form'])) {
-
-            // Пользователь уже видел диалог с выбором печатной формы и кликнул по одной из ссылок!
-            $form = $_GET['form'];
-            if (!isset($this->printForms[$form])) {
-                throw new \InvalidArgumentException("Неизвестная печатная форма $form");
-            }
-
-            // Запустим массовую печать (логика инкапсулирована в отдельном классе MassactionPrint)
-            $printForm = $this->printForms[$form];
-            $getFolderRelativePath = function (array $data) {
-                return $this->getFolderRelativePath($data);
-            };
-            MassactionPrint::proceedMultiplePrint($ids, $printForm, $objBase, $getFolderRelativePath);
-            return;
-
-        }
-
-        MassactionPrint::showSelectPrintFromDialog($ids, $objBase, $this->printForms);
-
-    }
-
-    protected function getHtmlMassactionsSelectBlock()
-    {
-        if (!$this->massactions || !$this->getTableDataCount()) {
-            return '';
-        }
-        $textWithSelected = Config::$lang === 'ru' ? 'С выделенными' : 'With selected';
-        $textSelectAll = Config::$lang === 'ru' ? 'Выделить все' : 'Select All';
-        $textSelectNone = Config::$lang === 'ru' ? 'Снять выделение' : 'Select None';
-        return '<div class="listmassaction">'
-            . ' <div class="listmassaction__selectlinks">'
-            . '<a href="#" class="listmassaction__selectall">' . $textSelectAll . '</a>'
-            . ' / '
-            . '<a href="#" class="listmassaction__selectnone">' . $textSelectNone . '</a>'
-            . '</div>'
-            . '<div class="listmassaction__content">'
-            . '<label for="massaction-select">' . $textWithSelected . '<span></span>:</label>&nbsp;'
-            . F::createSelect('massaction-select', [
-                'options' => $this->massactions,
-                'editWidth' => 'medium'
-            ])->getHtmlInput('')
-            . '</div>'
-            . '</div>';
-    }
 }

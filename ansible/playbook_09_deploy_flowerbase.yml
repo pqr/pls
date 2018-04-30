@@ -42,11 +42,22 @@
       backup: yes
     tags: conf
 
+  - name: Run Migrate autolaunch
+    shell: php public/index.php Light/Migrate
+    args:
+      chdir: "{{ project_dir_flowerbase }}"
+      executable: /bin/bash
+    tags: migrate
+
   - name: deploy flowerbase 5. Install composer deps
+    become: no
     composer:
       command: install
       working_dir: "{{ project_dir_flowerbase }}"
       no_dev: true
+      optimize_autoloader: true
+    environment:
+      COMPOSER_ALLOW_SUPERUSER: 1
     tags: code
 
     # Создать символические ссылки на папки для nginx

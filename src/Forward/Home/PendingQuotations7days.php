@@ -9,11 +9,14 @@ use Light\HomeBase\HomeBlockAbstract;
 
 class PendingQuotations7days extends HomeBlockAbstract
 {
-    protected function init()
+    protected static $title = 'Pending Quotations';
+    protected static $description = 'Котировки находящиеся в статусе Pending или Draft 2 или более дней с даты создания';
+    protected static $informationFor = 'Информация для Quotation Responsible CS и Sales.';
+
+    public function __construct(int $userId)
     {
-        $this->_title = 'Pending Quotations';
-        $this->_description = 'Котировки находящиеся в статусе Pending или Draft 2 или более дней с даты создания';
-        $this->_informationFor = 'Информация для Quotation Responsible CS и Sales.';
+        parent::__construct($userId);
+
         $this->tableLinkModule = 'Quotation';
 
         $this->addFields(
@@ -25,7 +28,7 @@ class PendingQuotations7days extends HomeBlockAbstract
         );
     }
 
-    protected function getTableQuery($userId)
+    protected function getDataQuery(int $userId)
     {
         return "SELECT ID, Name, CustomerID, Status, DATEDIFF(NOW(), CreatedDateTime) AS Days
                   FROM quotation

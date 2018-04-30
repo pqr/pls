@@ -12,13 +12,17 @@ use Light\Link;
 
 class CustomerOutstanding extends HomeBlockAbstract
 {
+    protected static $title = 'Customer Outstanding';
+    protected static $description = '';
+    protected static $informationFor = 'Information for Customer Responsible CS / Sales.';
+
+
     private $userGroupId;
 
-    protected function init()
+    public function __construct(int $userId)
     {
-        $this->_title = 'Customer Outstanding';
-        $this->_description = '';
-        $this->_informationFor = 'Information for Customer Responsible CS / Sales.';
+        parent::__construct($userId);
+        
         $this->tableLinkModule = 'Customer';
         $this->allowExportToExcel = false;
         $this->_printHeadBlock = false;
@@ -38,7 +42,7 @@ class CustomerOutstanding extends HomeBlockAbstract
      * @param int $userId
      * @return mixed|void
      */
-    protected function getTableQuery($userId)
+    protected function getDataQuery(int $userId)
     {
         $query = "SELECT ID 
                     , CONCAT(CreditCurrencyISO, ' ', CreditAmount) AS CreditAmount,

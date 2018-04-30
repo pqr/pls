@@ -63,6 +63,11 @@ class FieldFloat extends FieldNumberAbstract
         return $value;
     }
 
+    public static function parse($value)
+    {
+        return (double)str_replace(',', '.', $value);
+    }
+
     public function allowSqlWhereValue($value)
     {
         return (float)$value !== 0.0;

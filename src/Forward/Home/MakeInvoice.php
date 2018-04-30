@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Home;
 
 use Forward\Field\HomeFields;
@@ -7,11 +8,14 @@ use Light\HomeBase\HomeBlockAbstract;
 
 class MakeInvoice extends HomeBlockAbstract
 {
-    protected function init()
+    protected static $title = 'Make Invoice';
+    protected static $description = 'Проставлена дата ATA, но не выставлен счёт.';
+    protected static $informationFor = 'Информация для Shipment Responsible CS и Sales.';
+
+    public function __construct(int $userId)
     {
-        $this->_title = 'Make Invoice';
-        $this->_description = 'Проставлена дата ATA, но не выставлен счёт.';
-        $this->_informationFor = 'Информация для Shipment Responsible CS и Sales.';
+        parent::__construct($userId);
+
         $this->tableLinkModule = 'Shipment';
 
         $this->addFields(
@@ -21,7 +25,7 @@ class MakeInvoice extends HomeBlockAbstract
         );
     }
 
-    protected function getTableQuery($userId)
+    protected function getDataQuery(int $userId)
     {
         return "SELECT shipment.ID, shipment.Name, shipment.MAWBNumber, shipment.ATA
                   FROM shipment

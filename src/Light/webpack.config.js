@@ -15,6 +15,8 @@ DtsBundlePlugin.prototype.apply = function (compiler) {
     });
 };
 
+console.log(__dirname + '/public/js/build');
+
 module.exports = {
     mode: 'production',
     devtool: "source-map",
@@ -32,17 +34,11 @@ module.exports = {
         'lodash': '_'
     },
     watch:true,
+    /*
     plugins: [
         new DtsBundlePlugin()
-        /*
-        new webpack.DefinePlugin({
-            'process.env': {
-                'NODE_ENV': JSON.stringify('production')
-            }
-        }),
-        new webpack.optimize.ModuleConcatenationPlugin()
-        */
     ],
+    */
     module: {
         rules: [
             {

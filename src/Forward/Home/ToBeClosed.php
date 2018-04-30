@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Home;
 
 use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
@@ -7,11 +8,14 @@ use Light\HomeBase\HomeBlockAbstract;
 
 class ToBeClosed extends HomeBlockAbstract
 {
-    protected function init()
+    protected static $title = 'To be closed';
+    protected static $description = 'Все счета получены, выпущены и оплачены, но файл в статусе Open';
+    protected static $informationFor = 'Информация для Shipment Responsible CS и Sales.';
+
+    public function __construct(int $userId)
     {
-        $this->_title = 'To be closed';
-        $this->_description = ShipmentCriteria::getText(ShipmentCriteria::ToBeClosed) . '.';
-        $this->_informationFor = 'Информация для Shipment Responsible CS и Sales.';
+        parent::__construct($userId);
+
         $this->tableLinkModule = 'Shipment';
 
         $this->addFields(
@@ -21,7 +25,7 @@ class ToBeClosed extends HomeBlockAbstract
         );
     }
 
-    protected function getTableQuery($userId)
+    protected function getDataQuery(int $userId)
     {
         return "SELECT shipment.ID, shipment.Name, shipment.MAWBNumber, shipment.ETD
                   FROM shipmentcriterion

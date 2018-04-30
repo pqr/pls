@@ -9,7 +9,6 @@ gulp.task('vendorsjs', function () {
 
     var allSrc = [
         'node_modules/jquery/dist/jquery.min.js',
-        'node_modules/sticky-table-headers/js/jquery.stickytableheaders.min.js',
         'node_modules/keypress.js/keypress-2.1.5.min.js',
         'public/js/jquery-ui.min.js',
         'public/js/tooltip.js',

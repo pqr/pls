@@ -299,6 +299,17 @@ a.showhide label {
     color: silver;
 }
 
+.note-markdown {
+    font-weight: normal;
+    font-size: 9px;
+    color: silver;
+}
+
+.note-markdown a {
+    color: silver;
+    font-weight: bold;
+}
+
 .nobr {
     white-space: nowrap;
 }
@@ -365,7 +376,6 @@ div.alert:last-child {
 span.cnt {
     font-style: normal;
     font-size: 90%;
-    opacity: 0.6;
 }
 
 ul.msg {

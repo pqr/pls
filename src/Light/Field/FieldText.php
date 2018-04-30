@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Field;
 
 /**
@@ -8,6 +9,8 @@ namespace Light\Field;
 class FieldText extends FieldAbstract
 {
     public $rows = 4;
+    public $markdown = false;
+    public $markdownInfo = false;
 
     protected function initDefaultParams()
     {
@@ -20,7 +23,14 @@ class FieldText extends FieldAbstract
 
     protected function getHtmlInner($value, array $data, $forTable)
     {
-        return str_replace("\n", '<br>', htmlspecialchars($value));
+        if ($this->markdown) {
+            $parsedown = new \Parsedown();
+            $parsedown->setSafeMode(true);
+            $html = $parsedown->text($value);
+        } else {
+            $html = str_replace("\n", '<br>', htmlspecialchars($value));
+        }
+        return $html;
     }
 
     protected function getHtmlInputInner($value, array $data, $idPrefix)
@@ -51,8 +61,14 @@ class FieldText extends FieldAbstract
             $tdata['tagParams'] .= ' rows="' . $rows . '"';
         }
 
-        return '<textarea data-type="' . $tdata['type'] . '" name="' . $tdata['editName'] . '" id="' . $tdata['editId'] .
-        '"' . $tdata['cssClass'] . $tdata['tagParams'] . '>' . htmlspecialchars($tdata['value']) . '</textarea>';
+        $html = '<textarea data-type="' . $tdata['type'] . '" name="' . $tdata['editName'] . '" id="' . $tdata['editId'] .
+            '"' . $tdata['cssClass'] . $tdata['tagParams'] . '>' . htmlspecialchars($tdata['value']) . '</textarea>';
+
+        if ($this->markdownInfo) {
+            $html .= '<div class="note-markdown">Данное поле поддерживает язык разметки <a href="http://klavogonki.ru/wiki/Markdown" target="_blank">Markdown</a></div>';
+        }
+
+        return $html;
     }
 
     protected function getDataFromRequestInner(array $request)

@@ -428,12 +428,12 @@ abstract class ApplicationAbstract
 
         if (!isset($GLOBALS['argv']) && Request::isAjax() && !Response::isRedirected()) {
             // Запрос пришел через ajax - отправим все накопившиеся flash сообщения обратно через ajax
-            $flashMessagess = Session::flashGetAll();
-            if ($flashMessagess) {
+            $messagess = Session::flashGetAllAndClear();
+            if ($messagess) {
                 if (Session::$showAsToast) {
-                    Response::header('x-light-toastmsg: ' . json_encode($flashMessagess));
+                    Response::header('x-light-toastmsg: ' . json_encode($messagess));
                 } else {
-                    Response::header('x-light-flashmsg: ' . json_encode($flashMessagess));
+                    Response::header('x-light-flashmsg: ' . json_encode($messagess));
                 }
             }
         }

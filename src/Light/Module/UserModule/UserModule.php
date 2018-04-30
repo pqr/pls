@@ -26,9 +26,7 @@ class UserModule
 
     private function printInitialHtml()
     {
-        //Js::addReactJs();
-        Js::$preact = true;
-        Js::$preactcompat = true;
+        Js::$react = true;
         Js::$mobx = true;
         Js::addLight('build/UserModuleBuild.js');
 
@@ -136,7 +134,7 @@ class UserModule
     private function getUsers()
     {
         $users = Db::getAll(
-            "SELECT ID, Name, Login, Email, InnerPhone, BirthDay, BirthMonth, Started, BranchOfficeID, Position, GroupID, `Password`, Active, ResponsibleRoles, ModuleAccessJSON, SpecialAccessJSON
+            "SELECT *
                 , (SELECT LastRefreshDateTime FROM user_visit WHERE UserID = user.ID) AS LastRefreshDateTime
              FROM user"
         );
@@ -255,18 +253,12 @@ class UserModule
 
         if (isset($_GET['class'])) {
 
-            if (Request::isXls()) {
-                //Запрос отдельно взятого блока Home - это может быть только отправка в Excel!
-                HomeBlocksPage::sendExcel($userId, $_GET['class']);
-            } else {
-                //Запрос на обновление таблицы через ajax
-                HomeBlocksPage::tableAjaxReload($userId, $_GET['class']);
-            }
+            HomeBlocksPage::proceedOneHomeBlockClass($userId, $_GET['class']);
 
         } else {
 
-            //Наконец, это обычный режим view
-            //Проверим, возможно в самом проекте в папке Home хранится какой-то проект-специфичный Home.css?
+            // Наконец, это обычный режим view
+            // Проверим, возможно в самом проекте в папке Home хранится какой-то проект-специфичный Home.css?
             $fileHomeCss = LIGHT_DIR_PUBLIC . '/css/Home.css';
             if (file_exists($fileHomeCss)) {
                 Css::add('Home.css');

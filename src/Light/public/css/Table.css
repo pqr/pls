@@ -10,6 +10,19 @@ table.table {
     border-spacing: 1px;
 }
 
+/* фиксация thead работает в Firefox и в Safari */
+table.table.sticky > thead {
+    position: sticky;
+    position: -webkit-sticky; /* Для Safari нужно с префисом */
+    top: 0;
+}
+
+/* Для Edge и Chome нужно фиксировать th */
+table.table.sticky > thead > tr > th {
+    position: sticky;
+    top: 0;
+}
+
 table.table > tbody > tr > td, table.table > thead > tr > th {
     padding: 5px 6px;
 }
@@ -60,6 +73,22 @@ table.table > tbody > tr.selected {
 
 table.table > tbody > tr.selected > td {
     color: #000000 !important;
+}
+
+table.table > tbody > tr.white {
+    background-color: #ffffff;
+}
+
+table.table > tbody > tr.separator {
+    background-color: rgba(227, 225, 16, 0.20);
+    height: 30px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+table.table > tbody > tr.separator > td {
+    border: none ;
+    border-top: 1px solid #000000;
 }
 
 table.table > thead > tr > th {

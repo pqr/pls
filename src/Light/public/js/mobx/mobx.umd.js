@@ -175,9 +175,8 @@ function spyReportEnd(change) {
 function spy(listener) {
     globalState.spyListeners.push(listener);
     return once(function () {
-        var idx = globalState.spyListeners.indexOf(listener);
-        if (idx !== -1)
-            globalState.spyListeners.splice(idx, 1);
+        globalState.spyListeners = globalState.spyListeners
+            .filter(function (l) { return l !== listener; });
     });
 }
 
@@ -185,7 +184,7 @@ function createAction(actionName, fn) {
     if (process.env.NODE_ENV !== "production") {
         invariant(typeof fn === "function", "`action` can only be invoked on functions");
         if (typeof actionName !== "string" || !actionName)
-            fail("actions should have valid names, got: '" + actionName + "'");
+            fail$1("actions should have valid names, got: '" + actionName + "'");
     }
     var res = function () {
         return executeAction(actionName, fn, this, arguments);
@@ -272,7 +271,7 @@ function namedActionDecorator(name) {
                 return {
                     value: createAction(name, descriptor.value),
                     enumerable: false,
-                    configurable: false,
+                    configurable: true,
                     writable: true // for typescript, this must be writable, otherwise it cannot inherit :/ (see inheritable actions test)
                 };
             }
@@ -280,8 +279,8 @@ function namedActionDecorator(name) {
             var initializer_1 = descriptor.initializer;
             return {
                 enumerable: false,
-                configurable: false,
-                writable: process.env.NODE_ENV !== "production",
+                configurable: true,
+                writable: true,
                 initializer: function () {
                     // N.B: we can't immediately invoke initializer; this would be wrong
                     return createAction(name, initializer_1.call(this));
@@ -765,11 +764,15 @@ var ComputedValue = /** @class */ (function () {
         var oldValue = this.value;
         var wasSuspended = 
         /* see #1208 */ this.dependenciesState === exports.IDerivationState.NOT_TRACKING;
-        var newValue = (this.value = this.computeValue(true));
-        return (wasSuspended ||
+        var newValue = this.computeValue(true);
+        var changed = wasSuspended ||
             isCaughtException(oldValue) ||
             isCaughtException(newValue) ||
-            !this.equals(oldValue, newValue));
+            !this.equals(oldValue, newValue);
+        if (changed) {
+            this.value = newValue;
+        }
+        return changed;
     };
     ComputedValue.prototype.computeValue = function (track) {
         this.isComputing = true;
@@ -1303,7 +1306,7 @@ function _isObservable(value, property) {
 function isObservable(value) {
     if (arguments.length !== 1)
         fail$1(process.env.NODE_ENV !== "production" &&
-            "isObservable expects only 1 argument. Use isObsevableProp to inspect the observability of a property");
+            "isObservable expects only 1 argument. Use isObservableProp to inspect the observability of a property");
     return _isObservable(value);
 }
 function isObservableProp(value, propName) {
@@ -1328,7 +1331,7 @@ function _isComputed(value, property) {
 function isComputed(value) {
     if (arguments.length > 1)
         return fail$1(process.env.NODE_ENV !== "production" &&
-            "isComputed expects only 1 argument. Use isObsevableProp to inspect the observability of a property");
+            "isComputed expects only 1 argument. Use isObservableProp to inspect the observability of a property");
     return _isComputed(value);
 }
 function isComputedProp(value, propName) {
@@ -2535,6 +2538,25 @@ Object.defineProperty(ObservableArray.prototype, "length", {
         this.$mobx.setArrayLength(newLength);
     }
 });
+if (typeof Symbol !== "undefined" && Symbol.toStringTag) {
+    addHiddenProp(ObservableArray.prototype, typeof Symbol !== "undefined" ? Symbol.toStringTag : "@@toStringTag", "Array");
+}
+// Internet Explorer on desktop doesn't support this.....
+// So, let's don't do this to avoid different semantics
+// See #1395
+// addHiddenProp(
+//     ObservableArray.prototype,
+//     typeof Symbol !== "undefined" ? Symbol.isConcatSpreadable as any : "@@isConcatSpreadable",
+//     {
+//         enumerable: false,
+//         configurable: true,
+//         value: true
+//     }
+// )
+/**
+ * Wrap function from prototype
+ */
+
 [
     "every",
     "filter",
@@ -3228,7 +3250,7 @@ function checkIfStateModificationsAreAllowed(atom) {
         fail$1(process.env.NODE_ENV !== "production" &&
             "Computed values are not allowed to cause side effects by changing observables that are already being observed. Tried to modify: " + atom.name);
     // Should not be possible to change observed state outside strict mode, except during initialization, see #563
-    if (!globalState.allowStateChanges && hasObservers$$1)
+    if (!globalState.allowStateChanges && (hasObservers$$1 || globalState.enforceActions === "strict"))
         fail$1(process.env.NODE_ENV !== "production" &&
             (globalState.enforceActions
                 ? "Since strict-mode is enabled, changing observed observable values outside actions is not allowed. Please wrap the code in an `action` if this change is intended. Tried to modify: "
@@ -3430,13 +3452,18 @@ var Reaction = /** @class */ (function () {
             this._isScheduled = false;
             if (shouldCompute(this)) {
                 this._isTrackPending = true;
-                this.onInvalidate();
-                if (this._isTrackPending && isSpyEnabled()) {
-                    // onInvalidate didn't trigger track right away..
-                    spyReport({
-                        name: this.name,
-                        type: "scheduled-reaction"
-                    });
+                try {
+                    this.onInvalidate();
+                    if (this._isTrackPending && isSpyEnabled()) {
+                        // onInvalidate didn't trigger track right away..
+                        spyReport({
+                            name: this.name,
+                            type: "scheduled-reaction"
+                        });
+                    }
+                }
+                catch (e) {
+                    this.reportExceptionInDerivation(e);
                 }
             }
             endBatch();
@@ -3476,6 +3503,8 @@ var Reaction = /** @class */ (function () {
             this.errorHandler(error, this);
             return;
         }
+        if (globalState.disableErrorBoundaries)
+            throw error;
         var message = "[mobx] Encountered an uncaught exception that was thrown by a reaction or observer component, in: '" + this;
         console.error(message, error);
         /** If debugging brought you here, please, read the above message :-). Tnx! */
@@ -3768,33 +3797,37 @@ function decorate(thing, decorators) {
 }
 
 function configure(options) {
-    if (options.enforceActions !== undefined) {
-        globalState.enforceActions = !!options.enforceActions;
-        globalState.allowStateChanges = !options.enforceActions;
+    var enforceActions = options.enforceActions, computedRequiresReaction = options.computedRequiresReaction, disableErrorBoundaries = options.disableErrorBoundaries, arrayBuffer = options.arrayBuffer, reactionScheduler = options.reactionScheduler;
+    if (enforceActions !== undefined) {
+        if (typeof enforceActions !== "boolean" && enforceActions !== "strict")
+            return fail("Invalid configuration for 'enforceActions': " + enforceActions);
+        globalState.enforceActions = enforceActions;
+        globalState.allowStateChanges =
+            enforceActions === true || enforceActions === "strict" ? false : true;
     }
-    if (options.computedRequiresReaction !== undefined) {
-        globalState.computedRequiresReaction = !!options.computedRequiresReaction;
+    if (computedRequiresReaction !== undefined) {
+        globalState.computedRequiresReaction = !!computedRequiresReaction;
     }
     if (options.isolateGlobalState === true) {
         isolateGlobalState();
     }
-    if (options.disableErrorBoundaries !== undefined) {
-        if (options.disableErrorBoundaries === true)
+    if (disableErrorBoundaries !== undefined) {
+        if (disableErrorBoundaries === true)
             console.warn("WARNING: Debug feature only. MobX will NOT recover from errors if this is on.");
-        globalState.disableErrorBoundaries = !!options.disableErrorBoundaries;
+        globalState.disableErrorBoundaries = !!disableErrorBoundaries;
     }
-    if (typeof options.arrayBuffer === "number") {
-        reserveArrayBuffer(options.arrayBuffer);
+    if (typeof arrayBuffer === "number") {
+        reserveArrayBuffer(arrayBuffer);
     }
-    if (options.reactionScheduler) {
-        setReactionScheduler(options.reactionScheduler);
+    if (reactionScheduler) {
+        setReactionScheduler(reactionScheduler);
     }
 }
 
 var generatorId = 0;
 function flow(generator) {
     if (arguments.length !== 1)
-        fail(process.env.NODE_ENV && "Flow expects one 1 argument and cannot be used as decorator");
+        fail$1(process.env.NODE_ENV && "Flow expects one 1 argument and cannot be used as decorator");
     var name = generator.name || "<unnamed flow>";
     // Implementation based on https://github.com/tj/co/blob/master/index.js
     return function () {
@@ -4008,13 +4041,21 @@ if (typeof __MOBX_DEVTOOLS_GLOBAL_HOOK__ === "object") {
 if (process.env.NODE_ENV !== "production" &&
     typeof module !== "undefined" &&
     typeof module.exports !== "undefined") {
-    
+    var warnedAboutDefaultExport_1 = false;
+    Object.defineProperty(module.exports, "default", {
+        enumerable: false,
+        get: function () {
+            if (!warnedAboutDefaultExport_1) {
+                warnedAboutDefaultExport_1 = true;
+                console.warn("The MobX package does not have a default export. Use 'import { thing } from \"mobx\"' (recommended) or 'import * as mobx from \"mobx\"' instead.\"");
+            }
+            return undefined;
+        }
+    });
     [
         "extras",
-        "default",
         "Atom",
         "BaseAtom",
-        "ObservableMap",
         "asFlat",
         "asMap",
         "asReference",

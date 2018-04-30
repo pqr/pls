@@ -140,9 +140,9 @@ class FilesFolder
         return is_file($pathAbsEnc);
     }
 
-    public static function mkdir(string $relativePath)
+    public static function mkdir(string $relativePath): bool
     {
-        File::mkdir(Config::$filesfolderLocal . '/' . $relativePath);
+        return File::mkdir(Config::$filesfolderLocal . '/' . $relativePath);
     }
 
     /**

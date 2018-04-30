@@ -804,7 +804,7 @@ export class Subtable {
         return out;
     }
 
-    setFieldValue(rowNum: RowNum, fieldKey: string, newValue: FieldValue, triggerChange = true) {
+    setFieldValue(rowNum: RowNum, fieldKey: string, newValue: FieldValue, triggerChange = true, updateDisabled = false) {
         if (this.fields[fieldKey] === undefined) {
             return;
         }
@@ -819,7 +819,7 @@ export class Subtable {
         } else {
             // Для поля находящегося в режиме edit, записываем значение в поле ввода
             // но только если это поле не находится в состоянии disabled
-            if (!$node.prop("disabled")) {
+            if (updateDisabled || !$node.prop("disabled")) {
                 setNodeValue($node, newValue, field.type, triggerChange && this.calcTotalEnabled);
             }
         }

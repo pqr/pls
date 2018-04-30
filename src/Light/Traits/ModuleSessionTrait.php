@@ -67,7 +67,7 @@ trait ModuleSessionTrait
      * @param $findid
      * @return null
      */
-    private function getTablePageFromModuleSession($findid)
+    protected function getTablePageFromModuleSession($findid)
     {
         $this->lazyInitModuleSessionFromRequest();
 

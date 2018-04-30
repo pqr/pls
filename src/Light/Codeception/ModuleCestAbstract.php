@@ -2,18 +2,31 @@
 
 namespace Light\Codeception;
 
+use Light\Db;
 use Light\Field\FieldDate;
 use Light\ModuleRegister;
 
 abstract class ModuleCestAbstract
 {
+    protected $minIdFromDb;
+
+    protected function getDbTable()
+    {
+        $module = $this->getModule();
+        return strtolower($module);
+    }
+
     /**
-     * Можно переопределить в классе потомке, если в текущем модуле нет элемента с ID = 100
+     * Можно переопределить в классе потомке
      * @return int
      */
     protected function getTestObjId()
     {
-        return 100;
+        if ($this->minIdFromDb === null) {
+            $dbtable = $this->getDbTable();
+            $this->minIdFromDb = (int)Db::getOne("SELECT min(ID) FROM $dbtable");
+        }
+        return $this->minIdFromDb;
     }
 
     protected function getModule(): string
@@ -92,7 +105,7 @@ abstract class ModuleCestAbstract
      */
     public function modeView($I)
     {
-        $I->amOnPage('?a=' . $this->getModule() . '&id=' . $this->getTestObjId());
+        $I->amOnPage('?a=' . $this->getModule() . '&id=' . $this->getTestObjId() /*. '&XDEBUG_SESSION_START=PHPSTORM'*/);
         $this->canSeeModuleNameInPageHead($I);
         $this->canSeeIdInPageHead($I);
         $I->cantSeeXdebugError();
@@ -162,7 +175,8 @@ abstract class ModuleCestAbstract
     protected function testChangeFieldDate($I, string $fieldKey, string $date)
     {
         $I->wantTo('Change field ' . $fieldKey . ' via ajax');
-        $I->sendAjaxPostRequest('?a=' . $this->getModule() . '&id=' . $this->getTestObjId() . '&func=ChangeField&fieldKey=' . $fieldKey, ['newValue' => $date]);
+        $I->sendAjaxPostRequest('?a=' . $this->getModule() . '&id=' . $this->getTestObjId() . '&func=ChangeField&fieldKey=' . $fieldKey,
+            ['newValue' => $date]);
         $I->canSeeResponseCodeIs(200);
         $response = $I->grabResponse();
         $I->assertContains(FieldDate::beautify($date), $response);

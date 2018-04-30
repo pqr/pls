@@ -359,12 +359,7 @@ export class Table {
                 this.updateHeadCheckbox();
                 // Обновим счётчик выделенных строк рядом со ссылкой "Export to Excel"
                 this.updateExcelSelectedCountSpan();
-
-                // Заново наложим sticky заголовки на таблицу (если только у неё нет специального класса .nosticky)
-                if (!this.$table.hasClass("nosticky")) {
-                    const offset = this.$table.attr("data-stickyoffset") || 0;
-                    this.$table.stickyTableHeaders({ fixedOffset: offset });
-                }
+                
             })
             .always(() => {
                 this.currentReloadXhr = null;

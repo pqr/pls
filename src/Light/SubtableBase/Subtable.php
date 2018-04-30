@@ -128,7 +128,7 @@ abstract class Subtable extends Table
         $this->_tablePrintTotalRecordsFound = false;
         $this->allowSort = false;
         $this->allowTableLayouts = false;
-        $this->nosticky = true;
+        $this->sticky = false;
 
         $this->textAddLink = Config::$lang === 'ru' ? 'Добавить строку' : 'Add Line';
 
@@ -1180,6 +1180,10 @@ abstract class Subtable extends Table
                 $select = $field->getClone($field->key . 'ChangeAll')->setParam('editCssClass', 'display-none');
                 $html .= $select->getHtmlInput('');
             }
+        }
+
+        if ($field->getType() == F::TYPE_TEXT && $field->markdown && $this->_state == self::STATE_EDIT) {
+            $html .= '<div class="note-markdown">Данное поле поддерживает язык разметки <a href="http://klavogonki.ru/wiki/Markdown" target="_blank">Markdown</a></div>';
         }
 
         return $html;

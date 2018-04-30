@@ -271,4 +271,5 @@ class File
         //Как только вышли из цикла, значит нашли уникальное имя!
         return self::decode($testFilepathEnc);
     }
+
 }

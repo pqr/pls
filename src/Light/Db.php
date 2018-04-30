@@ -550,6 +550,12 @@ class Db
         return self::$_queriesTime;
     }
 
+    public static function explodeByComa(string $filterComaSeparated)
+    {
+        $filterComaSeparated = str_replace(['"', "\r", "\n", ";"], ['', '', ',', ','], $filterComaSeparated);
+        return array_map('trim', explode(',', $filterComaSeparated));
+    }
+
     /**
      * возваращает строку для sql запроса where в виде "($SQLVarName LIKE '1234' OR $SQLVarName LIKE '3456')" с номерами,
      * либо возвращает строку "1", что так же подходит для sql условия where
@@ -572,14 +578,12 @@ class Db
     ) {
         $query = $default; //Условие для WHERE принимаем за 1. Будет изменено
 
-        $filterComaSeparated = str_replace(['"', "\r", "\n", ";"], ['', '', ',', ','], $filterComaSeparated);
-        $filterComaSeparatedArrRaw = explode(',', $filterComaSeparated);
+        $filterComaSeparatedArrRaw = self::explodeByComa($filterComaSeparated);
 
         // в фильтре по номеру нужна возможность указать интервал номеров через тире (например: 850001-850020)
         $filterComaSeparatedArr = [];
         foreach ($filterComaSeparatedArrRaw as $elem) {
 
-            $elem = trim($elem);
             $filterComaSeparatedArr[] = $elem;
 
             if (strpos($elem, '-') !== false) {

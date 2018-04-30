@@ -1,20 +1,13 @@
 <?php
+
 namespace Light\Module\Home;
 
 use Light\HomeBase\HomeBlocksPage;
-use Light\Request;
 use Light\Response;
 use Light\User;
 
 class Home
 {
-    protected function printHomePage()
-    {
-        Response::setPageTitle('Home');
-        $this->printHeader();
-        $this->printBody();
-    }
-
     /**
      * Можно переопределить в классе потомке в проекте, чтобы добавить что-то своё
      */
@@ -38,17 +31,13 @@ class Home
     {
         if (isset($_GET['class'])) {
 
-            if (Request::isXls()) {
-                //Запрос отдельно взятого блока Home - это может быть только отправка в Excel!
-                HomeBlocksPage::sendExcel(User::getId(), $_GET['class']);
-            } else {
-                //Запрос на обновление таблицы через ajax
-                HomeBlocksPage::tableAjaxReload(User::getId(), $_GET['class']);
-            }
+            HomeBlocksPage::proceedOneHomeBlockClass(User::getId(), $_GET['class']);
 
         } else {
 
-            $this->printHomePage();
+            Response::setPageTitle('Home');
+            $this->printHeader();
+            $this->printBody();
 
         }
     }

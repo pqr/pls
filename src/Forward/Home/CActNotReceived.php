@@ -19,11 +19,13 @@ use Light\HomeBase\HomeBlockAbstract;
 
 class CActNotReceived extends HomeBlockAbstract
 {
-    protected function init()
+    protected static $title = 'Нет оригинала акта';
+    protected static $description = 'Клиенту отправлен акт (заполнена папка 3), но ещё не получен подписанный оригинал (пустая папка 4). Проверяются перевозки только в статусе Open.';
+    protected static $informationFor = 'Информация для Shipment Customer Service.';
+
+    public function __construct(int $userId)
     {
-        $this->_title = 'Нет оригинала акта';
-        $this->_description = 'Клиенту отправлен акт (заполнена папка 3), но ещё не получен подписанный оригинал (пустая папка 4). Проверяются перевозки только в статусе Open.';
-        $this->_informationFor = 'Информация для Shipment Customer Service.';
+        parent::__construct($userId);
         $this->tableLinkModule = 'Shipment';
 
         $this->addFields(
@@ -33,12 +35,12 @@ class CActNotReceived extends HomeBlockAbstract
         );
     }
 
-    protected function getTableQuery($userId)
+    protected function getDataQuery(int $userId)
     {
         return "";
     }
 
-    protected function tableLoadData($userId)
+    protected function tableLoadData(int $userId)
     {
         $userId = (int)$userId;
         $shipments = Db::getAll(
@@ -46,14 +48,14 @@ class CActNotReceived extends HomeBlockAbstract
             FROM shipment 
             WHERE ResponsibleCS = $userId 
                 AND FileClosed = 0 
-                AND CompanyID IN (".implode(',', array_keys(Constant::$onecCompany)).")
+                AND CompanyID IN (" . implode(',', array_keys(Constant::$onecCompany)) . ")
             ORDER BY MAWBDate, ID"
         );
         if (!$shipments) {
             return;
         }
 
-        foreach($shipments as $shipment) {
+        foreach ($shipments as $shipment) {
             $folderRelative = "Shipment/" . floor($shipment['ID'] / 1000) . '/' . $shipment['ID'];
             $folder3NotEmpty = FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[3]));
             $folder4NotEmpty = FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[4]));

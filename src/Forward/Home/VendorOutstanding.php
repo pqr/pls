@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Home;
 
 use Forward\Application;
@@ -12,16 +13,21 @@ use Light\User;
 
 class VendorOutstanding extends HomeBlockAbstract
 {
-    protected function init()
+    protected static $title = 'Vendor Outstanding';
+
+    public function __construct(int $userId)
     {
-        $this->_title = 'Vendor Outstanding';
+        parent::__construct($userId);
+
         $this->tableLinkModule = 'Vendor';
 
         $this->addFields(
 
             F::createString('Name', ['name' => 'Vendor']),
-            F::createHtml('Outstanding',
-                ['title' => 'Sum of Amount of Open & Part Cleared Vendor Invoices', 'tableAlign' => 'right']),
+            F::createHtml('Outstanding', [
+                'title' => 'Sum of Amount of Open & Part Cleared Vendor Invoices',
+                'tableAlign' => 'right'
+            ]),
 
             F::createHtml('OverdueCL', [
                 'name' => 'Overdue CL',
@@ -40,12 +46,12 @@ class VendorOutstanding extends HomeBlockAbstract
         );
     }
 
-    protected function getTableQuery($userId)
+    protected function getDataQuery(int $userId)
     {
         return '';
     }
 
-    protected function tableLoadData($userId)
+    protected function tableLoadData(int $userId)
     {
         if (!User::hasSpecialAccess(Application::SA_HOME_VOUTSTANDING, $userId)) {
             return;

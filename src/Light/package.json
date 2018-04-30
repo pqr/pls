@@ -33,7 +33,6 @@
     "react-dom": "latest",
     "rollbar": "latest",
     "select2": "latest",
-    "serializr": "latest",
-    "sticky-table-headers": "latest"
+    "serializr": "latest"
   }
 }

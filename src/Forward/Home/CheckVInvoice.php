@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Home;
 
 use Forward\Application;
@@ -10,36 +11,42 @@ use Light\User;
 
 class CheckVInvoice extends HomeBlockAbstract
 {
-    protected function init()
+    protected static $title = 'Vendor Invoices';
+    protected static $description = 'Vendor Invoices в статусах On checking и Under dipsute.  Учитываются только USD/EUR счета. Сортировка по кол-ву оставшихся на проверку дней (Days Left).';
+    protected static $informationFor = 'Информация для Vendor Invoice Responsible.';
+
+    public function __construct(int $userId)
     {
-        $this->_title = 'Vendor Invoices';
-        $this->_description = 'Vendor Invoices в статусах On checking и Under dipsute.  Учитываются только USD/EUR счета. Сортировка по кол-ву оставшихся на проверку дней (Days Left).';
-        $this->_width = 550;
-        $this->_informationFor = 'Информация для Vendor Invoice Responsible.';
+        parent::__construct($userId);
+        $this->width = 550;
+
         $this->tableLinkModule = 'VInvoice';
 
         $this->addFields(
 
-            F::create('Status', F::TYPE_STRING, ['name' => 'St.', 'getHtmlFunction' => 'Forward\\Classes\\Finance::getVInvoiceStatusIcon']),
+            F::createString('Status', [
+                'name' => 'St.',
+                'getHtmlFunction' => 'Forward\\Classes\\Finance::getVInvoiceStatusIcon'
+            ]),
 
-            F::create('Name', F::TYPE_STRING, ['name' => 'Reference']),
+            F::createString('Name', ['name' => 'Reference']),
 
-            F::create('Amount', F::TYPE_MONEY),
+            F::createMoney('Amount'),
 
             CF::currency(),
 
-            F::create('DueDate', F::TYPE_DATE, ['name' => 'Due Date']),
+            F::createDate('DueDate', ['name' => 'Due Date']),
 
-            F::create('DaysLeft', F::TYPE_INT, ['name' => 'Days Left', 'tableAlign' => 'center']),
+            F::createInt('DaysLeft', ['name' => 'Days Left', 'tableAlign' => 'center']),
 
-            F::create('MAWBNumbers', F::TYPE_TEXT, ['name' => 'MAWB Numbers']),
+            F::createText('MAWBNumbers', ['name' => 'MAWB Numbers']),
 
-            F::create('FileNumbers', F::TYPE_TEXT, ['name' => 'File Numbers'])
+            F::createText('FileNumbers', ['name' => 'File Numbers'])
 
         );
     }
 
-    protected function getTableQuery($userId)
+    protected function getDataQuery(int $userId)
     {
         return "SELECT ID, Name, Amount, CurrencyISO, DueDate, Status,
                         DATEDIFF(DueDate, CURDATE()) AS DaysLeft,
@@ -57,7 +64,7 @@ class CheckVInvoice extends HomeBlockAbstract
                   ORDER BY Status, DaysLeft, DueDate, Name";
     }
 
-    protected function tableLoadData($userId)
+    protected function tableLoadData(int $userId)
     {
         if (User::hasSpecialAccess(Application::SA_HOME_VINVOICE, $userId)) {
             parent::tableLoadData($userId);

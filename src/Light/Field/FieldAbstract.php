@@ -17,6 +17,7 @@ use Light\Html;
  * @method $this setTableWidthExcel(int $value)
  * @method $this setTableWidthHtml(int $value)
  * @method $this setTableOrderBy($sqlFieldKey)
+ * @method $this setTableOrderByLikeFilter($comaSepFilterFieldKey)
  * @method $this setTableAlign(string $leftCenterRight)
  * @method $this setExcelStyle($arrayOrCallable)
  * @method $this setViewCssClass($stringOrCallable)
@@ -67,6 +68,7 @@ use Light\Html;
  * @method int getTableWidthExcel()
  * @method int getTableWidthHtml()
  * @method string getTableOrderBy()
+ * @method string getTableOrderByLikeFilter()
  * @method string getEditId()
  * @method string getEditName()
  * @method string getEditWidth()
@@ -218,6 +220,17 @@ abstract class FieldAbstract
      * @var string Имя поля в бд по которому сортировать (если не задано, используется key)
      */
     public $tableOrderBy;
+
+    /**
+     * @var string иногда в таблице хочется отфильтровать значения ровно в том порядке, как они указаны в множественном фильтре
+     * Например фильтр по списку контейнеров.
+     * Это можно сделать с помощью sql инструкции ORDER BY FIELD(ContainerName, <значения>, <из>, <фильтра>, ...)
+     * https://stackoverflow.com/questions/396748/ordering-by-the-order-of-values-in-a-sql-in-clause
+     *
+     * В данном поле нужно указать ключ в фильтрах, который нужно проверить: если пользователь фильтрует по этому ключу
+     * и внутри много значений, то применяем сортировку
+     */
+    public $tableOrderByLikeFilter;
 
     /**
      * Делаем поле public, чтобы иметь прямой доступ из классов Table и XlsWriter для увеличения производительности

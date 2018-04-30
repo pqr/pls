@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Home;
 
 use Forward\Application;
@@ -9,27 +10,30 @@ use Light\User;
 
 class CheckATD extends HomeBlockAbstract
 {
-    protected function init()
+    protected static $title = 'Check ATD';
+    protected static $description = 'Остался один день до даты Ready For Carriage или ETD уже наступило, но дата ATD ещё не проставлена.';
+    protected static $informationFor = 'Информация для Shipment Responsible CS и Sales.';
+
+    public function __construct(int $userId)
     {
-        $this->_title = 'Check ATD';
-        $this->_description = 'Остался один день до даты Ready For Carriage или ETD уже наступило, но дата ATD ещё не проставлена.';
-        $this->_informationFor = 'Информация для Shipment Responsible CS и Sales.';
+        parent::__construct($userId);
         $this->tableLinkModule = 'Shipment';
 
         $this->addFields(
 
             HomeFields::name(),
             HomeFields::mawbNumber(),
-            F::createDate(
-                'ReadyForCarriageDate',
-                ['name' => 'Ready For Carriage', 'nameTable' => "Ready For\nCarriage", 'editMandatory' => true]
-            ),
+            F::createDate('ReadyForCarriageDate', [
+                'name' => 'Ready For Carriage',
+                'nameTable' => "Ready For\nCarriage",
+                'editMandatory' => true
+            ]),
             F::createDate('ETD')
 
         );
     }
 
-    protected function getTableQuery($userId)
+    protected function getDataQuery(int $userId)
     {
         return "SELECT shipment.ID, shipment.Name, shipment.MAWBNumber, shipment.ETD, shipment.ReadyForCarriageDate
                   FROM shipment
@@ -48,7 +52,7 @@ class CheckATD extends HomeBlockAbstract
                   ORDER BY shipment.ETD";
     }
 
-    protected function tableLoadData($userId)
+    protected function tableLoadData(int $userId)
     {
         if (User::hasSpecialAccess(Application::SA_HOME_CHECKATD, $userId)) {
             parent::tableLoadData($userId);

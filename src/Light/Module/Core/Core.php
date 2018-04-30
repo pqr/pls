@@ -433,7 +433,7 @@ class Core
         }
 
         $msg = Config::$lang === 'ru'
-            ? "Настройки фильтров успешно сохранены"
+            ? "Настройки фильтров сохранены"
             : "Filters layout saved";
         Response::sendToast('success', $msg);
 

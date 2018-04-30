@@ -202,7 +202,12 @@ class User
 
     public static function hasWriteAccess($module = null, int $userId = null)
     {
-        return self::getAccess($module, $userId) === 2;
+        return self::getAccess($module, $userId) >= 2;
+    }
+
+    public static function hasDeleteAccess($module = null, int $userId = null)
+    {
+        return self::getAccess($module, $userId) >= 3;
     }
 
     public static function hasLogInPlaceAccess(int $userId = null)

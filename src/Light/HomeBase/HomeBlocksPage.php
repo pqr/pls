@@ -3,8 +3,7 @@ namespace Light\HomeBase;
 
 use Light\ApplicationAbstract;
 use Light\Css;
-use Light\Response;
-use Light\Template;
+use Light\Request;
 
 /**
  * Этот класс используется для вывода блоков Home непосредственно на экране и на вкладке Home при просмотре
@@ -18,76 +17,41 @@ class HomeBlocksPage
      * @param string $homeClass
      * @return string
      */
-    private static function getHomeFullClass($homeClass)
+    private static function getHomeFullClass(string $homeClass): string
     {
         return PROJECT_NAMESPACE . "\\Home\\$homeClass";
     }
 
-
-    /**
-     * @param string $fullClassName
-     * @return string
-     */
-    private static function getHomeShortClass($fullClassName)
-    {
-        $parts = explode('\\', $fullClassName);
-        return end($parts);
-    }
-
-    /**
-     * Возвращает отсортированный массив шаблонных переменных для вывода блоков
-     * @param int $userId
-     * @return array
-     */
-    private static function getBlocksTplData($userId)
-    {
-        /** @var HomeBlockAbstract[] $objects */
-        $tdata = [];
-        foreach (ApplicationAbstract::$app->getHomeBlocks() as list($fullClassName, $cssClass)) {
-            $className = self::getHomeShortClass($fullClassName);
-            /** @var HomeBlockAbstract $homeObj */
-            $homeObj = new $fullClassName($userId);
-            $blockTdata = $homeObj->getTplData();
-            if ($blockTdata) {
-                $tdata[$className] = $blockTdata + ['cssClass' => $cssClass];
-            }
-        }
-        return $tdata;
-    }
-
-    public static function printHomeBlocks($userId)
+    public static function printHomeBlocks(int $userId)
     {
         Css::addLight('Home.css');
 
-        //Располагаем все блоки в одну линейку
+        // Располагаем все блоки в одну линейку
         print '<table><tr>';
-        foreach (self::getBlocksTplData($userId) as $blockTdata) {
+        foreach (ApplicationAbstract::$app->getHomeBlocks() as [$fullClassName, $cssClass]) {
+            /** @var HomeBlockAbstract $homeBlockObj */
+            $homeBlockObj = new $fullClassName($userId);
             print '<td>';
-            Template::includeTpl('homeblock.tpl.php', $blockTdata);
+            print $homeBlockObj->getHtml($cssClass);
             print '</td>';
         }
         print '</tr></table>';
     }
 
-    /**
-     * Отправляет в поток Excel файл и возвращает true, если передано правельное имя класса
-     * Если блока с таким $homeClass нет, то метод просто возвращает false, ничего не отправляя в поток
-     * @param int $userId
-     * @param string $homeClass
-     */
-    public static function sendExcel($userId, $homeClass)
+    public static function proceedOneHomeBlockClass(int $userId, string $homeClass)
     {
         $homeFullClass = self::getHomeFullClass($homeClass);
         /** @var HomeBlockAbstract $homeBlock */
         $homeBlock = new $homeFullClass($userId);
-        $homeBlock->sendExcel();
-    }
 
-    public static function tableAjaxReload($userId, $homeClass)
-    {
-        $homeFullClass = self::getHomeFullClass($homeClass);
-        /** @var HomeBlockAbstract $homeBlock */
-        $homeBlock = new $homeFullClass($userId);
-        print $homeBlock->getHtmlTableForAjax();
+        if (Request::isXls()) {
+
+            $homeBlock->proceedSendExcel();
+
+        } else {
+
+            print $homeBlock->getHtmlTableForAjax();
+
+        }
     }
 }

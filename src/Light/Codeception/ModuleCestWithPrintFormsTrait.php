@@ -29,11 +29,11 @@ trait ModuleCestWithPrintFormsTrait
 
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
-     * @param \Codeception\Example $example
+     * @param \Codeception\Example|array $example
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
      */
-    private function printExcelInternal($I, Example $example)
+    private function printExcelInternal($I, $example)
     {
         [$id, $form] = $example;
 
@@ -141,7 +141,7 @@ trait ModuleCestWithPrintFormsTrait
 
         $I->expect('See print buttons: ' . implode(', ', $forms));
         foreach ($forms as $form) {
-            $I->assertContains('p=massaction&action=Print&form=' . $form . '#post', $html);
+            $I->assertContains('p=MassactionPrintSubmit&form=' . $form, $html);
             $I->assertContains($idsString, $html);
             unset($allForms[$form]);
         }
@@ -150,7 +150,7 @@ trait ModuleCestWithPrintFormsTrait
         if ($allForms) {
             $I->expect('Dont see print buttons: ' . implode(', ', $allForms));
             foreach ($allForms as $form => $text) {
-                $I->assertNotContains('p=MultiplePrintSubmit&form=' . $form . '&ids=' . $idsString . '"', $html);
+                $I->assertNotContains('p=MassactionPrintSubmit&form=' . $form, $html);
             }
         }
     }

@@ -2,62 +2,56 @@
 
 namespace Light;
 
+/**
+ * @method static flashInfo(string $msg)
+ * @method static flashSuccess(string $msg)
+ * @method static flashWarning(string $msg)
+ * @method static flashError(string $msg)
+ * @method static flashNormal(string $msg)
+ */
 class Session implements \SessionHandlerInterface
 {
     public static $showAsToast = false;
-    private static $flash = [];
 
-    public static function flashAdd($type, $msg)
-    {
-        self::$flash[] = ['type' => $type, 'msg' => $msg];
-    }
+    /** @var Msg */
+    private static $msgBuff;
 
-    public static function flashInfo($msg)
+    public static function getMsgBuff()
     {
-        self::flashAdd('info', $msg);
-    }
-
-    public static function flashSuccess($msg)
-    {
-        self::flashAdd('success', $msg);
-    }
-
-    public static function flashWarning($msg)
-    {
-        self::flashAdd('warning', $msg);
-    }
-
-    public static function flashError($msg)
-    {
-        self::flashAdd('danger', $msg);
-    }
-
-    /**
-     * Без какой-либо окраски
-     * @param string $msg
-     */
-    public static function flashNormal($msg)
-    {
-        self::flashAdd('normal', $msg);
-    }
-
-    public static function flashAddArr(array $messages)
-    {
-        foreach ($messages as $msginfo) {
-            self::flashAdd($msginfo['type'], $msginfo['msg']);
+        if (!self::$msgBuff) {
+            self::$msgBuff = new Msg();
         }
+        return self::$msgBuff;
     }
 
-    public static function flashGetAll()
+    public static function flashAdd(string $type, string $msg)
     {
-        $flashes = self::$flash;
-        if ($flashes) {
-            // Очищаем и в локальном массиве и в базе
-            self::$flash = [];
-            $sessionIdSql = Db::esc(session_id());
-            Db::query("DELETE FROM phpsessionflash WHERE SessionID = '$sessionIdSql'");
+        self::getMsgBuff()->add($type, $msg);
+    }
+
+    public static function __callStatic($name, $arguments)
+    {
+        if (strpos($name, 'flash') === 0) {
+            $type = strtolower(substr($name, 5));
+            self::flashAdd($type, $arguments[0] ?? '');
+            return;
         }
-        return $flashes;
+        throw new \InvalidArgumentException("Unknown method Session::$name");
+    }
+
+    public static function flashGetAllAndClear(): array
+    {
+        $out = [];
+        if (self::$msgBuff) {
+            // Очищаем и в локальном буфере сообщений
+            $out = self::getMsgBuff()->getAll();
+            self::$msgBuff = new Msg();
+        }
+
+        // Очищаем в базе
+        Db::query("DELETE FROM phpsessionflash WHERE SessionID = " . Db::escString(session_id()));
+
+        return $out;
     }
 
     public function close()
@@ -92,7 +86,10 @@ class Session implements \SessionHandlerInterface
         self::$lastSessionData = (string)Db::getOne("SELECT `Data` FROM phpsession WHERE SessionID = '$sessionIdSql'");
         $flashMessagesJson = Db::getOne("SELECT Messages FROM phpsessionflash WHERE SessionID = '$sessionIdSql'");
         if ($flashMessagesJson) {
-            self::$flash = json_decode($flashMessagesJson, true);
+            $flashMessagess = json_decode($flashMessagesJson, true);
+            if (is_array($flashMessagess)) {
+                self::getMsgBuff()->addMessagess($flashMessagess);
+            }
         }
         return self::$lastSessionData;
     }
@@ -106,9 +103,9 @@ class Session implements \SessionHandlerInterface
              VALUES ('$sessionIdSql', " . time() . ", '" . Db::esc($sessionData) . "')"
             );
         }
-        if (self::$flash) {
+        if (self::$msgBuff && self::$msgBuff->getCount()) {
             // Есть какие-то новые flash сообщения, запишем их в таблицу phpsessionflash
-            $flashMessagesJson = json_encode(self::$flash, JSON_UNESCAPED_UNICODE);
+            $flashMessagesJson = json_encode(self::$msgBuff->getAll(), JSON_UNESCAPED_UNICODE);
             Db::query(
                 "REPLACE INTO phpsessionflash (SessionID, Messages)
              VALUES ('$sessionIdSql', '" . Db::esc($flashMessagesJson) . "')"

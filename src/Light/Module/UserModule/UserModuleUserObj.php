@@ -18,8 +18,17 @@ class UserModuleUserObj extends ObjAbstract
             F::createString('Password', ['modes' => F::MODE_EDITSUBMIT]),
             F::createString('Email', 'E-mail'),
             F::createString('InnerPhone', 'Phone'),
+            F::createString('Mobile', 'Mobile'),
             F::createInt('BirthDay', 'Birth Day'),
             F::createInt('BirthMonth', 'Birth Month'),
+            F::createSelect('Sex', [
+                'name' => 'Sex',
+                'empty' => true,
+                'options' => [
+                    'M' => 'M',
+                    'F' => 'F',
+                ],
+            ]),
             F::createInt('Started', 'Started (Year)'),
             F::createString('Position', 'Position'),
             F::createSelect('BranchOfficeID', ['name' => 'Branch Office', 'options' => 'SELECT ID, Name FROM userbranchoffice ORDER BY ID']),
