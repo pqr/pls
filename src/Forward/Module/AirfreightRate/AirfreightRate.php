@@ -17,7 +17,7 @@ class AirfreightRate extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Airfreight Rate';
+        $this->textSaveBtn = 'Airfreight Rate';
     }
 
     protected function initFilters()

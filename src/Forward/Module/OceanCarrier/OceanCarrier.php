@@ -14,7 +14,7 @@ class OceanCarrier extends ModuleAbstract
         parent::__construct();
 
         $this->setDbTable('oceancarrier');
-        $this->_textObjectName = 'Ocean Carrier';
+        $this->textSaveBtn = 'Ocean Carrier';
         $this->tableDefaultOrderBy = 'Name ASC';
 
         $this->allowTableLayouts = false;

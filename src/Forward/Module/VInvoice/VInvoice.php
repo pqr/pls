@@ -31,7 +31,7 @@ class VInvoice extends InvoiceModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Vendor Invoice';
+        $this->textSaveBtn = 'Vendor Invoice';
         $this->tableLinkFieldKeys = ['VendorID'];
         $this->tableLayouts['Default'] = 'VendorID|Name|Amount|CurrencyISO|StatusIco|CacheResponsibleUserID|' .
             'ReceivedDate|DocDate|DueDate|CacheLastPaymentDate|Comments';

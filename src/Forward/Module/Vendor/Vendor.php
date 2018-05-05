@@ -11,7 +11,7 @@ class Vendor extends ModuleAbstract
         parent::__construct();
 
         $this->folders = true;
-        $this->_textObjectName = 'Vendor';
+        $this->textSaveBtn = 'Vendor';
         $this->tableLayouts['Default'] = 'Name|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
 
         $this->registerSubtable('Responsibles');

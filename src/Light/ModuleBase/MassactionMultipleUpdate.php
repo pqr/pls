@@ -59,7 +59,7 @@ trait MassactionMultipleUpdate
         $updated = 0;
         $nothingChanged = 0;
 
-        $dataFromPost = $this->muDataFromPost();
+        $dataFromPost = $this->muDataFromPost($msgBuff);
         if ($dataFromPost) {
             $ids = $this->getMassactionIdsFromPost();
             $updatedObjects = [];
@@ -150,7 +150,7 @@ trait MassactionMultipleUpdate
         return Template::parseTpl($templateFile, $tdata);
     }
 
-    protected function muDataFromPost()
+    protected function muDataFromPost(Msg $msgBuff)
     {
         //Отфильтруем fieldset только теми полями, которые обозначены как доступные для Multiple Update
         $muFieldset = $this->muFieldset();

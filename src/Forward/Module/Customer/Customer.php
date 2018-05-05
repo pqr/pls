@@ -22,7 +22,7 @@ class Customer extends ModuleAbstract
         parent::__construct();
 
         $this->folders = true;
-        $this->_textObjectName = 'Customer';
+        $this->textSaveBtn = 'Customer';
         $this->tableLayouts['Default'] = 'Name|Commodity|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
 
         $this->registerSubtable('CustomerAccounts');

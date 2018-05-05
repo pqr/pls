@@ -165,4 +165,16 @@ class Msg implements \Countable
     {
         return '<div class="alert alert-' . ($type === "error" ? "danger" : $type) . '">' . $msg . '</div>';
     }
+
+    public function hasError(): bool
+    {
+        $hasError = false;
+        foreach ($this->messages as $msginfo) {
+            if ($msginfo['type'] == 'error') {
+                $hasError = true;
+                break;
+            }
+        }
+        return $hasError;
+    }
 }

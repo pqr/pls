@@ -15,7 +15,7 @@ class CurrencyRateCitadele extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Currency Rate';
+        $this->textSaveBtn = 'Currency Rate';
     }
 
     protected function initFilters()

@@ -13,7 +13,7 @@ class VPayment extends PaymentModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Vendor Payment';
+        $this->textSaveBtn = 'Vendor Payment';
         $this->tableLayouts['Default'] =
             'CompanyID|Name|VendorID|PaymentDate|Amount|CurrencyISO|Comments';
 

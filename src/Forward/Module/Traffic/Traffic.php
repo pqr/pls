@@ -12,7 +12,7 @@ class Traffic extends ModuleAbstract
         parent::__construct();
 
         $this->setDbTable('traffic');
-        $this->_textObjectName = 'Traffic';
+        $this->textSaveBtn = 'Traffic';
         $this->tableDefaultOrderBy = 'OrderID';
         $this->tableLayouts['Default'] = 'OrderID|Name|FileNumberFrom|FileNumberUntil|NextFileNumber|Type';
 

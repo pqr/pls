@@ -69,9 +69,9 @@ abstract class ModuleAbstract extends Table
     //Использовать ли выпадающий список с выбором действия после сохранения?
     protected $continmethod = false;
 
-    //Настройки сообщений на экран
-    protected $_textObjectName = '';
-    protected $_textObjectNameGen = '';
+    // Текст, который будет выводиться на кнопке Save полсе слова "Сохранить"
+    // например, чтобы выводилось "Созранить Перевозку", нужно указать $this->textSaveBtn = "Перевозку"
+    protected $textSaveBtn = '';
 
     //Внутренние переменные состояния
     protected $_saveErrors = []; //Массив имя поля => сообщение об ошибке
@@ -401,7 +401,6 @@ abstract class ModuleAbstract extends Table
         // чтобы форма не отрпавлялась случайно при нажатии enter на лубом из полей
         $textSave = Config::$lang === 'ru' ? 'Сохранить' : 'Save';
         $textCancel = Config::$lang === 'ru' ? 'Отмена' : 'Cancel';
-        $textObjectName = $this->_textObjectNameGen ?: $this->_textObjectName;
         $alertSaveButton = '';
         if ($this->_alertSaveButton) {
             [$text, $hidden, $icon, $color] = $this->_alertSaveButton;
@@ -411,7 +410,7 @@ abstract class ModuleAbstract extends Table
         $contentHtml = '<div class="formactions_fixed">'
             . $alertSaveButton
             . '<button type="button" class="waves-effect btn btn-save bgcolor-btn-primary" title="Ctrl + S">'
-            . "$textSave $textObjectName"
+            . "$textSave {$this->textSaveBtn}"
             . '</button>'
             . '<a href="javascript: history.back()" class="btn-flat waves-effect cancel-link">'
             . $textCancel
@@ -585,10 +584,11 @@ abstract class ModuleAbstract extends Table
         if ($_GET['elfinder'] === 'dialog') {
             $textFolder = Config::$lang === 'ru' ? 'Папка' : 'Folder';
             // Это первичный запрос на рендер каркаса диалога (пока без содержимого с файлами)
+            $moduleName = ModuleRegister::getModuleName($this->getModule());
             Template::includeTpl(LIGHT_DIR_LIGHT . '/templates/module/elfinderdialog.tpl.php', [
                 'module' => $module,
                 'id' => $id,
-                'title' => $textFolder . ': ' . $this->_textObjectName . ' ' . strip_tags($this->_obj->getDescriptionHtml())
+                'title' => "$textFolder: $moduleName " . strip_tags($this->_obj->getDescriptionHtml())
             ]);
             ApplicationAbstract::terminate();
             return;
@@ -990,7 +990,8 @@ abstract class ModuleAbstract extends Table
         $viewUrl = "?a=$module&id=$id";
 
         $openExternalText = Config::$lang === 'ru' ? 'Открыть в новом окне' : 'Open in new window';
-        $headLink = "{$this->_textObjectName} <strong>$obj</strong> <span class='note'>(ID: $id)</span>";
+        $moduleName = ModuleRegister::getModuleName($this->getModule());
+        $headLink = "$moduleName <strong>$obj</strong> <span class='note'>(ID: $id)</span>";
 
         $html = '<div style="margin-bottom:10px; display: flex;  justify-content: space-between;">'
             . '<h3 style="padding:0; margin: 0px">' . $headLink . '</h3>'
@@ -1356,8 +1357,9 @@ abstract class ModuleAbstract extends Table
     {
         $alreadyExistsText = Config::$lang === 'ru' ? 'уже существует' : 'already exists';
         $viewText = Config::$lang === 'ru' ? 'посмотреть...' : 'view...';
-        $msg = $this->_textObjectName
-            . ' <strong>' . htmlspecialchars($name) . '</strong> ' . $alreadyExistsText . ', '
+        $msg = ' <strong>' . htmlspecialchars($name) . '</strong> '
+            . $alreadyExistsText
+            . ', '
             . Link::moduleViewBlank($viewText, $existId);
         $this->riseSaveErorr($msg, $fieldKey);
     }

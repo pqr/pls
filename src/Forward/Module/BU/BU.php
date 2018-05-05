@@ -13,7 +13,7 @@ class BU extends ModuleAbstract
         parent::__construct();
 
         $this->setDbTable('bu');
-        $this->_textObjectName = 'Business Unit';
+        $this->textSaveBtn = 'Business Unit';
         $this->tableDefaultOrderBy = 'OrderID';
 
         $this->addFields(

@@ -13,7 +13,7 @@ class Location extends ModuleAbstract
 
         $this->setDbTable('location');
 
-        $this->_textObjectName = 'Airport';
+        $this->textSaveBtn = 'Airport';
         $this->tableDefaultOrderBy = 'Name';
         $this->tableLayouts['Default'] = 'Name|NameRu|IATA|CountryCode';
 

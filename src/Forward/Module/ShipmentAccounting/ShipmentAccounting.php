@@ -36,7 +36,7 @@ class ShipmentAccounting extends ModuleAbstract
         $this->allowLog = false;
         $this->allowDelete = false;
 
-        $this->_textObjectName = 'Накладная';
+        $this->textSaveBtn = 'Накладная';
         $this->tableDefaultOrderBy = 'shipment.ID DESC';
         $this->tableLayouts['Default'] =
             'Name|MAWBNumber|ShipmentRequestNo|CompanyID|CustomerID|CustomerInvoices|CActs|VendorID|DepartureIATA|ArrivalIATA|ATA';

@@ -12,7 +12,7 @@ class Shipper extends ModuleAbstract
         parent::__construct();
 
         $this->setDbTable('list_shipper');
-        $this->_textObjectName = 'Shipper';
+        $this->textSaveBtn = 'Shipper';
         $this->continmethod = true;
 
         $this->addFields(

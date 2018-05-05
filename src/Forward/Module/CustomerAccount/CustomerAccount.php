@@ -15,7 +15,7 @@ class CustomerAccount extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Customer Account';
+        $this->textSaveBtn = 'Customer Account';
         $this->tableLayouts['Default'] = 'Name|ContractNo|InvoiceAddress|Comments|Active';
         $this->registerSubtable('Customers');
     }

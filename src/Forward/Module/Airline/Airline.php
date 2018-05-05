@@ -12,7 +12,7 @@ class Airline extends ModuleAbstract
         parent::__construct();
 
         $this->setDbTable('airline');
-        $this->_textObjectName = 'Airline';
+        $this->textSaveBtn = 'Airline';
         $this->continmethod = true;
 
         $this->addFields(

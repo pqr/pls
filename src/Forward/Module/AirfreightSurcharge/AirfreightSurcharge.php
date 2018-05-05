@@ -11,7 +11,7 @@ class AirfreightSurcharge extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Airfreight Local';
+        $this->textSaveBtn = 'Airfreight Local';
     }
 
     protected function initFilters()

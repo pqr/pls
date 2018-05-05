@@ -195,16 +195,16 @@ class Table
         return $outFieldset;
     }
 
-    protected function addCheckboxCol()
+    protected function addCheckboxCol($class = 'cb')
     {
         $checkboxField = F::createHtml('CheckBox', [
                 'tableWidthHtml' => 20,
                 'tableOrderBy' => '',
                 'tableAlign' => 'center',
                 'nameTable' => '<input type="checkbox" class="cb-all">',
-                'getHtmlFunction' => function ($value, array $data) {
+                'getHtmlFunction' => function ($value, array $data) use ($class) {
                     if (isset($data['ID'])) {
-                        return '<input type="checkbox" class="cb" value="' . $data['ID'] . '">';
+                        return '<input type="checkbox" class="' . $class . '" value="' . $data['ID'] . '">';
                     }
 
                     return '';

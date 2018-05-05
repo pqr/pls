@@ -11,7 +11,7 @@ class CurrencyRate extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Currency Rate';
+        $this->textSaveBtn = 'Currency Rate';
         $this->tableDefaultOrderBy = 'ValidDate DESC';
         $this->allowTableLayouts = false;
         $this->tableLinkFieldKeys = [];

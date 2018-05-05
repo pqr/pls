@@ -13,7 +13,7 @@ class Uom extends ModuleAbstract
 
         $this->setDbTable('uom');
 
-        $this->_textObjectName = 'UOM';
+        $this->textSaveBtn = 'UOM';
         $this->tableDefaultOrderBy = 'OrderID';
 
         $this->addFields(

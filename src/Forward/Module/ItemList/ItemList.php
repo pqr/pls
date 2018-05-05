@@ -12,7 +12,7 @@ class ItemList extends ModuleAbstract
 
         $this->setDbTable('list_chargedescription');
 
-        $this->_textObjectName = 'Item';
+        $this->textSaveBtn = 'Item';
         $this->tableDefaultOrderBy = 'Name';
 
         $this->addFields(

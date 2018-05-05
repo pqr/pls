@@ -11,7 +11,7 @@ class Currency extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Currency';
+        $this->textSaveBtn = 'Currency';
         $this->tableDefaultOrderBy = 'OrderID ASC';
         $this->tableLayouts['Default'] = 'OrderID|Name|Symbol|Description';
 

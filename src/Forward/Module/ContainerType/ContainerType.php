@@ -13,7 +13,7 @@ class ContainerType extends ModuleAbstract
 
         $this->setDbTable('containertype');
 
-        $this->_textObjectName = 'Container Type';
+        $this->textSaveBtn = 'Container Type';
         $this->tableDefaultOrderBy = 'OrderID';
         $this->tableLayouts['Default'] = 'OrderID|Name|TEU';
 

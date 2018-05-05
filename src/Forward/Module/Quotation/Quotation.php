@@ -33,7 +33,7 @@ class Quotation extends ModuleAbstract
         parent::__construct();
 
         $this->setDbTable('quotation');
-        $this->_textObjectName = 'Quotation';
+        $this->textSaveBtn = 'Quotation';
         $this->folders = true;
 
         $this->addFields(

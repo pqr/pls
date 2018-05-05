@@ -16,7 +16,7 @@ class CPayment extends PaymentModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Customer Payment';
+        $this->textSaveBtn = 'Customer Payment';
         $this->tableLayouts['Default'] =
             'CompanyID|Name|CustomerID|PaymentDate|Amount|CurrencyISO|Comments';
 

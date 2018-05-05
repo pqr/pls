@@ -419,7 +419,7 @@ class Template
     {
         if (!isset(static::$tdata['_fieldset'][$fieldKey])) {
             //Если этого поля нет в Fieldset, то, скорее всего, оно не прошло по фильтр
-            //$this->getFieldset()->filterByMode(F::MODE_MULTIPLEUPDATE); в ModuleAbstract::getMultipleUpdateFieldset()
+            //$this->getFieldset()->filterByMode(F::MODE_MULTIPLEUPDATE); в ModuleAbstract::muFieldset()
             //Возможно, для данного пользователя это поле запрещено редактировать, однако на общей вёрстке Multiple Update
             //оно присутсвует (чтобы не горить if ... в шаблоне)
             //В этом случае ничего не рендрим.

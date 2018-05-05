@@ -11,7 +11,7 @@ class VendorAccount extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Vendor Account';
+        $this->textSaveBtn = 'Vendor Account';
         $this->tableDefaultOrderBy = 'Name ASC';
         $this->tableLayouts['Default'] = 'Name|InvoiceAddress|Comments|Active';
         $this->registerSubtable('Vendors');

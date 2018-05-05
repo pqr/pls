@@ -9,7 +9,7 @@ class OurCompany extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Company';
+        $this->textSaveBtn = 'Company';
         $this->tableDefaultOrderBy = 'OrderID ASC';
         $this->tableLayouts['Default'] = 'OrderID|Name';
 

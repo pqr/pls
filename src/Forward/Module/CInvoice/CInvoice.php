@@ -40,7 +40,7 @@ class CInvoice extends InvoiceModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Customer Invoice';
+        $this->textSaveBtn = 'Customer Invoice';
         $this->tableLayouts['Default'] =
             'Name|CustomerAccountID|Amount|CurrencyISO|DocType|StatusIco|DocDate|DueDate|Overdue|Comments';
 

@@ -18,6 +18,9 @@ module.exports = {
         'mobx-react': 'mobxReact',
         'serializr': 'serializr'
     },
+    optimization: {
+        noEmitOnErrors: false
+    },
     module: {
         rules: [
             {

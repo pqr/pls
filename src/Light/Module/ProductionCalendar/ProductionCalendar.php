@@ -11,8 +11,7 @@ class ProductionCalendar extends ModuleAbstract
     {
         parent::__construct();
 
-        $this->_textObjectName = 'Дата';
-        $this->_textObjectNameGen = 'Дату';
+        $this->textSaveBtn = 'Дату';
     }
 
     protected function initFilters()

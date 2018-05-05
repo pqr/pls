@@ -55,7 +55,7 @@ class Shipment extends ModuleAbstract
 
         $this->folders = true;
 
-        $this->_textObjectName = 'Shipment';
+        $this->textSaveBtn = 'Shipment';
         $this->tableDefaultOrderBy = 'shipment.ID DESC';
         $this->tableLayouts['Default'] =
             'Name|FileClosed|Month|MAWBNumber|DepartureIATA|ArrivalIATA|CustomerID|ETD|ETA|ATA';
