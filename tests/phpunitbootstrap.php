@@ -2,7 +2,7 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 define('PROJECT_NAMESPACE', 'Forward');
-require __DIR__ . '/../src/Light/Autoloader.php';
+// require __DIR__ . '/../src/Light/Autoloader.php';
 
 include __DIR__ . '/../config/config.php';
 

@@ -16,7 +16,6 @@
     "ext-xml": "*",
     "ext-xsl": "*",
     "ext-zip": "*",
-    "phpoffice/phpexcel": "@stable",
     "swiftmailer/swiftmailer": "@stable",
     "tedivm/fetch": "@stable",
     "symfony/dom-crawler": "@stable",
@@ -28,6 +27,17 @@
     "mobiledetect/mobiledetectlib": "@stable",
     "sentry/sentry": "@stable",
     "phpoffice/phpspreadsheet": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Forward\\": "src/Forward/",
+      "Light\\": "src/Light/"
+    }
+  },
+  "scripts": {
+    "test": [
+      "vendor/bin/codecept run functional --skip-group pdf"
+    ]
   },
   "require-dev": {
     "codeception/codeception": "^2.4"

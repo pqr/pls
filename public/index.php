@@ -10,7 +10,7 @@ if (isset($_SERVER['HTTP_USER_AGENT'])) {
 include __DIR__ . '/../vendor/autoload.php';
 
 define('PROJECT_NAMESPACE', 'Forward');
-include __DIR__ . '/../src/Light/Autoloader.php';
+// include __DIR__ . '/../src/Light/Autoloader.php';
 
 include __DIR__ . '/../config/config.php';
 
