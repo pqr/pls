@@ -27,7 +27,7 @@ class CPayment extends PaymentModuleAbstract
     {
         $this->addFilters(
 
-            F::create('FilterName', F::TYPE_TEXT, [
+            F::createText('FilterName', [
                 'name' => 'Ref. / Comments',
                 'title' => 'Reference or Comments',
                 'sqlWhere' => function ($value) {

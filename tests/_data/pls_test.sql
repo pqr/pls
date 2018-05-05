@@ -2151,6 +2151,7 @@ CREATE TABLE `reportaccess` (
   `CreatedDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
   `ReportClass` varchar(100) NOT NULL,
   `UserIDs` varchar(100) NOT NULL,
+  `GroupIDs` varchar(100) NOT NULL,
   PRIMARY KEY (`ID`),
   UNIQUE KEY `ReportClass` (`ReportClass`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -2487,15 +2488,15 @@ DROP TABLE IF EXISTS `user`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user` (
   `ID` int(5) NOT NULL AUTO_INCREMENT,
-  `CreatedBy` int(5) NOT NULL DEFAULT 0,
-  `CreatedDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
+  `CreatedBy` int(5) NOT NULL DEFAULT '0',
+  `CreatedDateTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `Login` varchar(50) NOT NULL,
   `Password` varchar(100) NOT NULL,
   `PasswordPlain` varchar(100) NOT NULL,
   `Name` varchar(255) NOT NULL,
   `Email` varchar(100) NOT NULL,
-  `GroupID` int(5) NOT NULL DEFAULT 0,
-  `Active` tinyint(1) NOT NULL DEFAULT 1,
+  `GroupID` int(5) NOT NULL DEFAULT '0',
+  `Active` tinyint(1) NOT NULL DEFAULT '1',
   `ModuleAccessJSON` text NOT NULL,
   `SpecialAccessJSON` text NOT NULL,
   `Position` varchar(200) NOT NULL DEFAULT '',
@@ -2510,8 +2511,11 @@ CREATE TABLE `user` (
   `ResponsibleRoles` varchar(100) NOT NULL,
   `BUIDs` varchar(10) NOT NULL,
   `InnerPhone` varchar(50) NOT NULL,
+  `TelegramToken` varchar(50) NOT NULL DEFAULT '',
+  `Mobile` varchar(50) NOT NULL,
+  `Sex` enum('','m','f') NOT NULL,
   PRIMARY KEY (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8 PACK_KEYS=0 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 PACK_KEYS=0 ROW_FORMAT=COMPACT;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2520,7 +2524,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` (`ID`, `CreatedBy`, `CreatedDateTime`, `Login`, `Password`, `PasswordPlain`, `Name`, `Email`, `GroupID`, `Active`, `ModuleAccessJSON`, `SpecialAccessJSON`, `Position`, `BirthDay`, `BirthMonth`, `Started`, `BranchOfficeID`, `CurrentVisitDateTime`, `LastVisitDateTime`, `LastRefreshTime`, `ResponsibleRoleIDs`, `ResponsibleRoles`, `BUIDs`, `InnerPhone`, `TelegramToken`, `Mobile`, `Sex`) VALUES ('1', '0', '2011-08-10 18:00:14', 'admin', 'admin', 'admin', 'Admin', 'admin', '5', '1', '{\n    \"Home\": 3,\n    \"Shipment\": 3,\n    \"ShipmentAccounting\": 3,\n    \"Help\": 3,\n    \"Reportmenu\": 3,\n    \"Quotation\": 3,\n    \"DefaultAddons\": 3,\n    \"AirfreightRate\": 3,\n    \"AirfreightSurcharge\": 3,\n    \"SearchAirfreightRateDialog\": 3,\n    \"Customer\": 3,\n    \"CustomerAccount\": 3,\n    \"CInvoice\": 3,\n    \"CPayment\": 3,\n    \"Vendor\": 3,\n    \"VendorAccount\": 3,\n    \"VInvoice\": 3,\n    \"VPayment\": 3,\n    \"Airline\": 3,\n    \"OceanCarrier\": 3,\n    \"Shipper\": 3,\n    \"OurCompany\": 3,\n    \"ContainerType\": 3,\n    \"Uom\": 3,\n    \"ItemList\": 3,\n    \"Traffic\": 3,\n    \"Location\": 3,\n    \"Port\": 3,\n    \"EmailNoticeSettings\": 3,\n    \"CurrencyRateCitadele\": 3,\n    \"Currency\": 3,\n    \"CurrencyRate\": 3,\n    \"Block\": 3,\n    \"ProductionCalendar\": 3,\n    \"Logviewer\": 3,\n    \"Deleted\": 3,\n    \"Autolaunch\": 3,\n    \"EmailQueueModule\": 3,\n    \"EmailLogModule\": 3,\n    \"ColorHint\": 3,\n    \"FiltersLog\": 3,\n    \"Phpinfo\": 3,\n    \"UserModule\": 3,\n    \"Incoterm\": 3,\n    \"ImportCPaymentFrom1CLog\": 3,\n    \"Console\": 3,\n    \"Autolaunchmenu\": 3,\n    \"BU\": 3,\n    \"ResponsibleRole\": 3,\n    \"User\": 3,\n    \"UserGroup\": 3\n}', '{\n    \"Home1\": 1,\n    \"Home2\": 1,\n    \"Home3\": 1,\n    \"SA_HOME_CHECKATD\": 1,\n    \"SA_HOME_CHECKATA\": 1,\n    \"Shipment1\": 1,\n    \"Shipment2\": 1,\n    \"VInvoice1\": 1,\n    \"VInvoice2\": 1,\n    \"VInvoice3\": 1,\n    \"SA_UNBLOCK\": 1,\n    \"Logviewer1\": 1\n}', '', '0', '0', '2000', '0', '2014-12-19 15:46:39', '2014-12-04 11:35:03', '1418997051', '', '|MOW|LED|', '|1|2|', '', 'a', '', '');
+INSERT INTO `user` (`ID`, `CreatedBy`, `CreatedDateTime`, `Login`, `Password`, `PasswordPlain`, `Name`, `Email`, `GroupID`, `Active`, `ModuleAccessJSON`, `SpecialAccessJSON`, `Position`, `BirthDay`, `BirthMonth`, `Started`, `BranchOfficeID`, `CurrentVisitDateTime`, `LastVisitDateTime`, `LastRefreshTime`, `ResponsibleRoleIDs`, `ResponsibleRoles`, `BUIDs`, `InnerPhone`, `TelegramToken`, `Mobile`, `Sex`) VALUES ('1', '0', '2011-08-10 18:00:14', 'admin', 'admin', 'adminTelegramToken', 'Admin', 'admin', '5', '1', '{\n    \"Home\": 3,\n    \"Shipment\": 3,\n    \"ShipmentAccounting\": 3,\n    \"Help\": 3,\n    \"Reportmenu\": 3,\n    \"Quotation\": 3,\n    \"DefaultAddons\": 3,\n    \"AirfreightRate\": 3,\n    \"AirfreightSurcharge\": 3,\n    \"SearchAirfreightRateDialog\": 3,\n    \"Customer\": 3,\n    \"CustomerAccount\": 3,\n    \"CInvoice\": 3,\n    \"CPayment\": 3,\n    \"Vendor\": 3,\n    \"VendorAccount\": 3,\n    \"VInvoice\": 3,\n    \"VPayment\": 3,\n    \"Airline\": 3,\n    \"OceanCarrier\": 3,\n    \"Shipper\": 3,\n    \"OurCompany\": 3,\n    \"ContainerType\": 3,\n    \"Uom\": 3,\n    \"ItemList\": 3,\n    \"Traffic\": 3,\n    \"Location\": 3,\n    \"Port\": 3,\n    \"EmailNoticeSettings\": 3,\n    \"CurrencyRateCitadele\": 3,\n    \"Currency\": 3,\n    \"CurrencyRate\": 3,\n    \"Block\": 3,\n    \"ProductionCalendar\": 3,\n    \"Logviewer\": 3,\n    \"Deleted\": 3,\n    \"Autolaunch\": 3,\n    \"EmailQueueModule\": 3,\n    \"EmailLogModule\": 3,\n    \"ColorHint\": 3,\n    \"FiltersLog\": 3,\n    \"Phpinfo\": 3,\n    \"UserModule\": 3,\n    \"Incoterm\": 3,\n    \"ImportCPaymentFrom1CLog\": 3,\n    \"Console\": 3,\n    \"Autolaunchmenu\": 3,\n    \"BU\": 3,\n    \"ResponsibleRole\": 3,\n    \"User\": 3,\n    \"UserGroup\": 3\n}', '{\n    \"Home1\": 1,\n    \"Home2\": 1,\n    \"Home3\": 1,\n    \"SA_HOME_CHECKATD\": 1,\n    \"SA_HOME_CHECKATA\": 1,\n    \"Shipment1\": 1,\n    \"Shipment2\": 1,\n    \"VInvoice1\": 1,\n    \"VInvoice2\": 1,\n    \"VInvoice3\": 1,\n    \"SA_UNBLOCK\": 1,\n    \"Logviewer1\": 1\n}', '', '0', '0', '2000', '0', '2014-12-19 15:46:39', '2014-12-04 11:35:03', '1418997051', '', '|MOW|LED|', '|1|2|', '', 'a', '', '');
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
