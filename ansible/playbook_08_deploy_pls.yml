@@ -23,15 +23,15 @@
     tags: code
 
   - name: deploy pls 5. Install composer deps
-      become: no
-      composer:
-        command: install
-        working_dir: "{{ project_dir_pls }}"
-        no_dev: true
-        optimize_autoloader: true
-      environment:
-        COMPOSER_ALLOW_SUPERUSER: 1
-      tags: code
+    become: no
+    composer:
+      command: install
+      working_dir: "{{ project_dir_pls }}"
+      no_dev: true
+      optimize_autoloader: true
+    environment:
+      COMPOSER_ALLOW_SUPERUSER: 1
+    tags: code
 
   # Проверить папки logs и temp и права 777 на них:
   - name: deploy pls 3. Check logs and temp folders and mode
