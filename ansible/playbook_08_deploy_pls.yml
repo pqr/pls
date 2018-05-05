@@ -22,6 +22,17 @@
       accept_hostkey: true
     tags: code
 
+  - name: deploy pls 5. Install composer deps
+      become: no
+      composer:
+        command: install
+        working_dir: "{{ project_dir_pls }}"
+        no_dev: true
+        optimize_autoloader: true
+      environment:
+        COMPOSER_ALLOW_SUPERUSER: 1
+      tags: code
+
   # Проверить папки logs и temp и права 777 на них:
   - name: deploy pls 3. Check logs and temp folders and mode
     become: true
@@ -50,17 +61,6 @@
       chdir: "{{ project_dir_pls }}"
       executable: /bin/bash
     tags: migrate
-
-  - name: deploy pls 5. Install composer deps
-    become: no
-    composer:
-      command: install
-      working_dir: "{{ project_dir_pls }}"
-      no_dev: true
-      optimize_autoloader: true
-    environment:
-      COMPOSER_ALLOW_SUPERUSER: 1
-    tags: code
 
     # Создать символические ссылки на папки для nginx
   - name: deploy pls 6. Create lightpublic symlink
