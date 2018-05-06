@@ -775,7 +775,7 @@ $body.on("submit", "form", function (this: HTMLFormElement, e: JQuery.Event) {
     }
 
     const $form = $(this);
-    const $formSaveButtons = $form.find(".btn-save, button[type=submit]");
+    const $formSaveButtons = $form.find(".btn-save, button[type=submit], input[type=submit]");
     $formSaveButtons.prop("disabled", true);
 
     if (this.action.substr(-5, 5) === "#ajax" && $form.closest(".lightdialog__content").length === 0) {

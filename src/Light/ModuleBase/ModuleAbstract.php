@@ -611,6 +611,8 @@ abstract class ModuleAbstract extends Table
                         // driver for accessing file system (REQUIRED)
                         'path' => FilesFolder::getAbsolutePath($relativePath),
                         'URL' => "?a=$module&id=$id&elfinder=download&file=",
+                        'quarantine' => LIGHT_DIR_TEMP .'/elfinder_quarantine',
+                        'tmbPath' => LIGHT_DIR_TEMP .'/elfinder_thumbnails',
                         // URL to files (REQUIRED)
                         'accessControl' => function ($attr, $path, $data, $volume) {
                             if (strpos(basename($path), '.') === 0) {
