@@ -225,6 +225,7 @@ abstract class ModuleAbstract extends Table
      * @param string $copymode
      * @param int $copyfrom
      * @return void
+     * @throws \Exception
      */
     protected function initDataForCopy($copymode, $copyfrom)
     {

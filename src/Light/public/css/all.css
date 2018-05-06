@@ -102,9 +102,12 @@ th {
 }
 
 .pin-menu-button {
-    padding: 0 5px;
+    text-align: center;
+    width: 40px;
+    height: 20px;
     color: black;
     cursor: pointer;
+    display: inline-block;
 }
 
 .global-menu-unfix .pin-menu-button {
