@@ -113,8 +113,6 @@
 </div>
 <?php endif; ?>
 
-<?= \Light\Response::getAdditionalHtml() ?>
-
 <?php foreach (\Light\Js::getSources() as $src): ?>
     <script type="text/javascript" src="<?= $src ?>"></script>
 <?php endforeach ?>

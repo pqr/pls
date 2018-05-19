@@ -1,4 +1,5 @@
 <?php
+
 namespace Light;
 
 class Response
@@ -16,7 +17,6 @@ class Response
     public static function reset()
     {
         self::$pageTitle = '';
-        self::$additionalHtml = '';
         self::$masterTemplate = 'Master.tpl.php';
         self::$pageHeadHtml = '';
         self::$pageHeadRightHtml = '';
@@ -87,6 +87,15 @@ class Response
             print '<script>document.getElementById("redirectpost").submit();</script>';
         }
         ApplicationAbstract::terminate();
+    }
+
+    public static function redirectToList(string $module, array $filters = null)
+    {
+        $postData = [];
+        if ($filters) {
+            $postData['filterValues'] = json_encode($filters);
+        }
+        self::redirectWithPost($module, null, $postData);
     }
 
     public static function sendHeaderJsReload()
@@ -171,8 +180,7 @@ class Response
         $height = null,
         $top = null,
         $afterClose = null
-    )
-    {
+    ) {
         Response::header('x-light-showdialog: showdialog');
 
         $dialogOptions = [];
@@ -231,16 +239,6 @@ class Response
     public static function isMainmenuEnabled()
     {
         return self::$printMainmenu;
-    }
-
-    public static function addHtml($html)
-    {
-        self::$additionalHtml .= $html;
-    }
-
-    public static function getAdditionalHtml()
-    {
-        return self::$additionalHtml;
     }
 
     public static function setPageTitle($title)
@@ -351,6 +349,8 @@ class Response
         Response::header('Cache-Control: max-age=0');
 
         print $content;
+
+        Response::setMasterTemplate(null);
     }
 
     public static function streamFileFromFilesystem(string $filepathAbs, string $downloadFilename = null)
@@ -373,5 +373,6 @@ class Response
 
         readfile($filepathAbsEnc);
 
+        Response::setMasterTemplate(null);
     }
 }

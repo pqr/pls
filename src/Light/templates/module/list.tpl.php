@@ -1,4 +1,4 @@
-<?php if ($buttons): ?>
+<?php if ($buttons || $badgeMessagess): ?>
     <div class="list-top-buttons-div">
         <?php foreach ($buttons as $button): ?>
 
@@ -12,6 +12,10 @@
                    class="btn-flat waves-effect<?= isset($button['linkCssClass']) ? ' ' . $button['linkCssClass'] : '' ?>"><?= $button['text'] ?></a>
             <?php endif ?>
 
+        <?php endforeach; ?>
+
+        <?php foreach ($badgeMessagess as $message): ?>
+            <?= $message ?>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>

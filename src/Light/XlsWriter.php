@@ -118,6 +118,8 @@ class XlsWriter
         Response::header('Cache-Control: max-age=0');
 
         $writer->save('php://output');
+
+        Response::setMasterTemplate(null);
     }
 
     public function sendPdf(string $filename): void
@@ -133,6 +135,8 @@ class XlsWriter
         Response::header('Cache-Control: max-age=0');
 
         $writer->save('php://output');
+
+        Response::setMasterTemplate(null);
     }
 
     /**

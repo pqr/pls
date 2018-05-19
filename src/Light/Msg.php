@@ -6,6 +6,10 @@ class Msg implements \Countable
 {
     private $messages = [];
 
+    /**
+     * @deprecated
+     * @param string $prefix
+     */
     public function addPrefxToAll(string $prefix)
     {
         foreach ($this->messages as &$message) {
@@ -22,6 +26,16 @@ class Msg implements \Countable
     public function count()
     {
         return count($this->messages);
+    }
+
+    public function merge(Msg $anotherMsgBuff, string $prefix = '')
+    {
+        foreach ($anotherMsgBuff->getAll() as $message) {
+            if ($prefix) {
+                $message['msg'] = $prefix . $message['msg'];
+            }
+            $this->add($message['type'], $message['msg']);
+        }
     }
 
     public function addMessagess(array $messagess)
@@ -168,13 +182,21 @@ class Msg implements \Countable
 
     public function hasError(): bool
     {
-        $hasError = false;
         foreach ($this->messages as $msginfo) {
             if ($msginfo['type'] == 'error') {
-                $hasError = true;
-                break;
+                return true;
             }
         }
-        return $hasError;
+        return false;
+    }
+
+    public function hasWarning(): bool
+    {
+        foreach ($this->messages as $msginfo) {
+            if ($msginfo['type'] == 'warning') {
+                return true;
+            }
+        }
+        return false;
     }
 }

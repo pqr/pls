@@ -443,6 +443,9 @@ abstract class Subtable extends Table
 
     public function getData()
     {
+        if ($this->_data === null) {
+            $this->loadData();
+        }
         return $this->_data;
     }
 
@@ -1083,7 +1086,7 @@ abstract class Subtable extends Table
 
         $this->loadData();
 
-        print parent::getHtmlTableForAjax($this->_printHeadBlock);
+        print $this->getHtmlTableForAjax($this->_printHeadBlock);
         ApplicationAbstract::terminate();
     }
 

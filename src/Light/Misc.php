@@ -4,6 +4,9 @@ namespace Light;
 
 class Misc
 {
+    const DAYS_CALENDAR = 1;
+    const DAYS_WORKING = 2;
+
     /**
      * В PHP есть стандартный метод uniqid, однако если его вызывать много раз в рамках одного php скрипта, то он не
      * гарантирует уникальный результат http://stackoverflow.com/questions/4070110/how-unique-is-uniqid
@@ -553,19 +556,62 @@ class Misc
         return date('Y-m-d', strtotime($year . 'W' . $wTxt . '7'));
     }
 
-    public static function addWorkingDays($startDate, $workingDays)
+    public static function addDays(string $dateFrom, int $addDays, int $calendarOrWorking): string
     {
-        $daysToAdd = 0;
-        while ($workingDays) {
-            $daysToAdd++;
-            $weekDay = date("N", strtotime($startDate . ' +' . $daysToAdd . ' days'));
-            if ($weekDay <= 5) {
-                //Попали на рабочий день - уменьшим счётчик требуемых рабочих дней
-                $workingDays--;
+        return $calendarOrWorking === self::DAYS_CALENDAR
+            ? self::addDaysCalendar($dateFrom, $addDays)
+            : self::addDaysWorking($dateFrom, $addDays);
+    }
+
+    public static function addDaysCalendar(string $dateFrom, int $addDays): string
+    {
+        return date('Y-m-d', strtotime("$dateFrom +$addDays days"));
+    }
+
+    public static function addDaysWorking(string $dateFrom, int $addWorkingDays): string
+    {
+        // будем прибавлять к стартовой дате рабочие дни
+        $currentDate = new \DateTime($dateFrom);
+
+        $addedDaysActual = 0;
+
+        while ($addedDaysActual < $addWorkingDays) {
+            // Двигаем счётчик на один день вперёд
+            $currentDate->modify("+1 day");
+            // Проверим, это рабочий день? (с учётом производственного календаря)
+            if (self::isWorkingDay($currentDate->format("Y-m-d"))) {
+                // Да, это рабочий день - увеличиваем счётчик реально использованных рабочих дней
+                // чтобы рано или поздно выйти из while цикла
+                $addedDaysActual++;
             }
         }
 
-        return date('Y-m-d', strtotime($startDate . ' +' . $daysToAdd . ' days'));
+        return $currentDate->format("Y-m-d");
+    }
+
+    public static function isWorkingDay(string $date): bool
+    {
+        static $cacheCalendar = [];
+
+        $year = substr($date, 0, 4);
+
+        if (!isset($cacheCalendar[$year])) {
+            // Закешируем список исключений на год указанный в $startDate
+            $cacheCalendar[$year] = Db::getAssoc("SELECT Date, WorkingDay FROM production_calendar WHERE YEAR(Date) = @i", $year);
+        }
+
+        if (isset($cacheCalendar[$year][$date])) {
+            // Если запрашиваемый день обнаружился в производственном календаре - вернём информацию оттуда,
+            // рабочий он или нет
+            return (bool)$cacheCalendar[$year][$date];
+        }
+
+        // Иначе используем стандартный подход
+        // 'N' - ISO-8601 numeric representation of the day of the week (added in PHP 5.1.0)
+        // 1 (for Monday) through 7 (for Sunday)
+        $weekDay = date('N', strtotime($date));
+        // Вохвращаем true, если это день с понедельника по пятницу
+        return $weekDay <= 5;
     }
 
     public static function minifyHtml($html)

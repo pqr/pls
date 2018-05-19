@@ -139,7 +139,7 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
         $msgBuff->putIntoSessionFlash();
     }
 
-    protected function afterDelete(ObjAbstract $obj, array $oldData, Msg $msgBuff)
+    protected function afterDelete(ObjAbstract $obj, array $oldData)
     {
         /** @var $obj PaymentObjAbstract */
         $dbLogMsg = 'Delete ' . $this->getCustomerOrVendor() . ' Payment ' . $obj->getDescriptionHtml();

@@ -21,6 +21,7 @@ use Light\ObjAbstract;
 use Light\PrintForm;
 use Light\Request;
 use Light\Response;
+use Light\Services\ModuleBadgeLoader;
 use Light\Session;
 use Light\SubtableBase\Subtable;
 use Light\Table;
@@ -611,8 +612,8 @@ abstract class ModuleAbstract extends Table
                         // driver for accessing file system (REQUIRED)
                         'path' => FilesFolder::getAbsolutePath($relativePath),
                         'URL' => "?a=$module&id=$id&elfinder=download&file=",
-                        'quarantine' => LIGHT_DIR_TEMP .'/elfinder_quarantine',
-                        'tmbPath' => LIGHT_DIR_TEMP .'/elfinder_thumbnails',
+                        'quarantine' => LIGHT_DIR_TEMP . '/elfinder_quarantine',
+                        'tmbPath' => LIGHT_DIR_TEMP . '/elfinder_thumbnails',
                         // URL to files (REQUIRED)
                         'accessControl' => function ($attr, $path, $data, $volume) {
                             if (strpos(basename($path), '.') === 0) {
@@ -1202,20 +1203,19 @@ abstract class ModuleAbstract extends Table
 
         Db::begin();
 
-        $msgBuff = new Msg();
-        $affectedRows = $this->proceedInsertUpdateObj($dataFromPost, $msgBuff);
+        $affectedRows = $this->proceedInsertUpdateObj($dataFromPost);
 
         if ($this->folders) {
             $this->createFolder();
         }
 
         if ($this->_justInserted) {
-            $this->afterInsert($this->_obj, $dataFromPost, $msgBuff);
+            $this->afterInsert($this->_obj, $dataFromPost);
         } else {
-            $this->afterUpdate($this->_obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, false);
+            $this->afterUpdate($this->_obj, $dataFromPost, $affectedRows, $oldData, $this->flash, false);
         }
 
-        $this->afterSubmit($this->_obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, false);
+        $this->afterSubmit($this->_obj, $dataFromPost, $affectedRows, $oldData, $this->flash, false);
 
         Db::commit();
 
@@ -1225,8 +1225,7 @@ abstract class ModuleAbstract extends Table
             $msg .= ' (' . $timer->getHtml() . ')';
         }
 
-        $msgBuff->addSuccess($msg);
-        $msgBuff->putIntoSessionFlash();
+        $this->flash->addSuccess($msg);
 
         $this->redirectAfterSubmit();
     }
@@ -1274,17 +1273,16 @@ abstract class ModuleAbstract extends Table
      */
     public function getOldDataBeforeSubmitOrDelete(ObjAbstract $obj)
     {
-        $oldData = $obj->getData();
+        $subtablesToLoad = [];
         foreach ($this->_subtables as $subtableName => $subtableParams) {
             if (!$subtableParams['readonly']) {
-                $subtableObj = $this->getSubtableObject($obj, $subtableName);
-                if ($subtableObj instanceof Subtable) {
-                    $subtableObj->loadData();
-                    $oldData['_subtables'][$subtableName] = $subtableObj->getData();
+                $subtable = $this->getSubtableObject($obj, $subtableName);
+                if ($subtable instanceof Subtable) {
+                    $subtablesToLoad[] = $subtable;
                 }
             }
         }
-        return $oldData;
+        return $obj->getDataWithSubtables(...$subtablesToLoad);
     }
 
     private function abortInsertUpdate($code)
@@ -1459,7 +1457,7 @@ abstract class ModuleAbstract extends Table
         return false;
     }
 
-    protected function proceedInsertUpdateObj(array $dataFromPost, Msg $msgBuff)
+    protected function proceedInsertUpdateObj(array $dataFromPost)
     {
         if ($this->_obj->getId() === 0) {
             $this->proceedInsertObj($dataFromPost);
@@ -1469,7 +1467,7 @@ abstract class ModuleAbstract extends Table
             $affectedRows = $this->proceedUpdateObj($dataFromPost);
         }
 
-        $affectedRows += $this->proceedSubmitSubtables($msgBuff);
+        $affectedRows += $this->proceedSubmitSubtables();
 
         return $affectedRows;
     }
@@ -1478,6 +1476,7 @@ abstract class ModuleAbstract extends Table
      * Если нужно добавть какую-то дополнительную логику сохранения, следует переопределять метод afterSubmit(array $dataFromPost)
      * В нём можно проверить флаг $this->_justInserted, чтобы определить вставку или обнвление
      * @param array $dataFromPost
+     * @throws \Exception
      */
     private function proceedInsertObj(array $dataFromPost)
     {
@@ -1492,6 +1491,7 @@ abstract class ModuleAbstract extends Table
      * В нём можно проверить флаг $this->_justInserted, чтобы определить вставку или обнвление
      * @param array $dataFromPost
      * @return int $affectedRows
+     * @throws \Exception
      */
     private function proceedUpdateObj(array $dataFromPost)
     {
@@ -1500,7 +1500,7 @@ abstract class ModuleAbstract extends Table
         return $this->_obj->updateDb($dataFromPost);
     }
 
-    protected function proceedSubmitSubtables(Msg $msgBuff)
+    protected function proceedSubmitSubtables()
     {
         $affectedRows = 0;
         if ($this->_subtables) {
@@ -1508,7 +1508,7 @@ abstract class ModuleAbstract extends Table
             foreach ($this->_subtables as $subtableName => $subtableParams) {
                 if (!$subtableParams['readonly']) {
                     $subtableObj = $this->getSubtableObject($this->_obj, $subtableName);
-                    $affectedRows += $subtableObj->proceedSubmit($msgBuff);
+                    $affectedRows += $subtableObj->proceedSubmit($this->flash);
                 }
             }
         }
@@ -1520,9 +1520,8 @@ abstract class ModuleAbstract extends Table
      * Вызывается после создания новой записи через режим Add New
      * @param ObjAbstract $obj
      * @param array $dataFromPost
-     * @param Msg $msgBuff
      */
-    protected function afterInsert(ObjAbstract $obj, array $dataFromPost, Msg $msgBuff)
+    protected function afterInsert(ObjAbstract $obj, array $dataFromPost)
     {
     }
 
@@ -1596,56 +1595,54 @@ abstract class ModuleAbstract extends Table
 
         if (!$this->allowDelete || !User::hasDeleteAccess() || !$this->hasDeleteAccessRightToObj($this->_obj)) {
             Response::abort(403, 'Delete not allowed');
+            return;
         }
 
-        if (Request::isPost()) {
-
-            // Запрос пришел из диалогового окна, нужно проверить, приавильно ли было заполнено диалоговое окно?
-            // Если внутри checkDeleteConfirmResult выяснится, что пользователь что-то не заполнил - этот метод
-            // сам отправит пользователю новый диалог или другое сообщение
-            if (!$this->checkDeleteConfirmResult()) {
-                return;
-            }
-
-            // Непосредственное удаление
-            $timer = new Timer();
-
-            $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
-
-            Db::begin();
-
-            $msgBuff = new Msg();
-
-            $this->beforeDelete($this->_obj, $msgBuff);
-            $this->proceedDeleteObj($this->_obj);
-            $this->proceedDeleteSubtables($this->_obj);
-            $this->afterDelete($this->_obj, $oldData, $msgBuff);
-
-            Db::commit();
-
-            $msg = '<strong>' . $this->_obj->getDescriptionHtml() . '</strong> deleted';
-            if ($timer->get() > 3) {
-                $msg .= ' (' . $timer->getHtml() . ')';
-            }
-
-            $msgBuff->addSuccess($msg);
-            $msgBuff->putIntoSessionFlash();
-
-            //Возвращаем специальный header, который позволяет выполнить js на стороне клиента
-            if (isset($_GET['fromList'])) {
-                //Light.table.get(Light.getModule()).reload();
-                Response::sendHeaderJsEval('Light.table.get(Light.getModule()).reload()');
-                ApplicationAbstract::terminate();
-            } else {
-                $this->redirectToList();
-            }
-
-        } else {
-
-            //Флага подтверждения не было, выведем форму подтверждения в диалоговом окне
+        if (!Request::isPost()) {
+            // Если пришел не POST запрос, значит это запрос на рендеринг диалогового окна с подтверждением удаления
             $this->sendDeleteConfirmDialog();
+            return;
+        }
+
+        // Запрос пришел из диалогового окна, нужно проверить, приавильно ли было заполнено диалоговое окно?
+        // Если внутри checkDeleteConfirmResult выяснится, что пользователь что-то не заполнил - этот метод
+        // сам отправит пользователю новый диалог или другое сообщение
+        if (!$this->checkDeleteConfirmResult()) {
+            return;
+        }
+
+        // Непосредственное удаление
+        $timer = new Timer();
+
+        $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
+
+        Db::begin();
+
+        $this->beforeDelete($this->_obj);
+        $this->proceedDeleteObj($this->_obj);
+        $this->proceedDeleteSubtables($this->_obj);
+        $this->afterDelete($this->_obj, $oldData);
+
+        Db::commit();
+
+        $msg = "<strong>$this->_obj</strong> - " . (Config::$lang === 'ru' ? 'удалено' : 'deleted');
+        if ($timer->get() > 3) {
+            $msg .= ' (' . $timer->getHtml() . ')';
+        }
+
+        $this->flash->addSuccess($msg);
+
+        if (isset($_GET['fromList'])) {
+
+            // Возвращаем специальный header, который обновит таблицу в режиме List с помощью js на стороне клиента
+            Response::sendHeaderJsReloadTable(Request::getModule());
+            ApplicationAbstract::terminate();
 
         }
+
+        // Если же удалени было не из режима List, то делаем редирект на режим List
+        $this->redirectToList();
+
     }
 
     /**
@@ -1689,9 +1686,9 @@ abstract class ModuleAbstract extends Table
     {
         foreach ($this->_subtables as $subtableName => $subtableParams) {
             if (!$subtableParams['readonly']) {
-                $subtableObj = $this->getSubtableObject($obj, $subtableName);
-                $subtableObj->loadData();
-                $subtableObj->deleteAll();
+                $subtable = $this->getSubtableObject($obj, $subtableName);
+                $subtable->loadData();
+                $subtable->deleteAll();
             }
         }
     }
@@ -1941,6 +1938,7 @@ abstract class ModuleAbstract extends Table
      * @param int $newId
      * @param string $dbLogMsg
      * @return int
+     * @throws \Exception
      */
     protected function whileDeleteUpdateLinkedRecord($linkedId, $className, $newId, $dbLogMsg)
     {
@@ -1951,7 +1949,7 @@ abstract class ModuleAbstract extends Table
         return $affectedRows;
     }
 
-    protected function beforeDelete(ObjAbstract $obj, Msg $msgBuff)
+    protected function beforeDelete(ObjAbstract $obj)
     {
     }
 
@@ -1964,9 +1962,8 @@ abstract class ModuleAbstract extends Table
      * дополнительными данными (например, данными подтаблиц)
      * @param ObjAbstract $obj
      * @param array $oldData
-     * @param Msg $msgBuff
      */
-    protected function afterDelete(ObjAbstract $obj, array $oldData, Msg $msgBuff)
+    protected function afterDelete(ObjAbstract $obj, array $oldData)
     {
     }
 
@@ -2070,6 +2067,7 @@ abstract class ModuleAbstract extends Table
             $tdata = [
                 'table' => $this->getHtmlTableDivWrapper() . '</div>',
                 'buttons' => $this->getListButtons(),
+                'badgeMessagess' => $this->getListBadgeMessagess(),
                 'filters' => $this->getFiltersHtml()
             ];
 
@@ -2089,6 +2087,30 @@ abstract class ModuleAbstract extends Table
 
     protected function initListIntro()
     {
+    }
+
+    protected function getListBadgeMessagess()
+    {
+        $out = [];
+
+        $module = $this->getModule();
+        $badges = ModuleBadgeLoader::getBadgesForModule($module);
+        /** @var Badge $badge */
+        foreach ($badges as $badge) {
+
+            $text = $badge->title . ': <strong>' . $badge->counter . '</strong>';
+            $tagParams = 'class="alert-badge alert-' . $badge->type . '"';
+            if ($badge->listFilters) {
+                // Если есть параметр listFilters, то оборачиваем в ссылку
+                $text = Link::moduleList($text, $badge->listFilters, null, $this->getModule(), null, $tagParams);
+            } else {
+                // Если же listFilters нет, то обренём в простой div для подсветки
+                $text = "<div $tagParams>$text</div>";
+            }
+            $out[] = $text;
+        }
+
+        return $out;
     }
 
     /**
@@ -2704,12 +2726,16 @@ abstract class ModuleAbstract extends Table
 
         $this->_obj->updateDb([$fieldKey => $normilizedValue], 'Ajax');
 
-        //Вызовем дополнительный обработчик, который, возможно, переопределён в классах потомках
+        // Вызовем дополнительный обработчик, который, возможно, переопределён в классах потомках
         $this->afterChangeField($fieldKey, $oldData);
 
         Db::commit();
 
         print $this->_obj->getFieldHtml($fieldKey);
+
+        // Если при изменении поля в $this->afterChangeField накопились какие-то Flash сообщения,
+        // отправим их в виде Toast блоков
+        Session::$showAsToast = true;
         ApplicationAbstract::terminate();
     }
 

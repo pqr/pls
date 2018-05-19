@@ -175,6 +175,13 @@ class FilesFolder
         return $result;
     }
 
+    public static function moveToDeleted(string $folderRelativePath)
+    {
+        // Перемещаем папку в специальную директорию deleted
+        $destRelativePath = 'deleted/' . $folderRelativePath;
+        FilesFolder::rename($folderRelativePath, $destRelativePath);
+    }
+
     /**
      * Возвращает массив файлов внутри директории относительно filesfolder
      * Особенность этого метода по сравнению со стандартным scandir:

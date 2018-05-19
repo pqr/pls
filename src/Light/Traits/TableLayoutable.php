@@ -53,13 +53,6 @@ trait TableLayoutable
                 $this->setFieldsShowAll();
 
             }
-
-            //Добавим вёрстку диалога в html код старницы
-            //Инициализируем диалог
-            if (!self::$isLayoutDailogPrinted && !Request::isAjax() && !Request::isXls()) {
-                Response::addHtml(Template::parseTpl(LIGHT_DIR_LIGHT .'/templates/table/layoutdialog.tpl.php'));
-                self::$isLayoutDailogPrinted = true;
-            }
         }
     }
 
@@ -141,11 +134,13 @@ trait TableLayoutable
             $layouts[] = ['name' => $name, 'fieldKeys' => explode('|', $layoutFields)];
         }
 
+        $userLayouts = self::getHtmlTableUserLayouts($this->getTableNameForSettings());
+
         Response::json([
             'allFields' => $allFields,
             'shownFieldKeys' => $shownFieldKeys,
             'layouts' => $layouts,
-            'userLayoutsHtml' => self::getHtmlTableUserLayouts($this->getTableNameForSettings())
+            'bodyHtml' => Template::parseTpl(LIGHT_DIR_LIGHT .'/templates/table/layoutdialog.tpl.php', ['userLayouts' => $userLayouts])
         ]);
     }
 

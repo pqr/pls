@@ -1,7 +1,11 @@
 <?php
+
 namespace Light;
 
 use Light\Field\FieldDate;
+use Light\ModuleBase\Badge;
+use Light\ModuleBase\ModuleBadgeInterface;
+use Light\Services\ModuleBadgeLoader;
 
 class Mainmenu
 {
@@ -30,12 +34,25 @@ class Mainmenu
                 continue;
             }
 
-            $section = (string)ModuleRegister::getModuleSection($module);
-            $sections[$section]['items'][] = $module;
+            $section = ModuleRegister::getModuleSection($module);
+            $moduleName = ModuleRegister::getModuleName($module);
+
+            $badges = ModuleBadgeLoader::getBadgesForModule($module);
+            $urlParams = ModuleBadgeLoader::getMainmenuUrlParams($module);
+
+            $text = $moduleName;
+            if ($badges) {
+                foreach ($badges as $badge) {
+                    /** @var Badge $badge */
+                    $text .= '&nbsp;<span class="badge-' . $badge->type . '" title="' . htmlspecialchars($badge->title) . '">' . $badge->counter . '</span>';
+                }
+            }
+
+            $url = Link::url($urlParams, $module);
+            $sections[$section]['modules'][$module] = ['text' => $text, 'url' => $url];
         }
 
-
-        //Добавим к каждой секции параметры
+        // Добавим к каждой секции параметры
         $userParams = self::getUserParams();
         foreach ($sections as $section => &$sectionParams) {
 
@@ -67,7 +84,6 @@ class Mainmenu
         $sections = self::getSections();
         $tdata = [
             'sections' => $sections,
-            'badges' => self::getBadges($sections),
         ];
         if (Config::$showRatesInMenu) {
             $tdata['rates'] = self::getCurrencyRates();
@@ -75,59 +91,8 @@ class Mainmenu
         return Template::parseTpl(LIGHT_DIR_LIGHT . '/templates/Mainmenu.tpl.php', $tdata);
     }
 
-    private static function getBadges($sections)
+    private static function getModuleBadges(string $module): array
     {
-        $badges = [];
-        foreach ($sections as $section) {
-            foreach ($section['items'] as $module) {
 
-                if (!ModuleRegister::hasBadge($module)) {
-                    continue;
-                }
-
-                $class = ModuleRegister::getModuleClass($module);
-                /** @var callable $function */
-                /**
-                 * В модуле может быть определён статический метод getMainmenuBadge()
-                 * Он может вернуть false - значит для данного модуля нет бейджа
-                 * или он может вернуть массив с параметрами:
-                 * нулевой элемент массива - текст для бейджа (обычно число с кол-вом уведомлений)
-                 * первый элемент массива - css класс для подстветки, обычно это классы badge-* (см. Light.css)
-                 * второй элемент массива (опционально) - urlParams - массив дополнительных параметров для ссылки в меню, если есть какие-то уведомления
-                 * Если все элементы - массивы, значит это несколько бейджей сразу
-                 */
-                $function = [$class, 'getMainmenuBadge'];
-                $result = $function();
-                if (is_array($result)) {
-
-                    if (A::every($result, function ($elem) {
-                        return is_array($elem);
-                    })) {
-                        $html = [];
-                        $urlParams = [];
-                        foreach ($result as $badgeData) {
-                            list($text, $cssClass) = $badgeData;
-                            $html[] = '<span class="' . $cssClass . '">' . $text . '</span>';
-                            if (isset($badgeData[2])) {
-                                $urlParams = array_merge($urlParams, $badgeData[2]);
-                            }
-                        }
-                        $badges[$module] = [
-                            'html' => implode(' ', $html),
-                            'urlParams' => $urlParams ?: null
-                        ];
-                    } else {
-                        list($text, $cssClass) = $result;
-                        $badges[$module] = [
-                            'html' => '<span class="' . $cssClass . '">' . $text . '</span>',
-                            'urlParams' => $result[2] ?? null
-                        ];
-                    }
-
-                }
-            }
-        }
-
-        return $badges;
     }
 }

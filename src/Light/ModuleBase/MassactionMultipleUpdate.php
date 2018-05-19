@@ -84,6 +84,9 @@ trait MassactionMultipleUpdate
                     continue;
                 }
 
+                // На всякий случай запишем в $this->_obj ссылку на текущий объект,
+                // чтобы в переопределённых методах в классах потомках не возникло случайных ошибок
+                $this->_obj = $obj;
                 if ($this->muUpdateObj($obj, $dataFromPost, $msgBuff)) {
                     $updated++;
                     $updatedObjects[] = $obj;
@@ -193,6 +196,7 @@ trait MassactionMultipleUpdate
      * @param array $dataFromPost
      * @param Msg $msgBuff
      * @return bool
+     * @throws \Exception
      */
     protected function muUpdateObj(ObjAbstract $obj, array $dataFromPost, Msg $msgBuff)
     {

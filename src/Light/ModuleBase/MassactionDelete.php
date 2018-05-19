@@ -26,7 +26,10 @@ trait MassactionDelete
             return;
         }
 
+        // Создадим новый буфер сообщений, чтобы накопить в него резульаты и вывести их в диалоговом окне
         $msgBuff = new Msg();
+        // Ссылку на этот буфер сохраним в $this->flash, чтобы работало внутри методов beforeDelete() и afterDelete()
+        $this->flash = $msgBuff;
         $deleted = 0;
 
         $objBase = $this->getObj();
@@ -52,10 +55,10 @@ trait MassactionDelete
 
             $oldData = $this->getOldDataBeforeSubmitOrDelete($obj);
 
-            $this->beforeDelete($obj, $msgBuff);
+            $this->beforeDelete($obj);
             $this->proceedDeleteObj($obj, 'Multiple Delete');
             $this->proceedDeleteSubtables($obj);
-            $this->afterDelete($obj, $oldData, $msgBuff);
+            $this->afterDelete($obj, $oldData);
             $deleted++;
         }
         Db::commit();

@@ -238,9 +238,9 @@ class CInvoice extends InvoiceModuleAbstract
         return $tdata;
     }
 
-    protected function afterInsert(ObjAbstract $obj, array $dataFromPost, Msg $msgBuff)
+    protected function afterInsert(ObjAbstract $obj, array $dataFromPost)
     {
-        parent::afterInsert($obj, $dataFromPost, $msgBuff);
+        parent::afterInsert($obj, $dataFromPost);
 
         if ($obj['Name'] === '' && !Constant::isOneCCompany($obj['CompanyID'])) {
             /** @var CInvoiceObj $obj */

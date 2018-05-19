@@ -197,8 +197,7 @@ tr {
     transition: opacity 0.5s;
 }
 
-a,
-a:visited {
+a {
     color: #2e3192;
     text-decoration: none;
     transition: color 0.1s ease-out;
@@ -410,6 +409,14 @@ ul.msg {
     margin-bottom: 20px;
     border: 1px solid transparent;
     border-radius: 4px;
+}
+
+.alert-badge {
+    padding: 8px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    display: inline-block;
 }
 
 .alert-success {
@@ -802,7 +809,7 @@ ul.checkboxset {
     border-radius: 7px;
 }
 
-.mainmenu__link > .badge-danger {
+.mainmenu__link > .badge-error {
     padding: 1px 3px;
     font-size: 11px;
     color: white;
@@ -813,7 +820,7 @@ ul.checkboxset {
     border-radius: 7px;
 }
 
-.mainmenu__link > .badge-blue {
+.mainmenu__link > .badge-info {
     padding: 1px 3px;
     font-size: 11px;
     color: #ffffff;

@@ -315,9 +315,9 @@ class Quotation extends ModuleAbstract
     {
     }
 
-    protected function proceedInsertUpdateObj(array $dataFromRequest, Msg $msgBuff)
+    protected function proceedInsertUpdateObj(array $dataFromRequest)
     {
-        parent::proceedInsertUpdateObj($dataFromRequest, $msgBuff);
+        parent::proceedInsertUpdateObj($dataFromRequest);
 
         $income =
             (double)Db::getOne("SELECT SUM(Amount) FROM quotationincome WHERE QuotationID = " . $this->_obj->getId());

@@ -39,12 +39,12 @@ $activeModule = \Light\Request::getModule();
 
         <ul class="mainmenu__section"
             data-status="<?= $sectionParams['status'] ?>"<?= $sectionParams['status'] === 'closed' ? ' style="display: none"' : '' ?>>
-            <?php foreach ($sectionParams['items'] as $module): ?>
+            <?php foreach ($sectionParams['modules'] as $module => ['text' => $text, 'url' => $url]): ?>
 
                 <li class="mainmenu__li">
                     <a class="mainmenu__link<?= $module === $activeModule ? ' mainmenu__link_active' : '' ?>"
-                       href="index.php?a=<?= $module ?><?= isset($badges[$module]['urlParams']) ? '&' . http_build_query($badges[$module]['urlParams']) : '' ?>">
-                        <?= \Light\ModuleRegister::getModuleName($module) ?> <?= isset($badges[$module]) ? $badges[$module]['html'] : '' ?>
+                       href="<?= $url ?>">
+                        <?= $text ?>
                     </a>
                 </li>
 

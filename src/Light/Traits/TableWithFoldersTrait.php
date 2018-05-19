@@ -94,8 +94,7 @@ trait TableWithFoldersTrait
         $folderRelativePath = $this->getFolderRelativePath($data);
         if ($folderRelativePath !== null) {
             // Перемещаем папку в специальную директорию deleted
-            $destRelativePath = 'deleted/' . $folderRelativePath;
-            FilesFolder::rename($folderRelativePath, $destRelativePath);
+            FilesFolder::moveToDeleted($folderRelativePath);
         }
     }
 

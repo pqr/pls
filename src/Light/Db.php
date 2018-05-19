@@ -353,7 +353,7 @@ class Db
         return $a;
     }
 
-    public static function getCount($table, $where = false): int
+    public static function getCount($table, string $where = ''): int
     {
         $query = "SELECT count(*) FROM " . self::quote($table);
         if ($where) {

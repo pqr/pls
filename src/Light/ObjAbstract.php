@@ -4,6 +4,7 @@ namespace Light;
 
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldMoneyWithCurrency;
+use Light\SubtableBase\Subtable;
 use Light\Traits\FieldsetAwareTrait;
 
 abstract class ObjAbstract implements \ArrayAccess
@@ -242,6 +243,7 @@ abstract class ObjAbstract implements \ArrayAccess
      * @param array $fieldsData
      * @param string $dbLogMsg
      * @return int кол-во обновлённых строк
+     * @throws \Exception
      */
     public function updateDb(array $fieldsData, $dbLogMsg = '')
     {
@@ -354,6 +356,19 @@ abstract class ObjAbstract implements \ArrayAccess
     final public function getData()
     {
         return $this->_data;
+    }
+
+    final public function getDataWithSubtables(...$subtables)
+    {
+        $data = $this->getData();
+        $data['_subtables'] = [];
+        /** @var Subtable $subtable */
+        foreach ($subtables as $subtable) {
+            $subtableName = Misc::getClass($subtable);
+            $data['_subtables'][$subtableName] = $subtable->getData();
+        }
+
+        return $data;
     }
 
     final public static function getDataStatic($id)

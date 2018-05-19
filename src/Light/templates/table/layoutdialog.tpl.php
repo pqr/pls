@@ -4,7 +4,7 @@ use Light\Config;
 
 $isLangRu = Config::$lang === 'ru'
 ?>
-<div id="tablelayoutdialog" class="display-none">
+<div id="tablelayoutdialog">
     <table>
         <tr>
             <td>
@@ -37,6 +37,7 @@ $isLangRu = Config::$lang === 'ru'
                 <ul id="tablelayoutdialog__layoutsdefault">
                 </ul>
                 <div id="tablelayoutdialog__layoutsuser">
+                    <?= $userLayouts ?>
                 </div>
                 <div style="margin-top: 10px;">
                     <input type="text" id="tablelayoutdialog__newlayout">

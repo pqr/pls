@@ -319,7 +319,10 @@ abstract class ApplicationAbstract
         // Запускаем модуль (происходит автоматический поиск в папке Module в проекте, потом в Light/Module)
         $output = $this->proceedModule();
 
-        if (Request::isAjax() || Request::isXls() || !Response::haveMasterTemplate()) {
+        if (Request::isAjax()
+            || Request::isXls()
+            || !Response::haveMasterTemplate()
+            || Response::isRedirected()) {
 
             //В случае ajax запроса или принудительно отключённого шаблона вывода - просто распечатаем $output
             //print $output;

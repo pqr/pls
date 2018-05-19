@@ -43,8 +43,8 @@ let currentState: CurrentState = {
 /**
  * Эта функция вызывается всего один раз при первом клике на любую кнопку Table layout settings
  */
-function initDialog() {
-    $btnSaveLayout = $("#tablelayoutdialog__btnsave").on("click", e => {
+function initDialogListeners() {
+    $btnSaveLayout = $("#tablelayoutdialog__btnsave").on("click", (e:any) => {
         e.preventDefault();
         const layoutName = $newLayoutInput.val();
         if (layoutName == "") {
@@ -71,7 +71,7 @@ function initDialog() {
         updateSortables([]);
     });
 
-    $layoutsDefault = $("#tablelayoutdialog__layoutsdefault").on("click", "a", e => {
+    $layoutsDefault = $("#tablelayoutdialog__layoutsdefault").on("click", "a", (e:any) => {
         e.preventDefault();
         const layoutIndex = myParseInt((<HTMLAnchorElement>e.currentTarget).hash.substring(1));
         const fieldsShow = currentState.layouts[layoutIndex].fieldKeys;
@@ -111,20 +111,6 @@ function initDialog() {
         }
     });
 
-    const $content = $("#tablelayoutdialog");
-    const options = {
-        width: "770px",
-        buttonOkText: isLangRu ? 'Применить' : 'Apply new Layout',
-        buttonCancelText: isLangRu ? 'Отмена' : 'Cancel',
-        buttonOkHandler: () => {
-            dialog.close();
-            currentState.dialogSubmitCallback!(getShownFieldKeys());
-        }
-    };
-
-    dialog = new Dialog($content, options, false);
-
-    $content.removeClass("display-none");
 }
 
 function updateSortables(showFieldKeys: Array<string>) {
@@ -210,18 +196,31 @@ export function showLayoutDialog(
     allFields: Array<Field>,
     initialShownFieldKeys: Array<string>,
     layouts: Array<Layout>,
-    userLayoutsHtml: string,
+    bodyHtml: string,
     dialogSubmitCallback: DialogSubmitCallback
 ) {
-    if (!dialog) {
-        initDialog();
-    }
+    const options = {
+        width: "770px",
+        buttonOkText: isLangRu ? 'Применить' : 'Apply new Layout',
+        buttonCancelText: isLangRu ? 'Отмена' : 'Cancel',
+        buttonOkHandler: () => {
+            dialog.close();
+            currentState.dialogSubmitCallback!(getShownFieldKeys());
+        }
+    };
+
+    dialog = new Dialog(bodyHtml, options);
 
     currentState.tableName = tableName;
     currentState.allFields = allFields;
     currentState.initialShownFieldKeys = initialShownFieldKeys;
     currentState.layouts = layouts;
     currentState.dialogSubmitCallback = dialogSubmitCallback;
+
+    //Отобразим диалог
+    dialog.open();
+
+    initDialogListeners();
 
     updateSortables(initialShownFieldKeys);
 
@@ -231,11 +230,7 @@ export function showLayoutDialog(
         $layoutsDefault.append(`<li><a href="#${index}">${layout.name}</a></li>`);
     });
 
-    $layoutsUser.html(userLayoutsHtml);
     $newLayoutInput.val("");
-
-    //Отобразим диалог
-    dialog.open();
 }
 
 // На все кнопки Table Layout Settings вешаем обрабочик клика
@@ -246,13 +241,13 @@ $("body").on("click", "a.table-layoutsettings", (e:any) => {
         .attr("data-tablename")!;
     const tableObj = table.get(tableName);
     $.ajax(tableObj.reloadUrl + "&loadTableLayoutSettings=1").done((settingsFromServer:any) => {
-        const { allFields, shownFieldKeys, layouts, userLayoutsHtml } = settingsFromServer;
+        const { allFields, shownFieldKeys, layouts, bodyHtml } = settingsFromServer;
         showLayoutDialog(
             tableName,
             allFields,
             shownFieldKeys,
             layouts,
-            userLayoutsHtml,
+            bodyHtml,
             (shownFieldKeys: string[]) => {
                 tableObj.reload({ fieldsShow: shownFieldKeys.join("|") });
             }

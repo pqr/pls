@@ -45,7 +45,7 @@ function updateMassactionDiv() {
     if (selectedCount === 0) {
         // Если ничего не выделено, больше ничего и не делаем
         $massactionDiv.removeClass("sticky");
-        $countSpan.html('');
+        $countSpan.html("");
         return;
     }
 
@@ -122,8 +122,8 @@ function updateMassactionDiv() {
                         .html()
                         .replace(/<br>/g, " ")
                         .replace(/<\/?[^>]+>/gi, "")
-                        .replace('▼', "")
-                        .replace('▲', "")
+                        .replace("▼", "")
+                        .replace("▲", "")
                         .trim();
 
                     const $totalSpan = $(`<div class="listmassaction__total"></div>`).append(
@@ -239,7 +239,7 @@ export function save(saveanyway: boolean, additionalData?: Object) {
     }
 
     $.post(url, postData)
-        .done((_:any, __:any, jqXHR: any) => {
+        .done((_: any, __: any, jqXHR: any) => {
             //В заголовках ответа должен прийти Location куда перенаправить пользователя после сохранения
             if (!jqXHR.getResponseHeader("x-light-redirect")) {
                 //Если же нет этого заголовка для перенаправления, то разблокируем кнопки Save и выведем диалог с ошибками
@@ -252,7 +252,7 @@ export function save(saveanyway: boolean, additionalData?: Object) {
                 }
             }
         })
-        .fail((jqXHR:any) => {
+        .fail((jqXHR: any) => {
             blockSaveButtons(false);
             //Если в пришедшем ajax ответе от срвера есть Header заголовок указывающий на то, что ответ содержит в себе
             //какое-то диалоговое окно, то в этом методе ничего делать не будем. Диалог отрисуется средствами js
@@ -307,7 +307,7 @@ export function setValidationHandler(handler: () => boolean): void {
 
 //Обработчик сохранения
 const $body = $("body");
-$body.on("click", "#edit-form .btn-save", function(e:any) {
+$body.on("click", "#edit-form .btn-save", function(e: any) {
     if ($(e.currentTarget).hasClass("disabled")) {
         return;
     }
@@ -320,16 +320,15 @@ $body.on("click", "#edit-form .btn-save", function(e:any) {
     }
 });
 
-$body.on("click", ".listmassaction__selectall", (e:any) => {
+$body.on("click", ".listmassaction__selectall", (e: any) => {
     e.preventDefault();
     table.get(getModule()).selectAll(true);
 });
 
-$body.on("click", ".listmassaction__selectnone", (e:any) => {
+$body.on("click", ".listmassaction__selectnone", (e: any) => {
     e.preventDefault();
     table.get(getModule()).selectAll(false);
 });
-
 
 $body.on("change", "#massaction-select", function(this: HTMLSelectElement, e: any) {
     e.preventDefault();
@@ -391,7 +390,7 @@ $body.on("change", "#massaction-select", function(this: HTMLSelectElement, e: an
     }
 });
 
-$body.on("click", "a.mushowhide", function(this: HTMLAnchorElement, e:any) {
+$body.on("click", "a.mushowhide", function(this: HTMLAnchorElement, e: any) {
     e.preventDefault();
     const $link = $(this);
 
@@ -428,15 +427,19 @@ listener.simple_combo("ctrl s", function() {
 
 if (state === "view") {
     // В режиме просмтра найдём ссылку на редактирование и добавим к ней обработчик клика
-    $(`a[href*="editid=${objectId}"]`)
-        .on("click", (e:any) => {
-            e.currentTarget.href += `&scrollTop=${document.documentElement.scrollTop}`;
-        })
-}
-else if (state === "edit" || state === "addnew") {
+    $(`a[href*="editid=${objectId}"]`).on("click", (e: any) => {
+        e.currentTarget.href += `&scrollTop=${document.documentElement.scrollTop}`;
+    });
+} else if (state === "edit" || state === "addnew") {
     editForm = form.get("edit-form");
-    // Передаём фокус на элемент Name
-    $("input[name=Name]").focus();
+    // Передаём фокус на элемент Name, но в следующем event loop цикле,
+    // чтобы успели приинициализироваться все прочие JS файлы
+    setTimeout(() => {
+        editForm
+            .getFormNode()
+            .find("input[name=Name]")
+            .focus();
+    }, 0);
 } else if (state === "list") {
     initListListeners();
 
@@ -444,10 +447,10 @@ else if (state === "edit" || state === "addnew") {
     try {
         const tableName = getModule();
         const listTable = table.get(tableName);
-        const findid = getPageParam('listInitialFindid');
-        const page = getPageParam('listInitialPage');
+        const findid = getPageParam("listInitialFindid");
+        const page = getPageParam("listInitialPage");
         // В массив отправляемых данных поставляе начальную страницу с которой нужно начат рендеринг
-        let data:any = {page: page};
+        let data: any = { page: page };
         if (findid) {
             data[`${tableName}_findid`] = findid;
         }

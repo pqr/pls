@@ -76,4 +76,23 @@ class A
 
         return $groupped;
     }
+
+    /**
+     * Проверяет указанную колонку в двумерном массиве - все ли значения в этой колонке одинаковые?
+     * Если есть хотя бы два различных значения, то возвращает true
+     * @param \Traversable|array $collection
+     * @param int|string $key
+     * @return bool
+     */
+    public static function hasDifferentInColumn($collection, $key)
+    {
+        $firstVal = reset($collection)[$key];
+        foreach($collection as $element) {
+            if ($element[$key] !== $firstVal) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 } 

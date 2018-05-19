@@ -891,7 +891,7 @@ class Shipment extends ModuleAbstract
         parent::proceedAddNew();
     }
 
-    protected function afterInsert(ObjAbstract $obj, array $dataFromPost, Msg $msgBuff)
+    protected function afterInsert(ObjAbstract $obj, array $dataFromPost)
     {
         //Если шипмент был создан из котировки (заполнено поле QuotationID), то нужно заполнить и Cost-sheet!
         if ($obj['QuotationID'] && $obj['QuotationID'] < 700000) {

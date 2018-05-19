@@ -141,16 +141,31 @@ class InvStatus
         self::CLEARED_DRAFT => self::CLEARED_DRAFT
     ];
 
+    public static $invDeleted = [
+        self::DELETED => self::DELETED,
+        self::CREDITNOTED => self::CREDITNOTED
+    ];
+
     public static function getOpenStatusesSql(string $firstLetter): string
     {
         $openStatuses = $firstLetter === 'C' ? self::$cinvOpen: self::$vinvOpen;
         return implode(',', $openStatuses);
     }
 
+    public static function getDeletedStatusesSql(): string
+    {
+        return implode(',', self::$invDeleted);
+    }
+
     public static function isOpenStatus(string $firstLetter, int $status): bool
     {
         $openStatuses = $firstLetter === 'C' ? self::$cinvOpen: self::$vinvOpen;
         return isset($openStatuses[$status]);
+    }
+
+    public static function isDeletedStatus(int $status): bool
+    {
+        return isset(self::$invDeleted[$status]);
     }
 
     public static function getIconHtml(string $firstLetter, int $status): string
