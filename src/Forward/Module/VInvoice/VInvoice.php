@@ -19,6 +19,7 @@ use Light\FilesFolder;
 use Light\Link;
 use Light\Misc;
 use Light\ModuleBase\MassactionAbstract;
+use Light\ModuleBase\MassactionUtils;
 use Light\Msg;
 use Light\ObjAbstract;
 use Light\Response;
@@ -314,7 +315,7 @@ class VInvoice extends InvoiceModuleAbstract
             }
         }
 
-        MassactionAbstract::sendSuccessDialog(
+        MassactionUtils::sendSuccessDialog(
             $updated . ' Vendor Invoice' . Misc::getSSuffix($updated)
             . ' ' . Misc::getWasWereVerb($updated) . ' updated'
         );
@@ -335,7 +336,7 @@ class VInvoice extends InvoiceModuleAbstract
 
         if (count($vendorInfo) === 0) {
 
-            MassactionAbstract::sendErrorDialog('Отмеченные счета не найдены в базе.');
+            MassactionUtils::sendErrorDialog('Отмеченные счета не найдены в базе.');
             return;
 
         }
@@ -343,7 +344,7 @@ class VInvoice extends InvoiceModuleAbstract
         if (count($vendorInfo) !== 1) {
 
             //Если кол-во комбинаций вендоров и аккаунтов больше 1, значит пользователь неверно выбрал входящие счета
-            MassactionAbstract::sendErrorDialog(
+            MassactionUtils::sendErrorDialog(
                 'Выбранные счета относятся к несольким Vendor или Vendor Account.<br>
                  Чтобы создать Vendor Payment, счета должны относится к одному Vendor и Vendor Account.'
             );
@@ -369,7 +370,7 @@ class VInvoice extends InvoiceModuleAbstract
     {
         $vinvoices = Db::getAll("SELECT ID, CacheLinesMAWBNumber FROM vinvoice WHERE ID IN (@a)", $ids);
         if (!$vinvoices) {
-            MassactionAbstract::sendErrorDialog('Указанные счета не найдены');
+            MassactionUtils::sendErrorDialog('Указанные счета не найдены');
         }
 
         // Создадим временную локальную папку, куда скопируем все файлы

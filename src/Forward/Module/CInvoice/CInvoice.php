@@ -26,6 +26,7 @@ use Light\File;
 use Light\FilesFolder;
 use Light\Img;
 use Light\ModuleBase\MassactionAbstract;
+use Light\ModuleBase\MassactionUtils;
 use Light\Msg;
 use Light\ObjAbstract;
 use Light\PrintForm;
@@ -303,7 +304,7 @@ class CInvoice extends InvoiceModuleAbstract
         $errors = CreateCPayments::check($ids);
 
         if ($errors) {
-            MassactionAbstract::sendErrorDialog($errors);
+            MassactionUtils::sendErrorDialog($errors);
             return;
         }
 
