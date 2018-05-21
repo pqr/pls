@@ -937,7 +937,7 @@ class Shipment extends ModuleAbstract
 
         //При создании новой перевозки отправляем Email уведомление для Sales и для Customer Service
         /** @var ShipmentObj $obj */
-        $this->sendShipmentEmail($obj, '', $msgBuff);
+        $this->sendShipmentEmail($obj, '', $this->flash);
     }
 
     protected function afterUpdate(
