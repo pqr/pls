@@ -7,54 +7,74 @@ use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\Img;
 use Light\SubtableBase\Subtable;
+use Light\Table\TableUserParamsRepository;
 
 trait TableSortable
 {
-    private $_sortFieldKey = false; //Имя поля по которому сортировать
-    private $_sortOrder; //Направление сортировки ASC | DESC
+    private $tableSortFieldKey = ''; // Имя поля по которому сортировать
+    private $tableSortOrder = 'ASC'; // Направление сортировки ASC | DESC
 
     protected $allowSort = true;
 
-    protected $tableDefaultOrderBy = 'ID DESC'; //SQL фрагмент, который будет добавлен в конец запроса ORDER BY ...
-
-    /**
-     * @param string $fieldKey
-     * @return F
-     */
-    abstract public function getField($fieldKey);
-
-    /** @return Fieldset|F[] */
-    abstract public function getFieldsetFirst();
-
-    /** @return Fieldset|F[] */
-    abstract public function getFieldsetLast();
-
-    abstract protected function setTableUserParam($name, $value);
-
-    abstract protected function getTableUserParam($name);
-
-    abstract public function isFieldShowed($fieldKey);
-
-    /** @return array */
-    abstract public function getTableData();
+    protected $tableDefaultOrderBy = 'ID DESC'; // SQL фрагмент, который будет добавлен в конец запроса ORDER BY ...
 
     protected function initSortable()
     {
-        //Сначала сохраним в базу новые значения сортировки, если они пришли в REQUEST
-        if ($this->allowSort) {
-
-            if (isset($_POST['sort'])) {
-                $this->setTableUserParam('SortFieldKey', $_POST['sort']);
-            }
-
-            if (isset($_POST['order'])) {
-                $this->setTableUserParam('SortOrder', $_POST['order']);
-            }
-
-            //Применим значения из $userParams к текущему объекту
-            $this->_sortFieldKey = $this->getTableUserParam('SortFieldKey');
-            $this->_sortOrder = $this->getTableUserParam('SortOrder');
+        // Сначала сохраним в базу новые значения сортировки, если они пришли в REQUEST
+        if (!$this->allowSort) {
+            return;
         }
+
+        // Проинициализируем поле $this->tableSortFieldKey
+        $this->initSortFieldKey();
+        // Проинициализируем поле $this->tableSortOrder
+        $this->initSortOrder();
+    }
+
+    private function initSortFieldKey()
+    {
+        /** @var TableUserParamsRepository $tableUserParams */
+        // Отдельный объект, которых заведует сохранением настроек в базу для данного пользователя
+        $tableUserParams = $this->tableUserParams;
+
+        $requestKey = $this->getTableName() . '_sort';
+        if (isset($_REQUEST[$requestKey])) {
+            // От браузера пришли какие-то новые настройки для таблицы - используем их!
+            $newSortFromRequest = $_REQUEST[$requestKey];
+            // Применим пришедшие настроки к текущей таблице
+            $this->tableSortFieldKey = $newSortFromRequest;
+            // Также сохраним эти настройки в настройки пользователя
+            $tableUserParams->saveSortFieldKey($newSortFromRequest);
+
+            return;
+        }
+
+        // Если из браузера не поступало никаких сигналов об изменении настройки sort,
+        // то загрузим из настроек пользователя из базы
+        $this->tableSortFieldKey = $tableUserParams->loadSortFieldKey();
+    }
+
+    private function initSortOrder()
+    {
+        /** @var TableUserParamsRepository $tableUserParams */
+        // Отдельный объект, которых заведует сохранением настроек в базу для данного пользователя
+        $tableUserParams = $this->tableUserParams;
+
+        $requestKey = $this->getTableName() . '_order';
+        if (isset($_REQUEST[$requestKey])) {
+            // От браузера пришли какие-то новые настройки для таблицы - используем их!
+            $newOrderFromRequest = $_REQUEST[$requestKey];
+            // Применим пришедшие настроки к текущей таблице
+            $this->tableSortOrder = $newOrderFromRequest;
+            // Также сохраним эти настройки в настройки пользователя
+            $tableUserParams->saveSortOrder($newOrderFromRequest);
+
+            return;
+        }
+
+        // Если из браузера не поступало никаких сигналов об изменении настройки sort,
+        // то загрузим из настроек пользователя из базы
+        $this->tableSortOrder = $tableUserParams->loadSortOrder();
     }
 
     /**
@@ -73,8 +93,8 @@ trait TableSortable
             $outHtml .= "<span class=table-sortinfo>$sortedByText $sortFieldName";
 
             //Добавим ссылку на текущее состояние сортировки, которая будет её переворачивать
-            $opositeOrder = $this->getSortOrder() === 'ASC' ? 'DESC' : 'ASC';
-            $outHtml .= ' ' . $this->getHtmlSortLink($this->getSortOrder(), $sortField->key, $opositeOrder);
+            $opositeOrder = $this->getTableSortOrder() === 'ASC' ? 'DESC' : 'ASC';
+            $outHtml .= ' ' . $this->getHtmlSortLink($this->getTableSortOrder(), $sortField->key, $opositeOrder);
             $outHtml .= ' | ';
 
             //Добавим ссылку на отключение сортировки
@@ -93,21 +113,21 @@ trait TableSortable
      */
     protected function getSortField()
     {
-        if (!$this->allowSort || !$this->_sortFieldKey || !$this->_sortOrder) {
+        if (!$this->allowSort || !$this->tableSortFieldKey || !$this->tableSortOrder) {
             return null;
         }
 
         //По умаолчанию ищем поле в _fieldset
-        $field = $this->getField($this->_sortFieldKey);
+        $field = $this->getField($this->tableSortFieldKey);
 
         //Попробуем найти поле в _fieldsetFirst
         if (!$field) {
-            $field = $this->getFieldsetFirst()->getField($this->_sortFieldKey);
+            $field = $this->getFieldsetFirst()->getField($this->tableSortFieldKey);
         }
 
         //Попробуем найти поле в _fieldsetLast
         if (!$field) {
-            $field = $this->getFieldsetLast()->getField($this->_sortFieldKey);
+            $field = $this->getFieldsetLast()->getField($this->tableSortFieldKey);
         }
 
         if (!$field) {
@@ -145,9 +165,9 @@ trait TableSortable
         return $manualSqlSelect === null || $manualSqlSelect;
     }
 
-    protected function getSortOrder()
+    protected function getTableSortOrder()
     {
-        return $this->_sortOrder === 'DESC' ? 'DESC' : 'ASC';
+        return $this->tableSortOrder === 'DESC' ? 'DESC' : 'ASC';
     }
 
     /**
@@ -177,7 +197,7 @@ trait TableSortable
                 }
             }
 
-            $sqlOrderBy[] = $sortField->tableOrderBy . ' ' . $this->getSortOrder();
+            $sqlOrderBy[] = $sortField->tableOrderBy . ' ' . $this->getTableSortOrder();
         }
 
         if ($this->tableDefaultOrderBy) {
@@ -281,14 +301,14 @@ trait TableSortable
             // Добавим иконку сортировки, если сортировка по текущему полю
             $sortField = $this->getSortField();
             if ($sortField === $field) {
-                $icon = $this->getSortOrder() === 'DESC' ? '▼' : '▲';
+                $icon = $this->getTableSortOrder() === 'DESC' ? '▼' : '▲';
                 $html .= ' <span class="tr-sort-icon">' . $icon . '</span>';
             }
 
             // Превратим загловок поля в ссылку
             if ($this->isFieldSortable($field)) {
                 if ($sortField === $field) {
-                    $order = $this->getSortOrder() === 'DESC' ? null : 'DESC';
+                    $order = $this->getTableSortOrder() === 'DESC' ? null : 'DESC';
                     if ($order === null && isset($this->_state) && $this->_state === Subtable::STATE_EDIT) {
                         $order = 'ASC';
                     }

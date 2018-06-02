@@ -4,7 +4,6 @@ namespace Light;
 
 use Light\Field\FieldDate;
 use Light\ModuleBase\Badge;
-use Light\ModuleBase\ModuleBadgeInterface;
 use Light\Services\ModuleBadgeLoader;
 
 class Mainmenu
@@ -42,14 +41,21 @@ class Mainmenu
 
             $text = $moduleName;
             if ($badges) {
+                /** @var Badge $badge */
                 foreach ($badges as $badge) {
-                    /** @var Badge $badge */
-                    $text .= '&nbsp;<span class="badge-' . $badge->type . '" title="' . htmlspecialchars($badge->title) . '">' . $badge->counter . '</span>';
+
+                    $badgeTitle = '';
+                    if ($badge->title) {
+                        $badgeTitle = htmlspecialchars($badge->title) . ': ' . $badge->counter;
+                    }
+
+                    $text .= '&nbsp;<span class="badge-' . $badge->type . '" title="' . $badgeTitle . '">' . $badge->counter . '</span>';
                 }
             }
 
+            $title = ModuleRegister::getModuleTitle($module);
             $url = Link::url($urlParams, $module);
-            $sections[$section]['modules'][$module] = ['text' => $text, 'url' => $url];
+            $sections[$section]['modules'][$module] = ['text' => $text, 'title' => $title, 'url' => $url];
         }
 
         // Добавим к каждой секции параметры
@@ -89,10 +95,5 @@ class Mainmenu
             $tdata['rates'] = self::getCurrencyRates();
         }
         return Template::parseTpl(LIGHT_DIR_LIGHT . '/templates/Mainmenu.tpl.php', $tdata);
-    }
-
-    private static function getModuleBadges(string $module): array
-    {
-
     }
 }

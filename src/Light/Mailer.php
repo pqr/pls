@@ -106,6 +106,7 @@ class Mailer
     public function asText()
     {
         $this->contentType = 'text/plain';
+        return $this;
     }
 
     public function send(Msg $msgBuff = null)

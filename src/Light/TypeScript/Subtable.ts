@@ -20,7 +20,7 @@ import {Dialog} from "./Dialog";
 export interface Field {
     mode: string; //'view' или 'edit'
     type: string;
-    calcTotal: boolean;
+    total: boolean;
     copyOnAdd: boolean;
     colIndex: number;
     disablePaste: boolean;
@@ -59,16 +59,16 @@ export class Subtable {
     private delRowsEl: HTMLInputElement;
 
     //+Для различный операций над ячейками неплохо было бы закешировать индексы полей
-    private fieldKeys: Array<string> = [];
-    private hiddenColumns: Array<boolean> = [];
-    private copyOnAddFieldKeys: Array<string> = [];
+    private fieldKeys: string[] = [];
+    private hiddenColumns: boolean[] = [];
+    private copyOnAddFieldKeys: string[] = [];
 
     //Хеш-массивы fieldKey => [...changeHandlers...]
-    private fieldCalcTotalHandlers: { [key: string]: Array<FieldCalcTotalHandler> } = {};
+    private fieldCalcTotalHandlers: { [key: string]: FieldCalcTotalHandler[] } = {};
 
-    private onAddHandlers: Array<AddHandler> = [];
-    private onDelHandlers: Array<DelHandler> = [];
-    private onCalcTotalHandlers: Array<CalcTotalHandler> = [];
+    private onAddHandlers: AddHandler[] = [];
+    private onDelHandlers: DelHandler[] = [];
+    private onCalcTotalHandlers: CalcTotalHandler[] = [];
 
     //Кеширующий объект, в качестве клюа выступает связка rowNum + fieldKey
     private fieldNodesCache: { [key: string]: JQuery } = {};
@@ -286,8 +286,8 @@ export class Subtable {
             });
         });
 
-        // Добавим обработчики на пересчёт Total при изменнии полей у которых стоит флаг calcTotal
-        this.fieldKeys.filter(fieldKey => this.fields[fieldKey].calcTotal).forEach(fieldKey => {
+        // Добавим обработчики на пересчёт Total при изменнии полей у которых стоит флаг total
+        this.fieldKeys.filter(fieldKey => this.fields[fieldKey].total).forEach(fieldKey => {
             this.onFieldChange(fieldKey, () => {
                 this.calcTotal(fieldKey);
 
@@ -402,7 +402,7 @@ export class Subtable {
 
         //Перебираем все поля в таблице и при нахождении полей с флагом calcTotal - вызываем пересчёт поля
         for (const fieldKey in this.fields) {
-            if (this.fields[fieldKey].calcTotal) {
+            if (this.fields[fieldKey].total) {
                 this.calcTotal(fieldKey);
             }
         }
@@ -824,8 +824,8 @@ export class Subtable {
             }
         }
 
-        // Обновим Total по этому полю, если у него есть флаг calcTotal и при вызове этого метода не было запрещено обновлять total
-        if (this.calcTotalEnabled && field.calcTotal) {
+        // Обновим Total по этому полю, если у него есть флаг total и при вызове этого метода не было запрещено обновлять total
+        if (this.calcTotalEnabled && field.total) {
             this.calcTotal(fieldKey);
         }
     }

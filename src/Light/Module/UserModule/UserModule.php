@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Module\UserModule;
 
 use Carbon\Carbon;

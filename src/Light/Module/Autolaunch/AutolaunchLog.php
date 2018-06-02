@@ -88,13 +88,13 @@ class AutolaunchLog extends Table
      * Возвращает url-параметры для строки. Они будут вставлены в аттрибут data-urlparams в теге tr,
      * Эти url-параметры в итоге будут использованы при двойном клике на строке (см. Table.js)
      * и при клике на одну из ссылок $this->_listLinkFieldKeys
-     * @param array $rowData
+     * @param array $rowDataCalculated
      * @param int $rowNum
      * @return array
      */
-    protected function getTableRowLinkUrlParams(array $rowData, int $rowNum): array
+    protected function getTableRowLinkUrlParams(array $rowDataCalculated, int $rowNum): array
     {
-        return ['id' => $rowData['ID']] + $this->getModuleSessionUrlParams();
+        return ['id' => $rowDataCalculated['ID']] + $this->getModuleSessionUrlParams();
     }
 
 }

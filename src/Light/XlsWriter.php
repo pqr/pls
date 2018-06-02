@@ -37,7 +37,7 @@ class XlsWriter
      */
     private $spreadsheet;
 
-    public static $cellHeaderStyle = [
+    const STYLE_HEADER = [
         'font' => [
             'bold' => true,
         ],
@@ -48,7 +48,7 @@ class XlsWriter
         ]
     ];
 
-    public static $rowSeparatorStyle = [
+    const STYLE_SEPARATOR = [
         'fill' => [
             'fillType' => Fill::FILL_SOLID,
             'color' => ['rgb' => 'f9f9cf'],
@@ -59,12 +59,17 @@ class XlsWriter
         ]
     ];
 
-    public static $rowTotalStyle = [
+    const STYLE_TOTAL = [
         'font' => [
             'bold' => true,
         ]
     ];
 
+    /**
+     * XlsWriter constructor.
+     * @param null $filenameToLoad
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     */
     public function __construct($filenameToLoad = null)
     {
         if ($filenameToLoad) {
@@ -122,6 +127,11 @@ class XlsWriter
         Response::setMasterTemplate(null);
     }
 
+    /**
+     * @param string $filename
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
     public function sendPdf(string $filename): void
     {
         $this->spreadsheet->getActiveSheet()->setShowGridLines(true);
@@ -303,9 +313,7 @@ class XlsWriter
         //Очистим ячейку от названия таблицы
         $sheet->setCellValueByColumnAndRow($col, $row, '');
 
-        //$tableData = $table->getTableCalculatedData();
-        $tableData = $table->getTableData();
-        $numRows = count($tableData);
+        $numRows = $table->getTableDataCount();
         if ($numRows > 0 || $tableOpts & self::TABLES_WITH_HEADER) {
 
             //Подготовим параметр $rowStyleFunction - он возможен только если эта таблица использует trait TableExcelExportable
@@ -322,10 +330,13 @@ class XlsWriter
             }
 
             //Теперь приступаем непосредственно к записи
+            $dataCalculated = $table->getTableDataCalculated();
+            $dataTotal = $table->getTableTotal($dataCalculated);
             $this->writeTableData(
                 $col,
                 $row,
-                $tableData,
+                $dataCalculated,
+                $dataTotal,
                 $table->getFieldsetShowed(),
                 $rowStyleFunction,
                 $tableOpts
@@ -385,7 +396,7 @@ class XlsWriter
 
         // Обернём заголовки в жирный и отцентрируем
         $ws->getStyleByColumnAndRow($col, $row, count($fieldset) + $col - 1, $row)
-            ->applyFromArray(self::$cellHeaderStyle)
+            ->applyFromArray(self::STYLE_HEADER)
             ->getAlignment()->setWrapText(1);
 
         if ($tableOpts & self::FREEZE_PANES) {
@@ -458,7 +469,8 @@ class XlsWriter
      *
      * @param int $col
      * @param int $row
-     * @param array $data
+     * @param array $dataCalculated
+     * @param array $dataTotal
      * @param Fieldset $fieldset
      * @param callable|null $rowStyleFunction
      * @param int $tableOpts битовая маска, определяет нужно ли писать заголовок таблицы, фиксировать первую строку, накладывать автофильтры, менять ширину колонок
@@ -467,7 +479,8 @@ class XlsWriter
     public function writeTableData(
         int $col,
         int $row,
-        array $data,
+        array $dataCalculated,
+        array $dataTotal,
         Fieldset $fieldset,
         callable $rowStyleFunction = null,
         $tableOpts = 0
@@ -482,19 +495,28 @@ class XlsWriter
             $currentRow++;
         }
 
-        //Запишем данные по строкам
-        foreach ($data as $rowData) {
-            $this->writeTableRow($col, $currentRow, $rowData, $fieldset, $rowStyleFunction);
+        // Запишем данные по строкам
+        foreach ($dataCalculated as $rowNum => $rowDataCalculated) {
+            $this->writeTableRow($col, $currentRow, $rowDataCalculated, $fieldset, $rowStyleFunction, $rowNum);
             $currentRow++;
         }
 
-        //Настройки колонок по стилям
         $lastCol = count($fieldset) + $col - 1;
+
+        if ($dataTotal) {
+            // Есть какая-то total строка, запишем и её
+            $this->writeTableRow($col, $currentRow, $dataTotal, $fieldset, $rowStyleFunction, 'total');
+            $ws->getStyleByColumnAndRow($col, $currentRow, $lastCol, $currentRow)
+                ->applyFromArray(self::STYLE_TOTAL);
+            $currentRow++;
+        }
+
+        // Настройки колонок по стилям
         $lastRow = $currentRow - 1;
         $startDataRow = $row + ($tableOpts & self::TABLES_WITH_HEADER ? 1 : 0);
         $this->applyTableColumnStyles($col, $startDataRow, $lastRow, $fieldset, $tableOpts);
 
-        //Глобальные настройки для всего массива данных: выравнивание по вертикали "center"
+        // Глобальные настройки для всего массива данных: выравнивание по вертикали "center"
         $ws->getStyleByColumnAndRow($col, $row, $lastCol, $lastRow)
             ->getAlignment()
             ->setVertical(Alignment::VERTICAL_CENTER);
@@ -509,29 +531,30 @@ class XlsWriter
      * Записывает данные в строку, форматируя ячейки в соответвие с типами полей описанными в $fieldset
      * @param int $col
      * @param int $row
-     * @param array $rowData
+     * @param array $rowDataCalculated
      * @param Fieldset $fieldset
      * @param callable|null $rowStyleFunction
+     * @param null $rowNum
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function writeTableRow(
         int $col,
         int $row,
-        array $rowData,
+        array $rowDataCalculated,
         Fieldset $fieldset,
-        callable $rowStyleFunction = null
+        callable $rowStyleFunction = null,
+        $rowNum = null
     ): void {
         $ws = $this->spreadsheet->getActiveSheet();
 
-        //Цикл по столбцам (полям таблицы)
+        // Цикл по столбцам (полям таблицы)
         $currentCol = $col;
 
-        $rowData = $fieldset->calcData($rowData, true);
         $hasTextField = false;
 
         foreach ($fieldset as $field) {
-            $value = $rowData[$field->key];
-            $this->writeCellDataByColumnAndRow($currentCol, $row, $value, $rowData, $field);
+            $value = $rowDataCalculated[$field->key] ?? '';
+            $this->writeCellDataByColumnAndRow($currentCol, $row, $value, $rowDataCalculated, $field);
             $currentCol++;
 
             $fieldType = $field->getType();
@@ -544,9 +567,13 @@ class XlsWriter
             }
         }
 
-        //Можем проставить цвет\стиль для всей строки
+        // Можем проставить цвет\стиль для всей строки
         if ($rowStyleFunction) {
-            $rowStyle = $rowStyleFunction($rowData, $row);
+            // Для $rowStyleFunction вторым параметром нужно передать номер строки в текущем массиве данных
+            // Это значение обычно приходит извне, но если оно не передано (null),
+            // то используем текущий номер строки в самом Excel ($row)
+            $rowNum = $rowNum ?? $row;
+            $rowStyle = $rowStyleFunction($rowDataCalculated, $rowNum);
             if ($rowStyle) {
                 $ws->getStyleByColumnAndRow($col, $row, count($fieldset) + $col - 1, $row)
                     ->applyFromArray($rowStyle);
@@ -564,24 +591,32 @@ class XlsWriter
      * @param int $col
      * @param int $row
      * @param $value
-     * @param array $rowData массив всех данных строки может пригодится при определении форматирования для данной ячейки
+     * @param array $rowDataCalculated массив всех данных строки может пригодится при определении форматирования для данной ячейки
      * @param F $field
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
-    public function writeCellDataByColumnAndRow(int $col, int $row, $value, array $rowData, F $field): void
+    public function writeCellDataByColumnAndRow(int $col, int $row, $value, array $rowDataCalculated, F $field): void
     {
         $columnLetter = Coordinate::stringFromColumnIndex($col);
         $coordinate = $columnLetter . $row;
 
-        $this->writeCellData($coordinate, $value, $rowData, $field);
+        $this->writeCellData($coordinate, $value, $rowDataCalculated, $field);
     }
 
-    public function writeCellData(string $coordinate, $value, array $rowData, F $field): void
+    /**
+     * @param string $coordinate
+     * @param $value
+     * @param array $rowDataCalulated
+     * @param F $field
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     */
+    public function writeCellData(string $coordinate, $value, array $rowDataCalulated, F $field): void
     {
         $ws = $this->spreadsheet->getActiveSheet();
 
         // Преобразуем данные преобразователем для Excel вывода
         // Здесь не нужно проверять наличие поля внутри $rowData - оно обязательно будет благодаря $fieldset->calcData($rowData, true);
-        $excelVal = $field->getExcel($value, $rowData);
+        $excelVal = $field->getExcel($value, $rowDataCalulated);
 
         //Записываем данные в ячейку
         $type = $field->getType();
@@ -646,7 +681,7 @@ class XlsWriter
 
         // Возможно, эту ячейку нужно как-то отдельно стилизовать? Првоерим параметр поля excelStyle
         // - там может быть готовый массив со стилями, либо функция, которую нужно вызвать, чтобы получить массив со стилями
-        $cellStyle = $field->getExcelStyle($value, $rowData);
+        $cellStyle = $field->getExcelStyle($value, $rowDataCalulated);
         if (is_array($cellStyle)) {
             $ws->getStyle($coordinate)->applyFromArray($cellStyle);
         }

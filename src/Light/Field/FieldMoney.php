@@ -22,6 +22,7 @@ class FieldMoney extends FieldFloat
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
+        $this->total = true;
         $this->tableWidthExcel = 14;
         $this->inputPattern = '-?[\d\s]+([.,]\d{1,2})?';
     }

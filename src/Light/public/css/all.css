@@ -752,6 +752,19 @@ ul.checkboxset {
     margin-bottom: 8px;
 }
 
+#mainmenu__logout {
+    margin-left: 5px;
+    color: gray;
+}
+
+#mainmenu__search {
+    display: block;
+    margin: 10px 5px 0 5px;
+    border-radius: 20px;
+    width: 155px;
+    padding: 5px;
+}
+
 .mainmenu__sectionhead {
     font-weight: bold;
     background: #dde7ee;
@@ -2067,6 +2080,15 @@ button.btn-floating {
     text-overflow: ellipsis;
 }
 
+.bad-line td {
+    color: #FFFFFF;
+    background-color: #ff514c;
+}
+
+.bad-line:hover td {
+    color: #000000;
+}
+
 /* статусы счетов */
 *[class^="invstatus"] {
     white-space: nowrap;
@@ -2326,6 +2348,12 @@ table.table > tbody > tr.deleted {
 
 table.table > tbody > tr.findid {
     background-color: #fff8b3;
+
+}
+
+table.table > tbody > tr.findid > td {
+    border-top: 1px solid green;
+    border-bottom: 1px solid green;
 }
 
 table.table > tbody > tr.selected {

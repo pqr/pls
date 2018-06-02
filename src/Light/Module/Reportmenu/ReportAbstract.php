@@ -146,8 +146,7 @@ abstract class ReportAbstract extends Table
             $fieldKey = "Month$m";
             $name = Config::$lang === 'ru' ? Misc::getRusMonthName($m) : date('M', mktime(0, 0, 0, $m));
             $params['name'] = $name;
-            $this->addField(F::create($fieldKey, $type, $params));
-            $this->_tableTotalRowCalcFieldsKeys[] = $fieldKey;
+            $this->addField(F::create($fieldKey, $type, $params + ['total' => true]));
         }
     }
 
@@ -162,12 +161,11 @@ abstract class ReportAbstract extends Table
             $weekEndDate = $this->getWeekEndDate($w, $year);
             $defaultParams = [
                 'name' => $w,
-                'title' => FieldDate::beautify($weekStartDate) . '-' . FieldDate::beautify($weekEndDate)
+                'title' => FieldDate::beautify($weekStartDate) . '-' . FieldDate::beautify($weekEndDate),
+                'total' => true,
             ];
             $fieldParams = array_merge($defaultParams, $params);
             $this->addField(F::create($fieldKey, $fieldType, $fieldParams));
-
-            $this->_tableTotalRowCalcFieldsKeys[] = $fieldKey;
         }
     }
 

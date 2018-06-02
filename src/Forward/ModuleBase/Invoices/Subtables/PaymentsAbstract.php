@@ -45,8 +45,7 @@ abstract class PaymentsAbstract extends Subtable
 
         );
 
-        $this->_tableTotalRowCalcFieldsKeys = ['ClearingAmountInInvoiceCurrency', 'ClearingAmountInPaymentCurrency'];
-        $this->_tableTotalRowData = ['Name' => 'Total'];
+        $this->tableTotal = ['Name' => 'Total'];
     }
 
     protected function getExcelFilename()

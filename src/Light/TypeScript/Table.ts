@@ -313,14 +313,14 @@ export class Table {
         });
     }
 
-    reload(data: ReloadParams = {}, callback?: () => void): JQueryXHR {
-        const newPage = myParseInt(data.page);
+    reload(reloadParams: ReloadParams = {}, callback?: () => void): JQueryXHR {
+        const newPage = myParseInt(reloadParams.page);
         if (newPage > 0) {
-            //При данном вызове метода realod меняется страница - сохраним в currentPage
+            // При данном вызове метода realod меняется страница - сохраним в currentPage
             this.currentPage = newPage;
         } else {
-            //Если же страница не была передана, то нужно взять из currentPage
-            data.page = this.currentPage;
+            // Если же страница не была передана, то нужно взять из currentPage
+            reloadParams.page = this.currentPage;
         }
 
         // Выполним ajax запрос к серверу, чтобы обновить таблицу
@@ -330,8 +330,27 @@ export class Table {
             this.currentReloadXhr.abort();
         }
 
+        // При передаче параметров на сервер, основным параметрам влияющим на таблицу дадим префикс с именем таблицы
+        const {fieldsShow, page, showall, sort, order, ...other} = reloadParams;
+        const postData: any = {...other};
+        if (typeof fieldsShow !== "undefined") {
+            postData[this.name + '_fieldsShow'] = fieldsShow;
+        }
+        if (typeof page !== "undefined") {
+            postData[this.name + '_page'] = page;
+        }
+        if (typeof page !== "undefined") {
+            postData[this.name + '_showall'] = showall;
+        }
+        if (typeof sort !== "undefined") {
+            postData[this.name + '_sort'] = sort;
+        }
+        if (typeof order !== "undefined") {
+            postData[this.name + '_order'] = order;
+        }
+
         // Запоминаем ссылку на текущий запрос обновления этой таблицы
-        this.currentReloadXhr = $.post(this.reloadUrl, data);
+        this.currentReloadXhr = $.post(this.reloadUrl, postData);
 
         // Запоминим выделенные галочками элементы, чтобы после перезагрузки таблицы вернуть выделение
         const selectedValues = this.getSelectedValues();

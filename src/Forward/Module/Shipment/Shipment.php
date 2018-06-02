@@ -67,17 +67,6 @@ class Shipment extends ModuleAbstract
 
     protected function initList()
     {
-        $this->_tableTotalRowCalcFieldsKeys = [
-            'CacheCSIncomeinUSD',
-            'CacheCSExpensesinUSD',
-            'CacheEGPinUSD',
-            'CacheIncomeinUSD',
-            'CacheExpensesinUSD',
-            'CacheGPinUSD',
-            'CacheGPDeviationinUSD',
-            'VAT12Amount',
-            'VAT18Amount',
-        ];
 
         $getSqlSelectInvoices = function ($firstLetter) {
             $firstLetterLower = strtolower($firstLetter);

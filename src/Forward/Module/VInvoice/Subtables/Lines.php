@@ -27,8 +27,7 @@ class Lines extends Subtable
         $this->folderNameFieldKey = 'FileNumber';
 
         $this->_tablePrintTotalRecordsFound = true;
-        $this->_tableTotalRowData = ['Name' => 'Total'];
-        $this->_tableTotalRowCalcFieldsKeys = ['Amount', 'VATAmount', 'FinalAmount'];
+        $this->tableTotal = ['Name' => 'Total'];
         $this->_copyOnAddFieldKeys = ['MAWBNumber', 'FileNumber', 'UOMID', 'VATPercent'];
 
         $this->_cacheFieldsKeys = ['MAWBNumber', 'FileNumber'];

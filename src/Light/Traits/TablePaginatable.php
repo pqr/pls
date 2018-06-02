@@ -2,21 +2,14 @@
 
 namespace Light\Traits;
 
-use Light\ApplicationAbstract;
 use Light\Config;
-use Light\Html;
-use Light\Msg;
+use Light\Table\TableUserParamsRepository;
 
-/**
- * @method getTableUserParam($name)
- * @method setTableUserParam($name, $value)
- * @property array $_tableData
- */
 trait TablePaginatable
 {
-    private $_page = 1;
-    private $_showAll = false; //показывать все записи на одной странице?
-    private $_tableTotalRecordsFound; //общее кол-во строк на всех страницах
+    private $tablePage = 1;
+    private $tableShowAll = false; //показывать все записи на одной странице?
+    private $tableTotalRecordsFound; //общее кол-во строк на всех страницах
 
     protected $defaultRowsPerPage = 50;
     protected $maxRowsPerPage = 1000;
@@ -25,21 +18,41 @@ trait TablePaginatable
 
     protected function initPaginatable()
     {
-        if ($this->allowPagination) {
-
-            //Проверим параметр showall, который также мог прийти в REQUSET, сохраним его в базу
-            if (isset($_REQUEST['showall'])) {
-                $this->setTableUserParam('ShowAll', (int)$_REQUEST['showall']);
-            }
-
-            //Применим параметр ShowAll к текущему объекту
-            $this->_showAll = (bool)$this->getTableUserParam('ShowAll');
-
-            //Прореверим, был ли передан номер страницы или номер записи с которой начать вывод
-            if (isset($_POST['page'])) {
-                $this->setTablePage($_POST['page']);
-            }
+        if (!$this->allowPagination) {
+            return;
         }
+
+        // Проинициализируем флаг $this->tableShowAll
+        $this->initShowAll();
+
+        // Прореверим, был ли передан номер страницы или номер записи с которой начать вывод
+        $requestKey = $this->getTableName() . '_page';
+        if (isset($_REQUEST[$requestKey])) {
+            $this->setTablePage($_REQUEST[$requestKey]);
+        }
+    }
+
+    private function initShowAll()
+    {
+        /** @var TableUserParamsRepository $tableUserParams */
+        // Отдельный объект, которых заведует сохранением настроек в базу для данного пользователя
+        $tableUserParams = $this->tableUserParams;
+
+        $requestKey = $this->getTableName() . '_showall';
+        if (isset($_REQUEST[$requestKey])) {
+            // От браузера пришли какие-то новые настройки для таблицы - используем их!
+            $newShowAllFromRequest = (bool)$_REQUEST[$requestKey];
+            // Применим пришедшие настроки к текущей таблице
+            $this->tableShowAll = $newShowAllFromRequest;
+            // Также сохраним эти настройки в настройки пользователя
+            $tableUserParams->saveShowAll($newShowAllFromRequest);
+
+            return;
+        }
+
+        // Если из браузера не поступало никаких сигналов об изменении настройки showall,
+        // то загрузим из настроек пользователя из базы
+        $this->tableShowAll = $tableUserParams->loadShowAll();
     }
 
     protected function getTablePagesHtml()
@@ -57,8 +70,8 @@ trait TablePaginatable
         $pages = [];
 
         //Если это не первая страница, вывести ссылку на предыдущую
-        if ($this->_page != 1) {
-            $pages[] = ['text' => '◀', 'num' => $this->_page - 1];
+        if ($this->tablePage != 1) {
+            $pages[] = ['text' => '◀', 'num' => $this->tablePage - 1];
         }
 
         $pagesToShow = 9;
@@ -66,7 +79,7 @@ trait TablePaginatable
             //Страниц больше, чем положено выводить в линейку в блоке Pages
             //Поэтмоу разбиваем...
             //Весь интервал $pagesToShow делится пополам. Слева от $currentPage выводится половина и справа выводится половина
-            $startPage = $this->_page - floor($pagesToShow / 2);
+            $startPage = $this->tablePage - floor($pagesToShow / 2);
             if ($startPage < 1) {
                 $startPage = 1;
             }
@@ -89,7 +102,7 @@ trait TablePaginatable
             for ($i = $startPage; $i <= $endPage; $i++) {
 
                 $page = ['text' => $i, 'num' => $i];
-                if ($i == $this->_page) {
+                if ($i == $this->tablePage) {
                     $page['active'] = true;
                 }
 
@@ -111,7 +124,7 @@ trait TablePaginatable
             for ($i = 1; $i <= $pagesCount; $i++) {
 
                 $page = ['text' => $i, 'num' => $i];
-                if ($i == $this->_page) {
+                if ($i == $this->tablePage) {
                     $page['active'] = true;
                 }
 
@@ -120,8 +133,8 @@ trait TablePaginatable
         }
 
         //Выведем ссылку на следующую страницу Next
-        if ($this->_page != $pagesCount) {
-            $pages[] = ['text' => '▶', 'num' => $this->_page + 1];
+        if ($this->tablePage != $pagesCount) {
+            $pages[] = ['text' => '▶', 'num' => $this->tablePage + 1];
         }
 
         $outHtml = '<span class="table-pagination"><span class="table-pages">';
@@ -148,16 +161,16 @@ trait TablePaginatable
      */
     protected function getTableTotalRecordsFound()
     {
-        if ($this->_tableTotalRecordsFound === null) {
-            $this->_tableTotalRecordsFound = $this->getTableDataCount();
+        if ($this->tableTotalRecordsFound === null) {
+            $this->tableTotalRecordsFound = $this->getTableDataCount();
         }
 
-        return $this->_tableTotalRecordsFound;
+        return $this->tableTotalRecordsFound;
     }
 
     protected function setTableTotalRecordsFound($totalRows)
     {
-        $this->_tableTotalRecordsFound = $totalRows;
+        $this->tableTotalRecordsFound = $totalRows;
     }
 
     /**
@@ -171,20 +184,20 @@ trait TablePaginatable
 
     public function getTablePage()
     {
-        return $this->_page;
+        return $this->tablePage;
     }
 
     protected function setTablePage($page)
     {
-        $this->_page = (int)$page;
-        if ($this->_page < 1) {
-            $this->_page = 1;
+        $this->tablePage = (int)$page;
+        if ($this->tablePage < 1) {
+            $this->tablePage = 1;
         }
     }
 
     protected function getTableRowsPerPage()
     {
-        return $this->_showAll ? $this->maxRowsPerPage : $this->defaultRowsPerPage;
+        return $this->tableShowAll ? $this->maxRowsPerPage : $this->defaultRowsPerPage;
     }
 
     /**
@@ -197,7 +210,7 @@ trait TablePaginatable
             return '';
         }
 
-        if ($this->_showAll) {
+        if ($this->tableShowAll) {
             //Находимся в режиме "вывести все строки"
             //Выведем ссылку на постраничный просмотр
             $linkText = Config::$lang === 'ru' ? "Показать {$this->defaultRowsPerPage} на страницу" : "Show {$this->defaultRowsPerPage} per page";
@@ -217,7 +230,7 @@ trait TablePaginatable
 
     protected function getShowAllWarning()
     {
-        if ($this->allowPagination && $this->_showAll && $this->getTableDataCount() > $this->defaultRowsPerPage) {
+        if ($this->allowPagination && $this->tableShowAll && $this->getTableDataCount() > $this->defaultRowsPerPage) {
             $msg = Config::$lang === 'ru'
                 ? "Вы просматриваете таблицу в режиме \"{$this->maxRowsPerPage} записей на страницу\" - страницы могут загружаться медленно!
                 Скорее всего, вам и не нужно столько записей на одном экране, сложно смотреть одновременно на {$this->maxRowsPerPage} строк в таблице и понимать смысл происходящего.

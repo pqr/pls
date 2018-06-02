@@ -76,8 +76,7 @@ abstract class ApplicationAbstract
                     if ($testToken !== $_SESSION['csrf_token']) {
                         if (Config::$rollbar) {
                             //Создаём Exception и отправяем его в логи rollbar - таким образом в логах будет backtrace!
-                            Rollbar
-                                ::log(Level::ERROR, new \Exception('wrong csrf token'));
+                            Rollbar::log(Level::ERROR, new \Exception('wrong csrf token'));
                         } else {
                             die('wrong csrf token');
                         }

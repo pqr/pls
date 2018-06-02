@@ -34,6 +34,12 @@ trait TableExcelExportable
         return $maxRows ?: 30000;
     }
 
+    /**
+     * @param $sheetname
+     * @return XlsWriter
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     */
     protected function getXlsWriter($sheetname)
     {
         $xls = new XlsWriter();
@@ -47,10 +53,14 @@ trait TableExcelExportable
             ->setFitToWidth(1)
             ->setFitToHeight(0);
 
+        $dataCalculated = $this->getTableDataCalculated();
+        $dataTotal = $this->getTableTotal($dataCalculated);
+
         $xls->writeTableData(
             1,
             1,
-            $this->getTableData(),
+            $dataCalculated,
+            $dataTotal,
             $this->getFieldsetShowed(),
             function (array $rowData, $rowNum) {
                 return $this->getTableRowDataExcelParams($rowData, $rowNum);
@@ -61,6 +71,13 @@ trait TableExcelExportable
         return $xls;
     }
 
+    /**
+     * @param null $filename
+     * @param null $sheetname
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
     public function sendExcel($filename = null, $sheetname = null)
     {
         $timer = new Timer();
@@ -86,6 +103,13 @@ trait TableExcelExportable
         Metric::record(Request::getModule() . $act . $this->getTableName(), $timer->getMs(), $payload);
     }
 
+    /**
+     * @param null $filename
+     * @param null $sheetname
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
     public function saveExcel($filename = null, $sheetname = null)
     {
         list($filename, $sheetname) = $this->normalizeFilenameSheetname($filename, $sheetname);
@@ -133,11 +157,11 @@ trait TableExcelExportable
     {
         $out = [];
         if (isset($rowData['IsSeparator'])) {
-            $out += XlsWriter::$rowSeparatorStyle;
+            $out += XlsWriter::STYLE_SEPARATOR;
         }
 
         if (isset($rowData['IsTotal']) || $rowNum === 'total') {
-            $out += XlsWriter::$rowTotalStyle;
+            $out += XlsWriter::STYLE_TOTAL;
         }
         return $out;
     }

@@ -46,7 +46,7 @@ class PaymentInvoiceFields
                 'modes' => F::MODE_READONLY,
                 'name' => 'Invoice Amount',
                 'getHtmlFunction' => function ($value, array $data, $outHtml) {
-                    if ($value) {
+                    if (isset($data['InvoiceCurrencyISO']) && $value) {
                         $outHtml = '<span class="nobr">' . $outHtml . ' ' . $data['InvoiceCurrencyISO'] . '</span>';
                     }
 

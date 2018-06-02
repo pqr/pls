@@ -1967,6 +1967,12 @@ abstract class ModuleAbstract extends Table
     {
     }
 
+    /**
+     * @throws \Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
     protected function proceedList()
     {
         if (isset($_GET['loadTableLayoutSettings'])) {
@@ -1986,7 +1992,7 @@ abstract class ModuleAbstract extends Table
             Response::redirectUrl($_SERVER['REQUEST_URI']);
         }
 
-        //Правильно определим переменную _state
+        // Правильно определим переменную _state
         if ($this->allowExportToExcel && Request::isXls()) {
             $this->_state = self::STATE_LIST_EXCEL;
         } else {
@@ -1997,11 +2003,63 @@ abstract class ModuleAbstract extends Table
         // Этот параметр также определяем модуль для перехода при двойном клике
         $this->tableLinkModule = $this->tableLinkModule ?: $this->getModule();
 
-        $this->initCssJs();
+        if ($this->isStateListExcel() || Request::isAjax()) {
 
-        //Регистрируем массовые действия - метод initMassactions должен быть переопределён в классе потомке
+            $this->renderListTable();
+            return;
+
+        }
+
+        // При первоначальном рендеринге не загружаем данные
+        // Данные появятся на экране пользователя в результате ajax запроса, который произойдёт сразу после загрузки
+        // страницы
+        $this->renderListInitialPage();
+
+    }
+
+    /**
+     * При первоначальном заходе на страницу ?a=<module> мы рендерим фильтры, но не выводим содерижмое таблицы
+     * (даже не загружаем данные этой таблицы).
+     *
+     * Таблица будет загружена отдельным ajax запросом (см. renderListTable())
+     * @throws \Exception
+     */
+    protected function renderListInitialPage()
+    {
+        $moduleName = ModuleRegister::getModuleName($this->getModule());
+        Response::setPageHeadHtml('<strong>' . $moduleName . '</strong>');
+        Response::setPageTitle($moduleName);
+
+        $this->initCssJs();
+        // $this->initList();
+        $this->initListJsData();
+        $this->initListIntro();
+        $this->initListFlash();
+
+        //Это обычный запрос на рендринг таблицы в режиме List
+        $tdata = [
+            'table' => $this->getHtmlTableDivWrapper() . '</div>',
+            'buttons' => $this->getListButtons(),
+            'badgeMessagess' => $this->getListBadgeMessagess(),
+            'filters' => $this->getFiltersHtml()
+        ];
+
+        Template::includeTpl('module/list.tpl.php', $tdata);
+    }
+
+    /**
+     * Этот метод вызывается либо при рендеринге html вида таблицы с помощью ajax запроса от бразуера
+     * либо пре экспорте таблицы в Excel
+     *
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
+    protected function renderListTable()
+    {
+        // Регистрируем массовые действия - метод initMassactions должен быть переопределён в классе потомке
         $this->initMassactions();
-        //Добавляем опции печати
+        // Добавляем опции печати (они также отображаются в массовых действиях)
         $this->initPrintForms();
         if ($this->printForms) {
             // Если в классе потомке были добавлены какие-то опции печати, то добавим massaction действие
@@ -2010,20 +2068,18 @@ abstract class ModuleAbstract extends Table
             $this->addMassaction('Print', 'Печать (выбрать форму...)', '', 'Печать');
         }
 
-        //Если у пользователя нет прав на редактирование в этом модуле - нужно закрыть для редактирования все поля
-        //Это особо актуально для полей с ajax редактированием, чтобы они не рендрились в таблицу как редактируемые
+        // Если у пользователя нет прав на редактирование в этом модуле - нужно закрыть для редактирования все поля
+        // Это особо актуально для полей с ajax редактированием, чтобы они не рендрились в таблицу как редактируемые
         if (!$this->allowEdit || !User::hasWriteAccess()) {
             $this->disableAllFieldsEdit();
         }
-        //Регистрирует поля типа Folder, Checkbox, Del, ...
+
+        // Регистрирует поля типа Folder, Checkbox, Del, ...
         $this->initTableFieldsAdditional();
-        //Добавим поля, которые объявлены как кеширующие в подтаблицах
+        // Добавим поля, которые объявлены как кеширующие в подтаблицах
         $this->initFieldsFromSubtables();
 
-        $this->initSortable();
-        $this->initLayoutable();
-
-        if ($this->_state != self::STATE_LIST_EXCEL) {
+        if (!$this->isStateListExcel()) {
             // Инициализируем пажинацию, только если это не экспорт в Excel
             $this->initPaginatable();
 
@@ -2035,43 +2091,19 @@ abstract class ModuleAbstract extends Table
             }
         }
 
+        $this->initSortable();
+        $this->initLayoutable();
+
         // Метод initList() переопределяется в классх потоках - там добавляются поля необходимые только для режима List
         $this->initList();
 
+        // При запросе Excel файла или при ajax запросе - загружаем данные таблицы для режима List и выводим в бразуер
+        $this->tableLoadData();
+
         if ($this->isStateListExcel()) {
-
-            //Запрос через кнопку Export to Excel
-            $this->tableLoadData();
             $this->sendExcel();
-
-        } elseif (Request::isAjax()) {
-
-            $this->tableLoadData();
-            print $this->getHtmlTableForAjax();
-
         } else {
-
-            // При первоначальном рендеринге не загружаем данные
-            // Данные появятся на экране пользователя в результате ajax запроса, который произойдёт сразу после загрузки
-            // страницы
-
-            $moduleName = ModuleRegister::getModuleName($this->getModule());
-            Response::setPageHeadHtml('<strong>' . $moduleName . '</strong>');
-            Response::setPageTitle($moduleName);
-
-            $this->initListJsData();
-            $this->initListIntro();
-            $this->initListFlash();
-
-            //Это обычный запрос на рендринг таблицы в режиме List
-            $tdata = [
-                'table' => $this->getHtmlTableDivWrapper() . '</div>',
-                'buttons' => $this->getListButtons(),
-                'badgeMessagess' => $this->getListBadgeMessagess(),
-                'filters' => $this->getFiltersHtml()
-            ];
-
-            Template::includeTpl('module/list.tpl.php', $tdata);
+            print $this->getHtmlTableForAjax();
         }
     }
 
@@ -2081,7 +2113,6 @@ abstract class ModuleAbstract extends Table
             'state' => 'list',
             'listInitialFindid' => $this->getTableFindIdFromRequest(),
             'listInitialPage' => $this->getTablePage(),
-            'tableTotalRowCalcFieldsKeys' => $this->_tableTotalRowCalcFieldsKeys,
         ]);
     }
 

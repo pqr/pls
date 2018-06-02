@@ -63,6 +63,12 @@ table.table > tbody > tr.deleted {
 
 table.table > tbody > tr.findid {
     background-color: #fff8b3;
+
+}
+
+table.table > tbody > tr.findid > td {
+    border-top: 1px solid green;
+    border-bottom: 1px solid green;
 }
 
 table.table > tbody > tr.selected {

@@ -13,88 +13,80 @@ class ModuleRegister
         'Home' => [
             'name' => 'Home',
             'order' => -1,
-            'hidden' => false,
             'section' => ''
         ],
         'Reportmenu' => [
             'name' => 'Reports',
             'order' => 80,
-            'hidden' => false,
             'section' => ''
         ],
         'Currency' => [
             'name' => 'Currency',
             'order' => 90,
-            'hidden' => false,
             'section' => 'Currency'
         ],
         'CurrencyRate' => [
             'name' => 'Currency Rates',
             'order' => 91,
-            'hidden' => false,
             'section' => 'Currency'
         ],
         'UserModule' => [
             'name' => 'Users',
             'order' => 100,
-            'hidden' => false,
             'section' => 'User Management'
         ],
         'ProductionCalendar' => [
             'name' => 'Производств.календарь',
             'order' => 102,
-            'hidden' => false,
             'section' => 'System'
         ],
         'Logviewer' => [
             'name' => 'Logs',
             'order' => 103,
-            'hidden' => false,
             'section' => 'System'
         ],
         'Deleted' => [
             'name' => 'Deleted',
             'order' => 105,
-            'hidden' => false,
             'section' => 'System'
         ],
         'Autolaunch' => [
             'name' => 'Autolaunch',
             'order' => 106,
-            'hidden' => false,
             'section' => 'System'
         ],
         'EmailQueueModule' => [
             'name' => 'Email Queue',
             'order' => 107,
-            'hidden' => false,
             'section' => 'System'
         ],
         'EmailLogModule' => [
             'name' => 'Email Log',
             'order' => 108,
-            'hidden' => false,
             'section' => 'System'
         ],
         'ColorHint' => [
             'name' => 'Color Hints',
             'order' => 109,
-            'hidden' => false,
             'section' => 'System'
         ],
         'FiltersLog' => [
             'name' => 'Filters Log',
             'order' => 111,
-            'hidden' => false,
             'section' => 'System'
         ],
         'Phpinfo' => [
             'name' => 'PHP Info',
             'order' => 112,
-            'hidden' => false,
             'section' => 'System'
         ]
     ];
+
+    private static $titles = [];
+
+    private static $hiddenModules = [];
+
+    private static $withBadges = [];
 
     private static $defaultModule = 'Home';
 
@@ -124,7 +116,7 @@ class ModuleRegister
         return array_filter(
             self::getModulesKeys(),
             function ($module) {
-                return !self::$modules[$module]['hidden'];
+                return !isset(self::$hiddenModules[$module]);
             }
         );
     }
@@ -144,6 +136,11 @@ class ModuleRegister
         return self::$modules[$module]['name'] ?? '';
     }
 
+    public static function getModuleTitle(string $module): string
+    {
+        return self::$titles[$module] ?? '';
+    }
+
     public static function getModuleSection(string $module): string
     {
         return self::$modules[$module]['section'] ?? '';
@@ -157,10 +154,21 @@ class ModuleRegister
         self::$modules[$module] = [
             'name' => $name,
             'section' => $section,
-            'order' => $autoorder,
-            'hidden' => $binOptions & self::MODULE_HIDDEN,
-            'badge' => $binOptions & self::MODULE_HASBADGE
+            'order' => $autoorder
         ];
+
+        if ($binOptions & self::MODULE_HIDDEN) {
+            self::$hiddenModules[$module] = true;
+        }
+
+        if ($binOptions & self::MODULE_HASBADGE) {
+            self::$withBadges[$module] = true;
+        }
+    }
+
+    public static function setTitle(string $module, string $title)
+    {
+        self::$titles[$module] = $title;
     }
 
     public static function removeModule(string $modue)
@@ -170,7 +178,7 @@ class ModuleRegister
 
     public static function hasBadge(string $module): bool
     {
-        return isset(self::$modules[$module]['badge']) && self::$modules[$module]['badge'];
+        return isset(self::$withBadges[$module]);
     }
 
     public static function getModuleClass(string $module): string

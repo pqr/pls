@@ -1,0 +1,136 @@
+<?php
+
+
+namespace Light\Table;
+
+
+use Light\Db;
+
+class TableUserParamsRepository
+{
+    private $tableNameForSettings;
+    private $userId;
+
+    private $isLoaded;
+
+    // Кеширующие поля
+    private $sortFieldKey = '';
+    private $sortOrder = '';
+    private $fieldsShow = '';
+    private $showAll = false;
+
+    public function __construct(string $tableNameForSettings, int $userId)
+    {
+        $this->tableNameForSettings = $tableNameForSettings;
+        $this->userId = $userId;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function loadSortFieldKey()
+    {
+        $this->lazyLoadTableUserParams();
+        return $this->sortFieldKey;
+    }
+
+    /**
+     * @param mixed $sortFieldKey
+     */
+    public function saveSortFieldKey(string $sortFieldKey): void
+    {
+        $this->sortFieldKey = $sortFieldKey;
+        $this->saveToDb('SortFieldKey', $sortFieldKey);
+    }
+
+
+    /**
+     * @return string
+     */
+    public function loadSortOrder(): string
+    {
+        $this->lazyLoadTableUserParams();
+        return $this->sortOrder;
+    }
+
+    /**
+     * @param string $sortOrder
+     */
+    public function saveSortOrder(string $sortOrder): void
+    {
+        $this->sortOrder = $sortOrder;
+        $this->saveToDb('SortOrder', $sortOrder);
+    }
+
+    /**
+     * @return string
+     */
+    public function loadFieldsShow(): string
+    {
+        $this->lazyLoadTableUserParams();
+        return $this->fieldsShow;
+    }
+
+    /**
+     * @param string $fieldsShow
+     */
+    public function saveFieldsShow(string $fieldsShow): void
+    {
+        $this->fieldsShow = $fieldsShow;
+        $this->saveToDb('FieldsShow', $fieldsShow);
+    }
+
+    /**
+     * @return bool
+     */
+    public function loadShowAll(): bool
+    {
+        $this->lazyLoadTableUserParams();
+        return $this->showAll;
+    }
+
+    /**
+     * @param bool $showAll
+     */
+    public function saveShowAll(bool $showAll): void
+    {
+        $this->showAll = $showAll;
+        $this->saveToDb('ShowAll', $showAll ? 1 : 0);
+    }
+
+    private function lazyLoadTableUserParams()
+    {
+        if (!$this->isLoaded) {
+            $params = Db::getRow(
+                "SELECT SortFieldKey, SortOrder, FieldsShow, ShowAll 
+                 FROM user_tableparam
+                 WHERE TableName = @s AND CreatedBy = @i"
+                , $this->tableNameForSettings
+                , $this->userId
+            );
+            if ($params) {
+                $this->sortFieldKey = (string)$params['SortFieldKey'];
+                $this->sortOrder = (string)$params['SortOrder'];
+                $this->fieldsShow = (string)$params['FieldsShow'];
+                $this->showAll = (string)$params['ShowAll'];
+            }
+        }
+    }
+
+    private function saveToDb(string $paramName, string $value)
+    {
+        $query = "INSERT INTO user_tableparam (
+                      CreatedBy,
+                      TableName,
+                      $paramName
+                  ) VALUES (
+                         $this->userId
+                      , '" . Db::esc($this->tableNameForSettings) . "'
+                      , '" . Db::esc($value) . "'
+
+                  ) ON DUPLICATE KEY UPDATE $paramName = VALUES($paramName)";
+
+        Db::query($query);
+    }
+
+}

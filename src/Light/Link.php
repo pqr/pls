@@ -35,12 +35,22 @@ class Link
         $blank = false
     ) {
         if ($filterValues) {
-            $urlParams = $urlParams ?? [];
             $filterValuesUrlParam = self::filterValuesUlrParam($filterValues);
+            $urlParams = $urlParams ?? [];
             $urlParams = self::mergeUrlParams($urlParams, $filterValuesUrlParam);
         }
 
         return self::module($innerHtml, $urlParams, $module, $title, $tagParams, $blank);
+    }
+
+    public static function moduleListBlank($innerHtml,
+        $filterValues = null,
+        $urlParams = null,
+        $module = null,
+        $title = null,
+        $tagParams = null)
+    {
+        return self::moduleList($innerHtml, $filterValues, $urlParams, $module, $title, $tagParams, true);
     }
 
     public static function moduleView(

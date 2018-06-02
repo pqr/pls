@@ -10,14 +10,13 @@ use Light\Currency;
 use Light\Db;
 use Light\DbLog;
 use Light\Field\FieldDate;
-use Light\File;
 use Light\FilesFolder;
 use Light\Metric;
 use Light\Misc;
 use Light\ModuleRegister;
 use Light\Request;
 use Light\Response;
-use Light\Table;
+use Light\Table\TableUserParamsRepository;
 use Light\Traits\TableLayoutable;
 use Light\User;
 
@@ -202,8 +201,9 @@ class Core
     public static function proceedSetTableUserParams()
     {
         if (isset($_POST['table'], $_POST['sortFieldKey'], $_POST['sortOrder'])) {
-            Table::writeDbUserTableParam($_POST['table'], 'SortFieldKey', $_POST['sortFieldKey']);
-            Table::writeDbUserTableParam($_POST['table'], 'SortOrder', $_POST['sortOrder']);
+            $tableUserParams = new TableUserParamsRepository($_POST['table'], User::getId());
+            $tableUserParams->saveSortFieldKey($_POST['sortFieldKey']);
+            $tableUserParams->saveSortOrder($_POST['sortOrder']);
         }
     }
 
@@ -226,7 +226,6 @@ class Core
         if (!$history) {
             $msg = Config::$lang === 'ru' ? 'История фильтров пуста' : 'History is empty';
             print $msg;
-            ApplicationAbstract::terminate();
             return;
         }
 
@@ -246,7 +245,6 @@ class Core
         $html .= '</ul>';
 
         print $html;
-        ApplicationAbstract::terminate();
     }
 
     public static function proceedFiltersSaveLikeReset()
@@ -285,8 +283,6 @@ class Core
             : 'Saved as default';
 
         Response::sendToast('success', $msg);
-
-        ApplicationAbstract::terminate();
     }
 
     public static function proceedFiltersGetSavedHtml()
@@ -337,7 +333,6 @@ class Core
         }
 
         print $html;
-        ApplicationAbstract::terminate();
     }
 
     public static function proceedFiltersSave()
@@ -436,15 +431,13 @@ class Core
             ? "Настройки фильтров сохранены"
             : "Filters layout saved";
         Response::sendToast('success', $msg);
-
-        ApplicationAbstract::terminate();
     }
 
     public static function proceedUploadUserAvatar()
     {
         if (!isset($_FILES['avatar']['tmp_name'])) {
-            print json_encode(['error' => true, 'text' => 'Произошла внутренняя ошибка']);
-            ApplicationAbstract::terminate();
+            Response::json(['error' => true, 'text' => 'Произошла внутренняя ошибка'], 500);
+            return;
         }
 
         $tmpFileName = $_FILES['avatar']['tmp_name'];
@@ -466,8 +459,8 @@ class Core
         }
 
         if (!$image) {
-            print json_encode(['error' => true, 'text' => 'Не опознано расширение']);
-            ApplicationAbstract::terminate();
+            Response::json(['error' => true, 'text' => 'Не опознано расширение'], 500);
+            return;
         }
 
         $relativePath = FilesFolder::getModuleRelative('User', User::getId());
@@ -489,10 +482,6 @@ class Core
         imagejpeg($avatar, $avatarFileAbs, 90);
 
         Response::json(['success' => true]);
-
-        ApplicationAbstract::terminate();
-
-        //echo json_encode(['imgUrl' => "i/employees/users/$userId.jpg" . "?" . filemtime($photoFile)]);
     }
 
     public static function proceedGetUserAvatar()
@@ -548,10 +537,9 @@ class Core
     {
         if (!isset($_GET['from']) || !isset($_GET['to']) || !isset($_GET['date'])) {
             Response::abort(400, 'Not enought GET parameters');
-            ApplicationAbstract::terminate();
+            return;
         }
 
         print Currency::getRate($_GET['from'], $_GET['to'], FieldDate::parse($_GET['date']));
-        ApplicationAbstract::terminate();
     }
 }

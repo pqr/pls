@@ -160,9 +160,9 @@ class Deleted extends ModuleAbstract
         return $insertId;
     }
 
-    protected function getTableRowCssClass(array $rowData, int $rowNum): string
+    protected function getTableRowCssClass(array $rowDataCalculated, int $rowNum): string
     {
-        if ($rowData['Restored']) {
+        if ($rowDataCalculated['Restored']) {
             return 'completed-tr';
         }
         return '';

@@ -30,8 +30,6 @@ class Cargo extends Subtable
 
         );
 
-        $this->setTableTotalRowCalcFieldsKeys(['Pieces', 'Volume']);
-
         $this->_obj->setDescriptionFunction(function(ObjAbstract $obj, $originalDescriptionHtml) {
 
             return $obj->getFieldHtml('Length')

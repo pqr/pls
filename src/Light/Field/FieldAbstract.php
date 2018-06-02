@@ -14,6 +14,7 @@ use Light\Html;
  * @method $this setModes(int $bitmap)
  * @method $this setDefault(string $value)
  * @method $this setUom(string $value)
+ * @method $this setTotal(bool $total)
  * @method $this setTableWidthExcel(int $value)
  * @method $this setTableWidthHtml(int $value)
  * @method $this setTableOrderBy($sqlFieldKey)
@@ -67,6 +68,7 @@ use Light\Html;
  * @method string getDefault()
  * @method int getTableWidthExcel()
  * @method int getTableWidthHtml()
+ * @method bool getTotal()
  * @method string getTableOrderBy()
  * @method string getTableOrderByLikeFilter()
  * @method string getEditId()
@@ -205,6 +207,11 @@ abstract class FieldAbstract
      * @var string единици измерения, в режиме таблицы будут добавлены в заголовок, в режиме view/edit после поля
      */
     public $uom;
+
+    /**
+     * @var bool нужно ли в таблице подсчитывать поэтому полю total в столбик?
+     */
+    public $total = false;
 
     /**
      * @var int Ширина колонки при отображении поля в таблице в Excel режиме
@@ -438,13 +445,6 @@ abstract class FieldAbstract
     public $acResultFormatterJsFunction;
     public $acOnSelectJsFunction;
     public $acFormatValueOnSaveFunction;
-
-    /**
-     * @var bool отображать ли колонку в таблице для динамического скрытия и отображения на стороне клиента
-     * Делаем эту колонку public, чтобы обеспечить быстрый доступ на чтение при рендринге таблицы
-     */
-    public $showInTable = true;
-
 
     /**
      * @var bool для подтаблиц - отображать ли ссылку "изменить все" в режиме редактирования подтаблицы

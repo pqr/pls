@@ -53,92 +53,88 @@ function updateMassactionDiv() {
     $massactionDiv.addClass("sticky");
     $countSpan.html(` (${selectedCount})`);
 
-    const tableTotalRowCalcFieldsKeys = getPageParam("tableTotalRowCalcFieldsKeys");
-    if (tableTotalRowCalcFieldsKeys && tableTotalRowCalcFieldsKeys.length) {
-        // Для этой таблицы заданы какие-то колонки по которым считается total
-        // в случае выделения строк галочками нужно пересчитать total и вывести его в massaction div
-        const $thead = listTable.getTableNode().find("thead");
-        tableTotalRowCalcFieldsKeys.forEach((fieldKey: string) => {
-            const $th = $thead.find(`th[data-fieldkey="${fieldKey}"]`);
-            if ($th.length) {
-                // Узнаем порядковый номер колонки, чтобы далее прочитать все значения
-                // в выделенных строках
-                const colIndex = $thead.find("th").index($th);
+    // Некоторые колонки могут быть отмечены атрибутом data-total="true"
+    // по ним посчитаем сумму по выделенным галочками
+    const $thead = listTable.getTableNode().find("thead");
+    $thead.find("th[data-total]").each(function(this:HTMLTableHeaderCellElement) {
+        const $th = $(this);
+        // Узнаем порядковый номер колонки, чтобы далее прочитать все значения
+        // в выделенных строках
+        const colIndex = $thead.find("th").index($th);
 
-                // Обычно для подсчёта используются колонки типа суммы
-                // Иногда это сумма с валютой
-                // Сразу заготовим Map с разбивкой по валютам. Если в данной колонке нет валют
-                // то в итоге получим Map из одного элемента (ключём будет пустая валюта - пустая строка)
-                const totalPerCurrency = new Map<string, number>();
+        // Обычно для подсчёта используются колонки типа суммы
+        // Иногда это сумма с валютой
+        // Сразу заготовим Map с разбивкой по валютам. Если в данной колонке нет валют
+        // то в итоге получим Map из одного элемента (ключём будет пустая валюта - пустая строка)
+        const totalPerCurrency = new Map<string, number>();
 
-                // Пройдём по всем выделенным строкам
-                listTable.getSelectedRows().each((_, tr) => {
-                    const tdHtml = $(tr)
-                        .find("td")
-                        .eq(colIndex)
-                        .html();
+        // Пройдём по всем выделенным строкам
+        listTable.getSelectedRows().each((_, tr) => {
+            const tdHtml = $(tr)
+                .find("td")
+                .eq(colIndex)
+                .html();
 
-                    // HTML код внутри ячейки может содержать <br>
-                    // это значит несколько сумм в режиме groupconcat
-                    // разобьём на элементарные строки
-                    tdHtml.split("<br>").forEach((oneLineHtml: string) => {
-                        // Вырежем все теги (которые обычно оформляют суммы)
-                        const text = $(oneLineHtml).text();
+            // HTML код внутри ячейки может содержать <br>
+            // это значит несколько сумм в режиме groupconcat
+            // разобьём на элементарные строки
+            tdHtml.split("<br>").forEach((oneLineHtml: string) => {
+                // Вырежем все теги (которые обычно оформляют суммы)
+                const text = $(oneLineHtml).text();
 
-                        // Попробуем распарсить текст, возможно там какие суммы с валютами?
-                        // Например "123 456.78 USD" или "1 234.00 $"
-                        // По умолчанию примим валюту пустой
-                        let currencyIso: string = "";
-                        const parts = text.split(" ");
-                        // Прововерим последнюю часть массива после разбивки по пробелам - там может быть реальная валюта
-                        if (!$.isNumeric(parts[parts.length - 1])) {
-                            // Нашли валюту в конце числа, вынимаем валюту из массива частей
-                            currencyIso = parts.pop()!;
-                        }
-                        // Оставшиеся части после изъятия валюты склеиваем обратно
-                        const amount = myParseFloat(parts.join(""));
-                        if (!totalPerCurrency.has(currencyIso)) {
-                            // Нашли какую-то новую валюту, которая не встречалась ранее
-                            totalPerCurrency.set(currencyIso, amount);
-                        } else {
-                            // Эта валюта уже есть в Map totalPerCurrency, прибавляем текующую сумму amount
-                            totalPerCurrency.set(currencyIso, totalPerCurrency.get(currencyIso)! + amount);
-                        }
-                    });
-                });
-
-                // После того как прошлись по всем строкам и собрали результат в totalPerCurrency
-                // выведем этот результат в massaction div
-
-                let perCurrencyBeautyAmounts: string[] = [];
-                totalPerCurrency.forEach((total: number, currencyIso: string) => {
-                    if (total != 0) {
-                        perCurrencyBeautyAmounts.push(getBeautyMoney(total, true, currencyIso));
-                    }
-                });
-                if (perCurrencyBeautyAmounts.length > 0) {
-                    // Имя поля возьмём из th, чтобы вывести внизу в massaction div
-                    const fieldName = $th
-                        .html()
-                        .replace(/<br>/g, " ")
-                        .replace(/<\/?[^>]+>/gi, "")
-                        .replace("▼", "")
-                        .replace("▲", "")
-                        .trim();
-
-                    const $totalSpan = $(`<div class="listmassaction__total"></div>`).append(
-                        `<div class="listmassaction__totalfieldname"><strong>${fieldName}:&nbsp;</strong></div>`
-                    );
-                    // Склеиваем все суммы по валютам через запятую и доавляем в текущий $totalSpan
-                    const amountsHtml = perCurrencyBeautyAmounts.join("<br>");
-                    $totalSpan.append(`<div class="listmassaction__totalamount">${amountsHtml}</div>`);
-
-                    // Итоговый результат вставляем в $massactionDiv
-                    $massactionDiv.append($totalSpan);
+                // Попробуем распарсить текст, возможно там какие суммы с валютами?
+                // Например "123 456.78 USD" или "1 234.00 $"
+                // По умолчанию примим валюту пустой
+                let currencyIso: string = "";
+                const parts = text.split(" ");
+                // Прововерим последнюю часть массива после разбивки по пробелам - там может быть реальная валюта
+                if (!$.isNumeric(parts[parts.length - 1])) {
+                    // Нашли валюту в конце числа, вынимаем валюту из массива частей
+                    currencyIso = parts.pop()!;
                 }
+                // Оставшиеся части после изъятия валюты склеиваем обратно
+                const amount = myParseFloat(parts.join(""));
+                if (!totalPerCurrency.has(currencyIso)) {
+                    // Нашли какую-то новую валюту, которая не встречалась ранее
+                    totalPerCurrency.set(currencyIso, amount);
+                } else {
+                    // Эта валюта уже есть в Map totalPerCurrency, прибавляем текующую сумму amount
+                    totalPerCurrency.set(currencyIso, totalPerCurrency.get(currencyIso)! + amount);
+                }
+            });
+        });
+
+
+        // После того как прошлись по всем строкам и собрали результат в totalPerCurrency
+        // выведем этот результат в massaction div
+        let perCurrencyBeautyAmounts: string[] = [];
+        totalPerCurrency.forEach((total: number, currencyIso: string) => {
+            if (total != 0) {
+                perCurrencyBeautyAmounts.push(getBeautyMoney(total, true, currencyIso));
             }
         });
-    }
+        if (perCurrencyBeautyAmounts.length > 0) {
+            // Имя поля возьмём из th, чтобы вывести внизу в massaction div
+            const fieldName = $th
+                .html()
+                .replace(/<br>/g, " ")
+                .replace(/<\/?[^>]+>/gi, "")
+                .replace("▼", "")
+                .replace("▲", "")
+                .trim();
+
+            const $totalSpan = $(`<div class="listmassaction__total"></div>`).append(
+                `<div class="listmassaction__totalfieldname"><strong>${fieldName}:&nbsp;</strong></div>`
+            );
+            // Склеиваем все суммы по валютам через запятую и доавляем в текущий $totalSpan
+            const amountsHtml = perCurrencyBeautyAmounts.join("<br>");
+            $totalSpan.append(`<div class="listmassaction__totalamount">${amountsHtml}</div>`);
+
+            // Итоговый результат вставляем в $massactionDiv
+            $massactionDiv.append($totalSpan);
+        }
+
+    });
 }
 
 export function initListListeners() {

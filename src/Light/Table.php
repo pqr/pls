@@ -5,6 +5,7 @@ namespace Light;
 use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldMoneyWithCurrency;
+use Light\Table\TableUserParamsRepository;
 use Light\Traits\FieldsetAwareTrait;
 
 class Table
@@ -35,10 +36,8 @@ class Table
     protected $tableFieldsShow;
 
     protected $_tableData = [];
-    protected $_tableTotalRowData;
 
-    /** @var array $_tableTotalRowCalcFieldsKeys */
-    protected $_tableTotalRowCalcFieldsKeys;
+    protected $tableTotal = [];
 
     /** @var string $tableReloadUrl путь по которому таблица будет делать ajax запрос, чтобы перезагрузить себя с сервера
      * например при пажинации или при применении фильтров
@@ -59,6 +58,8 @@ class Table
     /** @var array дополнительные параметры, которые будут добавлены к ссылкам генерируемым по трём предыдущим свойствам */
     protected $tableLinkUrlParams = [];
 
+    protected $tableLinkBlank = false;
+
     public $sticky = true;
 
     /**
@@ -69,10 +70,9 @@ class Table
 
     /**
      * Параметры таблицы, которые хранятся в базе в user_tableparam
-     * Загружаются лениво при первом обращении с помощью метода $this->lazyLoadTableUserParams()
-     * @var array
+     * @var TableUserParamsRepository
      */
-    private $tableUserParams;
+    protected $tableUserParams;
 
     public function __construct($tableName = null)
     {
@@ -84,6 +84,7 @@ class Table
 
         //Инициализируем внутреннюю переменную _obj хитрым способом -  возможно, на основе файла в этой же папке
         $this->_obj = $this->createObj();
+        $this->tableUserParams = new TableUserParamsRepository($this->getTableNameForSettings(), User::getId());
     }
 
     protected function createObj()
@@ -250,14 +251,9 @@ class Table
         $this->_tableData = $data;
     }
 
-    public function setTableTotalRowData(array $totalRowData = null)
+    public function setTableTotal(array $dataTotal)
     {
-        $this->_tableTotalRowData = $totalRowData;
-    }
-
-    public function setTableTotalRowCalcFieldsKeys(array $totalRowCalcFieldsKeys = null)
-    {
-        $this->_tableTotalRowCalcFieldsKeys = $totalRowCalcFieldsKeys;
+        $this->tableTotal = $dataTotal;
     }
 
     public function getTableName()
@@ -477,9 +473,11 @@ class Table
             $width = $field->getTableWidthHtml();
             $width = $width ? ' width="' . htmlspecialchars($width) . '"' : '';
             $fieldKey = ' data-fieldkey="' . htmlspecialchars($field->key) . '"';
-            $cssClass = !$field->showInTable ? ' class="display-none"' : '';
+            $dataTotal = $field->total ? ' data-total="true"' : '';
 
-            $outHtml .= '<th' . $title . $width . $fieldKey . $cssClass . '>' . $this->getHtmlTableTheadThContent($field) . '</th>';
+            $outHtml .= '<th' . $title . $width . $fieldKey . $dataTotal . '>'
+                . $this->getHtmlTableTheadThContent($field)
+                . '</th>';
         }
         $outHtml .= '</tr></thead>';
 
@@ -508,27 +506,19 @@ class Table
 
     private function getHtmlTableTbody(array $allFields)
     {
-        //Если есть total строка, то нам понадобится вспомагательный массив с calculated данными по каждой строке
-        //А если total строки нет, то этот массив и не нужен (переменную $calculatedDataCache сделаем null)
         $tableDataCount = $this->getTableDataCount();
 
-        if (is_array($this->_tableTotalRowCalcFieldsKeys)) {
-            $calcTotal = true;
-            $calculatedDataCache = [];
-            $calcFieldKeysHash = array_flip($this->_tableTotalRowCalcFieldsKeys);
-        } else {
-            $calcTotal = false;
-            $calculatedDataCache = null;
-            $calcFieldKeysHash = null;
-        }
+        $dataCalculated = [];
 
         $outHtml = '<tbody>';
         for ($rowNum = 0; $rowNum < $tableDataCount; $rowNum++) {
 
-            //Достаём данные из массива $this->_tableData
+            // Достаём данные из массива $this->_tableData
+            // (метод getTableRowData() может быть переопределён в потомке, поэтому не можем читать напрямую из $this->_tableData
             $rowData = $this->getTableRowData($rowNum);
 
-            //Вызовем все методы calcData определённые внутри полей
+            // Вызовем все методы calcData определённые внутри полей
+            /** @var FieldAbstract $field */
             foreach ($allFields as $field) {
                 $fieldKey = $field->key;
                 $value = $rowData[$fieldKey] ?? null;
@@ -537,8 +527,8 @@ class Table
                 }
                 $rowData[$fieldKey] = $value;
 
-                if ($calcTotal && isset($calcFieldKeysHash[$fieldKey])) {
-                    $calculatedDataCache[$rowNum][$fieldKey] = $rowData[$fieldKey];
+                if ($field->total) {
+                    $dataCalculated[$rowNum][$fieldKey] = $value;
                 }
             }
 
@@ -546,11 +536,8 @@ class Table
 
         }
 
-        //Если есть total строка
-        if (is_array($this->_tableTotalRowData) || is_array($this->_tableTotalRowCalcFieldsKeys)) {
-            $outHtml .= $this->getHtmlTableTrTotal($allFields, $calculatedDataCache);
-        }
-
+        // Добавляем total строку (метод может венуть пустую строку, если для данной таблицы подсчёт total не нужен
+        $outHtml .= $this->getHtmlTableTrTotal($allFields, $dataCalculated);
 
         $outHtml .= '</tbody>';
 
@@ -561,18 +548,18 @@ class Table
      * Метод для переопределения в классах потомках.
      * Он вызывается на всех строках, кроме последней total строки, поэтому $rowNum указан как int
      * (для последней total строки агрумент $rowNum был бы 'total', но этот метод не вызывается для total строки)
-     * @param array $rowData
+     * @param array $rowDataCalculated
      * @param int $rowNum
      * @return string
      */
-    protected function getTableRowCssClass(array $rowData, int $rowNum): string
+    protected function getTableRowCssClass(array $rowDataCalculated, int $rowNum): string
     {
         $out = '';
-        if (isset($rowData['IsSeparator'])) {
+        if (isset($rowDataCalculated['IsSeparator'])) {
             $out = 'separator';
         }
 
-        if (isset($rowData['IsTotal'])) {
+        if (isset($rowDataCalculated['IsTotal'])) {
             $out .= ' total';
         }
 
@@ -584,21 +571,21 @@ class Table
      * Возвращает url-параметры для строки. Они будут вставлены в аттрибут data-urlparams в теге tr,
      * Эти url-параметры в итоге будут использованы при двойном клике на строке (см. Table.js)
      * и при клике на одну из ссылок $this->_listLinkFieldKeys
-     * @param array $rowData
+     * @param array $rowDataCalculated
      * @param int $rowNum
      * @return array
      */
-    protected function getTableRowLinkUrlParams(array $rowData, int $rowNum): array
+    protected function getTableRowLinkUrlParams(array $rowDataCalculated, int $rowNum): array
     {
         return [];
     }
 
     /**
-     * @param array $rowData
+     * @param array $rowDataCalculated
      * @param int $rowNum
      * @return string
      */
-    protected function getTableRowTagParams(array $rowData, int $rowNum): string
+    protected function getTableRowTagParams(array $rowDataCalculated, int $rowNum): string
     {
         return '';
     }
@@ -607,16 +594,16 @@ class Table
 
     /**
      * Метод переопределяется в Subtable, когда в режиме редактирования нужно выводить поля в режиме редактирования
-     * @param array $rowData
+     * @param array $rowDataCalculated
      * @param int $rowNum
      * @param F $field
      * @param array $fullLinkParams
      * @return string
      */
-    protected function getHtmlTableCell(array $rowData, int $rowNum, F $field, array $fullLinkParams): string
+    protected function getHtmlTableCell(array $rowDataCalculated, int $rowNum, F $field, array $fullLinkParams): string
     {
-        $value = $rowData[$field->key] ?? null;
-        $outHtml = $field->getHtml($value, $rowData, true); //forTable = ture
+        $value = $rowDataCalculated[$field->key] ?? null;
+        $outHtml = $field->getHtml($value, $rowDataCalculated, true); //forTable = ture
         // Обернём значение ячейки в ссылку на модуль tableLinkModule, если это поле среди tableLinkFieldKeys
         if ($this->tableLinkModule) {
 
@@ -630,12 +617,16 @@ class Table
                 }
             }
 
-            if (isset($this->tableLinkFieldKeysHash[$field->key], $rowData[$this->tableLinkIdFieldKey])) {
+            if (isset($this->tableLinkFieldKeysHash[$field->key], $rowDataCalculated[$this->tableLinkIdFieldKey])) {
+                $id = $rowDataCalculated[$this->tableLinkIdFieldKey];
                 $outHtml = Link::moduleView(
                     $outHtml,
-                    $rowData[$this->tableLinkIdFieldKey],
+                    $id,
                     $fullLinkParams,
-                    $this->tableLinkModule
+                    $this->tableLinkModule,
+                    null,
+                    null,
+                    $this->tableLinkBlank
                 );
             }
         }
@@ -643,40 +634,44 @@ class Table
         return $outHtml;
     }
 
-    protected function getHtmlTableTr(array $rowData, int $rowNum, array $allFields, array $tableLinkUrlParams)
-    {
-        $cssClass = $this->getTableRowCssClass($rowData, $rowNum);
+    protected function getHtmlTableTr(
+        array $rowDataCalculated,
+        int $rowNum,
+        array $allFields,
+        array $tableLinkUrlParams
+    ) {
+        $cssClass = $this->getTableRowCssClass($rowDataCalculated, $rowNum);
 
-        if ($this->isFindId($rowData)) {
+        if ($this->isFindId($rowDataCalculated)) {
             $cssClass .= ' findid';
         }
 
-        if (isset($rowData['Color']) && $rowData['Color'] != 0) {
+        if (isset($rowDataCalculated['Color']) && $rowDataCalculated['Color'] != 0) {
             //Если существует поле с зарезервированным именем Color, то внесём этот цвет в класс строки
-            $cssClass .= ' color' . $rowData['Color'];
+            $cssClass .= ' color' . $rowDataCalculated['Color'];
         }
 
         $cssClass = $cssClass ? ' class="' . $cssClass . '"' : '';
 
-        $dataLinkId = isset($rowData[$this->tableLinkIdFieldKey]) ? ' data-linkid="' . $rowData[$this->tableLinkIdFieldKey] . '"' : '';
+        $dataLinkId = isset($rowDataCalculated[$this->tableLinkIdFieldKey]) ? ' data-linkid="' . $rowDataCalculated[$this->tableLinkIdFieldKey] . '"' : '';
 
-        $rowLinkUrlParams = $this->getTableRowLinkUrlParams($rowData, $rowNum);
+        $rowLinkUrlParams = $this->getTableRowLinkUrlParams($rowDataCalculated, $rowNum);
         $dataLinkUrlParams = $rowLinkUrlParams ? ' data-linkurlparams="' . htmlspecialchars(http_build_query($rowLinkUrlParams)) . '"' : '';
 
         $fullLinkParams = $tableLinkUrlParams + $rowLinkUrlParams;
 
-        $tagParams = $this->getTableRowTagParams($rowData, $rowNum);
+        $tagParams = $this->getTableRowTagParams($rowDataCalculated, $rowNum);
         $tagParams = $tagParams ? ' ' . $tagParams : '';
 
         $outHtml = "<tr{$cssClass}{$dataLinkId}{$dataLinkUrlParams}{$tagParams}>";
 
         foreach ($allFields as $field) {
 
-            $tdHtml = $this->getHtmlTableCell($rowData, $rowNum, $field, $fullLinkParams);
+            $tdHtml = $this->getHtmlTableCell($rowDataCalculated, $rowNum, $field, $fullLinkParams);
 
             /** @var \Light\Field\FieldAbstract $field */
             $fieldKey = $field->key;
-            $value = $rowData[$fieldKey];
+            $value = $rowDataCalculated[$fieldKey];
             if ($field->groupconcat && strpos($value, "\n") !== false) {
                 //Если было объединение нескольких значений, то накладывать css class на всю ячейку TD не стоит
                 //В этом случае каждое значение должно быть подсвечено отдельно
@@ -684,7 +679,7 @@ class Table
             } else {
                 // Четрвёртым параметром $excludeOverflow300 = true задаём поведение, чтобы класс overflow300
                 // не добавлялся ко всей ячейке td - он портит вывод.
-                $tdCssClass = $field->getViewCssClass($value, $rowData, true, true);
+                $tdCssClass = $field->getViewCssClass($value, $rowDataCalculated, true, true);
 
                 // Добавим этот класс внутрь содержимого, обернув содержимое дополнительным div
                 if ($field->viewMaxWidth300) {
@@ -696,15 +691,12 @@ class Table
                 $tdCssClass .= ' ta' . $field->tableAlign[0]; //получается 'tac' (если center) или 'tar' (если right)
             }
 
-            if (!$field->showInTable) {
-                $tdCssClass .= ' display-none';
-            }
             $tdCssClass = $tdCssClass ? ' class="' . $tdCssClass . '"' : '';
 
-            $tdTitle = $field->getViewTitle($value, $rowData, true);
+            $tdTitle = $field->getViewTitle($value, $rowDataCalculated, true);
             $tdTitle = $tdTitle ? ' title="' . htmlspecialchars($tdTitle) . '"' : '';
 
-            $tdTagParams = $field->getViewTagParams($value, $rowData, true);
+            $tdTagParams = $field->getViewTagParams($value, $rowDataCalculated, true);
             $tdTagParams = $tdTagParams ? ' ' . $tdTagParams : '';
 
             $outHtml .= "<td{$tdCssClass}{$tdTitle}{$tdTagParams}>{$tdHtml}</td>";
@@ -716,20 +708,48 @@ class Table
         return $outHtml;
     }
 
-    protected function getHtmlTableTrTotal(array $allFields, array $calculatedDataCache = null)
+    /**
+     * Возвращает значения для total строки таблицы
+     * @param array $dataCalculated
+     * @param array|null $fields опционально можно передать массив полей, по которым делать подсчёт
+     * этот массив передаётся явно при рендеринге в html для оптимизации
+     * @return array
+     */
+    public function getTableTotal(array $dataCalculated, array $fields = null): array
     {
-        $totalRowData = is_array($this->_tableTotalRowData) ? $this->_tableTotalRowData : [];
+        $dataTotal = $this->tableTotal ?: [];
 
-        //Если были переданые поля для подсчёта Total динамически - сделаем это!
-        //Подсчёт total происходит до вызова calcData и getTableRowDataHtmlFormatedStandard
-        if ($calculatedDataCache && is_array($this->_tableTotalRowCalcFieldsKeys)) {
-            foreach ($this->_tableTotalRowCalcFieldsKeys as $fieldKey) {
-                //Посчитаем эту total ячейку только в том случае, если пользователь не определил её сам ранее
-                if (array_key_exists($fieldKey, $calculatedDataCache[0]) && !array_key_exists($fieldKey,
-                        $totalRowData)) {
-                    $totalRowData[$fieldKey] = $this->tableCalcFieldTotal($fieldKey, $calculatedDataCache);
-                }
+        if (!$dataCalculated) {
+            // Нет подсчитанных данных на основе строк таблицы (таблица пуста?)
+            return $dataTotal;
+        }
+
+        // Проходим по полям описанным в настройках для автоматичекого подсчёта
+        if ($fields === null) {
+            $fields = $this->getFieldsetShowed()->getFieldsArr();
+        }
+        foreach ($fields as $field) {
+            if (!$field->total) {
+                // У этого поля не стоит флаг total, значит его не нужно подсчитывать в столбик
+                continue;
             }
+            $fieldKey = $field->key;
+            if (array_key_exists($fieldKey, $this->tableTotal)) {
+                // По этому полю Total значение уже задано пользователем вручную
+                continue;
+            }
+            // Посчитаем используя функцию tableCalcFieldTotal(), которую можно переопределить в классах потомках
+            $dataTotal[$fieldKey] = $this->tableCalcFieldTotal($field, $dataCalculated);
+        }
+
+        return $dataTotal;
+    }
+
+    protected function getHtmlTableTrTotal(array $allFields, array $dataCalculated)
+    {
+        $dataTotal = $this->getTableTotal($dataCalculated, $allFields);
+        if (!$dataTotal) {
+            return '';
         }
 
         $outHtml = '<tr class="total">';
@@ -739,34 +759,32 @@ class Table
             /** @var \Light\Field\FieldAbstract $field */
             $fieldKey = $field->key;
 
-            $totalValue = $totalRowData[$fieldKey] ?? null;
+            $totalValue = $dataTotal[$fieldKey] ?? null;
             if ($field->groupconcat && strpos($totalValue, "\n") !== false) {
                 //Если было объединение нескольких значений, то накладывать css class на всю ячейку TD не стоит
                 //В этом случае каждое значение должно быть подсвечено отдельно
                 $tdCssClass = '';
             } else {
-                $tdCssClass = $field->getViewCssClass($totalValue, $totalRowData, 'total');
+                $tdCssClass = $field->getViewCssClass($totalValue, $dataTotal, 'total');
             }
             if ($field->tableAlign) {
                 $tdCssClass .= ' ta' . $field->tableAlign[0]; //получается 'tac' (если center) или 'tar' (если right)
             }
-            if (!$field->showInTable) {
-                $tdCssClass .= ' display-none';
-            }
+
             $tdCssClass = $tdCssClass ? ' class="' . $tdCssClass . '"' : '';
 
             // Формируем html представление только для тех ячеек, у которых реально определено значнеие в массиве $totalRowData
             // иначе можем получить total строку из большого кол-ва значений по умолчанию (нули, No, и т.п)
-            if (array_key_exists($fieldKey, $totalRowData)) {
-                $totalValue = $totalRowData[$fieldKey];
+            if (array_key_exists($fieldKey, $dataTotal)) {
+                $totalValue = $dataTotal[$fieldKey];
                 if ($field->getType() === F::TYPE_MONEY_WITH_CURRENCY && strpos($totalValue, "\n") !== false) {
                     // Текущая колонка имеет тип TYPE_MONEY_WITH_CURRENCY, а total значение содержит перевод строки
                     // значит в таблице были разные валюты и мы в итоге получаем разбивку по валютам
                     // нужно применить groupconcat подход
                     $fieldWithGroupconcat = $field->getClone($field->key, ['groupconcat' => true]);
-                    $tdHtml = $fieldWithGroupconcat->getHtml($totalValue, $totalRowData, 'total');
+                    $tdHtml = $fieldWithGroupconcat->getHtml($totalValue, $dataTotal, 'total');
                 } else {
-                    $tdHtml = $field->getHtml($totalValue, $totalRowData, 'total');
+                    $tdHtml = $field->getHtml($totalValue, $dataTotal, 'total');
                 }
             } else {
                 $tdHtml = '';
@@ -783,7 +801,7 @@ class Table
 
     private $findId = null;
 
-    protected function isFindId(array $rowData): bool
+    protected function isFindId(array $rowDataCalculated): bool
     {
         // Инициализируем кэш, если он ещё не был инициализирован
         if ($this->findId === null) {
@@ -797,7 +815,7 @@ class Table
                 foreach ($findIdFields as $part) {
 
                     if (strpos($part, '|') !== false) {
-                        list($key, $val) = explode('|', $part);
+                        [$key, $val] = explode('|', $part);
                         $this->findId[$key] = $val;
                     } else {
                         $this->findId['ID'] = $part;
@@ -814,7 +832,7 @@ class Table
         }
 
         foreach ($this->findId as $key => $val) {
-            if (!isset($rowData[$key]) || $rowData[$key] != $val) {
+            if (!isset($rowDataCalculated[$key]) || $rowDataCalculated[$key] != $val) {
                 return false;
             }
         }
@@ -827,17 +845,16 @@ class Table
      * Тут может быть нюанс: если поле типа MONEY_WITH_CURRENCY, то считать total нужно только в том случае, если все
      * значения имеют одинаковую валюту.
      * Также при типе MONEY_WITH_CURRENCY меняется тип возвращаемого значения - это уже не просто число, но строка
-     * @param string $fieldKey
+     * @param FieldAbstract $field
      * @param array $tableData
      * @return float|string $total
      */
-    public function tableCalcFieldTotal(string $fieldKey, array $tableData)
+    public function tableCalcFieldTotal(FieldAbstract $field, array $tableData)
     {
-        $amounts = array_column($tableData, $fieldKey);
-
-        $isMoneyWithCurrency = $this->getField($fieldKey)->getType() == F::TYPE_MONEY_WITH_CURRENCY;
+        $amounts = array_column($tableData, $field->key);
+        $isMoneyWithCurrency = $field->getType() == F::TYPE_MONEY_WITH_CURRENCY;
         if ($isMoneyWithCurrency) {
-            $groupconcat = $this->getField($fieldKey)->groupconcat;
+            $groupconcat = $field->groupconcat;
             $amountPerCurrency = [];
             foreach ($amounts as $cellText) {
                 if ($groupconcat) {
@@ -884,21 +901,16 @@ class Table
         return $this->_tableData;
     }
 
-    public function getTableCalculatedData()
+    public function getTableDataCalculated()
     {
-        $calculatedData = [];
+        $dataCalculated = [];
         $fieldsetShowed = $this->getFieldsetShowed();
-        $rowsCount = $this->getTableDataCount();
         $tableData = $this->getTableData();
-        for ($rowNum = 0; $rowNum < $rowsCount; $rowNum++) {
-
-            $rowData = $tableData[$rowNum] ?? [];
-            $calculatedRowData = $fieldsetShowed->calcData($rowData, true);
-            //Скалькулированные значениея строки положим обратно в _tableData - пригодится для подсчёта total
-            $calculatedData[] = $calculatedRowData;
+        foreach ($tableData as $rowData) {
+            $dataCalculated[] = $fieldsetShowed->calcData($rowData, true);
         }
 
-        return $calculatedData;
+        return $dataCalculated;
     }
 
     public function getTableDataCount()
@@ -946,12 +958,6 @@ class Table
         $this->lazyLoadTableUserParams();
         Table::writeDbUserTableParam($this->getTableNameForSettings(), $name, $value);
         $this->tableUserParams[$name] = $value;
-    }
-
-    protected function getTableUserParam($name)
-    {
-        $this->lazyLoadTableUserParams();
-        return $this->tableUserParams[$name] ?? null;
     }
 
     /**

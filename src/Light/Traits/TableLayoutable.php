@@ -1,12 +1,13 @@
 <?php
+
 namespace Light\Traits;
 
 use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
-use Light\Request;
 use Light\Response;
+use Light\Table\TableUserParamsRepository;
 use Light\Template;
 use Light\User;
 
@@ -19,9 +20,6 @@ trait TableLayoutable
 
     abstract public function setTableFieldsShow($fieldsKeysString);
 
-    abstract protected function setTableUserParam($name, $value);
-
-    abstract protected function getTableUserParam($name);
 
     /** @return Fieldset|F[] */
     abstract public function getFieldset();
@@ -33,27 +31,47 @@ trait TableLayoutable
 
     protected function initLayoutable()
     {
-        if ($this->allowTableLayouts) {
-
-            //Проверим, возможно вместе с запросом отобразить страницу пришел новый Layout в параметре fields
-            //Затем пробуем установить поля из настроек пользователя из базы
-            //Затем Default Layout
-            //Если и его нет, тогда отображаем все поля таблицы
-            if (isset($_REQUEST['fieldsShow'])) {
-
-                $this->setTableFieldsShow($_REQUEST['fieldsShow']);
-                $this->setTableUserParam('FieldsShow', $_REQUEST['fieldsShow']);
-
-            } elseif ($this->getTableUserParam('FieldsShow') !== null) {
-
-                $this->setTableFieldsShow($this->getTableUserParam('FieldsShow'));
-
-            } elseif (!$this->setLayout('Default')) {
-
-                $this->setFieldsShowAll();
-
-            }
+        if (!$this->allowTableLayouts) {
+            return;
         }
+
+        /** @var TableUserParamsRepository $tableUserParams */
+        // Отдельный объект, которых заведует сохранением настроек в базу для данного пользователя
+        $tableUserParams = $this->tableUserParams;
+
+        $requestKey = $this->getTableName() . '_fieldsShow';
+
+        if (isset($_REQUEST[$requestKey])) {
+
+            // От браузера пришли какие-то новые настройки для таблицы - используем их!
+            $newFieldsShowFromRequest = $_REQUEST[$requestKey];
+            // Применим пришедшие настроки к текущей таблице
+            $this->setTableFieldsShow($newFieldsShowFromRequest);
+            // Также сохраним эти настройки в настройки пользователя
+            $tableUserParams->saveFieldsShow($newFieldsShowFromRequest);
+            return;
+
+        }
+
+        $userParamsFieldsShow = $tableUserParams->loadFieldsShow();
+        if ($userParamsFieldsShow) {
+
+            // У пользователя есть какие-то собственные настройки колонок в таблице, применим их
+            $this->setTableFieldsShow($userParamsFieldsShow);
+            return;
+
+        }
+
+        // У пользователя нет собственных настроек колонок в таблице, попробуем применить Default раскладку
+        if (isset($this->tableLayouts['Default'])) {
+            // Для данной таблицы задана некая Default раскладка, именно её и используем
+            $this->setTableFieldsShow($this->tableLayouts['Default']);
+            return;
+        }
+
+        // Для данной таблицы нет даже Default раскладки, отображаем все поля подряд
+        $this->setFieldsShowAll();
+
     }
 
     public function isLayoutEnabled()
@@ -101,7 +119,7 @@ trait TableLayoutable
     {
         if ($this->allowTableLayouts) {
             $linkText = Config::$lang === 'ru' ? 'Настройка колонок' : 'Table layout settings';
-            return '<span><a href="#" class="table-layoutsettings"><i class="fa fa-cog icon-tablelayoutsettings"></i> '.$linkText.'</a></span>';
+            return '<span><a href="#" class="table-layoutsettings"><i class="fa fa-cog icon-tablelayoutsettings"></i> ' . $linkText . '</a></span>';
         }
 
         return '';
@@ -140,7 +158,8 @@ trait TableLayoutable
             'allFields' => $allFields,
             'shownFieldKeys' => $shownFieldKeys,
             'layouts' => $layouts,
-            'bodyHtml' => Template::parseTpl(LIGHT_DIR_LIGHT .'/templates/table/layoutdialog.tpl.php', ['userLayouts' => $userLayouts])
+            'bodyHtml' => Template::parseTpl(LIGHT_DIR_LIGHT . '/templates/table/layoutdialog.tpl.php',
+                ['userLayouts' => $userLayouts])
         ]);
     }
 

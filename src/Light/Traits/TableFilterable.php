@@ -4,10 +4,8 @@ namespace Light\Traits;
 
 use Light\Config;
 use Light\Db;
-use Light\DbLog;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
-use Light\Field\FieldInputAbstract;
 use Light\Field\FieldMonth;
 use Light\Field\FieldSelect;
 use Light\Field\FieldSelect2Multiple;
@@ -164,7 +162,7 @@ trait TableFilterable
     public function addFilterName(string $type = F::TYPE_STRING, array $params = [], bool $synonyms = false)
     {
         if (!isset($params['name'])) {
-            $params['name'] = 'Search Text';
+            $params['name'] = Config::$lang === 'ru' ? 'Поиск по тексту' : 'Search Text';
         }
 
         if (!isset($params['sqlWhere'])) {
@@ -175,6 +173,24 @@ trait TableFilterable
         }
 
         $this->addFilter(F::create('FilterName', $type, $params));
+
+        return $this;
+    }
+
+    public function addFilterNameComaSeparated(array $params = [], $sqlVarName = 'Name', $normalStrLen = 0, $fullLike = false, $isIntField = false)
+    {
+        if (!isset($params['name'])) {
+            $params['name'] = Config::$lang === 'ru' ? 'Номера' : 'IDs';
+        }
+
+        if (!isset($params['sqlWhere'])) {
+            $params['sqlWhere'] = function($filterValue) use ($sqlVarName, $normalStrLen, $fullLike, $isIntField) {
+                return Db::getSqlWhereSeparatedByComa($filterValue, $sqlVarName, $normalStrLen, $fullLike, $isIntField);
+            };
+        }
+
+        $fieldKey = 'Filter' . $sqlVarName;
+        $this->addFilter(F::createText($fieldKey, $params));
 
         return $this;
     }

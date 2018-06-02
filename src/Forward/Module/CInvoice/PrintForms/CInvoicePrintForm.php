@@ -67,11 +67,13 @@ class CInvoicePrintForm extends PrintForm
 
         //Добавим подтаблицу с линиями
         $linesSubtable = new Lines($obj);
+        foreach($linesSubtable->getFieldset() as $field) {
+            $field->setTotal(false);
+        }
         $linesSubtable->loadData();
+        $linesSubtable->setTableTotal([]);
 
         $linesSubtable->setTableFieldsShow('Name|UOMID|Quantity|Price|Amount');
-        $linesSubtable->setTableTotalRowData(null);
-        $linesSubtable->setTableTotalRowCalcFieldsKeys(null);
         $tdata['LinesSubtable'] = $linesSubtable->getHtmlTable(false);
 
         return $tdata;

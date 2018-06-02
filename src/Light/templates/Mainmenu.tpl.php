@@ -22,11 +22,17 @@ $activeModule = \Light\Request::getModule();
             </div>
         <?php endif; ?>
 
-        <div id="mainmenu__username" title="Username"><?= htmlspecialchars(\Light\User::getName()) ?></div>
-        <div id="mainmenu__usergroup" title="Usergroup"><?= htmlspecialchars(\Light\User::getGroupName()) ?></div>
-        <div>
-            <a href="index.php?a=Logout#ajax-post">Logout</a>
+        <div id="mainmenu__username">
+            <?= htmlspecialchars(\Light\User::getName()) ?>
         </div>
+
+        <div id="mainmenu__usergroup">
+            <?= htmlspecialchars(\Light\User::getGroupName()) ?>
+            <a href="index.php?a=Logout#ajax-post" id="mainmenu__logout" title="Logout"><i
+                        class="fa fa-sign-out"></i></a>
+        </div>
+
+        <input type="text" placeholder="Поиск по меню" id="mainmenu__search">
     </div>
 
     <?php foreach ($sections as $sectionText => $sectionParams): ?>
@@ -39,9 +45,9 @@ $activeModule = \Light\Request::getModule();
 
         <ul class="mainmenu__section"
             data-status="<?= $sectionParams['status'] ?>"<?= $sectionParams['status'] === 'closed' ? ' style="display: none"' : '' ?>>
-            <?php foreach ($sectionParams['modules'] as $module => ['text' => $text, 'url' => $url]): ?>
+            <?php foreach ($sectionParams['modules'] as $module => ['text' => $text, 'title' => $title, 'url' => $url]): ?>
 
-                <li class="mainmenu__li">
+                <li class="mainmenu__li"<?= $title ? ' title="' . htmlspecialchars($title) . '"' : '' ?>>
                     <a class="mainmenu__link<?= $module === $activeModule ? ' mainmenu__link_active' : '' ?>"
                        href="<?= $url ?>">
                         <?= $text ?>

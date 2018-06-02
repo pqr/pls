@@ -3,6 +3,8 @@
 namespace Light\Module\Home;
 
 use Light\HomeBase\HomeBlocksPage;
+use Light\Js;
+use Light\Request;
 use Light\Response;
 use Light\User;
 
@@ -33,11 +35,20 @@ class Home
 
             HomeBlocksPage::proceedOneHomeBlockClass(User::getId(), $_GET['class']);
 
+        } elseif (Request::isAjax()) {
+
+            // Это ajax запрос за реальную загрузку контента для Home
+            $this->printBody();
+
         } else {
 
+            // Первоначально рендерим только шапку
             Response::setPageTitle('Home');
             $this->printHeader();
-            $this->printBody();
+            print '<div id="homecontent"></div>';
+
+            // Реальный контент будет загружен асинхронно отдельным ajax запросом
+            Js::addLight('Home.js');
 
         }
     }

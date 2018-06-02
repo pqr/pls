@@ -177,7 +177,8 @@ class CommonFields
             'nameTable' => "Gross\nWeight (kg)",
             'tableWidthHtml' => 62,
             'editCssClass' => 'input-weight',
-            'uom' => 'kg'
+            'uom' => 'kg',
+            'total' => true,
         ]);
     }
 
@@ -190,7 +191,8 @@ class CommonFields
                 'nameTable' => "Net\nWeight (kg)",
                 'tableWidthHtml' => 62,
                 'editCssClass' => 'input-weight',
-                'uom' => 'kg'
+                'uom' => 'kg',
+                'total' => true,
             ]
         );
     }
@@ -203,7 +205,8 @@ class CommonFields
                 'name' => 'Chargeable Weight',
                 'tableWidthHtml' => 62,
                 'editCssClass' => 'input-weight',
-                'uom' => 'kg'
+                'uom' => 'kg',
+                'total' => true,
             ]
         );
     }
@@ -235,14 +238,15 @@ class CommonFields
                 'tableWidthHtml' => 62,
                 'editCssClass' => 'input-weight',
                 'uom' => 'm<sup>3</sup>',
-                'precision' => 3
+                'precision' => 3,
+                'total' => true,
             ]
         );
     }
 
     public static function pieces(): FieldInt
     {
-        return F::createInt('Pieces', ['name' => 'Pieces']);
+        return F::createInt('Pieces', ['name' => 'Pieces', 'total' => true]);
     }
 
     public static function address($key = 'Address'): FieldText
@@ -272,7 +276,7 @@ class CommonFields
 
     public static function teu(): FieldInt
     {
-        return F::createInt('TEU', ['tableAlign' => 'center']);
+        return F::createInt('TEU', ['tableAlign' => 'center', 'total' => true]);
     }
 
     public static function synonyms(): FieldText

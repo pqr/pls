@@ -449,19 +449,19 @@ abstract class Subtable extends Table
         return $this->_data;
     }
 
-    protected function getHtmlTableCell(array $rowData, int $rowNum, F $field, array $fullLinkParams): string
+    protected function getHtmlTableCell(array $rowDataCalculated, int $rowNum, F $field, array $fullLinkParams): string
     {
 
         if ($this->isStateEdit() && ($field->hasMode(F::MODE_EDIT) || $field->getType() === 'Color')) {
-            $value = $rowData[$field->key];
-            return (string)$this->getHtmlInput($field, $rowNum, $value, $rowData);
+            $value = $rowDataCalculated[$field->key] ?? '';
+            return (string)$this->getHtmlInput($field, $rowNum, $value, $rowDataCalculated);
         }
 
-        return parent::getHtmlTableCell($rowData, $rowNum, $field, $fullLinkParams);
+        return parent::getHtmlTableCell($rowDataCalculated, $rowNum, $field, $fullLinkParams);
 
     }
 
-    protected function getTableRowTagParams(array $rowData, int $rowNum): string
+    protected function getTableRowTagParams(array $rowDataCalculated, int $rowNum): string
     {
         if ($this->isStateEdit()) {
             //В режиме Edit добавим номер каждой строки в виде id для тега tr (убыстряет селекторы)
@@ -471,9 +471,9 @@ abstract class Subtable extends Table
         return '';
     }
 
-    protected function getHtmlTableTrTotal(array $allFields, array $calculatedDataCache = null)
+    protected function getHtmlTableTrTotal(array $allFields, array $dataCalculated)
     {
-        $outHtml = parent::getHtmlTableTrTotal($allFields, $calculatedDataCache);
+        $outHtml = parent::getHtmlTableTrTotal($allFields, $dataCalculated);
         return str_replace('tr class="total"', 'tr class="total" id="' . $this->getTableName() . '-subtable-tr-total"',
             $outHtml);
     }
@@ -530,8 +530,7 @@ abstract class Subtable extends Table
                 }
 
                 //Добавим флаг, считать-ли total по этому полю автоматически?
-                $jsField['calcTotal'] = is_array($this->_tableTotalRowCalcFieldsKeys) && in_array($fieldKey,
-                        $this->_tableTotalRowCalcFieldsKeys);
+                $jsField['total'] = $field->total;
 
                 //Число знаков после запятой до скольки округлять при пересчёте Total
                 if ($field instanceof FieldFloat) {
@@ -1162,7 +1161,7 @@ abstract class Subtable extends Table
         return $this->getMasterModule() . parent::getTableNameForSettings();
     }
 
-    protected function getTableRowLinkUrlParams(array $rowData, int $rowNum): array
+    protected function getTableRowLinkUrlParams(array $rowDataCalculated, int $rowNum): array
     {
         if ($this->_tableLinkFindidSubtableName) {
             return [$this->_tableLinkFindidSubtableName . '_findid' => $this->_masterObj->getId()];

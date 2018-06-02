@@ -740,6 +740,19 @@ ul.checkboxset {
     margin-bottom: 8px;
 }
 
+#mainmenu__logout {
+    margin-left: 5px;
+    color: gray;
+}
+
+#mainmenu__search {
+    display: block;
+    margin: 10px 5px 0 5px;
+    border-radius: 20px;
+    width: 155px;
+    padding: 5px;
+}
+
 .mainmenu__sectionhead {
     font-weight: bold;
     background: #dde7ee;
@@ -2053,4 +2066,13 @@ button.btn-floating {
     max-width: 300px;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.bad-line td {
+    color: #FFFFFF;
+    background-color: #ff514c;
+}
+
+.bad-line:hover td {
+    color: #000000;
 }

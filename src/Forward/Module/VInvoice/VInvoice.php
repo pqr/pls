@@ -239,12 +239,6 @@ class VInvoice extends InvoiceModuleAbstract
 
     protected function initList()
     {
-        $this->_tableTotalRowCalcFieldsKeys = [
-            'Amount',
-            'VAT12Amount',
-            'VAT18Amount'
-        ];
-
         $this->addFields(
             $this->getListVatMountField(12),
             $this->getListVatMountField(18)

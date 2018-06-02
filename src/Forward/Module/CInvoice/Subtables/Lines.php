@@ -28,8 +28,7 @@ class Lines extends Subtable
         $this->_editTableLayout = $this->_viewTableLayout;
 
         $this->_tablePrintTotalRecordsFound = true;
-        $this->_tableTotalRowData = ['Name' => 'Total'];
-        $this->_tableTotalRowCalcFieldsKeys = ['Amount'];
+        $this->tableTotal = ['Name' => 'Total'];
         $this->_copyOnAddFieldKeys = ['FileNumber', 'UOM', 'Quantity'];
 
         $this->_cacheFieldsKeys = ['FileNumber'];

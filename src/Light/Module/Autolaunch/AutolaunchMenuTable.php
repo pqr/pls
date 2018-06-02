@@ -103,8 +103,8 @@ class AutolaunchMenuTable extends Table
         }
     }
 
-    protected function getTableRowLinkUrlParams(array $rowData, int $rowNum): array
+    protected function getTableRowLinkUrlParams(array $rowDataCalculated, int $rowNum): array
     {
-        return ['class' => $rowData['ClassName']];
+        return ['class' => $rowDataCalculated['ClassName']];
     }
 }

@@ -1490,7 +1490,7 @@ export function ajaxGetCurrRate(
     const url = `?a=Core&ps=GetRate&date=${date}&currencyfrom=${currencyFrom}&currencyto=${currencyTo}`;
     $.ajax(url).done((currRate: any) => {
         callback(currRate);
-        toastSuccess(`Курс: ${currRate}`);
+        toastSuccess(`Курс ${currencyFrom}/${currencyTo}: ${currRate}`);
     });
 }
 

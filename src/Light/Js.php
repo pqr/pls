@@ -42,7 +42,7 @@ class Js
 
     public static function getSources(): array
     {
-        $min = Config::$debug ? '.min' : '';
+        $min = Config::$debug ? '' : '.min';
 
         $out = [
             'lightpublic/js/vendors.js'

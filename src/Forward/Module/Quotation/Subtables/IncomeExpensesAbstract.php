@@ -38,6 +38,5 @@ abstract class IncomeExpensesAbstract extends Subtable
         );
 
         $this->_copyOnAddFieldKeys = ['Per'];
-        $this->setTableTotalRowCalcFieldsKeys(['Amount']);
     }
 }
