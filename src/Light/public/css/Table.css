@@ -177,26 +177,44 @@ div.filters {
     border-radius: 0.5em;
 }
 
-div.filters th {
-    font-weight: normal;
-    text-align: right;
-    padding-right: 4px;
-}
-
-div.filters th.filter-active, div.filters label.filter-active {
+div.filters li.filter-active, div.filters label.filter-active {
     font-weight: bold;
 }
 
-table.filters tr {
-    vertical-align: middle;
+ul.filters__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
-table.filters td, table.filters th {
+ul.filters__list > li {
     padding: 2px;
 }
 
-table.filters td {
+ul.filters__list > li > div {
+    display: flex;
+    align-items: center;
+}
+
+ul.filters__list > li .filter__label {
+    text-align: right;
     padding-right: 10px;
+    width: 120px;
+}
+
+ul.filters__list > li.filters__buttons,
+ul.filters__list > li.filters__layoutbuttons {
+    margin-top: 10px;
+    padding-left: 120px;
+}
+
+.filters__buttonsicons {
+    margin-left: 8.5em;
+    margin-top: 0.5em;
+    padding-top: 0.2em;
+    border-top: 1px #e1e1e1 solid;
+    display: inline-block;
+    min-width: 9em;
 }
 
 div.filters select.input-default {
@@ -211,21 +229,20 @@ div.filters input[type=text].input-default {
     width: 244px;
 }
 
+div.filters.filters__layoutmode {
+    z-index: 10;
+}
+
+div.filters.filters__layoutmode ul.filters__list > li:not(.filters__buttons):not(.filters__layoutbuttons) * {
+    cursor: move;
+}
+
 .btn-filter {
     margin-right: 1em;
 }
 
 .filters-layout-save {
     margin-right: 0.6em;
-}
-
-.filters-buttons-icons {
-    margin-left: 8.5em;
-    margin-top: 0.5em;
-    padding-top: 0.2em;
-    border-top: 1px #e1e1e1 solid;
-    display: inline-block;
-    min-width: 9em;
 }
 
 .filters-reset,
@@ -277,7 +294,7 @@ div.filters input[type=text].input-default {
 
 .filter-hide-icon {
     margin-right: 0.5em;
-    cursor: pointer;
+    cursor: pointer !important;
     transition: color .1s ease-out;
     opacity: 0.6;
 }
@@ -537,4 +554,8 @@ h3:hover #tablelayoutdialog__linkall, h3:hover #tablelayoutdialog__linknone {
 #tablelayoutdialog__newlayout {
     width: 200px;
     font-size: 11px;
+}
+
+.sortable-ghost {
+    opacity: .6;
 }

@@ -511,7 +511,7 @@ class Filters
         $content = '<table><tr>';
         foreach ($layout as $colIndex => $col) {
 
-            $content .= '<td><table class="filters">';
+            $content .= '<td><ul class="filters__list">';
 
             foreach ($col as $templateKey => $templateVal) {
                 $isInvisible = in_array($templateKey, $invisibleArray);
@@ -520,10 +520,10 @@ class Filters
 
             if ($colIndex === 0) {
                 // В конце первой колонки добавляем строку с кнопками Filter и Reset
-                $content .= Template::filtersButtonsRow($allowLayoutChange);
+                $content .= $this->getFilterButtonsHtml($allowLayoutChange);
             }
 
-            $content .= '</table></td>';
+            $content .= '</ul></td>';
         }
         $content .= '</tr></table>';
 
@@ -550,15 +550,18 @@ class Filters
 
     private function getFilterHtml(string $templateKey, $templateVal, array $tdata, bool $isInvisible): string
     {
-        $cssClass = $isInvisible ? 'filter-invisible' : null;
-
         $field = $this->getField($templateKey);
 
         if (is_string($templateVal)) {
 
             // Чаще всего ключ в шаблоне совпадает с ключём поля описанном в Fieldset
             if ($field) {
-                return Template::c($templateKey, false, $cssClass, $templateKey);
+
+                $title = Template::title($field->key);
+                $label = Template::label($field->key);
+                $html = Template::html($field->key);
+
+                return $this->getFilterLiHtml($templateKey, $isInvisible, $title, $label, $html);
             }
 
             // В данном случае не совпало, проверим, существуют ли похожие поля From/Until?
@@ -572,7 +575,13 @@ class Filters
                 && $fieldFrom->filterFromUntil
                 && ($fieldUntil->getType() === 'Date' || $fieldUntil->getType() === 'DateTime')
                 && $fieldUntil->filterFromUntil) {
-                return Template::datesFromUntil($templateKey, $cssClass, $templateKey);
+
+
+                $title = Template::title($fieldFrom->key);
+                $label = Template::label($fieldFrom->key);
+                $html = '<nobr>' . Template::html($fieldFrom->key) . ' - ' . Template::html($fieldUntil->key) . '</nobr>';
+
+                return $this->getFilterLiHtml($templateKey, $isInvisible, $title, $label, $html);
             }
         }
 
@@ -599,19 +608,47 @@ class Filters
                 ? call_user_func($templateVal['func'], $tdata)
                 : '<span class="bad">Html function is not defined!</span>';
 
-            return Template::control($title, $label, $html, $cssClass, $templateKey);
-
+            return $this->getFilterLiHtml($templateKey, $isInvisible, $title, $label, $html);
         }
 
         if (is_callable($templateVal)) {
 
             // В массиве с настройками колонок фильтров данный фильтр был описан просто функцией
             $html = call_user_func($templateVal, $tdata);
-            return Template::control($title, $label, $html, $cssClass, $templateKey);
+            return $this->getFilterLiHtml($templateKey, $isInvisible, $title, $label, $html);
 
         }
 
         return '<span class=bad>No template for ' . htmlspecialchars($templateKey) . '</span>';
+    }
+
+    private function getFilterLiHtml($templateKey, $isInvisible, $title, $label, $html)
+    {
+        $class = $isInvisible ? ' class="filter-invisible"' : '';
+        $dataKey = ' data-templatekey="' . htmlspecialchars($templateKey) . '"';
+
+        $left = "<div class=filter__label>$label</div>";
+        $right = "<div>$html</div>";
+
+        return "<li{$title}{$dataKey}{$class}><div>{$left}{$right}</div></li>";
+    }
+
+    private function getFilterButtonsHtml(bool $allowLayoutChange): string
+    {
+        $isLangRu = Config::$lang === 'ru';
+        $textHistory = $isLangRu ? 'История фильтров' : 'Filters history';
+        $textSaved = $isLangRu ? 'Сохраненные фильтры' : 'Saved filters';
+        $textSettings = $isLangRu ? 'Настройка фильтров' : 'Filters layout';
+        $textReset = $isLangRu ? 'СБРОС' : 'RESET';
+        return '<li class="filters__buttons">
+                <button class="btn waves-effect btn-filter" type="submit">' . Img::iconSearch() . '</button>
+                <button class="btn-flat waves-effect filters-reset" type="button">' . $textReset . '</button>
+                <nobr><div><div class="filters__buttonsicons">
+                    <span class="btn-flat waves-effect toggle-tooltip filters-history" title="' . $textHistory . '"><i class="fa fa-history"></i></span>
+                    <span class="btn-flat waves-effect toggle-tooltip filters-save" title="' . $textSaved . '"><i class="fa fa-save"></i></span>
+                    ' . ($allowLayoutChange ? '<span class="btn-flat waves-effect toggle-tooltip filters-layout" title="' . $textSettings . '"><i class="fa fa-cog"></i></span>' : '') . '
+                </div></div></nobr>
+                </li>';
     }
 
 }

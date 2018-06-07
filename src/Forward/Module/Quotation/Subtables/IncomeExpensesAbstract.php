@@ -26,6 +26,7 @@ abstract class IncomeExpensesAbstract extends Subtable
 
             F::createSelect('Per', [
                 'options' => ['GW' => 'GW', 'CW' => 'CW', 'MAWB' => 'MAWB', 'Piece' => 'Piece'],
+                'copy' => true,
                 'empty' => false,
                 'editCssClass' => 'input-per',
                 'tableAlign' => 'center'
@@ -36,7 +37,5 @@ abstract class IncomeExpensesAbstract extends Subtable
             F::createMoney('Amount')
 
         );
-
-        $this->_copyOnAddFieldKeys = ['Per'];
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace Light;
 
 class Link
@@ -43,13 +44,14 @@ class Link
         return self::module($innerHtml, $urlParams, $module, $title, $tagParams, $blank);
     }
 
-    public static function moduleListBlank($innerHtml,
+    public static function moduleListBlank(
+        $innerHtml,
         $filterValues = null,
         $urlParams = null,
         $module = null,
         $title = null,
-        $tagParams = null)
-    {
+        $tagParams = null
+    ) {
         return self::moduleList($innerHtml, $filterValues, $urlParams, $module, $title, $tagParams, true);
     }
 
@@ -60,14 +62,21 @@ class Link
         $module = null,
         $title = null,
         $tagParams = null,
-        $blank = false
+        $blank = false,
+        $dialog = false
     ) {
         if ($urlParams) {
             $urlParams = self::mergeUrlParams(['id' => $id], $urlParams);
         } else {
             $urlParams = ['id' => $id];
         }
-        return self::module($innerHtml, $urlParams, $module, $title, $tagParams, $blank);
+
+        if ($dialog) {
+            $urlParams['func'] = 'dialog';
+        }
+        $ajax = $dialog;
+
+        return self::module($innerHtml, $urlParams, $module, $title, $tagParams, $blank, $ajax);
     }
 
     public static function moduleViewBlank(
@@ -104,9 +113,13 @@ class Link
         $module = null,
         $title = null,
         $tagParams = null,
-        $blank = false
+        $blank = false,
+        $ajax = false
     ) {
         $url = self::url($urlParams, $module);
+        if ($ajax) {
+            $url .= "#ajax";
+        }
 
         if ($title) {
             $title = ' title="' . htmlspecialchars($title) . '"';

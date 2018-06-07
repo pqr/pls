@@ -3,6 +3,7 @@ namespace Forward\Module\VInvoice\Subtables;
 
 use Forward\Field\GeneralFields;
 use Forward\Field\InvoiceFields;
+use Light\Field\CommonFields as CF;
 use Light\ObjAbstract;
 use Light\Field\FieldAbstract as F;
 
@@ -11,13 +12,6 @@ class LinesObj extends ObjAbstract
     public function __construct()
     {
         $this->setDbTable('vinvoiceline');
-
-        $vat = [
-            '-1.00' => 'No VAT',
-            '0.00' => '0%',
-            '12.00' => '12%',
-            '18.00' => '18%',
-        ];
 
         $this->addFields(
 
@@ -40,15 +34,9 @@ class LinesObj extends ObjAbstract
 
             F::createMoney('Amount'),
 
-            F::createSelect('VATPercent', [
-                'name' => 'VAT %',
-                'options' => $vat,
-                'empty' => false,
-                'tableWidthHtml' => 59,
-                'tableAlign' => 'center'
-            ]),
+            CF::vatPercent(),
 
-            F::createMoney('VATAmount', ['name' => 'VAT Amount']),
+            CF::vatAmount(),
 
             F::createMoney('FinalAmount', ['name' => 'Final Amount'])
 

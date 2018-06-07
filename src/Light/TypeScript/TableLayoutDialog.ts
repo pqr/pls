@@ -1,6 +1,8 @@
-import {Dialog} from "./Dialog";
+import { Dialog } from "./Dialog";
 import * as table from "./Table";
-import { myParseInt, toastSuccess, isLangRu } from "./Light";
+import { isLangRu, myParseInt, toastSuccess, loadSortableJs } from "./Light";
+
+declare var Sortable: any;
 
 let dialog: Dialog,
     $shownUl: JQuery,
@@ -44,7 +46,7 @@ let currentState: CurrentState = {
  * Эта функция вызывается всего один раз при первом клике на любую кнопку Table layout settings
  */
 function initDialogListeners() {
-    $btnSaveLayout = $("#tablelayoutdialog__btnsave").on("click", (e:any) => {
+    $btnSaveLayout = $("#tablelayoutdialog__btnsave").on("click", (e: any) => {
         e.preventDefault();
         const layoutName = $newLayoutInput.val();
         if (layoutName == "") {
@@ -55,23 +57,23 @@ function initDialogListeners() {
             layoutName: layoutName,
             fieldsShow: getShownFieldKeys().join("|")
         }).done(() => {
-            const successText = isLangRu ? 'Настройки сохранены' : 'Layout saved';
+            const successText = isLangRu ? "Настройки сохранены" : "Layout saved";
             toastSuccess(`${successText}: <strong>${layoutName}</strong>`);
         });
     });
 
     $newLayoutInput = $("#tablelayoutdialog__newlayout"); //.on('key', userLayoutSaveByEnter, 'enter');
 
-    $("#tablelayoutdialog__linkall").on("click", (e:any) => {
+    $("#tablelayoutdialog__linkall").on("click", (e: any) => {
         e.preventDefault();
         updateSortables(currentState.allFields.map(f => f.key));
     });
-    $("#tablelayoutdialog__linknone").on("click", (e:any) => {
+    $("#tablelayoutdialog__linknone").on("click", (e: any) => {
         e.preventDefault();
         updateSortables([]);
     });
 
-    $layoutsDefault = $("#tablelayoutdialog__layoutsdefault").on("click", "a", (e:any) => {
+    $layoutsDefault = $("#tablelayoutdialog__layoutsdefault").on("click", "a", (e: any) => {
         e.preventDefault();
         const layoutIndex = myParseInt((<HTMLAnchorElement>e.currentTarget).hash.substring(1));
         const fieldsShow = currentState.layouts[layoutIndex].fieldKeys;
@@ -79,20 +81,22 @@ function initDialogListeners() {
     });
 
     $layoutsUser = $("#tablelayoutdialog__layoutsuser")
-        .on("click", "a", (e:any) => {
+        .on("click", "a", (e: any) => {
             e.preventDefault();
             const a = <HTMLAnchorElement>e.currentTarget;
             $newLayoutInput.val(a.innerText);
             updateSortables(a.hash.substring(1).split("|"));
         })
-        .on("click", "i", (e:any) => {
+        .on("click", "i", (e: any) => {
             ajaxCore({ delid: (<HTMLElement>e.currentTarget).getAttribute("data-delid") });
         });
 
-    $shownUl = $("#tablelayoutdialog__showul").sortable({ connectWith: "#tablelayoutdialog__hideul" });
-    $hiddenUl = $("#tablelayoutdialog__hideul").sortable({ connectWith: "#tablelayoutdialog__showul" });
+    //$shownUl = $("#tablelayoutdialog__showul").sortable({ connectWith: "#tablelayoutdialog__hideul" });
+    //$hiddenUl = $("#tablelayoutdialog__hideul").sortable({ connectWith: "#tablelayoutdialog__showul" });
+    $shownUl = $("#tablelayoutdialog__showul");
+    $hiddenUl = $("#tablelayoutdialog__hideul");
 
-    $filter = $("#tablelayoutdialog__filter").on("keyup change", (e:any) => {
+    $filter = $("#tablelayoutdialog__filter").on("keyup change", (e: any) => {
         const filterValLower = (<HTMLInputElement>e.currentTarget).value.toLowerCase();
         if (filterValLower === "") {
             $hiddenUl.find("li.display-none").removeClass("display-none");
@@ -111,9 +115,19 @@ function initDialogListeners() {
         }
     });
 
+    loadSortableJs().then(() => {
+        Sortable.create(document.getElementById("tablelayoutdialog__showul"), {
+            group: "tbl",
+            animation: 100
+        });
+        Sortable.create(document.getElementById("tablelayoutdialog__hideul"), {
+            group: "tbl",
+            animation: 100
+        });
+    });
 }
 
-function updateSortables(showFieldKeys: Array<string>) {
+function updateSortables(showFieldKeys: string[]) {
     //Очистим оба списка в DOM
     $filter.val("");
     $shownUl.empty();
@@ -137,10 +151,6 @@ function updateSortables(showFieldKeys: Array<string>) {
 
     // Отрендрим накопленный массив отображаемых полей
     toShow.forEach(field => appendLi($shownUl, field.key, field.name, field.title));
-
-    // После изменения DOM дерева внутри списков Sortable, нужно вызвать метод sync()
-    $shownUl.sortable("refresh");
-    $hiddenUl.sortable("refresh");
 }
 
 const appendLi = function($ul: JQuery, fieldKey: string, fieldName: string, fieldTitle: string) {
@@ -158,11 +168,11 @@ const appendLi = function($ul: JQuery, fieldKey: string, fieldName: string, fiel
 };
 
 /**
-     * Возвращает массив из ключей полей, которые сейчас находятся в левом блоке (в блоке отображаемы)
-     * Этот метод вызывается при сабмите диалога и при сохранении пользовательских настроек
-     */
-function getShownFieldKeys(): Array<string> {
-    const shownFieldKeys: Array<string> = [];
+ * Возвращает массив из ключей полей, которые сейчас находятся в левом блоке (в блоке отображаемы)
+ * Этот метод вызывается при сабмите диалога и при сохранении пользовательских настроек
+ */
+function getShownFieldKeys(): string[] {
+    const shownFieldKeys: string[] = [];
     $shownUl.find("li").each(function(this: HTMLLIElement) {
         shownFieldKeys.push(this.getAttribute("data-fieldkey")!);
     });
@@ -178,7 +188,7 @@ function ajaxCore(postdata?: Object) {
         data: postdata,
         type: "post"
     })
-        .done((userLayoutsHtml:string) => {
+        .done((userLayoutsHtml: string) => {
             // В ответ всегда приходит html код для вставки в виде списка пользовательских layouts
             $layoutsUser.html(userLayoutsHtml);
         })
@@ -188,21 +198,21 @@ function ajaxCore(postdata?: Object) {
 }
 
 /**
-     * Этот метод специально сделан экспортируемым, чтобы можно было отображать диалоговое окно выбора полей
-     * не только по стандартной ссылке "Table layout settings", но и в SPA приложении
-     */
+ * Этот метод специально сделан экспортируемым, чтобы можно было отображать диалоговое окно выбора полей
+ * не только по стандартной ссылке "Table layout settings", но и в SPA приложении
+ */
 export function showLayoutDialog(
     tableName: string,
-    allFields: Array<Field>,
-    initialShownFieldKeys: Array<string>,
-    layouts: Array<Layout>,
+    allFields: Field[],
+    initialShownFieldKeys: string[],
+    layouts: Layout[],
     bodyHtml: string,
     dialogSubmitCallback: DialogSubmitCallback
 ) {
     const options = {
         width: "770px",
-        buttonOkText: isLangRu ? 'Применить' : 'Apply new Layout',
-        buttonCancelText: isLangRu ? 'Отмена' : 'Cancel',
+        buttonOkText: isLangRu ? "Применить" : "Apply new Layout",
+        buttonCancelText: isLangRu ? "Отмена" : "Cancel",
         buttonOkHandler: () => {
             dialog.close();
             currentState.dialogSubmitCallback!(getShownFieldKeys());
@@ -217,7 +227,7 @@ export function showLayoutDialog(
     currentState.layouts = layouts;
     currentState.dialogSubmitCallback = dialogSubmitCallback;
 
-    //Отобразим диалог
+    // Отобразим диалог
     dialog.open();
 
     initDialogListeners();
@@ -234,23 +244,16 @@ export function showLayoutDialog(
 }
 
 // На все кнопки Table Layout Settings вешаем обрабочик клика
-$("body").on("click", "a.table-layoutsettings", (e:any) => {
+$("body").on("click", "a.table-layoutsettings", (e: any) => {
     e.preventDefault();
     const tableName: string = $(e.currentTarget)
         .closest("div.table-div")
         .attr("data-tablename")!;
     const tableObj = table.get(tableName);
-    $.ajax(tableObj.reloadUrl + "&loadTableLayoutSettings=1").done((settingsFromServer:any) => {
+    $.ajax(tableObj.reloadUrl + "&loadTableLayoutSettings=1").done((settingsFromServer: any) => {
         const { allFields, shownFieldKeys, layouts, bodyHtml } = settingsFromServer;
-        showLayoutDialog(
-            tableName,
-            allFields,
-            shownFieldKeys,
-            layouts,
-            bodyHtml,
-            (shownFieldKeys: string[]) => {
-                tableObj.reload({ fieldsShow: shownFieldKeys.join("|") });
-            }
-        );
+        showLayoutDialog(tableName, allFields, shownFieldKeys, layouts, bodyHtml, (shownFieldKeys: string[]) => {
+            tableObj.reload({ fieldsShow: shownFieldKeys.join("|") });
+        });
     });
 });

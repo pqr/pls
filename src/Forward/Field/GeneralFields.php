@@ -290,22 +290,20 @@ class GeneralFields
 
     public static function fileNumber($checkByShipmentId = false)
     {
-        $field = F::createString(
-            'FileNumber',
-            [
-                'name' => 'File Number',
-                'title' => 'Shipment',
-                'groupconcatTruncate' => true,
-                'groupconcat' => true,
-                'editCssClass' => 'file-no input-int input-left',
-                'tableAlign' => 'center',
-                'tableWidthHtml' => 68,
-                'tableWidthExcel' => 20,
-                F::PARAM_AC_SOURCE => '?a=Core&ac=SearchShipment',
-                F::PARAM_AC_ONSELECTJSFUNCTION => 'Forward.onFileNumberSelect',
-                F::PARAM_AC_RESULTFORMATTERJSFUNCTION => 'Forward.acMawbFileResultFormatter'
-            ]
-        );
+        $field = F::createString('FileNumber', [
+            'name' => 'File Number',
+            'title' => 'Shipment',
+            'copy' => true,
+            'groupconcatTruncate' => true,
+            'groupconcat' => true,
+            'editCssClass' => 'file-no input-int input-left',
+            'tableAlign' => 'center',
+            'tableWidthHtml' => 68,
+            'tableWidthExcel' => 20,
+            F::PARAM_AC_SOURCE => '?a=Core&ac=SearchShipment',
+            F::PARAM_AC_ONSELECTJSFUNCTION => 'Forward.onFileNumberSelect',
+            F::PARAM_AC_RESULTFORMATTERJSFUNCTION => 'Forward.acMawbFileResultFormatter'
+        ]);
 
         //Если передан специальный параметр, добавим метод проверяющий по наличию поля ShipmentID
         //что этот файл существует в базе
@@ -338,20 +336,18 @@ class GeneralFields
 
     public static function mawbNumber()
     {
-        return F::createString(
-            'MAWBNumber',
-            [
-                'name' => 'MAWB',
-                'editCssClass' => 'mawb-no',
-                'tableWidthHtml' => 105,
-                'tableWidthExcel' => 25,
-                'source' => '?a=Core&ac=SearchMawb',
-                'config' => [
-                    'onSelectFunction' => 'Forward.onMAWBSelect',
-                    'resultFormatterFunction' => 'Forward.acMawbFileResultFormatter'
-                ]
+        return F::createString('MAWBNumber', [
+            'name' => 'MAWB',
+            'copy' => true,
+            'editCssClass' => 'mawb-no',
+            'tableWidthHtml' => 105,
+            'tableWidthExcel' => 25,
+            'source' => '?a=Core&ac=SearchMawb',
+            'config' => [
+                'onSelectFunction' => 'Forward.onMAWBSelect',
+                'resultFormatterFunction' => 'Forward.acMawbFileResultFormatter'
             ]
-        );
+        ]);
     }
 
     public static function containerWeight()
@@ -375,6 +371,7 @@ class GeneralFields
         return F::createFloat('Quantity', [
             'name' => 'Qty.',
             'default' => 1,
+            'copy' => true,
             'editWidth' => 'mini',
             'tableWidthHtml' => 50,
             'tableAlign' => 'center',

@@ -24,8 +24,6 @@ abstract class SurchargesAbstract extends Subtable
             CF::currency()
 
         );
-
-        $this->_copyOnAddFieldKeys = ['CurrencyISO'];
     }
 
     protected function getMasterFieldKey()

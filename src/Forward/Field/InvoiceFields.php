@@ -334,6 +334,7 @@ class InvoiceFields
         return F::createSelect('UOMID', [
             'name' => 'UOM',
             'title' => 'Unit of Measure',
+            'copy' => true,
             'options' => 'uom',
             'empty' => true,
             'default' => 1,

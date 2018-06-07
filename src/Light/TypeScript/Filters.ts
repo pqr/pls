@@ -1,7 +1,17 @@
-import { buildMapFromObj, buildObjFromMap, initTooltip, isLangRu, parseJson, toastError } from "./Light";
+import {
+    buildMapFromObj,
+    buildObjFromMap,
+    initTooltip,
+    isLangRu,
+    loadSortableJs,
+    parseJson,
+    toastError
+} from "./Light";
 import * as forms from "./Form";
 import { Field, Form } from "./Form";
 import { Table } from "./Table";
+
+declare var Sortable: any;
 
 export class Filters {
     private name: string;
@@ -9,7 +19,7 @@ export class Filters {
     public form: Form;
     private $form: JQuery;
     private table: Table;
-    private $layer:JQuery;
+    private $layer: JQuery;
 
     // Описание схемы
     private allowLayoutChange: boolean;
@@ -20,6 +30,10 @@ export class Filters {
 
     private layoutForCancel: string[][];
     private invisibleForCancel: Set<string>;
+
+    // Массив в котором будут храниться инстансы Sortable объектов,
+    // чтобы при закрытии режима настроек сделать им всем destroy()
+    private sortables: any[] = [];
 
     constructor(table: Table) {
         this.name = table.getName();
@@ -71,11 +85,11 @@ export class Filters {
         return this.form.getFieldsValues();
     }
 
-    setValue(fieldKey:string, newValue:string|number) {
+    setValue(fieldKey: string, newValue: string | number) {
         this.form.setFieldValue(fieldKey, newValue);
     }
 
-    private renderHtmlIntoWidget(html:string) {
+    private renderHtmlIntoWidget(html: string) {
         if (this.$widget) {
             this.$widget.html(html);
         }
@@ -84,7 +98,7 @@ export class Filters {
     private highlightActive() {
         //Сначала уберём подсветку со всех полей
         this.$form.find(".filter-active").removeClass("filter-active");
-        this.form.getFields().forEach((_:any, fieldKey: string) => {
+        this.form.getFields().forEach((_: any, fieldKey: string) => {
             if (!this.isDefaultValue(fieldKey)) {
                 const $field = this.form.getFieldNode(fieldKey);
                 const $label = $field.prev("label");
@@ -117,7 +131,7 @@ export class Filters {
     };
 
     private reset() {
-        this.form.getFields().forEach((field:Field, fieldKey:string) => {
+        this.form.getFields().forEach((field: Field, fieldKey: string) => {
             if (!field.donotreset) {
                 this.form.setFieldValue(fieldKey, field.def || "");
             }
@@ -125,18 +139,14 @@ export class Filters {
     }
 
     private onResetClick = () => {
-
         if (this.table.isLoading()) {
-
             // Если в момент нажатия RESET уже происходила какая-то загрузка данных, то её нужно прервать,
             this.table.cancelReload();
             this.afterStopFiltering();
-
         }
 
         this.reset();
         this.resetHandlers.forEach(handler => handler());
-
     };
 
     submit() {
@@ -148,7 +158,6 @@ export class Filters {
             page: 1
         };
         this.table.reload(reloadParams, () => {
-
             const hiddenInput = this.table.getDivNode().find("input[name=filterValues]");
             if (hiddenInput.length > 0) {
                 const newValues = parseJson(<string>hiddenInput.val());
@@ -165,15 +174,14 @@ export class Filters {
             }
 
             this.afterStopFiltering();
-
         });
     }
 
-    private afterStopFiltering()
-    {
+    private afterStopFiltering() {
         this.$form
             .removeClass("loading-opacity")
-            .find(".btn-filter").prop("disabled", false);
+            .find(".btn-filter")
+            .prop("disabled", false);
     }
 
     private showWidget(clickTarget: HTMLElement): JQuery {
@@ -197,7 +205,6 @@ export class Filters {
 
         // Удаляет фильтр
         $widget.on("click", ".del-link", this.onWidgetDeleteSavedClick);
-
 
         let offset = $(clickTarget).offset()!;
         offset.top += 40;
@@ -260,7 +267,6 @@ export class Filters {
         this.submit();
 
         this.hideWidget();
-
     };
 
     private onWidgetSaveCurrentClick = (e: any) => {
@@ -284,7 +290,7 @@ export class Filters {
         $.post("?a=Core&ps=FiltersSave&TableName=" + encodeURIComponent(this.name), {
             Name: newName,
             Filters: buildObjFromMap(this.getValues())
-        }).done((savedHtml:string) => {
+        }).done((savedHtml: string) => {
             this.renderHtmlIntoWidget(savedHtml);
             this.$widget!.find("input.input-default").val(newName);
         });
@@ -299,7 +305,7 @@ export class Filters {
 
         $.post("?a=Core&ps=FiltersDelete&TableName=" + encodeURIComponent(this.name), {
             Name: toBeDeletedName
-        }).done((savedHtml:string) => {
+        }).done((savedHtml: string) => {
             // Если успешно удалили то от сервера приходит обновлённый список всех сохранённых настроек
             this.renderHtmlIntoWidget(savedHtml);
         });
@@ -310,17 +316,21 @@ export class Filters {
 
         this.showWidget(e.currentTarget);
 
-        $.ajax("?a=Core&ps=FiltersGetHistoryHtml&TableName=" + encodeURIComponent(this.name)).done((responseHtml:string) => {
-            this.renderHtmlIntoWidget(responseHtml);
-        });
+        $.ajax("?a=Core&ps=FiltersGetHistoryHtml&TableName=" + encodeURIComponent(this.name)).done(
+            (responseHtml: string) => {
+                this.renderHtmlIntoWidget(responseHtml);
+            }
+        );
     };
 
     private onSaveClick = (e: any) => {
         e.preventDefault();
         this.showWidget(e.currentTarget);
-        $.ajax("?a=Core&ps=FiltersGetSavedHtml&TableName=" + encodeURIComponent(this.name)).done((savedHtml:string) => {
-            this.renderHtmlIntoWidget(savedHtml);
-        });
+        $.ajax("?a=Core&ps=FiltersGetSavedHtml&TableName=" + encodeURIComponent(this.name)).done(
+            (savedHtml: string) => {
+                this.renderHtmlIntoWidget(savedHtml);
+            }
+        );
     };
 
     /**
@@ -328,16 +338,15 @@ export class Filters {
      * Применяется в начальный момент времени, когда пользователь только нажал кнопку настроек, чтобы сохранить в this.layoutForCancel
      * и при нажатии кнопки "применить настройки", когда нужно отправить на сервер все настройки сделанные пользователем
      */
-    private getLayoutFromMarkup():string[][]
-    {
+    private getLayoutFromMarkup(): string[][] {
         const layoutFromMarkup: string[][] = [];
-        this.$form.find("table.filters").each(function(this: HTMLTableElement, tableIndex: number) {
-            const $table = $(this);
-            layoutFromMarkup[tableIndex] = [];
-            $table.find("tr[data-templatekey]").each(function(this: HTMLTableRowElement) {
-                const $tr = $(this);
-                const templateKey = <string>$tr.attr('data-templatekey')!;
-                layoutFromMarkup[tableIndex].push(templateKey);
+        this.$form.find("ul.filters__list").each(function(this: HTMLUListElement, colIndex: number) {
+            const $ul = $(this);
+            layoutFromMarkup[colIndex] = [];
+            $ul.find("li[data-templatekey]").each(function(this: HTMLLIElement) {
+                const $li = $(this);
+                const templateKey = <string>$li.attr("data-templatekey")!;
+                layoutFromMarkup[colIndex].push(templateKey);
             });
         });
 
@@ -348,11 +357,10 @@ export class Filters {
      * Возвращает Set из ключей templatekey у котоырх в вёрстке стоит класс filter-invisible
      * @returns {string[]}
      */
-    private getInvisibleFromMakrup(): Set<string>
-    {
+    private getInvisibleFromMakrup(): Set<string> {
         const invisibleFromMarkup = new Set<string>();
-        this.$form.find("tr[data-templatekey].filter-invisible").each(function(this:HTMLTableRowElement) {
-            invisibleFromMarkup.add($(this).attr('data-templatekey')!);
+        this.$form.find("li[data-templatekey].filter-invisible").each(function(this: HTMLLIElement) {
+            invisibleFromMarkup.add($(this).attr("data-templatekey")!);
         });
 
         return invisibleFromMarkup;
@@ -363,12 +371,12 @@ export class Filters {
      * Вызывается при начале работы в режиме настроек
      */
     private showEyeIcons() {
-        this.$form.find("tr[data-templatekey]").each(function(this:HTMLTableRowElement) {
-            const $tr = $(this);
-            const invisible = $tr.hasClass('filter-invisible');
+        this.$form.find("li[data-templatekey]").each(function(this: HTMLLIElement) {
+            const $li = $(this);
+            const invisible = $li.hasClass("filter-invisible");
             const iconClass = invisible ? "fa-eye-slash" : "fa-eye";
             const icon = `<i class="filter-hide-icon fa ${iconClass}"></i>`;
-            $tr.find('th').prepend(icon);
+            $li.find(".filter__label").prepend(icon);
         });
     }
 
@@ -389,11 +397,24 @@ export class Filters {
         // Отображаем все скрытые фильтры
         $form.find(".filter-invisible").removeClass("filter-invisible");
 
+        /*
         $form.find("table.filters").sortable({
             connectWith: "table.filters",
             items: "> tbody > tr",
             cursor: "move",
             handle: "th:not(:empty)"
+        });
+        */
+        loadSortableJs().then(() => {
+            $form.find("ul.filters__list").each((_: any, ul: HTMLUListElement) => {
+                const sortable = Sortable.create(ul, {
+                    group: "filters",
+                    filter: ".filters__buttons, .filters__layoutbuttons", // Selectors that do not lead to dragging (String or Function)
+                    animation: 100
+                });
+                // Сохраним в специальный массив, чтобы при закрытии сделать destroy
+                this.sortables.push(sortable);
+            });
         });
     };
 
@@ -403,7 +424,8 @@ export class Filters {
         const $form = this.$form;
 
         // Отключаем виджет сортировки
-        $form.find("table.filters").sortable("destroy");
+        //$form.find("table.filters").sortable("destroy");
+        this.sortablesDistroy();
         // Убираем все иконки-глазки
         $form.find(".filter-hide-icon").remove();
 
@@ -422,13 +444,13 @@ export class Filters {
         const $form = this.$form;
 
         const newLayout: string[][] = this.getLayoutFromMarkup();
-        const newInvisible = new Set<string>();
 
         // Соберём набор полей которые пользователь отметил иконкой "скрыть" (перечёркнутый глаз)
+        const newInvisible = new Set<string>();
         $form.find(".fa-eye-slash").each(function(this: HTMLElement) {
-            const $tr = $(this).closest('tr[data-templatekey]');
-            if ($tr.length === 1) {
-                newInvisible.add($tr.attr('data-templatekey')!);
+            const $li = $(this).closest("li[data-templatekey]");
+            if ($li.length === 1) {
+                newInvisible.add($li.attr("data-templatekey")!);
             }
         });
 
@@ -439,7 +461,8 @@ export class Filters {
         });
 
         // Отключаем jQuery плагин sortable
-        $form.find("table.filters").sortable("destroy");
+        //$form.find("table.filters").sortable("destroy");
+        this.sortablesDistroy();
 
         // Физически скрываем все отмеченные перечёкнутым глазом фильтроы
         this.addInvisibleClasses(newInvisible);
@@ -450,6 +473,15 @@ export class Filters {
         // Скрываем форму настроек
         this.hideLayout();
     };
+
+    private sortablesDistroy() {
+        // Удаляем все объекы виджета Sortable накопленные в специальном массиве
+        this.sortables.forEach((sortable: any) => {
+            sortable.destroy();
+        });
+        // B очищаем этот специальный массив целиком
+        this.sortables = [];
+    }
 
     private onLayoutResetClick = (e: any) => {
         e.preventDefault();
@@ -465,23 +497,30 @@ export class Filters {
      * либо когда пользователь нажал "сбросить положение фильтров по умолчанию"
      * @param {string[][]} layout
      */
-    private applyLayout(layout:string[][]) {
+    private applyLayout(layout: string[][]) {
         const $form = this.$form;
 
-        // Перебирем колонки, которые уже есть в вёрстке (table.filters)
-        $form.find("table.filters").each(function(this: HTMLTableElement, tableIndex: number) {
-            const $table = $(this);
+        // Перебирем колонки, которые уже есть в вёрстке
+        $form.find("ul.filters__list").each(function(this: HTMLUListElement, colIndex: number) {
+            const $ul = $(this);
             // Внутри каждой колонки применяем полученный порядок полей пришедший в параметре layout
-            if (layout[tableIndex] !== undefined) {
-                layout[tableIndex].forEach((templateKey: string) => {
+            if (layout[colIndex] !== undefined) {
+                layout[colIndex].forEach((templateKey: string) => {
                     // Вынимаем элемент вёрски где-бы он ни находился и просто доабвляем в конец текущей колонки
-                    $table.append($form.find('table.filters tr[data-templatekey="' + templateKey + '"]'));
+                    $ul.append($form.find('li[data-templatekey="' + templateKey + '"]'));
                 });
             }
         });
 
         // Кнопки фильтров расположим в первой колонке в самом конце
-        $form.find("table.filters").first().append($form.find('.filters-buttons').closest('tr'))
+        $form
+            .find("ul.filters__list")
+            .first()
+            .append($form.find("li.filters__buttons"));
+        $form
+            .find("ul.filters__list")
+            .first()
+            .append($form.find("li.filters__layoutbuttons"));
     }
 
     /**
@@ -489,7 +528,6 @@ export class Filters {
      * @param {Set<string>} invisibleTemplateKeys
      */
     private addInvisibleClasses(invisibleTemplateKeys: Set<string>) {
-
         if (!this.allowLayoutChange) {
             // Если для данного модуля в целом отключена система настроек layout,
             // то и скрывать ничего не будем
@@ -500,19 +538,18 @@ export class Filters {
         // Сначала удаляем все старые наложенные классы на всякий случай
         $form.remove(".filter-invisible");
         // Теперь накладываем классы заново
-        invisibleTemplateKeys.forEach((templateKey) => {
+        invisibleTemplateKeys.forEach(templateKey => {
             if (this.isDefaultValue(templateKey)) {
                 // Скрываем только если поле имеет значение по-умолчанию
                 // При проверке на default может быть не соответствие: templateKey не всегда совпадает с реальным fieldKey
                 // В случае если среди фильтров отсутствует поле с ключём templateKey, метод isDefaultValue вернёт true
                 // и значит мы скроем такую строку не проверив на самом деле что внутри
-                $form.find(`tr[data-templatekey="${templateKey}"]`).addClass('filter-invisible');
+                $form.find(`li[data-templatekey="${templateKey}"]`).addClass("filter-invisible");
             }
         });
     }
 
-    private refreshInvisibleClasses()
-    {
+    private refreshInvisibleClasses() {
         if (this.allowLayoutChange) {
             this.addInvisibleClasses(this.getInvisibleFromMakrup());
         }
@@ -523,21 +560,25 @@ export class Filters {
         const $icon = $(e.currentTarget);
         const isCurrentInvisible = $icon.hasClass("fa-eye-slash");
         const newInvisible = !isCurrentInvisible;
-        $icon
-            .toggleClass("fa-eye-slash", newInvisible)
-            .toggleClass("fa-eye", !newInvisible);
+        $icon.toggleClass("fa-eye-slash", newInvisible).toggleClass("fa-eye", !newInvisible);
     };
 
     private onAllVisibleClick = (e: any) => {
         e.preventDefault();
         // Убираем все перечёркнутые глазки, добавляем обычные глазки
-        this.$form.find(".filter-hide-icon").removeClass("fa-eye-slash").addClass("fa-eye");
+        this.$form
+            .find(".filter-hide-icon")
+            .removeClass("fa-eye-slash")
+            .addClass("fa-eye");
     };
 
     private onAllInvisibleClick = (e: any) => {
         e.preventDefault();
         // Убираем все обычные глазки, добавляем перечёркнутые глазки
-        this.$form.find(".filter-hide-icon").removeClass("fa-eye").addClass("fa-eye-slash");
+        this.$form
+            .find(".filter-hide-icon")
+            .removeClass("fa-eye")
+            .addClass("fa-eye-slash");
     };
 
     private showLayout() {
@@ -545,7 +586,8 @@ export class Filters {
 
         const $form = this.$form;
 
-        $form.closest(".filters").css("z-index", 10);
+        $form.closest(".filters").addClass("filters__layoutmode");
+        $form.find("input, select, textarea").prop("disabled", true);
 
         if (!this.$layer) {
             const $layer = $("body > .layer");
@@ -560,20 +602,20 @@ export class Filters {
 
         $("body").css("overflow", "hidden");
 
-        const $buttons = $form.find(".filters-buttons").addClass("display-none");
+        const $buttons = $form.find(".filters__buttons").addClass("display-none");
 
         const textResetSort = isLangRu ? "Сбросить сортировку фильтров" : "Reset to default layout";
         const textShowAll = isLangRu ? "Сделать все фильтры видимыми" : "Show all";
         const textHideAll = isLangRu ? "Сделать все фильтры невидимыми" : "Hide all";
         const textCancel = isLangRu ? "Отмена" : "Cancel";
 
-        const $layoutButtons = $(`<div class="filters-layout-buttons">
-                                             <span class="btn waves-effect bgcolor-btn-green filters-layout-save"><i class="fa fa-save" aria-hidden="true"></i></span>       
-                                             <span class="btn-flat waves-effect filters-layout-reset-sort toggle-tooltip" title="${textResetSort}"><i class="fa fa-random" aria-hidden="true"></i></span>
-                                             <span class="btn-flat waves-effect filters-layout-allvisible toggle-tooltip" title="${textShowAll}"><i class="fa fa-eye" aria-hidden="true"></i></span>
-                                             <span class="btn-flat waves-effect filters-layout-allinvisible toggle-tooltip" title="${textHideAll}"><i class="fa fa-eye-slash" aria-hidden="true"></i></span>
-                                             <span class="btn-flat waves-effect filters-layout-cancel toggle-tooltip" title="${textCancel}"><i class="fa fa-ban" aria-hidden="true"></i></span>
-                                        </div>`);
+        const $layoutButtons = $(`<li class="filters__layoutbuttons">
+                                             <span class="btn waves-effect bgcolor-btn-green filters-layout-save"><i class="fa fa-save"></i></span>       
+                                             <span class="btn-flat waves-effect filters-layout-reset-sort toggle-tooltip" title="${textResetSort}"><i class="fa fa-random"></i></span>
+                                             <span class="btn-flat waves-effect filters-layout-allvisible toggle-tooltip" title="${textShowAll}"><i class="fa fa-eye"></i></span>
+                                             <span class="btn-flat waves-effect filters-layout-allinvisible toggle-tooltip" title="${textHideAll}"><i class="fa fa-eye-slash"></i></span>
+                                             <span class="btn-flat waves-effect filters-layout-cancel toggle-tooltip" title="${textCancel}"><i class="fa fa-ban"></i></span>
+                                        </li>`);
 
         initTooltip($layoutButtons);
 
@@ -583,13 +625,14 @@ export class Filters {
     hideLayout() {
         const $form = this.$form;
 
-        $form.closest(".filters").css("z-index", 0);
+        $form.closest(".filters").removeClass("filters__layoutmode");
+        $form.find("input, select, textarea").prop("disabled", false);
         this.$layer.fadeOut("fast");
 
         $("body").css("overflow", "auto");
 
-        $form.find(".filters-buttons").removeClass("display-none");
-        $form.find(".filters-layout-buttons").remove();
+        $form.find(".filters__buttons").removeClass("display-none");
+        $form.find(".filters__layoutbuttons").remove();
     }
 
     isDefaultValue(fieldKey: string) {
@@ -612,9 +655,8 @@ export class Filters {
         return value.toString() === field.def.toString();
     }
 
-    private onBodyClickTryHideWidget = (e:any) => {
-        if (this.$widget
-            && !$.contains(this.$widget.get(0), e.target)) {
+    private onBodyClickTryHideWidget = (e: any) => {
+        if (this.$widget && !$.contains(this.$widget.get(0), e.target)) {
             this.hideWidget();
         }
     };

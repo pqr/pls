@@ -610,16 +610,21 @@ abstract class ObjAbstract implements \ArrayAccess
         return null;
     }
 
-    public function getLinkView(array $urlParams = [], $title = null, $tagParams = null, $blank = false)
+    public function getLinkView(array $urlParams = [], $title = null, $tagParams = null, $blank = false, $dialog = false)
     {
         $innerHtml = $this->getDescriptionHtml();
         $id = (int)($this->_masterIdForDbLog ?: $this->_id);
         $module = $this->getMasterModuleForDbLog();
-        return Link::moduleView($innerHtml, $id, $urlParams, $module, $title, $tagParams, $blank);
+        return Link::moduleView($innerHtml, $id, $urlParams, $module, $title, $tagParams, $blank, $dialog);
     }
 
     public function getLinkViewBlank(array $urlParams = [], $title = null, $tagParams = null)
     {
-        $this->getLinkView($urlParams, $title, $tagParams, true);
+        return $this->getLinkView($urlParams, $title, $tagParams, true);
+    }
+
+    public function getLinkViewDialog(array $urlParams = [], $title = null, $tagParams = null)
+    {
+        return $this->getLinkView($urlParams, $title, $tagParams, false, true);
     }
 }

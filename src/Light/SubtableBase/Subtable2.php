@@ -98,12 +98,6 @@ abstract class Subtable2
      */
     protected $_tableLinkFindidSubtableName;
 
-    /**
-     * Массив с ключами полей, значения которых нужно копировать из предыдущей строки в новую в режиме Edit
-     * @var array
-     */
-    protected $_copyOnAddFieldKeys;
-
     public function __construct(ObjAbstract $masterObj)
     {
         //Инициализируем внутреннюю переменную _obj хитрым способом -  возможно, на основе файла в этой же папке

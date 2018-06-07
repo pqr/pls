@@ -231,6 +231,30 @@ export function initSelect2($root: JQuery) {
     }
 }
 
+let sortablejsLoaded = false;
+
+export function loadSortableJs() {
+    return new Promise(function(resolve) {
+        if (sortablejsLoaded) {
+            // Если Sortable.min.js уже был загружен, то мгновенно резолвим промис и выходим
+            resolve();
+            return;
+        }
+
+        // Асинхронно загружаем js файл библиотеки, которая отвечает на sortable функциональность
+        let script = document.createElement("script");
+        script.src = "lightpublic/js/Sortable.min.js";
+        script.type = "text/javascript";
+        script.async = true;
+        script.onload = () => {
+            // Как только успешно загрузили, заново вызываем вызываем showLayoutDialog()
+            sortablejsLoaded = true;
+            resolve();
+        };
+        document.getElementsByTagName("head")[0].appendChild(script);
+    });
+}
+
 // Вспомагательная функция - вычисляет css свойства для индикатора активного таба
 // Принимает активную ссылку
 function calcTabsIndicatorCss($a: JQuery) {

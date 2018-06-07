@@ -15,6 +15,7 @@ use Light\Html;
  * @method $this setDefault(string $value)
  * @method $this setUom(string $value)
  * @method $this setTotal(bool $total)
+ * @method $this setCopy(bool $copy)
  * @method $this setTableWidthExcel(int $value)
  * @method $this setTableWidthHtml(int $value)
  * @method $this setTableOrderBy($sqlFieldKey)
@@ -69,6 +70,7 @@ use Light\Html;
  * @method int getTableWidthExcel()
  * @method int getTableWidthHtml()
  * @method bool getTotal()
+ * @method bool getCopy()
  * @method string getTableOrderBy()
  * @method string getTableOrderByLikeFilter()
  * @method string getEditId()
@@ -212,6 +214,11 @@ abstract class FieldAbstract
      * @var bool нужно ли в таблице подсчитывать поэтому полю total в столбик?
      */
     public $total = false;
+
+    /**
+     * @var bool нужно ли копировать значение из предыдущей строки при добавлении новой строки в подтаблице (Subtable)?
+     */
+    public $copy = false;
 
     /**
      * @var int Ширина колонки при отображении поля в таблице в Excel режиме

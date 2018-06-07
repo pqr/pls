@@ -113,7 +113,7 @@ function createPropDecorator(propertyInitiallyEnumerable, propertyCreator) {
         var decoratorArguments;
         var decorator = function decorate(target, prop, descriptor, applyImmediately
         // This is a special parameter to signal the direct application of a decorator, allow extendObservable to skip the entire type decoration part,
-        // as the instance to apply the deorator to equals the target
+        // as the instance to apply the decorator to equals the target
         ) {
             if (applyImmediately === true) {
                 propertyCreator(target, prop, descriptor, target, decoratorArguments);
@@ -175,8 +175,7 @@ function spyReportEnd(change) {
 function spy(listener) {
     globalState.spyListeners.push(listener);
     return once(function () {
-        globalState.spyListeners = globalState.spyListeners
-            .filter(function (l) { return l !== listener; });
+        globalState.spyListeners = globalState.spyListeners.filter(function (l) { return l !== listener; });
     });
 }
 
@@ -301,7 +300,7 @@ function actionFieldDecorator(name) {
                 return undefined;
             },
             set: function (value) {
-                addHiddenFinalProp(this, prop, action(name, value));
+                addHiddenProp(this, prop, action(name, value));
             }
         });
     };
@@ -680,7 +679,7 @@ var ComputedValue = /** @class */ (function () {
         this.isComputing = false; // to check for cycles
         this.isRunningSetter = false;
         this.isTracing = TraceMode.NONE;
-        if (process.env.NODE_ENV === "production" && !options.get)
+        if (process.env.NODE_ENV !== "production" && !options.get)
             return fail$1("missing option for computed: get");
         this.derivation = options.get;
         this.name = options.name || "ComputedValue@" + getNextId();
@@ -711,7 +710,7 @@ var ComputedValue = /** @class */ (function () {
     ComputedValue.prototype.get = function () {
         if (this.isComputing)
             fail$1("Cycle detected in computation " + this.name + ": " + this.derivation);
-        if (globalState.inBatch === 0) {
+        if (globalState.inBatch === 0 && this.observers.length === 0) {
             if (shouldCompute(this)) {
                 this.warnAboutUntrackedRead();
                 startBatch(); // See perf test 'computed memoization'
@@ -1013,17 +1012,17 @@ var ObservableObjectAdministration = /** @class */ (function () {
         this.values = {};
     }
     ObservableObjectAdministration.prototype.read = function (owner, key) {
-        if (this.target !== owner) {
+        if (process.env.NODE_ENV === "production" && this.target !== owner) {
             this.illegalAccess(owner, key);
-            return;
+            if (!this.values[key])
+                return undefined;
         }
         return this.values[key].get();
     };
     ObservableObjectAdministration.prototype.write = function (owner, key, newValue) {
         var instance = this.target;
-        if (instance !== owner) {
+        if (process.env.NODE_ENV === "production" && instance !== owner) {
             this.illegalAccess(owner, key);
-            return;
         }
         var observable = this.values[key];
         if (observable instanceof ComputedValue) {
@@ -1126,7 +1125,7 @@ var ObservableObjectAdministration = /** @class */ (function () {
          *
          * When using decorate, the property will always be redeclared as own property on the actual instance
          */
-        return fail$1("Property '" + propName + "' of '" + owner + "' was accessed through the prototype chain. Use 'decorate' instead to declare the prop or access it statically through it's owner");
+        console.warn("Property '" + propName + "' of '" + owner + "' was accessed through the prototype chain. Use 'decorate' instead to declare the prop or access it statically through it's owner");
     };
     /**
      * Observes this object. Triggers for the events 'add', 'update' and 'delete'.
@@ -1263,6 +1262,9 @@ function isObservableObject(thing) {
 
 function createDecoratorForEnhancer(enhancer) {
     var decorator = createPropDecorator(true, function (target, propertyName, descriptor, _decoratorTarget, decoratorArgs) {
+        if (process.env.NODE_ENV !== "production") {
+            invariant(!descriptor || !descriptor.get, "@observable cannot be used on getter (property \"" + propertyName + "\"), use @computed instead.");
+        }
         var initialValue = descriptor
             ? descriptor.initializer ? descriptor.initializer.call(target) : descriptor.value
             : undefined;
@@ -1344,9 +1346,9 @@ function isComputedProp(value, propName) {
 var computedDecorator = createPropDecorator(false, function (instance, propertyName, descriptor, decoratorTarget, decoratorArgs) {
     var get = descriptor.get, set = descriptor.set; // initialValue is the descriptor for get / set props
     // Optimization: faster on decorator target or instance? Assuming target
-    // Optimiziation: find out if declaring on instance isn't just faster. (also makes the property descriptor simpler). But, more memory usage..
+    // Optimization: find out if declaring on instance isn't just faster. (also makes the property descriptor simpler). But, more memory usage..
     var options = decoratorArgs[0] || {};
-    defineComputedProperty(instance, propertyName, __assign({}, options, { get: get, set: set }));
+    defineComputedProperty(instance, propertyName, __assign({ get: get, set: set }, options));
 });
 var computedStructDecorator = computedDecorator({ equals: comparer.structural });
 /**
@@ -3228,6 +3230,7 @@ function shouldCompute(derivation) {
                     }
                     // if ComputedValue `obj` actually changed it will be computed and propagated to its observers.
                     // and `derivation` is an observer of `obj`
+                    // invariantShouldCompute(derivation)
                     if (derivation.dependenciesState === exports.IDerivationState.STALE) {
                         untrackedEnd(prevUntracked);
                         return true;
@@ -3240,6 +3243,15 @@ function shouldCompute(derivation) {
         }
     }
 }
+// function invariantShouldCompute(derivation: IDerivation) {
+//     const newDepState = (derivation as any).dependenciesState
+//     if (
+//         process.env.NODE_ENV === "production" &&
+//         (newDepState === IDerivationState.POSSIBLY_STALE ||
+//             newDepState === IDerivationState.NOT_TRACKING)
+//     )
+//         fail("Illegal dependency state")
+// }
 function isComputingDerivation() {
     return globalState.trackingDerivation !== null; // filter out actions inside computations
 }
@@ -3684,6 +3696,19 @@ function values(obj) {
     return fail$1(process.env.NODE_ENV !== "production" &&
         "'values()' can only be used on observable objects, arrays and maps");
 }
+function entries(obj) {
+    if (isObservableObject(obj)) {
+        return keys(obj).map(function (key) { return [key, obj[key]]; });
+    }
+    if (isObservableMap(obj)) {
+        return keys(obj).map(function (key) { return [key, obj.get(key)]; });
+    }
+    if (isObservableArray(obj)) {
+        return obj.map(function (key, index) { return [index, key]; });
+    }
+    return fail$1(process.env.NODE_ENV !== "production" &&
+        "'entries()' can only be used on observable objects, arrays and maps");
+}
 function set(obj, key, value) {
     if (arguments.length === 2) {
         startBatch();
@@ -3701,7 +3726,7 @@ function set(obj, key, value) {
         var adm = obj.$mobx;
         var existingObservable = adm.values[key];
         if (existingObservable) {
-            existingObservable.set(value);
+            adm.write(obj, key, value);
         }
         else {
             defineObservableProperty(obj, key, value, adm.defaultEnhancer);
@@ -3904,65 +3929,70 @@ var defaultOptions = {
     detectCycles: true,
     exportMapsAsObjects: true
 };
-function toJS(source, options, __alreadySeen) {
-    if (__alreadySeen === void 0) { __alreadySeen = []; }
+function cache(map, key, value, options) {
+    if (options.detectCycles)
+        map.set(key, value);
+    return value;
+}
+function toJSHelper(source, options, __alreadySeen) {
+    if (!isObservable(source))
+        return source;
+    var detectCycles = options.detectCycles === true;
+    if (detectCycles &&
+        source !== null &&
+        typeof source === "object" &&
+        __alreadySeen.has(source)) {
+        return __alreadySeen.get(source);
+    }
+    if (isObservableArray(source)) {
+        var res = cache(__alreadySeen, source, [], options);
+        var toAdd = source.map(function (value) { return toJSHelper(value, options, __alreadySeen); });
+        res.length = toAdd.length;
+        for (var i = 0, l = toAdd.length; i < l; i++)
+            res[i] = toAdd[i];
+        return res;
+    }
+    if (isObservableObject(source)) {
+        var res = cache(__alreadySeen, source, {}, options);
+        keys(source); // make sure we track the keys of the object
+        for (var key in source) {
+            res[key] = toJSHelper(source[key], options, __alreadySeen);
+        }
+        return res;
+    }
+    if (isObservableMap(source)) {
+        if (options.exportMapsAsObjects === false) {
+            var res_1 = cache(__alreadySeen, source, new Map(), options);
+            source.forEach(function (value, key) {
+                res_1.set(key, toJSHelper(value, options, __alreadySeen));
+            });
+            return res_1;
+        }
+        else {
+            var res_2 = cache(__alreadySeen, source, {}, options);
+            source.forEach(function (value, key) {
+                res_2[key] = toJSHelper(value, options, __alreadySeen);
+            });
+            return res_2;
+        }
+    }
+    if (isObservableValue(source))
+        return toJSHelper(source.get(), options, __alreadySeen);
+    return source;
+}
+function toJS(source, options) {
+    if (!isObservable(source))
+        return source;
     // backward compatibility
     if (typeof options === "boolean")
         options = { detectCycles: options };
     if (!options)
         options = defaultOptions;
     var detectCycles = options.detectCycles === true;
-    // optimization: using ES6 map would be more efficient!
-    // optimization: lift this function outside toJS, this makes recursion expensive
-    function cache(value) {
-        if (detectCycles)
-            __alreadySeen.push([source, value]);
-        return value;
-    }
-    if (isObservable(source)) {
-        if (detectCycles && __alreadySeen === null)
-            __alreadySeen = [];
-        if (detectCycles && source !== null && typeof source === "object") {
-            for (var i = 0, l = __alreadySeen.length; i < l; i++)
-                if (__alreadySeen[i][0] === source)
-                    return __alreadySeen[i][1];
-        }
-        if (isObservableArray(source)) {
-            var res = cache([]);
-            var toAdd = source.map(function (value) { return toJS(value, options, __alreadySeen); });
-            res.length = toAdd.length;
-            for (var i = 0, l = toAdd.length; i < l; i++)
-                res[i] = toAdd[i];
-            return res;
-        }
-        if (isObservableObject(source)) {
-            var res = cache({});
-            keys(source); // make sure we track the keys of the object
-            for (var key in source) {
-                res[key] = toJS(source[key], options, __alreadySeen);
-            }
-            return res;
-        }
-        if (isObservableMap(source)) {
-            if (options.exportMapsAsObjects === false) {
-                var res_1 = cache(new Map());
-                source.forEach(function (value, key) {
-                    res_1.set(key, toJS(value, options, __alreadySeen));
-                });
-                return res_1;
-            }
-            else {
-                var res_2 = cache({});
-                source.forEach(function (value, key) {
-                    res_2[key] = toJS(value, options, __alreadySeen);
-                });
-                return res_2;
-            }
-        }
-        if (isObservableValue(source))
-            return toJS(source.get(), options, __alreadySeen);
-    }
-    return source;
+    var __alreadySeen;
+    if (detectCycles)
+        __alreadySeen = new Map();
+    return toJSHelper(source, options, __alreadySeen);
 }
 
 function interceptReads(thing, propOrHandler, handler) {
@@ -4078,7 +4108,10 @@ if (process.env.NODE_ENV !== "production" &&
         });
     });
 }
+// forward compatibility with mobx, so that packages can easily support mobx 4 & 5
+var $mobx = "$mobx";
 
+exports.$mobx = $mobx;
 exports.Reaction = Reaction;
 exports.untracked = untracked;
 exports.createAtom = createAtom;
@@ -4108,6 +4141,7 @@ exports.isAction = isAction;
 exports.runInAction = runInAction;
 exports.keys = keys;
 exports.values = values;
+exports.entries = entries;
 exports.set = set;
 exports.remove = remove;
 exports.has = has$1;

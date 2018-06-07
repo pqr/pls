@@ -35,9 +35,9 @@ class Core
     {
         if (Request::getMehod() === 'POST') {
             //Распечатаем сохранённое в базе значение - возможно, оно ещё понадобится для js клиента
-            print User::setParam($_POST['param'], $_POST['value']);
+            print User::setParam((string)$_POST['param'], $_POST['value']);
         } else {
-            print User::getParam($_GET['param']);
+            print User::getParam((string)$_GET['param']);
         }
 
         ApplicationAbstract::terminate();
@@ -540,6 +540,6 @@ class Core
             return;
         }
 
-        print Currency::getRate($_GET['from'], $_GET['to'], FieldDate::parse($_GET['date']));
+        print Currency::getRate((string)$_GET['from'], (string)$_GET['to'], FieldDate::parse($_GET['date']));
     }
 }

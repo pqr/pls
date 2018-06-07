@@ -10,8 +10,7 @@
     "source-map-loader": "latest",
     "ts-loader": "^4.0.1",
     "typescript": "latest",
-    "webpack": "^4.1.0",
-    "webpack-cli": "^2.0.10"
+    "webpack": "^3"
   },
   "dependencies": {
     "@types/jquery": "^3.3.0",
@@ -33,6 +32,7 @@
     "react-dom": "latest",
     "rollbar": "latest",
     "select2": "latest",
-    "serializr": "latest"
+    "serializr": "latest",
+    "sortablejs": "^1.7.0"
   }
 }

@@ -116,12 +116,9 @@ class Template
         self::$tdata = $tdata;
     }
 
-    public static function control($title, $label, $html, $cssClass = null, $filterTemplateKey = null)
+    public static function control($title, $label, $html)
     {
-        $dataSort = $filterTemplateKey ? ' data-templatekey="' . htmlspecialchars($filterTemplateKey) . '"' : '';
-        $class = $cssClass ? ' class="' . $cssClass . '"' : '';
-
-        return "<tr{$title}{$dataSort}{$class}><th>{$label}</th><td>{$html}</td></tr>";
+        return "<tr{$title}><th>{$label}</th><td>{$html}</td></tr>";
     }
 
     public static function h3($fieldKey)
@@ -129,25 +126,28 @@ class Template
         return static::c($fieldKey, true);
     }
 
-    public static function c($fieldKey, $h3 = false, $cssClass = null, $filterTemplateKey = null)
+    public static function c($fieldKey, $h3 = false)
     {
         if (!isset(static::$tdata['_fieldset'][$fieldKey])) {
-            return static::control('', htmlspecialchars($fieldKey),
-                '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>');
+            $title = '';
+            $label = htmlspecialchars($fieldKey);
+            $html = '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
+            return static::control($title, $label, $html);
         }
 
         $title = static::title($fieldKey);
         $label = static::label($fieldKey);
         $html = $h3 ? static::htmlh3($fieldKey) : static::html($fieldKey);
-        $filterTemplateKey = $filterTemplateKey ? (is_string($filterTemplateKey) ? $filterTemplateKey : $fieldKey) : null;
-        return static::control($title, $label, $html, $cssClass, $filterTemplateKey);
+        return static::control($title, $label, $html);
     }
 
     public static function amountWithCurrency($fieldKey, $currencyKey = null)
     {
         if (!isset(static::$tdata['_fieldset'][$fieldKey])) {
-            return static::control('', htmlspecialchars($fieldKey),
-                '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>');
+            $title = '';
+            $label = htmlspecialchars($fieldKey);
+            $html = '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
+            return static::control($title, $label, $html);
         }
 
         $title = static::title($fieldKey);
@@ -368,46 +368,13 @@ class Template
         return $html;
     }
 
-    public static function filtersButtons($allowLayoutChange = true)
-    {
-        $isLangRu = Config::$lang === 'ru';
-        $textHistory = $isLangRu ? 'История фильтров' : 'Filters history';
-        $textSaved = $isLangRu ? 'Сохраненные фильтры' : 'Saved filters';
-        $textSettings = $isLangRu ? 'Настройка фильтров' : 'Filters layout';
-        $textReset = $isLangRu ? 'СБРОС' : 'RESET';
-        return '<div class="filters-buttons">
-                <button class="btn waves-effect btn-filter" type="submit">' . Img::iconSearch() . '</button>
-                <button class="btn-flat waves-effect filters-reset" type="button">' . $textReset . '</button>
-                <nobr><div><div class="filters-buttons-icons">
-                    <span class="btn-flat waves-effect toggle-tooltip filters-history" title="' . $textHistory . '"><i class="fa fa-history"></i></span>
-                    <span class="btn-flat waves-effect toggle-tooltip filters-save" title="' . $textSaved . '"><i class="fa fa-save"></i></span>
-                    ' . ($allowLayoutChange ? '<span class="btn-flat waves-effect toggle-tooltip filters-layout" title="' . $textSettings . '"><i class="fa fa-cog"></i></span>' : '') . '
-                </div></div></nobr>
-                </div>';
-    }
-
-    public static function filtersButtonsRow($allowLayoutChange = true)
-    {
-        return '<tr><th></th><td style="padding-top:1em;">' . static::filtersButtons($allowLayoutChange) . '</td></tr>';
-    }
-
-    public static function filterImport()
-    {
-        $html = static::html('ImportID') . ' ' . static::html('ImportChangeType');
-        return static::control('', 'Import ID', $html);
-    }
-
-    public static function datesFromUntil($fieldKey, $cssClass = null, $filterTemplateKey = null)
+    public static function datesFromUntil($fieldKey)
     {
         $title = static::title($fieldKey . 'From');
         $label = static::label($fieldKey . 'From');
         $html = '<nobr>' . static::html($fieldKey . 'From') . ' - ' . static::html($fieldKey . 'Until') . '</nobr>';
-        if (!$filterTemplateKey) {
-            // Поскольку функция datesFromUntil() используется в основном только в фильтрах
-            // добавим
-            $filterTemplateKey = $fieldKey;
-        }
-        return static::control($title, $label, $html, $cssClass, $filterTemplateKey);
+
+        return static::control($title, $label, $html);
     }
 
     /**

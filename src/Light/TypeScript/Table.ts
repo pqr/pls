@@ -339,7 +339,7 @@ export class Table {
         if (typeof page !== "undefined") {
             postData[this.name + '_page'] = page;
         }
-        if (typeof page !== "undefined") {
+        if (typeof showall !== "undefined") {
             postData[this.name + '_showall'] = showall;
         }
         if (typeof sort !== "undefined") {

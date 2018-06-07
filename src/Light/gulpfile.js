@@ -65,6 +65,13 @@ gulp.task('select2', function () {
 });
 
 
+gulp.task('sortablejs', function () {
+    "use strict";
+    gulp.src('node_modules/sortablejs/Sortable.min.js')
+        .pipe(gulp.dest('public/js'));
+});
+
+
 gulp.task('fileupload', function () {
 
     var allSrc = [
@@ -174,7 +181,7 @@ gulp.task('watch', function () {
     gulp.watch(['public/css/Light.css', 'public/css/Table.css'], ['buildcss']);
 });
 
-gulp.task('buildjs', ['vendorsjs', 'rollbar', 'select2', 'fileupload', 'react', 'mobx', 'preact']);
+gulp.task('buildjs', ['vendorsjs', 'rollbar', 'select2', 'sortablejs', 'fileupload', 'react', 'mobx', 'preact']);
 
 gulp.task('default', ['buildjs', 'buildcss', 'fontawesome']);
 

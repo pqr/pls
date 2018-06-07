@@ -106,12 +106,6 @@ abstract class Subtable extends Table
     protected $_tableLinkFindidSubtableName;
 
     /**
-     * Массив с ключами полей, значения которых нужно копировать из предыдущей строки в новую в режиме Edit
-     * @var array
-     */
-    protected $_copyOnAddFieldKeys;
-
-    /**
      * Массив с ключами полей, которые не должны участсовать в функции Paste
      * @var array
      */
@@ -508,8 +502,7 @@ abstract class Subtable extends Table
                 if ($field->hasMode(F::MODE_EDIT)) {
 
                     //Добавим флаг copyOnAdd, чтобы значение поля в новой строке копировалось из предыдущей
-                    $jsField['copyOnAdd'] =
-                        is_array($this->_copyOnAddFieldKeys) && in_array($fieldKey, $this->_copyOnAddFieldKeys);
+                    $jsField['copy'] = $field->copy;
 
                     //Поля, которые редактируемые могут быть вставлены с помощью функции Paste
                     $jsField['disablePaste'] = in_array($fieldKey, $this->_disablePasteFieldKeys);

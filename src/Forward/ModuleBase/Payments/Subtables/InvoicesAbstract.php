@@ -48,7 +48,6 @@ abstract class InvoicesAbstract extends Subtable
         $this->_editTableLayout = 'StatusIco|' . $firstLetter . 'InvoiceID|' . $commonFields;
 
         $this->tableTotal = [$firstLetter . 'InvoiceName' => 'Total'];
-        $this->_copyOnAddFieldKeys = ['RateToInvoiceCurrency'];
 
         if (isset($_POST['invoices'])) {
             $invIds = explode(',', $_POST['invoices']);

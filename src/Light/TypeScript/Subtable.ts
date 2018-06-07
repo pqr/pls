@@ -21,7 +21,7 @@ export interface Field {
     mode: string; //'view' или 'edit'
     type: string;
     total: boolean;
-    copyOnAdd: boolean;
+    copy: boolean;
     colIndex: number;
     disablePaste: boolean;
     tableAlign: string;
@@ -103,7 +103,7 @@ export class Subtable {
             this.hiddenColumns.push(this.$thead.find(`th[data-fieldkey="${fieldKey}"]`).hasClass("display-none"));
 
             //Сформируем массив из ключей полей, которые нужно копировать при добавлении новой строки
-            if (this.fields[fieldKey].copyOnAdd) {
+            if (this.fields[fieldKey].copy) {
                 this.copyOnAddFieldKeys.push(fieldKey);
             }
         }
@@ -111,7 +111,7 @@ export class Subtable {
         const that = this;
 
         //Добавляем обработчик на ссылку добавления новой строки
-        $div.find(".subtable-add-link").on("click", e => {
+        $div.find(".subtable-add-link").on("click", (e:any) => {
             e.preventDefault();
 
             let data: { [key: string]: string } = {};
@@ -138,7 +138,7 @@ export class Subtable {
             that.addRow(data);
         });
 
-        $div.find(".change-all").on("click", e => {
+        $div.find(".change-all").on("click", (e:any) => {
             e.preventDefault();
 
             //Hide changeAll button

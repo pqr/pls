@@ -22,7 +22,6 @@ abstract class IncomeExpensesAbstract extends Subtable
         $this->_printHeadBlock = false;
         $this->allowExportToExcel = false;
         $this->allowTableLayouts = false;
-        $this->_copyOnAddFieldKeys = ['Quantity', 'Amount'];
     }
 
     protected function getMasterModule()

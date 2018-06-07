@@ -9,6 +9,18 @@ use Light\Misc;
 
 class CommonFields
 {
+    const VAT_EMPTY = -2;
+    const VAT_BEZNDS = -1;
+    const VAT_0 = 0;
+    const VAT_18 = 18;
+
+    const VAT_OPTIONS = [
+        self::VAT_EMPTY => '',
+        self::VAT_BEZNDS => 'Без НДС',
+        self::VAT_0 => '0%',
+        self::VAT_18 => '18%',
+    ];
+
     public static function id(array $params = []): FieldInt
     {
         $defaultParams = ['modes' => F::MODE_LIST, 'tableAlign' => 'left', 'tableWidthHtml' => 24];
@@ -122,6 +134,7 @@ class CommonFields
             'tableAlign' => 'center',
             'tableWidthHtml' => 60,
             'empty' => false,
+            'copy' => true,
             'options' => "SELECT Name AS K, Name FROM currency ORDER BY OrderID, Name",
             'editCssClass' => 'select-currency'
         ];
@@ -417,6 +430,35 @@ class CommonFields
                 }
                 return $value;
             }
+        ]);
+    }
+
+    public static function vatPercent()
+    {
+        return F::createSelect('VATPercent', [
+            'name' => Config::$lang === 'ru' ? 'НДС %' : 'VAT %',
+            'default' => self::VAT_BEZNDS,
+            'options' => self::VAT_OPTIONS,
+            'empty' => false,
+            'copy' => true,
+            'tableWidthHtml' => 59,
+            'tableAlign' => 'center',
+            'changeAll' => true,
+            'getHtmlFunction' => function ($value, array $data, $outHtml, $forTable) {
+                if ($forTable === 'total' && $value > 0) {
+                    // Это похоже на total строку, т.е. нужно вывести $value как сумму
+                    $outHtml = FieldMoney::beautify($value);
+                }
+                return $outHtml;
+            }
+        ]);
+    }
+
+    public static function vatAmount()
+    {
+        return F::createMoney('VATAmount', [
+            'name' => Config::$lang === 'ru' ? 'Сумма НДС' : 'VAT Amount',
+            'zeroEmpty' => true,
         ]);
     }
 }

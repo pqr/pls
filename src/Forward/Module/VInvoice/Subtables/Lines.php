@@ -28,7 +28,6 @@ class Lines extends Subtable
 
         $this->_tablePrintTotalRecordsFound = true;
         $this->tableTotal = ['Name' => 'Total'];
-        $this->_copyOnAddFieldKeys = ['MAWBNumber', 'FileNumber', 'UOMID', 'VATPercent'];
 
         $this->_cacheFieldsKeys = ['MAWBNumber', 'FileNumber'];
         $this->_cacheOnlyUniqueValues = true;

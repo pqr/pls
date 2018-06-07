@@ -25,6 +25,11 @@ abstract class ModuleCestAbstract
         if ($this->minIdFromDb === null) {
             $dbtable = $this->getDbTable();
             $this->minIdFromDb = (int)Db::getOne("SELECT min(ID) FROM $dbtable");
+            if (!$this->minIdFromDb) {
+                // Если таблица ещё пуста, создадим пустую фиктивную запись в целях тестирования
+                Db::query("INSERT INTO $dbtable (ID) VALUES (NULL)");
+                $this->minIdFromDb = Db::getInsertId();
+            }
         }
         return $this->minIdFromDb;
     }

@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Field;
 
 use Light\Field\FieldAbstract as F;
@@ -98,17 +99,15 @@ class PaymentInvoiceFields
 
     public static function rateToInvoiceCurrency()
     {
-        return F::create(
-            'RateToInvoiceCurrency',
-            F::TYPE_FLOAT,
-            [
-                'name' => "Exch Rate to\nInv. Currency",
-                'title' => 'Exchange Rate to Invoice Currency',
-                'tableWidthHtml' => 84,
-                'tableWidthExcel' => 12,
-                'default' => 1
-            ]
-        );
+        return F::createFloat('RateToInvoiceCurrency', [
+            'name' => "Exch Rate to\nInv. Currency",
+            'title' => 'Exchange Rate to Invoice Currency',
+            'copy' => true,
+            'changeAll' => true,
+            'tableWidthHtml' => 84,
+            'tableWidthExcel' => 12,
+            'default' => 1
+        ]);
     }
 
     public static function clearingAmountInPaymentCurrency()
