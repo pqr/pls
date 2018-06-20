@@ -30,7 +30,7 @@ class Block
     public static function proceedBlock()
     {
         Application::setParam('blocked', '1');
-        Db::query("UPDATE user SET SessionID=''");
+        Db::query("TRUNCATE phpsession");
         session_destroy();
         Response::redirectUrl('http://yandex.ru');
     }
