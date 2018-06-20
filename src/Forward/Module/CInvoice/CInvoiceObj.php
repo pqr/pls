@@ -1,6 +1,7 @@
 <?php
 namespace Forward\Module\CInvoice;
 
+use Forward\Classes\Constant;
 use Forward\Classes\Finance;
 use Forward\ModuleBase\Invoices\InvoiceObjAbstract;
 use Forward\Field\GeneralFields;
@@ -204,9 +205,17 @@ class CInvoiceObj extends InvoiceObjAbstract
             $oldFileNumbers = [];
         }
 
-        //Если имя счета изменилось, запустим метод переименования и в платежах, и в Cost-sheet`ах
+        // Если имя счета изменилось, запустим метод переименования и в платежах, и в Cost-sheet`ах
+        if ($this['Name'] === '' && !Constant::isOneCCompany($this['CompanyID'])) {
+
+            $this->autogenerateName();
+
+        }
+
         if (isset($oldData['Name']) && (string)$oldData['Name'] !== (string)$this['Name']) {
+
             $this->renameAfterInsertUpdate($oldData['Name'], $this['Name']);
+
         }
 
         //Обновим дату DueDate, но только если она пуста. Если она уже заполнена - возможно, это правильное значение введённое пользователем

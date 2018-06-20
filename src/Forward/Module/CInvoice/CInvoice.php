@@ -238,16 +238,6 @@ class CInvoice extends InvoiceModuleAbstract
         return $tdata;
     }
 
-    protected function afterInsert(ObjAbstract $obj, array $dataFromPost)
-    {
-        parent::afterInsert($obj, $dataFromPost);
-
-        if ($obj['Name'] === '' && !Constant::isOneCCompany($obj['CompanyID'])) {
-            /** @var CInvoiceObj $obj */
-            $obj->autogenerateName();
-        }
-    }
-
     protected function proceedAddNew()
     {
         if (isset($_GET['fromCostSheet'])) {
