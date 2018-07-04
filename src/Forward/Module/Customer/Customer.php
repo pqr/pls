@@ -3,21 +3,19 @@
 namespace Forward\Module\Customer;
 
 use Forward\Application;
-use Forward\Classes\Traits\ModuleWithBuTrait;
+use Forward\Classes\BuAccess;
+use Forward\Classes\CustomerAccess;
 use Forward\Field\GeneralFields;
 use Forward\Module\Customer\StandartRateDialog\StandartRateDialog;
 use Forward\Module\SearchAirfreightRateDialog\SearchAirfreightRateDialog;
 use Light\Currency;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
-use Light\Js;
 use Light\ModuleBase\ModuleAbstract;
 use Light\User;
 
 class Customer extends ModuleAbstract
 {
-    use ModuleWithBuTrait;
-
     public function __construct()
     {
         parent::__construct();
@@ -139,4 +137,10 @@ class Customer extends ModuleAbstract
             Currency::putJsRates();
         }
     }
+
+    protected function getAccessSqlWhere(): string
+    {
+        return BuAccess::getSqlWhereBu() . " AND " . CustomerAccess::getSqlWhere("ID");
+    }
+
 }

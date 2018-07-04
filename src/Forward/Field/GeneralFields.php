@@ -5,6 +5,7 @@ namespace Forward\Field;
 use Forward\Application;
 use Forward\Classes\BuAccess;
 use Forward\Classes\Constant;
+use Forward\Classes\CustomerAccess;
 use Light\Db;
 use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
@@ -65,6 +66,15 @@ class GeneralFields
             unset($option);
         }
 
+        $noAccessCustomerIds = CustomerAccess::getNoAccessCustomerIds();
+        if ($noAccessCustomerIds) {
+            foreach($noAccessCustomerIds as $noAccessCustomerId) {
+                if (isset($options[$noAccessCustomerId])) {
+                    $options[$noAccessCustomerId]['Active'] = 0;
+                }
+            }
+        }
+
         return F::createSelect('CustomerID', [
             'name' => 'Customer',
             'tableWidthExcel' => 30,
@@ -92,6 +102,15 @@ class GeneralFields
             unset($option);
         }
 
+        $noAccessCustomerAccountIds = CustomerAccess::getNoAccessCustomerAccountIds();
+        if ($noAccessCustomerAccountIds) {
+            foreach($noAccessCustomerAccountIds as $noAccessCustomerAccountId) {
+                if (isset($options[$noAccessCustomerAccountId])) {
+                    $options[$noAccessCustomerAccountId]['Active'] = 0;
+                }
+            }
+        }
+
         return F::createSelectChild('CustomerAccountID', [
             'name' => 'Customer Account',
             'tableWidthExcel' => 30,
@@ -105,7 +124,7 @@ class GeneralFields
         ]);
     }
 
-    public static function consigneeId($addCustomerAccount = false)
+    public static function consigneeId()
     {
         $options = Db::getAssoc("SELECT ID, Name, CustomerID FROM customerconsignee ORDER BY Name");
 
@@ -114,6 +133,16 @@ class GeneralFields
             foreach ($options as &$option) {
                 //Скроем или оставим видимым данный аккаунт на основе того, есть ли его ID среди допустимых
                 $option['Active'] = in_array($option['CustomerID'], $allowedCustomerIds);
+            }
+            unset($option);
+        }
+
+        $noAccessCustomerIds = CustomerAccess::getNoAccessCustomerIds();
+        if ($noAccessCustomerIds) {
+            foreach ($options as &$option) {
+                if (in_array($option['CustomerID'], $noAccessCustomerIds)) {
+                    $option['Active'] = 0;
+                }
             }
             unset($option);
         }

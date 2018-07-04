@@ -62,6 +62,11 @@ class CustomerObj extends ObjAbstract
                 'rows' => 20
             ]),
 
+            F::createCheckbox('OnlyForResponsibles', [
+                'name' => 'Доступ только для ответсвенных',
+                'title' => 'Перевозки и счета этого клиента будут видны только отвественным менеджерам указанным в Responsibles'
+            ]),
+
             CustomerFields::openInvoicesAmounts(),
 
             CustomerFields::overdueInvoicesAmounts(),

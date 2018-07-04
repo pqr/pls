@@ -43,9 +43,9 @@ class BuAccess
      */
     public static function getSqlWhereBu()
     {
-        //Если у пользователя доступ ко всем BU - возвращаем пустую строку, что обозначает "никаких SQL ограничений"
+        //Если у пользователя доступ ко всем BU - возвращаем TRUE, что обозначает "никаких SQL ограничений"
         if (self::hasAccessAll()) {
-            return '';
+            return 'TRUE';
         }
 
         //Если у пользователя нет доступа ни к одному BU, возвращаем строку 'FALSE', которая в SQL запросе вернёт пустую выборку
@@ -74,9 +74,9 @@ class BuAccess
      */
     public static function getSqlWhereCustomerId()
     {
-        //Если у пользователя доступ ко всем BU - возвращаем пустую строку, что обозначает "никаких SQL ограничений"
+        //Если у пользователя доступ ко всем BU - возвращаем TRUE, что обозначает "никаких SQL ограничений"
         if (BuAccess::hasAccessAll()) {
-            return '';
+            return 'TRUE';
         }
 
         if (BuAccess::hasAccessNone()) {
@@ -120,13 +120,9 @@ class BuAccess
      */
     private static function getIdsFromTable($dbTable)
     {
-        $query = "SELECT ID FROM " . $dbTable;
-
-        //Сформируем ограничение по полю BUIDs
-        $sqlWhere = self::getSqlWhereBu();
-        if ($sqlWhere) {
-            $query .= " WHERE " . $sqlWhere;
-        }
+        $query = "SELECT ID 
+                  FROM $dbTable
+                  WHERE " . self::getSqlWhereBu();
 
         return Db::getCol($query);
     }

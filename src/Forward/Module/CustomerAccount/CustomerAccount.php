@@ -3,6 +3,7 @@ namespace Forward\Module\CustomerAccount;
 
 use Forward\Classes\BuAccess;
 use Forward\Classes\Constant;
+use Forward\Classes\CustomerAccess;
 use Forward\Field\GeneralFields;
 use Light\Db;
 use Light\Img;
@@ -26,16 +27,6 @@ class CustomerAccount extends ModuleAbstract
 
         $this->addFilterName();
         $this->addFilter(GeneralFields::buIdsFilter());
-    }
-
-    public function getFiltersSqlWhere()
-    {
-        return Db::maybeImplodeSqlWheres('AND', parent::getFiltersSqlWhere(), BuAccess::getSqlWhereBu());
-    }
-
-    public function hasAccessRightToObj(ObjAbstract $obj)
-    {
-        return BuAccess::hasAccess($obj['BUIDs']);
     }
 
     protected function initViewSubmenu()
@@ -65,6 +56,11 @@ class CustomerAccount extends ModuleAbstract
             $url = "mailto:$mailto?subject=" . rawurlencode($subject) . "&body=" . rawurlencode($body);
             $this->addSubmenuItemUrl('Email в бухгалтерию', Img::iconMailBlue(), $url);
         }
+    }
+
+    protected function getAccessSqlWhere(): string
+    {
+        return BuAccess::getSqlWhereBu() . " AND " . CustomerAccess::getSqlWhereCustomerAccount();
     }
 
 

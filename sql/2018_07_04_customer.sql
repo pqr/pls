@@ -1,0 +1,1 @@
+ALTER TABLE customer ADD OnlyForResponsibles TINYINT(1) DEFAULT 0 NOT NULL;

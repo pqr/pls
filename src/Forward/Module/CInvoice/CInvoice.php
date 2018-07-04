@@ -6,6 +6,7 @@ use Forward\Application;
 use Forward\Classes\BuAccess;
 use Forward\Classes\CInvoiceCommon;
 use Forward\Classes\Constant;
+use Forward\Classes\CustomerAccess;
 use Forward\Classes\Finance;
 use Forward\Classes\InvoicesCommon;
 use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
@@ -357,22 +358,9 @@ class CInvoice extends InvoiceModuleAbstract
         Response::redirect('CInvoice', ['filterValues' => json_encode($filterValues)]);
     }
 
-    /*
-     * Ограничеваем доступ к инвойсам на основе BU по клиенту
-     */
-    public function getFiltersSqlWhere()
+    protected function getAccessSqlWhere(): string
     {
-        return Db::maybeImplodeSqlWheres('AND', parent::getFiltersSqlWhere(), BuAccess::getSqlWhereCustomerId());
-    }
-
-    public function hasAccessRightToObj(ObjAbstract $obj)
-    {
-        if (BuAccess::hasAccessAll()) {
-            return true;
-        }
-
-        $allowedCustomerIds = BuAccess::getCustomerIds();
-        return in_array($obj['CustomerID'], $allowedCustomerIds);
+        return BuAccess::getSqlWhereCustomerId() . " AND " . CustomerAccess::getSqlWhere();
     }
 
     protected function hasWriteAccessRightToObj(ObjAbstract $obj)

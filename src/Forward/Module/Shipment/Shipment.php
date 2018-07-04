@@ -3,12 +3,13 @@
 namespace Forward\Module\Shipment;
 
 use Forward\Application;
+use Forward\Classes\BuAccess;
 use Forward\Classes\CompanyChild;
 use Forward\Classes\Constant;
+use Forward\Classes\CustomerAccess;
 use Forward\Classes\Finance;
 use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
 use Forward\Classes\ShipmentDownloadDocs;
-use Forward\Classes\Traits\ModuleWithBuTrait;
 use Forward\Field\GeneralFields;
 use Forward\Field\ShipmentFields;
 use Forward\Module\Shipment\CostSheet\CostSheetObj;
@@ -42,8 +43,6 @@ use Light\XlsWriter;
 
 class Shipment extends ModuleAbstract
 {
-    use ModuleWithBuTrait;
-
     private static $_responsibleRole = [
         'ResponsibleSales' => 'Sales',
         'ResponsibleCS' => 'Customer Service',
@@ -1552,4 +1551,10 @@ class Shipment extends ModuleAbstract
         Response::json($newCsLines);
 
     }
+
+    protected function getAccessSqlWhere(): string
+    {
+        return BuAccess::getSqlWhereBu() . " AND " . CustomerAccess::getSqlWhere();
+    }
+
 }

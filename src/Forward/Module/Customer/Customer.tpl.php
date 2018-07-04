@@ -30,6 +30,10 @@
             </div>
             <div style="clear: right"></div>
 
+            <table class="form">
+                <?= t::c('OnlyForResponsibles') ?>
+            </table>
+
             <h2>Internal Info</h2>
             <table class="form">
                 <?= t::c('CompanyID') ?>
@@ -58,13 +62,13 @@
                 <li><a href="#tabs-contacts">Contacts
                         (<?= t::subtableCount('Contacts'); ?>)</a></li>
                 <li><a
-                        href="#tabs-originsagents">Origins & Agents (<?= t::subtableCount('Agents'); ?>)</a></li>
+                            href="#tabs-originsagents">Origins & Agents (<?= t::subtableCount('Agents'); ?>)</a></li>
                 <li><a
-                        href="#tabs-instructions">Instructions</a></li>
+                            href="#tabs-instructions">Instructions</a></li>
                 <li><a href="#tabs-quotations">Quotations
                         (<?= t::subtableCount('Quotations'); ?>)</a></li>
                 <li><a
-                        href="#tabs-standartrates">Standart Rates (<?= t::subtableCount('StandartRates'); ?>)</a>
+                            href="#tabs-standartrates">Standart Rates (<?= t::subtableCount('StandartRates'); ?>)</a>
                 </li>
                 <li><a href="#tabs-addon">Addons
                         (<?= t::value('UseDefaultAddon') ? 'Default' : '+' ?>)</a></li>
