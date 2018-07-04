@@ -5,6 +5,7 @@ namespace Forward\Module\Quotation;
 use Forward\Classes\BuAccess;
 use Forward\Classes\CompanyChild;
 use Forward\Classes\Constant;
+use Forward\Classes\CustomerAccess;
 use Forward\Field\GeneralFields;
 use Forward\Field\QuotationFields;
 use Forward\Module\SearchAirfreightRateDialog\SearchAirfreightRateDialog;
@@ -292,23 +293,9 @@ class Quotation extends ModuleAbstract
         ];
     }
 
-    public function getFiltersSqlWhere()
+    protected function getAccessSqlWhere(): string
     {
-        return Db::maybeImplodeSqlWheres('AND', parent::getFiltersSqlWhere(), BuAccess::getSqlWhereCustomerId());
-    }
-
-    public function hasAccessRightToObj(ObjAbstract $obj)
-    {
-        if ($obj['CustomerID'] == 0) {
-            return true;
-        }
-
-        if (BuAccess::hasAccessAll()) {
-            return true;
-        }
-
-        $allowedCustomerIds = BuAccess::getCustomerIds();
-        return in_array($obj['CustomerID'], $allowedCustomerIds);
+        return BuAccess::getSqlWhereCustomerId() . " AND " . CustomerAccess::getSqlWhere();
     }
 
     protected function validateUnique(array $dataFromRequest)
