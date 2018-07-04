@@ -2076,3 +2076,7 @@ button.btn-floating {
 .bad-line:hover td {
     color: #000000;
 }
+
+.subtable-sort-link {
+    cursor: move;
+}

@@ -340,10 +340,10 @@ export class Filters {
      */
     private getLayoutFromMarkup(): string[][] {
         const layoutFromMarkup: string[][] = [];
-        this.$form.find("ul.filters__list").each(function(this: HTMLUListElement, colIndex: number) {
+        this.$form.find("ul.filters__list").each(function(this: any, colIndex: number) {
             const $ul = $(this);
             layoutFromMarkup[colIndex] = [];
-            $ul.find("li[data-templatekey]").each(function(this: HTMLLIElement) {
+            $ul.find("li[data-templatekey]").each(function(this: any) {
                 const $li = $(this);
                 const templateKey = <string>$li.attr("data-templatekey")!;
                 layoutFromMarkup[colIndex].push(templateKey);

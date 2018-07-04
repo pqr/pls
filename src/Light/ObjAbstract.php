@@ -7,7 +7,7 @@ use Light\Field\FieldMoneyWithCurrency;
 use Light\SubtableBase\Subtable;
 use Light\Traits\FieldsetAwareTrait;
 
-abstract class ObjAbstract implements \ArrayAccess
+abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 {
     use FieldsetAwareTrait;
 
@@ -458,6 +458,11 @@ abstract class ObjAbstract implements \ArrayAccess
         return strip_tags($this->getDescriptionHtml());
     }
 
+    public function jsonSerialize()
+    {
+        return $this->_data;
+    }
+
     public function getDescriptionHtml()
     {
         $nameFieldKey = $this->getNameFieldKey();
@@ -610,21 +615,16 @@ abstract class ObjAbstract implements \ArrayAccess
         return null;
     }
 
-    public function getLinkView(array $urlParams = [], $title = null, $tagParams = null, $blank = false, $dialog = false)
+    public function getLinkView(): Link
     {
         $innerHtml = $this->getDescriptionHtml();
-        $id = (int)($this->_masterIdForDbLog ?: $this->_id);
         $module = $this->getMasterModuleForDbLog();
-        return Link::moduleView($innerHtml, $id, $urlParams, $module, $title, $tagParams, $blank, $dialog);
+        $id = (int)($this->_masterIdForDbLog ?: $this->_id);
+        return Link::create($module, $innerHtml)->view($id);
     }
 
-    public function getLinkViewBlank(array $urlParams = [], $title = null, $tagParams = null)
+    public function getLinkViewDialog(): Link
     {
-        return $this->getLinkView($urlParams, $title, $tagParams, true);
-    }
-
-    public function getLinkViewDialog(array $urlParams = [], $title = null, $tagParams = null)
-    {
-        return $this->getLinkView($urlParams, $title, $tagParams, false, true);
+        return $this->getLinkView()->funcDialog();
     }
 }

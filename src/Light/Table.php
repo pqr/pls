@@ -8,7 +8,7 @@ use Light\Field\FieldMoneyWithCurrency;
 use Light\Table\TableUserParamsRepository;
 use Light\Traits\FieldsetAwareTrait;
 
-class Table
+class Table implements \JsonSerializable
 {
     use FieldsetAwareTrait;
 
@@ -516,7 +516,7 @@ class Table
             // Достаём данные из массива $this->_tableData
             // (метод getTableRowData() может быть переопределён в потомке, поэтому не можем читать напрямую из $this->_tableData
             $rowData = $this->getTableRowData($rowNum);
-
+            $rowDataCalculated = $rowData;
             // Вызовем все методы calcData определённые внутри полей
             /** @var FieldAbstract $field */
             foreach ($allFields as $field) {
@@ -525,14 +525,11 @@ class Table
                 if ($field->calcFunction) {
                     $value = $field->getCalculatedValue($value, $rowData, true); //$forTable = true
                 }
-                $rowData[$fieldKey] = $value;
-
-                if ($field->total) {
-                    $dataCalculated[$rowNum][$fieldKey] = $value;
-                }
+                $rowDataCalculated[$fieldKey] = $value;
             }
+            $dataCalculated[$rowNum] = $rowDataCalculated;
 
-            $outHtml .= $this->getHtmlTableTr($rowData, $rowNum, $allFields, $this->tableLinkUrlParams);
+            $outHtml .= $this->getHtmlTableTr($rowDataCalculated, $rowNum, $allFields, $this->tableLinkUrlParams);
 
         }
 
@@ -619,15 +616,11 @@ class Table
 
             if (isset($this->tableLinkFieldKeysHash[$field->key], $rowDataCalculated[$this->tableLinkIdFieldKey])) {
                 $id = $rowDataCalculated[$this->tableLinkIdFieldKey];
-                $outHtml = Link::moduleView(
-                    $outHtml,
-                    $id,
-                    $fullLinkParams,
-                    $this->tableLinkModule,
-                    null,
-                    null,
-                    $this->tableLinkBlank
-                );
+                $outHtml = Link::create($this->tableLinkModule, $outHtml)
+                    ->view($id)
+                    ->params($fullLinkParams)
+                    ->blank($this->tableLinkBlank)
+                    ->getHtml();
             }
         }
 
@@ -846,12 +839,12 @@ class Table
      * значения имеют одинаковую валюту.
      * Также при типе MONEY_WITH_CURRENCY меняется тип возвращаемого значения - это уже не просто число, но строка
      * @param FieldAbstract $field
-     * @param array $tableData
+     * @param array $dataCalculated
      * @return float|string $total
      */
-    public function tableCalcFieldTotal(FieldAbstract $field, array $tableData)
+    public function tableCalcFieldTotal(FieldAbstract $field, array $dataCalculated)
     {
-        $amounts = array_column($tableData, $field->key);
+        $amounts = array_column($dataCalculated, $field->key);
         $isMoneyWithCurrency = $field->getType() == F::TYPE_MONEY_WITH_CURRENCY;
         if ($isMoneyWithCurrency) {
             $groupconcat = $field->groupconcat;
@@ -981,5 +974,10 @@ class Table
     public function setNameFieldKey($nameFieldKey)
     {
         $this->_obj->setNameFieldKey($nameFieldKey);
+    }
+
+    public function jsonSerialize()
+    {
+        return $this->_tableData;
     }
 }

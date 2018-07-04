@@ -6,7 +6,7 @@
     "@types/keypress.js": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "mobx": "latest",
+    "mobx": "^4",
     "mobx-react": "latest",
     "serializr": "latest"
   },

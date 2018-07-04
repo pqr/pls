@@ -80,7 +80,7 @@ class FilesFolder
         $module = $parts[0];
         $recordId = (int)end($parts);
 
-        return "?a=$module&id=$recordId&elfinder=dialog";
+        return Link::create($module)->view($recordId)->params(['elfinder' => 'dialog'])->getHref();
     }
 
     /**

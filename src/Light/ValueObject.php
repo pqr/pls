@@ -1,7 +1,7 @@
 <?php
 namespace Light;
 
-class ValueObject
+class ValueObject implements \JsonSerializable
 {
     private $value;
 
@@ -19,4 +19,11 @@ class ValueObject
     {
         return (string)$this->value;
     }
+
+    public function jsonSerialize()
+    {
+        return $this->value;
+    }
+
+
 }

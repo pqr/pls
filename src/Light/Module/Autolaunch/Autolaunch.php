@@ -109,7 +109,7 @@ class Autolaunch
 
         Response::setPageTitle("Autolaunch $title");
 
-        $link = Link::module('Autolaunch');
+        $link = Link::create('Autolaunch', 'Autolaunch');
         $imgSrc = 'lightpublic/i/autolaunch.png';
         $img = "<img src=$imgSrc width=24>";
         Response::setPageHeadHtml("$link $img <strong>$title</strong>");
@@ -153,6 +153,7 @@ class Autolaunch
      * Отображает детальные логи отдельно взятого запуска
      * @param string $className
      * @param int $logId
+     * @throws \Exception
      */
     private function renderOneLog(string $className, int $logId)
     {
@@ -170,7 +171,7 @@ class Autolaunch
 
         Response::setPageTitle("Autolaunch $title Log $logId");
 
-        $link = Link::module('Autolaunch');
+        $link = Link::create('Autolaunch', 'Autolaunch');
         $imgSrc = 'lightpublic/i/autolaunch.png';
         $img = "<img src=$imgSrc width=24>";
 
@@ -183,7 +184,7 @@ class Autolaunch
         if (isset($_GET['msid'])) {
             $backUrlParams['msid'] = $_GET['msid'];
         }
-        $titleWithLink = Link::module($title, $backUrlParams);
+        $titleWithLink = Link::create('Autolaunch', $title)->params($backUrlParams);
         Response::setPageHeadHtml("$link $img <strong>$titleWithLink Log $logId</strong>");
 
         $this->addModuleSessionNextPrevLinks($logObj, 'id', ['class' => $className]);
@@ -198,7 +199,7 @@ class Autolaunch
                 'items' => [
                     [
                         'text' => 'Back',
-                        'url' => Link::url($backUrlParams)
+                        'url' => $titleWithLink->getHref()
                     ]
                 ]
             ]

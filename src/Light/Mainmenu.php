@@ -54,7 +54,7 @@ class Mainmenu
             }
 
             $title = ModuleRegister::getModuleTitle($module);
-            $url = Link::url($urlParams, $module);
+            $url = Link::create($module, '')->params($urlParams)->getHref();
             $sections[$section]['modules'][$module] = ['text' => $text, 'title' => $title, 'url' => $url];
         }
 

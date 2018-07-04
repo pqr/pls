@@ -2,14 +2,11 @@
 
 namespace Light\Module\Reportmenu;
 
-use Codeception\Module;
-use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Css;
 use Light\Db;
 use Light\DbLog;
 use Light\Field\FieldAbstract as F;
-use Light\Field\FieldAbstract;
 use Light\Fieldset;
 use Light\Img;
 use Light\Js;
@@ -62,12 +59,14 @@ class Reportmenu
 
     private static function getReportFullClass(string $reportClass): string
     {
-        return PROJECT_NAMESPACE . "\\Reportmenu\\$reportClass";;
+        return PROJECT_NAMESPACE . "\\Reportmenu\\$reportClass";
     }
 
-    private function getReportLink(string $innerHtml, string $reportClass, bool $blank = false): string
+    private function getReportLink(string $innerHtml, string $reportClass): Link
     {
-        return Link::module($innerHtml, ['class' => $reportClass], 'Reportmenu', null, null, $blank);
+        $module = 'Reportmenu';
+        $params = ['class' => $reportClass];
+        return Link::create($module, $innerHtml)->params($params);
     }
 
     /**
@@ -113,10 +112,16 @@ class Reportmenu
 
         foreach ($reportsForUser as $reportClass) {
 
+            $params = ['class' => $reportClass];
             $manageAccessLink = '';
             if ($hasWriteAcess) {
                 $manageAccessText = Config::$lang === 'ru' ? 'Доступ' : 'Access';
-                $manageAccessLink = '<a href="?a=Reportmenu&p=AccessDialog&class=' . $reportClass . '#ajax" class="reportblock__accesslink"><i class="fa fa-user-plus"></i> ' . $manageAccessText . '</a>';
+                $innerHtml = Img::icon('fa-user-plus') . " $manageAccessText";
+                $manageAccessLink = Link::create('Reportmenu', $innerHtml)
+                    ->params($params)
+                    ->ajax()
+                    ->attrs(['class' => 'reportblock__accesslink'])
+                    ->getHtml();
             }
 
             $title = $this->getReportTitle($reportClass);
@@ -125,10 +130,10 @@ class Reportmenu
 
             $out[$reportClass] = '<div class="reportblock">'
                 . '<div>'
-                . $this->getReportLink($imageHtml, $reportClass)
+                . Link::create('Reportmenu', $imageHtml)->params($params)->getHtml()
                 . '</div>'
                 . '<div>'
-                . $this->getReportLink($title, $reportClass)
+                . Link::create('Reportmenu', $title)->params($params)->getHtml()
                 . '<br>' . $descriptioon
                 . '</div>'
                 . $manageAccessLink
@@ -216,16 +221,25 @@ class Reportmenu
             }
 
             // Если в GET запросе не передан конкретный класс подмодуля, выведем список всех
-            $moduleName = ModuleRegister::getModuleName('Reportmenu');
+            $module = 'Reportmenu';
+            $moduleName = ModuleRegister::getModuleName($module);
             Response::setPageTitle($moduleName);
             Response::setPageHeadHtml($moduleName);
 
-            $filterPlaceholder = Config::$lang === 'ru' ? 'Фильтр по названию или описанию' : 'Search report by name or description';
+            $filterPlaceholder = Config::$lang === 'ru'
+                ? 'Фильтр по названию или описанию'
+                : 'Search report by name or description';
+
             print '<h3>'
                 . '<input type="text" placeholder="' . $filterPlaceholder . '" id="reportmenu-filter-input" style="padding: 5px">';
             if (User::hasWriteAccess()) {
                 $auditText = $this->getAuditText();
-                print '<a href="?a=Reportmenu&p=AccessAudit" class="btn-flat waves-effect" style="margin-left: 50px;">' . Img::icon('fa-user-circle') . ' ' . $auditText . '</a>';
+                $innerHtml = Img::icon('fa-user-circle') . " $auditText";
+                print Link::create($module, $innerHtml)
+                    ->params(['p' => 'AccessAudit'])
+                    ->btnFlat()
+                    ->attrs(['style' => "margin-left: 50px;"])
+                    ->getHtml();
             }
             print '</h3>';
 
@@ -259,19 +273,22 @@ class Reportmenu
 
     public function proceedAccessAudit()
     {
+        $module = 'Reportmenu';
+
         if (!User::hasWriteAccess()) {
             Session::flashError('No access');
             Response::redirect('Reportmenu');
             return;
         }
         // Если в GET запросе не передан конкретный класс подмодуля, выведем список всех
-        $moduleName = ModuleRegister::getModuleName('Reportmenu');
+        $moduleName = ModuleRegister::getModuleName($module);
         $auditText = $this->getAuditText();
+        $link = Link::create($module, $moduleName);
         Response::setPageTitle("$moduleName - $auditText");
-        Response::setPageHeadHtml(Link::module($moduleName) . " - <strong>$auditText</strong>");
+        Response::setPageHeadHtml("$link - <strong>$auditText</strong>");
 
         $backText = Config::$lang === 'ru' ? 'Вернуться к отчётам' : 'Back to reports';
-        print '<a href="?a=Reportmenu" class="btn-flat waves-effect">◀ ' . $backText . '</a>';
+        print Link::create($module, "◀ $backText")->btnFlat();
 
         $allUsers = $this->getAllActiveUsers();
         print $this->getUsersWithFullAccessHtml($allUsers);
@@ -310,7 +327,7 @@ class Reportmenu
                 } else {
                     foreach ($reportsForThisUser as $reportClass) {
                         $title = $this->getReportTitle($reportClass);
-                        $reportsLinksForThisUser[] = $this->getReportLink($title, $reportClass, true);
+                        $reportsLinksForThisUser[] = $this->getReportLink($title, $reportClass)->blank();
                     }
                 }
             }

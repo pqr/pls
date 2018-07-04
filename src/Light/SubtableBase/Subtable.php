@@ -8,6 +8,7 @@ use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldFloat;
 use Light\Field\FieldMoney;
+use Light\Img;
 use Light\Misc;
 use Light\Msg;
 use Light\ObjAbstract;
@@ -83,6 +84,12 @@ abstract class Subtable extends Table
 
     //Сортировка по умолчанию
     protected $_orderBy = 'ID';
+
+    //Включение ручной сортировки (требует поля OrderID в таблице БД)
+    protected $_orderManual = false;
+
+    //Добавление кнопки для копирования строки
+    protected $_copyRow = false;
 
     // Настройки режима редактирования (Subtable::STATE_EDIT)
     protected $allowAdd = true;
@@ -379,10 +386,18 @@ abstract class Subtable extends Table
             $query .= "0";
         }
 
+        $orderBy = [];
         if ($this->allowSort) {
-            $query .= " ORDER BY " . $this->getSqlOrderBy();
-        } elseif ($this->_orderBy != '') {
-            $query .= " ORDER BY " . $this->_orderBy;
+            $orderBy[] = $this->getSqlOrderBy();
+        }
+        if ($this->_orderManual) {
+            $orderBy[] = '`OrderID`';
+        }
+        if ($this->_orderBy != '') {
+            $orderBy[] = $this->_orderBy;
+        }
+        if ($orderBy) {
+            $query .= " ORDER BY " . implode(",", $orderBy);
         }
 
         return $query;
@@ -492,6 +507,28 @@ abstract class Subtable extends Table
             ];
         }
 
+        if ($this->_copyRow) {
+            $field = $this->getFieldsetFirst()['Copy'];
+            $jsFields['Copy'] = [
+                'calcTotal' => false,
+                'disablePaste' => true,
+                'tableAlign' => 'center',
+                'html' => $this->getHtmlCopy(),
+                'type' => $field->getType(),
+            ];
+        }
+
+        if ($this->_orderManual) {
+            $field = $this->getFieldsetFirst()['OrderID'];
+            $jsFields['Sort'] = [
+                'calcTotal' => false,
+                'disablePaste' => true,
+                'tableAlign' => 'center',
+                'html' => $this->getJsFieldInput($field),
+                'type' => $field->getType(),
+            ];
+        }
+
         //Добавляем ячейки в цикле
         $editFields = explode('|', $this->_editTableLayout);
         foreach ($editFields as $fieldKey) {
@@ -508,7 +545,7 @@ abstract class Subtable extends Table
                     $jsField['disablePaste'] = in_array($fieldKey, $this->_disablePasteFieldKeys);
 
                     //Сам html код для вывода поля
-                    $jsField['html'] = $this->getJsFieldInput($fieldKey);
+                    $jsField['html'] = $this->getJsFieldInput($field);
                 } else {
                     //Если поле не для режима редактирования, нужно вывести пустую ячейку при добавлении новой строки в JS
                     $jsField['html'] = $field->getHtml($field->default);
@@ -539,14 +576,13 @@ abstract class Subtable extends Table
 
     /**
      * Возвращает HTML код input элемента, который будет вставлен при добавлении новой строки
-     * @param string $fieldKey
+     * @param F $field
      * @return string
      */
-    protected function getJsFieldInput($fieldKey)
+    protected function getJsFieldInput($field)
     {
         //HTML код поля в режиме редактирования, который будет вставлен в JS скрипт добавления новой строки
         //В качестве rowNum используется 0
-        $field = $this->getField($fieldKey);
         return $this->getHtmlInput($field, '{NewRowNum}', $field->default, []);
     }
 
@@ -597,6 +633,40 @@ abstract class Subtable extends Table
             $this->getFieldsetFirst()->addField(F::createHtml('Del', $params));
         }
 
+        if ($this->_copyRow && $this->isStateEdit()) {
+            $params = $commonParams;
+            $params['name'] = 'Copy';
+            $params['getHtmlFunction'] = function ($value, $data, $outHtml, $forTable) {
+
+                if ($forTable !== "total") {
+                    $outHtml = $this->getHtmlCopy();
+                }
+
+                return $outHtml;
+            };
+            $this->getFieldsetFirst()->addField(F::createHtml('Copy', $params));
+        }
+
+        if ($this->_orderManual && ($this->isStateEdit() || $this->isStateSubmit())) {
+            $params = [
+                'name' => 'Sort',
+                'tableWidthHtml' => 20,
+                'tableOrderBy' => '',
+                'tableAlign' => 'center',
+                'inputType' => 'hidden',
+                'default' => '',
+                'getHtmlInputFunction' => function ($value, $data, $outHtml, $forTable, $field) {
+
+                    if ($forTable !== "total") {
+                        $outHtml = $this->getHtmlSortable() . $outHtml;
+                    }
+
+                    return $outHtml;
+                },
+            ];
+            $this->getFieldsetFirst()->addField(F::createInt('OrderID', $params));
+        }
+
         if ($this->folders && $this->isStateView()) {
             $this->getFieldsetFirst()->addField($this->fieldFolder());
         }
@@ -605,6 +675,16 @@ abstract class Subtable extends Table
     private function getHtmlDel()
     {
         return '<a href="#" title="Remove row" class="subtable-del-link">—</a>';
+    }
+
+    private function getHtmlSortable()
+    {
+        return '<span class="subtable-sort-link">' . Img::icon('fa-bars') . '</span>';
+    }
+
+    private function getHtmlCopy()
+    {
+        return '<a href="#" class="subtable-copy-link">' . Img::icon('fa-copy') . '</a>';
     }
 
     /**
@@ -746,7 +826,8 @@ abstract class Subtable extends Table
             'allowDelete' => $this->allowDelete,
             'allowPaste' => $this->allowPaste,
             'textAddLink' => $this->textAddLink,
-            'fieldsJson' => json_encode($this->getJsFieldsArray())
+            'fieldsJson' => json_encode($this->getJsFieldsArray()),
+            'orderManual' => $this->_orderManual
         ];
 
         return $tdata;
@@ -788,6 +869,13 @@ abstract class Subtable extends Table
         удаления строк используются чекбоксы)
 
         */
+
+        // При ручной сортировке скопируем поле OrderID из FieldsetFirst для сохранения сортировки в базу
+        if ($this->_orderManual) {
+            $this->initTableFieldsAdditional();
+            $field = $this->getFieldsetFirst()['OrderID'];
+            $this->addField($field);
+        }
 
         $this->loadData();
         $oldData = $this->_data;
@@ -855,7 +943,8 @@ abstract class Subtable extends Table
         $affectedRows,
         array $oldData,
         Msg $msgBuff
-    ) {
+    )
+    {
     }
 
     //Кеширующая переменная

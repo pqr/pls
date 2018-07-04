@@ -5,7 +5,7 @@ namespace Light;
 use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
 
-class Fieldset implements \Iterator, \Countable, \ArrayAccess
+class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 {
     /**
      * @var F[]
@@ -562,7 +562,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess
             return '1';
         }
 
-        return '('. implode(' AND ', $sqlWhere) . ')';
+        return '(' . implode(' AND ', $sqlWhere) . ')';
     }
 
     public function validateMandatory(array $dataFromRequest)
@@ -617,5 +617,10 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess
         }
 
         return $fields;
+    }
+
+    public function jsonSerialize()
+    {
+        return $this->_fields;
     }
 }

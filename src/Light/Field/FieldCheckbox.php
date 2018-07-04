@@ -10,6 +10,9 @@ class FieldCheckbox extends FieldAbstract
     public $textYes = 'Yes';
     public $textNo = 'No';
 
+    public $cssClassYes = 'yes';
+    public $cssClassNo = 'no';
+
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -33,10 +36,10 @@ class FieldCheckbox extends FieldAbstract
     {
         $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeOverflow300);
         if ($value !== null) {
-            $viewCssClass .= ' ' . ($value ? 'yes' : 'no');
+            $viewCssClass .= ' ' . ($value ? $this->cssClassYes : $this->cssClassNo);
         }
 
-        return $viewCssClass;
+        return trim($viewCssClass);
     }
 
     public function getText($value, array $data = [], $forTable = false)

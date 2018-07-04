@@ -142,7 +142,7 @@
     vertical-align: bottom;
 }
 
-tr.invrow31 {
+.invrow31 {
     text-decoration: none;
     font-style: italic;
     opacity: 0.8;
@@ -159,7 +159,7 @@ tr.invrow31 {
     vertical-align: bottom;
 }
 
-tr.invrow32 {
+.invrow32 {
     text-decoration: line-through;
     opacity: 0.7;
 }

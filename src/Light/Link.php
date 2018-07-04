@@ -4,7 +4,219 @@ namespace Light;
 
 class Link
 {
+    private $innerHtml = '';
+    private $module = '';
+    private $title = '';
+    private $isBlank = false;
+    private $isAjax = false;
+    private $isPost = false;
+    private $hash = '';
+    private $isAbsolute = false;
+    private $params = [];
+    private $cssClass = [];
+    private $attributes = [];
+    private $filters = [];
+
+    public function __construct(string $module, string $innerHtml = '')
+    {
+        $this->innerHtml = $innerHtml;
+        $this->module = $module;
+    }
+
+    public static function create(string $module, ?string $innerHtml = '')
+    {
+        return (new self($module, (string)$innerHtml));
+    }
+
+    public function title(string $title)
+    {
+        $this->title = $title;
+        return $this;
+    }
+
+    public function blank(bool $isBlank = true)
+    {
+        $this->isBlank = $isBlank;
+        return $this;
+    }
+
+    public function ajax(bool $isAjax = true)
+    {
+        $this->isAjax = $isAjax;
+        return $this;
+    }
+
+    public function post(bool $isPost = true)
+    {
+        $this->isPost = $isPost;
+        return $this;
+    }
+
+    public function hash(string $hash)
+    {
+        $this->hash = $hash;
+        return $this;
+    }
+
+    public function absolute(bool $isAbsolute = true)
+    {
+        $this->isAbsolute = $isAbsolute;
+        return $this;
+    }
+
+    public function params(array $params)
+    {
+        $this->params = array_merge($this->params, $params);
+        return $this;
+    }
+
     /**
+     * Формирует query параметр для ссылки в формате Lines_findid=123
+     *
+     * @param string $tableName имя таблицы, которую нужно подсветить
+     * @param int $findId ID строки, которую нужно подсветить
+     * @return Link
+     */
+    public function findId(string $tableName, int $findId)
+    {
+        $param = "{$tableName}_findid";
+        $this->params[$param] = $findId;
+
+        return $this;
+    }
+
+    /**
+     * Формирует query параметр для ссылки в формате Lines_findid=ShipmentID|123+Amount|456
+     * См. подробнее как это работает в Table::isFindId()
+     *
+     * @param string $tableName имя таблицы, которую нужно подсветить
+     * @param array $keyVal здесь передаётся массив ключ-значение, которые потом будут преобразованы как в примере в ShipmentID|123+Amount|456
+     * @return Link
+     */
+    public function findIdAssoc(string $tableName, array $keyVal)
+    {
+        $param = "{$tableName}_findid";
+        $values = [];
+        foreach ($keyVal as $key => $val) {
+            $values[] = "$key|$val";
+        }
+        $this->params[$param] = implode('+', $values);
+
+        return $this;
+    }
+
+    public function view(int $id)
+    {
+        $this->params['id'] = $id;
+        return $this;
+    }
+
+    public function edit(int $id)
+    {
+        $this->params['editid'] = $id;
+        return $this;
+    }
+
+    public function func(string $func)
+    {
+        $this->params['func'] = $func;
+        return $this;
+    }
+
+    public function funcDialog()
+    {
+        $this->params['func'] = 'dialog';
+        $this->isAjax = true;
+        return $this;
+    }
+
+    public function filters(array $filters)
+    {
+        $this->filters = array_merge($this->filters, $filters);
+        return $this;
+    }
+
+    public function cssClass(string $cssClass)
+    {
+        $this->cssClass[] = $cssClass;
+        return $this;
+    }
+
+    public function attrs(array $attributes)
+    {
+        $this->attributes = array_merge($this->attributes, $attributes);
+        return $this;
+    }
+
+    public function btnFlat()
+    {
+        $this->cssClass[] = "btn-flat";
+        $this->cssClass[] = "waves-effect";
+        return $this;
+    }
+
+    public function getHref(): string
+    {
+        $href = "?a=$this->module";
+        if ($this->params) {
+
+            $href .= '&' . http_build_query($this->params);
+
+        }
+
+        if ($this->filters) {
+            $href .= '&filterValues=' . htmlspecialchars(json_encode($this->filters));
+        }
+
+        if ($this->hash) {
+
+            $href .= '#' . $this->hash;
+
+        } else {
+
+            if ($this->isAjax && $this->isPost) {
+                $href .= "#ajax-post";
+            } elseif ($this->isAjax) {
+                $href .= "#ajax";
+            } elseif ($this->isPost) {
+                $href .= "#post";
+            }
+
+        }
+
+        if ($this->isAbsolute) {
+            $href = Config::$localUrl . '/' . $href;
+        }
+        return $href;
+    }
+
+    public function getHtml(): string
+    {
+        $href = $this->getHref();
+        $attributesText = '';
+        if ($this->attributes) {
+            foreach ($this->attributes as $attrKey => $attrVal) {
+                $attributesText .= ' ' . $attrKey . '="' . htmlspecialchars($attrVal) . '"';
+            }
+        }
+
+        return '<a href="' . $href . '"'
+            . ($this->title ? ' title="' . htmlspecialchars($this->title) . '"' : '')
+            . ($this->cssClass ? ' class="' . implode(' ', $this->cssClass) . '"' : '')
+            . $attributesText
+            . ($this->isBlank ? ' target="_blank"' : '')
+            . '>'
+            . $this->innerHtml
+            . '</a>';
+    }
+
+    public function __toString()
+    {
+        return $this->getHtml();
+    }
+
+    /**
+     * @deprecated
      * Добавляет к уже существующим urlParams дополнительные
      * @param string|array|null $currentUrlParams уже существующие urlParams
      * @param string|array|null $additionalParams дополниьельные urlParams, которые нужно добавить у уже существующим
@@ -26,6 +238,9 @@ class Link
         return array_merge($currentUrlParams, $additionalParams);
     }
 
+    /**
+     * @deprecated
+     */
     public static function moduleList(
         $innerHtml,
         $filterValues = null,
@@ -34,7 +249,8 @@ class Link
         $title = null,
         $tagParams = null,
         $blank = false
-    ) {
+    )
+    {
         if ($filterValues) {
             $filterValuesUrlParam = self::filterValuesUlrParam($filterValues);
             $urlParams = $urlParams ?? [];
@@ -44,6 +260,9 @@ class Link
         return self::module($innerHtml, $urlParams, $module, $title, $tagParams, $blank);
     }
 
+    /**
+     * @deprecated
+     */
     public static function moduleListBlank(
         $innerHtml,
         $filterValues = null,
@@ -51,10 +270,14 @@ class Link
         $module = null,
         $title = null,
         $tagParams = null
-    ) {
+    )
+    {
         return self::moduleList($innerHtml, $filterValues, $urlParams, $module, $title, $tagParams, true);
     }
 
+    /**
+     * @deprecated
+     */
     public static function moduleView(
         $innerHtml,
         $id,
@@ -63,8 +286,10 @@ class Link
         $title = null,
         $tagParams = null,
         $blank = false,
-        $dialog = false
-    ) {
+        $dialog = false,
+        $ajax = false
+    )
+    {
         if ($urlParams) {
             $urlParams = self::mergeUrlParams(['id' => $id], $urlParams);
         } else {
@@ -74,11 +299,14 @@ class Link
         if ($dialog) {
             $urlParams['func'] = 'dialog';
         }
-        $ajax = $dialog;
+        $ajax = $ajax || $dialog;
 
         return self::module($innerHtml, $urlParams, $module, $title, $tagParams, $blank, $ajax);
     }
 
+    /**
+     * @deprecated
+     */
     public static function moduleViewBlank(
         $innerHtml,
         $id,
@@ -86,10 +314,14 @@ class Link
         $module = null,
         $title = null,
         $tagParams = null
-    ) {
+    )
+    {
         return self::moduleView($innerHtml, $id, $urlParams, $module, $title, $tagParams, true);
     }
 
+    /**
+     * @deprecated
+     */
     public static function moduleEdit(
         $innerHtml,
         $id,
@@ -98,7 +330,8 @@ class Link
         $title = null,
         $tagParams = null,
         $blank = false
-    ) {
+    )
+    {
         if ($urlParams) {
             $urlParams = self::mergeUrlParams(['editid' => $id], $urlParams);
         } else {
@@ -107,6 +340,9 @@ class Link
         return self::module($innerHtml, $urlParams, $module, $title, $tagParams, $blank);
     }
 
+    /**
+     * @deprecated
+     */
     public static function module(
         $innerHtml,
         $urlParams = null,
@@ -115,7 +351,8 @@ class Link
         $tagParams = null,
         $blank = false,
         $ajax = false
-    ) {
+    )
+    {
         $url = self::url($urlParams, $module);
         if ($ajax) {
             $url .= "#ajax";
@@ -136,11 +373,17 @@ class Link
         return '<a href="' . $url . '"' . $title . $tagParams . $blank . '>' . $innerHtml . '</a>';
     }
 
+    /**
+     * @deprecated
+     */
     public static function moduleBlank($innerHtml, $urlParams = null, $module = null, $title = null, $tagParams = null)
     {
         return self::module($innerHtml, $urlParams, $module, $title, $tagParams, true);
     }
 
+    /**
+     * @deprecated
+     */
     public static function url($urlParams = null, $module = null)
     {
         if ($module === null) {
@@ -155,6 +398,9 @@ class Link
         return '?' . http_build_query($urlParams);
     }
 
+    /**
+     * @deprecated
+     */
     public static function filterValuesUlrParam(array $filterValues)
     {
         return ['filterValues' => json_encode($filterValues)];

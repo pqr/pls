@@ -38,17 +38,17 @@ class Response
 
     /**
      * Перенаправляет пользователя на другую страницу и завершает приложение
-     * @param $module
-     * @param string|array|null $urlParams
+     * @param string $module
+     * @param array $params
      * @param bool $blank
      */
-    public static function redirect($module, $urlParams = null, $blank = false)
+    public static function redirect(string $module, array $params = [], $blank = false)
     {
-        $url = Link::url($urlParams, $module);
+        $url = Link::create($module)->params($params)->getHref();
         self::redirectUrl($url, $blank);
     }
 
-    public static function redirectToFilesFolder($relativePath)
+    public static function redirectToFilesFolder(string $relativePath)
     {
         $url = FilesFolder::getUrl($relativePath);
         self::redirectUrl($url);
@@ -70,10 +70,14 @@ class Response
         ApplicationAbstract::terminate();
     }
 
-    public static function redirectWithPost($module, $urlParams, array $postData, $blank = false)
+    public static function redirectWithPost(string $module, array $params = null, array $postData = null, $blank = false)
     {
         self::$isRedirected = true;
-        $url = Link::url($urlParams, $module);
+        $link = Link::create($module);
+        if ($params) {
+            $link->params($params);
+        }
+        $url = $link->getHref();
         if (Request::isAjax()) {
             Response::header('x-light-redirect-post: ' . $url);
             print json_encode($postData);

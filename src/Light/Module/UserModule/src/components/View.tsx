@@ -46,6 +46,11 @@ class ViewHeader extends React.Component<{store?: UserModuleStore}, {}> {
         return this.selected && this.selected.isChanged;
     }
 
+    onUserCopyClick = (e:any) => {
+        e.preventDefault();
+        this.props.store!.copyUser();
+    };
+
     render() {
 
         const store = this.props.store!;
@@ -59,11 +64,16 @@ class ViewHeader extends React.Component<{store?: UserModuleStore}, {}> {
             </h1>
             {this.isExistUserSelected &&
             <a href={"?a=UserModule&p=ViewHome&userId=" + id}
-               className="btn-flat waves-effect usermodule__homelink" target="_blank">Home</a>
+               className="btn-flat waves-effect usermodule__headlink" target="_blank">Home</a>
             }
             {this.isExistUserSelected &&
             <a href={"?a=UserModule&p=LoginAs&userId=" + id}
-               className="btn-flat waves-effect usermodule__loginlink">Login</a>
+               className="btn-flat waves-effect usermodule__headlink">Login</a>
+            }
+            {this.isExistUserSelected &&
+            <a href="#"
+               className="btn-flat waves-effect usermodule__headlink"
+               onClick={this.onUserCopyClick}>Copy</a>
             }
         </div>)
 

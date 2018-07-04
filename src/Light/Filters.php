@@ -1,14 +1,7 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: petr
- * Date: 13.11.17
- * Time: 11:14
- */
 
 namespace Light;
 
-use Fluent\Logger\Exception;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
 use Light\Field\FieldInputAbstract;
@@ -591,14 +584,14 @@ class Filters
             $title = Template::title($field->key);
             $label = Template::label($field->key);
         } else {
-            // Если же имеем дело с виртуальной ячейкой, для начала по умолчанию примим title и label как $templateKey
-            $title = $templateKey;
+            // Если же имеем дело с виртуальной ячейкой, для начала по умолчанию примим label как $templateKey
+            $title = '';
             $label = $templateKey;
         }
 
         if (is_array($templateVal)) {
-            // В массиве с настройками колонок фильтров данный фильтр был описан массивом
 
+            // В массиве с настройками колонок фильтров данный фильтр был описан массивом
             if (isset($templateVal['label'])) {
                 // Если в массиве явно задан label, то используем его
                 $label = $templateVal['label'];
@@ -630,7 +623,7 @@ class Filters
         $left = "<div class=filter__label>$label</div>";
         $right = "<div>$html</div>";
 
-        return "<li{$title}{$dataKey}{$class}><div>{$left}{$right}</div></li>";
+        return "<li {$title}{$dataKey}{$class}><div>{$left}{$right}</div></li>";
     }
 
     private function getFilterButtonsHtml(bool $allowLayoutChange): string

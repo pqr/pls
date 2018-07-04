@@ -87,7 +87,10 @@ abstract class FieldOptionsAbstract extends FieldAbstract
         $outHtml = htmlspecialchars($text);
 
         if (!$forTable && $this->linkModule) {
-            $outHtml = Link::moduleView($outHtml, $originalValue, null, $this->linkModule);
+            $outHtml = Link::create($this->linkModule, $outHtml)
+                ->view((int)$originalValue)
+                ->funcDialog()
+                ->getHtml();
         }
 
         if (is_array($option) && isset($option['cssClass'])) {

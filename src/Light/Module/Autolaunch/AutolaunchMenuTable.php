@@ -28,7 +28,7 @@ class AutolaunchMenuTable extends Table
                 'getHtmlFunction' => function ($value) {
                     $parts = explode('\\', $value);
                     $shortClass = end($parts);
-                    return Link::module($shortClass, ['class' => $value]);
+                    return Link::create('Autolaunch', $shortClass)->params(['class' => $value])->getHtml();
                 }
             ]),
 

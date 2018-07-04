@@ -12,10 +12,13 @@ import {
     parseTextValue,
     postMetric,
     round,
-    setNodeValue
+    setNodeValue,
+    loadSortableJs
 } from "./Light";
 import {getObjectId} from "./Module";
 import {Dialog} from "./Dialog";
+
+declare var Sortable: any;
 
 export interface Field {
     mode: string; //'view' или 'edit'
@@ -81,10 +84,13 @@ export class Subtable {
     //Решение: введём глобальный флаг, если он установлен в true, метод calcTotal ничего не будет делать!
     private calcTotalEnabled = true;
 
+    private orderManual: boolean;
+
     constructor($div: JQuery) {
         this.$div = $div;
         this.fields = parseJson($div.attr("data-fields")!);
         this.name = <string>$div.attr("data-subtablename")!;
+        this.orderManual = !!$div.attr("data-sortable")!;
         this.$table = $div.find("table.table").first();
         this.$thead = this.$table.children("thead").first();
         this.$tbody = this.$table.children("tbody").first();
@@ -111,7 +117,7 @@ export class Subtable {
         const that = this;
 
         //Добавляем обработчик на ссылку добавления новой строки
-        $div.find(".subtable-add-link").on("click", (e:any) => {
+        $div.find(".subtable-add-link").on("click", (e: any) => {
             e.preventDefault();
 
             let data: { [key: string]: string } = {};
@@ -138,7 +144,37 @@ export class Subtable {
             that.addRow(data);
         });
 
-        $div.find(".change-all").on("click", (e:any) => {
+        // бработчик на копирование строки
+        $div.find(".subtable-copy-link").on("click", (e: any) => {
+            e.preventDefault();
+
+            let data: { [key: string]: string } = {};
+            const rowNum = getRowNum($(e.target));
+
+            const fieldKeys: Array<string> = this.fieldKeys;
+            const removedFieldKeys: Array<string> = ["Del", "Copy", "Sort"];
+
+            removedFieldKeys.forEach((fieldKey: string) => {
+                const index = fieldKeys.indexOf(fieldKey, 0);
+                if (index > -1) {
+                    fieldKeys.splice(index, 1);
+                }
+            });
+
+            fieldKeys.forEach((fieldKey: string) => {
+                data[fieldKey] = this.getFieldValue(rowNum, fieldKey).toString();
+
+                if (this.fields[fieldKey].type === "MoneyWithCurrency") {
+                    //Если это поле MoneyWithCurrency, то будем копировать не всё значение, а только валюту
+                    data[fieldKey] = data[fieldKey].substring(0, 3) + " 0";
+                }
+            });
+
+            //Вызываем публичный метод addRow - он пересчитывает total
+            that.addRow(data);
+        });
+
+        $div.find(".change-all").on("click", (e: any) => {
             e.preventDefault();
 
             //Hide changeAll button
@@ -301,6 +337,27 @@ export class Subtable {
         // Пересчитаем все Total поля
         this.calcTotalAll();
         this.updateCountSpan();
+
+        if (this.orderManual) {
+            this.updateSort();
+            loadSortableJs().then(() => {
+                Sortable.create(this.$tbody.get(0), {
+                    animation: 50, // ms, animation speed moving items when sorting, `0` — without animation
+                    handle: ".subtable-sort-link", // Restricts sort start click/touch to the specified element
+                    draggable: "tr", // Specifies which items inside the element should be sortable
+                    onUpdate: function () {
+                        that.updateSort();
+                    }
+                });
+            });
+        }
+
+    }
+
+    updateSort() {
+        this.$tbody.find(">tr").each(function (this: any, sortIndex: number) {
+            $(this).find('input[name$="[OrderID]"]').val(sortIndex);
+        });
     }
 
     disableCalcTotal() {
@@ -629,6 +686,11 @@ export class Subtable {
             this.onAddHandlers[i].call(this, newRowNum, $newRow);
         }
 
+        // Пересчитаем сортировку
+        if (this.orderManual) {
+            this.updateSort();
+        }
+
         return {newRowNum: newRowNum, newRowNode: $newRow};
     }
 
@@ -711,6 +773,11 @@ export class Subtable {
         if (this.calcTotalEnabled) {
             this.calcTotalAll();
             this.updateCountSpan();
+        }
+
+        // Пересчитаем сортировку
+        if (this.orderManual) {
+            this.updateSort();
         }
 
         return true;

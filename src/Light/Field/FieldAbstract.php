@@ -109,7 +109,7 @@ use Light\Html;
  * @method static FieldYesNo createYesNo(string $fieldKey, array $params = [])
  * @method static FieldMonth createMonth(string $fieldKey, array $params = [])
  */
-abstract class FieldAbstract
+abstract class FieldAbstract implements \JsonSerializable
 {
     const MODE_LIST = 0b000001;
     const MODE_VIEW = 0b000010;
@@ -1057,6 +1057,7 @@ abstract class FieldAbstract
     }
 
     private $evaluatedViewCssClass = null;
+
     public function getViewCssClass($value, array $data = [], $forTable = false, $excludeOverflow300 = false)
     {
         if ($this->evaluatedViewCssClass !== null) {
@@ -1235,5 +1236,14 @@ abstract class FieldAbstract
     public static function parseFromDb($dbValue)
     {
         return $dbValue;
+    }
+
+    public function jsonSerialize()
+    {
+        return [
+            'FieldKey' => $this->key,
+            'Type' => $this->getType(),
+            'Params' => $this->initialParams
+        ];
     }
 }

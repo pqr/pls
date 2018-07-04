@@ -1,5 +1,8 @@
-<div id="<?= $name ?>-subtable" class="subtable-div" data-subtablename="<?= $name ?>"
-     data-fields="<?= htmlspecialchars($fieldsJson) ?>">
+<div id="<?= $name ?>-subtable"
+     class="subtable-div"
+     data-subtablename="<?= $name ?>"
+     data-fields="<?= htmlspecialchars($fieldsJson) ?>"
+     data-sortable="<?= $orderManual ?>">
 
     <?php if ($allowAdd || $allowPaste): ?>
     <table>
@@ -29,9 +32,11 @@
     </table>
 <?php endif; ?>
 
-    <input type="hidden" name="<?= $name ?>Subtable<?= $postfixName ?? '' ?>[ids]" id="<?= $name ?>-subtable-ids" value="<?= $ids ?>">
+    <input type="hidden" name="<?= $name ?>Subtable<?= $postfixName ?? '' ?>[ids]" id="<?= $name ?>-subtable-ids"
+           value="<?= $ids ?>">
     <?php if ($allowDelete): ?>
-        <input type="hidden" name="<?= $name ?>Subtable<?= $postfixName ?? '' ?>[delrows]" id="<?= $name ?>-subtable-delrows">
+        <input type="hidden" name="<?= $name ?>Subtable<?= $postfixName ?? '' ?>[delrows]"
+               id="<?= $name ?>-subtable-delrows">
     <?php endif; ?>
 
 </div>

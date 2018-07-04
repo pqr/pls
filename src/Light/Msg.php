@@ -2,7 +2,7 @@
 
 namespace Light;
 
-class Msg implements \Countable
+class Msg implements \Countable, \JsonSerializable
 {
     private $messages = [];
 
@@ -198,5 +198,10 @@ class Msg implements \Countable
             }
         }
         return false;
+    }
+
+    public function jsonSerialize()
+    {
+        return $this->messages;
     }
 }

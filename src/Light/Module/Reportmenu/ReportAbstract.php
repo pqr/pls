@@ -34,6 +34,7 @@ abstract class ReportAbstract extends Table
         $this->tableReloadUrl = '?a=Reportmenu&class=' . Misc::getClass($this);;
         $this->allowSort = false;
         $this->allowFiltersLayoutChange = false;
+        $this->tableLinkBlank = true;
     }
 
     /**
@@ -81,6 +82,11 @@ abstract class ReportAbstract extends Table
         }
     }
 
+    /**
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
     public function __invoke()
     {
         $timer = new Timer();
@@ -91,7 +97,7 @@ abstract class ReportAbstract extends Table
 
         if (Request::isXls()) {
 
-            //Запрос через кнопку Export to Excel
+            // Запрос через кнопку Export to Excel
             $this->sendExcel();
 
         } elseif (Request::isAjax()) {
@@ -120,12 +126,12 @@ abstract class ReportAbstract extends Table
     {
         //Распечатка полноценной страницы с отчётом
         $img = '<img src="i/' . static::getIconFile() . '" width="24">';
-        $moduleName = ModuleRegister::getModuleName('Reportmenu');
+        $module = 'Reportmenu';
+        $moduleName = ModuleRegister::getModuleName($module);
         $reportName = self::getTitle();
+        $link = Link::create($module, $moduleName);
         Response::setPageTitle("$moduleName - $reportName");
-        Response::setPageHeadHtml(
-            Link::module($moduleName) . " $img <strong>$reportName</strong>"
-        );
+        Response::setPageHeadHtml("$link $img <strong>$reportName</strong>");
 
     }
 

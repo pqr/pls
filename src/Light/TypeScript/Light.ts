@@ -306,7 +306,7 @@ function initTabs($root: JQuery) {
             // Пройдём по всем ссылкам, скроем все слои, кроме активного
             // Кроме этого нужно найти самый большой по вертикали слой и всем остальным слоям добавить min-height,
             // чтобы не было дёрганий по вертикали при переключении табов
-            const links = <Array<HTMLAnchorElement>>$ul.find("a").get();
+            const links = <Array<any>>$ul.find("a").get();
             const maxHeight = Math.max.apply(null, links.map(link => $(link.hash).outerHeight()));
             links.forEach(link => {
                 const $div = $(link.hash);
@@ -860,7 +860,7 @@ export function getPageParam(paramName: string) {
     return (window as any)._lightPageParams[paramName];
 }
 
-export function blockButtons(selector: string | JQuery | HTMLElement, block: boolean) {
+export function blockButtons(selector: any, block: boolean) {
     $(selector)
         .blur()
         .prop("disabled", block);

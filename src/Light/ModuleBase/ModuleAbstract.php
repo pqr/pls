@@ -166,16 +166,19 @@ abstract class ModuleAbstract extends Table
             $this->initDataForCopy($_GET['copymode'], $_GET['copyfrom']);
         }
 
-        $moduleName = ModuleRegister::getModuleName($this->getModule());
-        $headText = Link::module($moduleName, $this->getModuleSessionUrlParams());
-        $headText .= ' - <strong>Add New</strong>';
+        $module = $this->getModule();
+        $moduleName = ModuleRegister::getModuleName($module);
+
+        $moduleSessionUrlParams = $this->getModuleSessionUrlParams();
+        $link = Link::create($module, $moduleName)->params($moduleSessionUrlParams);
+        $headText = "$link - <strong>Add New</strong>";
         Response::setPageHeadHtml($headText);
         $this->initAddNewJsData();
 
         $formActionUrlParams = ['submitid' => 0] + $this->getModuleSessionUrlParams();
         $tdata = [
-            'formActionUrl' => Link::url($formActionUrlParams),
-            'cancelUrl' => Link::url($this->getModuleSessionUrlParams()),
+            'formActionUrl' => Link::create($module)->params($formActionUrlParams)->getHref(),
+            'cancelUrl' => Link::create($module)->params($moduleSessionUrlParams)->getHref(),
             'content' => $this->getViewEditContentHtml(),
             'formactions' => $this->getFormactionsHtml(),
             'fields' => $this->getFieldsForFormJs()
@@ -820,9 +823,13 @@ abstract class ModuleAbstract extends Table
 
     protected function getPageHeadHtml($stateText = '')
     {
-        $moduleName = ModuleRegister::getModuleName($this->getModule());
-        $headText = Link::module($moduleName, $this->getFindidUrlParams() + $this->getModuleSessionUrlParams());
-        $headText .= ' - ';
+        $module = $this->getModule();
+        $moduleName = ModuleRegister::getModuleName($module);
+
+        $link = Link::create($module, $moduleName)
+            ->params($this->getFindidUrlParams() + $this->getModuleSessionUrlParams());
+
+        $headText = "$link - ";
         if ($stateText) {
             $headText .= $stateText . ' ';
         }
@@ -872,26 +879,29 @@ abstract class ModuleAbstract extends Table
     {
         $out = [];
 
+        $module = $this->getModule();
         $id = $this->_obj->getId();
         $msUrlParams = $this->getModuleSessionUrlParams();
         $subtablesFindidUrlParams = $this->getSubtablesFindidUrlParams();
 
         $out[] = [
             'text' => 'List',
-            'url' => Link::url($this->getFindidUrlParams() + $msUrlParams),
+            'url' => Link::create($module)->params($this->getFindidUrlParams() + $msUrlParams)->getHref(),
             'active' => false
         ];
 
+        $viewEditLogParams = $msUrlParams + $subtablesFindidUrlParams;
+
         $out[] = [
             'text' => 'View',
-            'url' => Link::url(['id' => $id] + $msUrlParams + $subtablesFindidUrlParams),
+            'url' => Link::create($module)->view($id)->params($viewEditLogParams)->getHref(),
             'active' => $this->_state === self::STATE_VIEW
         ];
 
         if ($this->allowEdit && User::hasWriteAccess() && $this->hasWriteAccessRightToObj($this->_obj)) {
             $out[] = [
                 'text' => 'Edit',
-                'url' => Link::url(['editid' => $id] + $msUrlParams + $subtablesFindidUrlParams),
+                'url' => Link::create($module)->edit($id)->params($viewEditLogParams)->getHref(),
                 'active' => $this->_state === self::STATE_EDIT
             ];
         }
@@ -899,7 +909,7 @@ abstract class ModuleAbstract extends Table
         if ($this->allowLog && User::hasLogInPlaceAccess() && $this->hasLogAccessRightToObj($this->_obj)) {
             $out[] = [
                 'text' => 'Log ',
-                'url' => Link::url(['logid' => $id] + $msUrlParams + $subtablesFindidUrlParams),
+                'url' => Link::create($module)->params(['logid' => $id] + $viewEditLogParams)->getHref(),
                 'active' => $this->_state === self::STATE_LOG
             ];
         }
@@ -907,7 +917,7 @@ abstract class ModuleAbstract extends Table
         if ($this->allowDelete && User::hasDeleteAccess() && $this->hasDeleteAccessRightToObj($this->_obj)) {
             $out[] = [
                 'text' => 'Delete',
-                'url' => Link::url(['delid' => $id] + $msUrlParams) . '#ajax',
+                'url' => Link::create($module)->params(['delid' => $id] + $viewEditLogParams)->ajax()->getHref(),
                 'linkCssClass' => 'del-link'
             ];
         }
@@ -1059,7 +1069,7 @@ abstract class ModuleAbstract extends Table
         $tdata = [
             'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
             'submenuItems' => $this->getSubmenuItemsTplData(),
-            'formActionUrl' => Link::url($formActionUrlParams),
+            'formActionUrl' => Link::create($this->getModule())->params($formActionUrlParams)->getHref(),
             'content' => $this->getViewEditContentHtml(),
             'formactions' => $this->getFormactionsHtml(),
             'fields' => $this->getFieldsForFormJs()
@@ -1152,19 +1162,30 @@ abstract class ModuleAbstract extends Table
         $this->_state = self::STATE_SUBMIT;
 
         $id = (int)$_GET['submitid'];
+
+        if (!Request::isPost() || !Request::isAjax()) {
+            // Непонятно как пользователь сформировал не POST или не AJAX запрос (возможно, его разлогинило, а потом перезашел)
+            // Просто перенаправим на режим view
+            $urlParams = [];
+            if ($id) {
+                $urlParams = ['id' => $id];
+            }
+            Response::redirect($this->getModule(), $urlParams);
+        }
+
         if ($id < 0 || ($_GET['submitid'] !== '' && !is_numeric($_GET['submitid']))) {
             //Если id был не числовой (приведён к 0) или отрицательный - перенаправляем в режим List
             $this->riseSaveErorr('Invalid object id');
             $this->abortInsertUpdate(400);
         }
 
-        //Проверим, есть ли права на запись в этот модуль?
+        // Проверим, есть ли права на запись в этот модуль?
         if (!$this->allowEdit || !User::hasWriteAccess()) {
             $this->riseSaveErorr('No access to edit');
             $this->abortInsertUpdate(403);
         }
 
-        //Проверим можно ли вообще добавлять новые элементы, если это режим добавления?
+        // Проверим можно ли вообще добавлять новые элементы, если это режим добавления?
         if ($id === 0) {
             if (!$this->allowAdd) {
                 $this->riseSaveErorr('Add new records not allowed');
@@ -1361,7 +1382,7 @@ abstract class ModuleAbstract extends Table
         $msg = ' <strong>' . htmlspecialchars($name) . '</strong> '
             . $alreadyExistsText
             . ', '
-            . Link::moduleViewBlank($viewText, $existId);
+            . Link::create($this->getModule(), $viewText)->view($existId)->blank()->getHtml();
         $this->riseSaveErorr($msg, $fieldKey);
     }
 
@@ -1792,9 +1813,10 @@ abstract class ModuleAbstract extends Table
     {
         $externalModule = explode('\\', $className)[2];
         if (User::hasReadAccess($externalModule)) {
-            return Link::moduleList('посмотреть...', [$this->whileDeleteGetForeignFieldKey($className) => $oldId], null,
-                $externalModule, null, null,
-                'blank');
+            return Link::create($externalModule, 'посмотреть...')
+                ->params([$this->whileDeleteGetForeignFieldKey($className) => $oldId])
+                ->blank()
+                ->getHtml();
         }
 
         return false;
@@ -2003,6 +2025,12 @@ abstract class ModuleAbstract extends Table
         // Этот параметр также определяем модуль для перехода при двойном клике
         $this->tableLinkModule = $this->tableLinkModule ?: $this->getModule();
 
+
+        if (!$this->isStateListExcel()) {
+            // Инициализируем пажинацию, только если это не экспорт в Excel
+            $this->initPaginatable();
+        }
+
         if ($this->isStateListExcel() || Request::isAjax()) {
 
             $this->renderListTable();
@@ -2079,18 +2107,6 @@ abstract class ModuleAbstract extends Table
         // Добавим поля, которые объявлены как кеширующие в подтаблицах
         $this->initFieldsFromSubtables();
 
-        if (!$this->isStateListExcel()) {
-            // Инициализируем пажинацию, только если это не экспорт в Excel
-            $this->initPaginatable();
-
-            // Установим номер страницы в зависимости от findid и moduleSession
-            $findid = $this->getTableFindIdFromRequest();
-            $newPage = $this->getTablePageFromModuleSession($findid);
-            if ($newPage !== null) {
-                $this->setTablePage($newPage);
-            }
-        }
-
         $this->initSortable();
         $this->initLayoutable();
 
@@ -2109,10 +2125,13 @@ abstract class ModuleAbstract extends Table
 
     protected function initListJsData()
     {
+        $findid = $this->getTableFindIdFromRequest();
+        $pageFromModuleSession = $this->getTablePageFromModuleSession($findid);
+
         Response::addJsData([
             'state' => 'list',
             'listInitialFindid' => $this->getTableFindIdFromRequest(),
-            'listInitialPage' => $this->getTablePage(),
+            'listInitialPage' => $pageFromModuleSession ?? $this->getTablePage(),
         ]);
     }
 
@@ -2130,13 +2149,20 @@ abstract class ModuleAbstract extends Table
         foreach ($badges as $badge) {
 
             $text = $badge->title . ': <strong>' . $badge->counter . '</strong>';
-            $tagParams = 'class="alert-badge alert-' . $badge->type . '"';
+            $cssClass = 'alert-badge alert-' . $badge->type;
             if ($badge->listFilters) {
+
                 // Если есть параметр listFilters, то оборачиваем в ссылку
-                $text = Link::moduleList($text, $badge->listFilters, null, $this->getModule(), null, $tagParams);
+                $text = Link::create($module, $text)
+                    ->filters($badge->listFilters)
+                    ->cssClass($cssClass)
+                    ->getHtml();
+
             } else {
+
                 // Если же listFilters нет, то обренём в простой div для подсветки
-                $text = "<div $tagParams>$text</div>";
+                $text = "<div class=\"$cssClass\">$text</div>";
+
             }
             $out[] = $text;
         }
@@ -2243,20 +2269,16 @@ abstract class ModuleAbstract extends Table
         $text,
         $imgHtml,
         $viewFunc,
-        ?array $urlParams = [],
+        array $urlParams = [],
         $blank = false,
         $urlHash = ''
     ) {
-        $urlParams['id'] = $this->_obj->getId();
-        $urlParams['func'] = $viewFunc;
-        $urlParams += $this->getModuleSessionUrlParams();
-        $url = Link::url($urlParams);
-
-        if ($urlHash) {
-            //Если этот url нужгно открыть ajax запросом, добавим небольшую метку к url.
-            //По этой метке будет навешен обработчик клика в JS initAjaxLinkListeners() в Light.js
-            $url .= "#$urlHash";
-        }
+        $url = Link::create($this->getModule())
+            ->view($this->_obj->getId())
+            ->func($viewFunc)
+            ->params($urlParams + $this->getModuleSessionUrlParams())
+            ->hash($urlHash)
+            ->getHref();
 
         $this->addSubmenuItemUrl($text, $imgHtml, $url, $blank);
     }
@@ -2288,7 +2310,7 @@ abstract class ModuleAbstract extends Table
         $this->addSubmenuItemViewFunc($text, $imgHtml, $viewFunc, $urlParams, false, 'ajax-post');
     }
 
-    final protected function addSubmenuItemUrl($text, $imgHtml, $url, $blank = false, $ajax = false)
+    final protected function addSubmenuItemUrl($text, $imgHtml, $url, $blank = false)
     {
         if ($imgHtml) {
             $text = $imgHtml . ' ' . $text;
@@ -2466,11 +2488,13 @@ abstract class ModuleAbstract extends Table
 
         if (User::hasWriteAccess()) {
 
+            $module = $this->getModule();
+
             if ($this->hasField('Color')) {
                 $colorField = $this->getField('Color');
                 $colorField->setParam(
                     'source',
-                    '?a=' . $this->getModule() . '&id={id}&func=changeField'
+                    '?a=' . $module . '&id={id}&func=changeField'
                 );
                 $this->getFieldsetFirst()->addField($colorField);
             }
@@ -2488,24 +2512,28 @@ abstract class ModuleAbstract extends Table
                 } else {
                     $params['tableWidthHtml'] = 20;
                 }
-                $params['getHtmlFunction'] = function ($value, array $data) {
+                $params['getHtmlFunction'] = function ($value, array $data) use ($module) {
+
+                    if (!isset($data['ID'])) {
+                        return '';
+                    }
 
                     $outHtml = '';
-                    if (isset($data['ID'])) {
-                        if ($this->allowEdit) {
-                            $outHtml .= Link::moduleEdit(
-                                Img::iconEdit(),
-                                $data['ID'],
-                                $this->getModuleSessionUrlParams() + ['fromList' => 1]
-                            );
-                        }
-                        if ($this->allowDelete) {
-                            $url = Link::url([
-                                        'delid' => $data['ID'],
-                                        'fromList' => 1
-                                    ] + $this->getModuleSessionUrlParams()) . '#ajax';
-                            $outHtml .= '<a href="' . $url . '" class="del-link" title="Delete">' . Img::iconDelete() . '</a>';
-                        }
+
+                    if ($this->allowEdit) {
+                        $outHtml .= Link::create($module, Img::iconEdit())
+                            ->edit($data['ID'])
+                            ->params(['fromList' => 1] + $this->getModuleSessionUrlParams())
+                            ->getHtml();
+                    }
+
+                    if ($this->allowDelete) {
+                        $outHtml .= Link::create($module, Img::iconDelete())
+                            ->params(['delid' => $data['ID'], 'fromList' => 1] + $this->getModuleSessionUrlParams())
+                            ->ajax()
+                            ->cssClass("del-link")
+                            ->title(Config::$lang === 'ru' ? 'Удалить' : 'Delete')
+                            ->getHtml();
                     }
 
                     return $outHtml;

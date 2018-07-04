@@ -1,9 +1,11 @@
 <?php
+
 namespace Light\Traits;
 
 use Light\Db;
 use Light\Link;
 use Light\ObjAbstract;
+use Light\Request;
 use Light\Response;
 
 trait ModuleSessionTrait
@@ -87,8 +89,11 @@ trait ModuleSessionTrait
      * @param string $idUrlParam
      * @param array $additionalUrlParams дополнительные параметры для ссылок next/prev - нужно в Autolaunch log и Import log
      */
-    final protected function addModuleSessionNextPrevLinks(ObjAbstract $obj, $idUrlParam, array $additionalUrlParams = [])
-    {
+    final protected function addModuleSessionNextPrevLinks(
+        ObjAbstract $obj,
+        $idUrlParam,
+        array $additionalUrlParams = []
+    ) {
         $this->lazyInitModuleSessionFromRequest();
         if ($this->moduleSessionId) {
             //Попробуем найти текущий объект в массиве ID текущей сесии
@@ -129,10 +134,14 @@ trait ModuleSessionTrait
      * @param ObjAbstract $obj текущий обхъект, который будет склонирован, получен следующий и предыдущий, чтобы вывести описание в title
      * @param string $idUrlParam имя url параметра в который нужно положить ID следущего и предыдущего объекта
      * @param array $additionalUrlParams
-     * @return string
+     * @return array
      */
-    private function getModuleSessionNextPrevLink($index, ObjAbstract $obj, $idUrlParam, array $additionalUrlParams)
-    {
+    private function getModuleSessionNextPrevLink(
+        $index,
+        ObjAbstract $obj,
+        string $idUrlParam,
+        array $additionalUrlParams
+    ) {
         $newObj = null;
 
         if (isset($this->moduleSessionObjectsIds[$index])) {
@@ -150,8 +159,11 @@ trait ModuleSessionTrait
         $out = false;
         if ($newObj) {
             $title = $newObj->getDescriptionHtml();
-            $urlParams = [$idUrlParam => $newObj->getId()] + $additionalUrlParams + $this->getModuleSessionUrlParams();
-            $out = ['url' => Link::url($urlParams), 'title' => $title];
+            $params = [$idUrlParam => $newObj->getId()] + $additionalUrlParams + $this->getModuleSessionUrlParams();
+            $url = Link::create(Request::getModule())
+                ->params($params)
+                ->getHref();
+            $out = ['url' => $url, 'title' => $title];
         }
 
         return $out;

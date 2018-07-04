@@ -1,4 +1,4 @@
-import {observable, computed, action} from "mobx";
+import {observable, computed, action, toJS} from "mobx";
 import {TabType} from "./Constants";
 import {User, UserData} from "./classes/User";
 import {Group, GroupData} from "./classes/Group";
@@ -126,6 +126,22 @@ export default class UserModuleStore {
     @action
     addNewUser() {
         this.selectedUser = new User({}, this);
+    }
+
+    @action
+    copyUser() {
+        if (!this.selectedUser) {
+            return;
+        }
+        const src = this.selectedUser;
+        const newUserData = {
+            GroupID: src.GroupID,
+            BranchOfficeID: src.BranchOfficeID,
+            ResponsibleRoles: {...toJS(src.ResponsibleRoles)},
+            moduleAccess: {...toJS(src.moduleAccess)},
+            specialAccess: {...toJS(src.specialAccess)}
+        };
+        this.selectedUser = new User(newUserData, this);
     }
 
     @action

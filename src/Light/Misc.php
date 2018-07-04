@@ -1,4 +1,5 @@
 <?php
+
 namespace Light;
 
 
@@ -924,5 +925,23 @@ class Misc
         }
 
         return $mawb;
+    }
+
+    public static function is_array_empty($inputVariable): bool
+    {
+        $result = true;
+        if (\is_array($inputVariable) && \count($inputVariable) > 0) {
+            foreach ($inputVariable as $value) {
+                $result = $result && static::is_array_empty($value);
+            }
+        } else {
+            $result = empty($inputVariable);
+        }
+        return $result;
+    }
+
+    public static function idsFromPost(string $comaSeparated): array
+    {
+        return array_values(array_filter(array_map('intval', explode(',', $comaSeparated))));
     }
 }

@@ -250,4 +250,14 @@ class InvStatus
 
         return '';
     }
+
+    public static function getRowCssClass(int $status): string
+    {
+        if ($status == self::DELETED || $status == self::CREDITNOTED) {
+            // Только для двух статусов определён особый css класс для строк таблицы
+            return "invrow$status";
+        }
+
+        return '';
+    }
 }
