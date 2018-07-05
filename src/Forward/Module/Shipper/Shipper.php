@@ -1,9 +1,11 @@
 <?php
 namespace Forward\Module\Shipper;
 
+use Forward\Application;
 use Forward\Field\GeneralFields;
 use Light\ModuleBase\ModuleAbstract;
 use Light\Field\FieldAbstract as F;
+use Light\User;
 
 class Shipper extends ModuleAbstract
 {
@@ -14,6 +16,7 @@ class Shipper extends ModuleAbstract
         $this->setDbTable('list_shipper');
         $this->textSaveBtn = 'Shipper';
         $this->continmethod = true;
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

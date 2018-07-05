@@ -1,8 +1,10 @@
 <?php
 namespace Forward\Module\Vendor;
 
+use Forward\Application;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 class Vendor extends ModuleAbstract
 {
@@ -13,6 +15,7 @@ class Vendor extends ModuleAbstract
         $this->folders = true;
         $this->textSaveBtn = 'Vendor';
         $this->tableLayouts['Default'] = 'Name|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->registerSubtable('Responsibles');
         $this->registerSubtable('VendorAccounts');

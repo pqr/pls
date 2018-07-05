@@ -1,9 +1,11 @@
 <?php
 namespace Forward\Module\Location;
 
+use Forward\Application;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 class Location extends ModuleAbstract
 {
@@ -13,6 +15,7 @@ class Location extends ModuleAbstract
 
         $this->setDbTable('location');
 
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
         $this->textSaveBtn = 'Airport';
         $this->tableDefaultOrderBy = 'Name';
         $this->tableLayouts['Default'] = 'Name|NameRu|IATA|CountryCode';

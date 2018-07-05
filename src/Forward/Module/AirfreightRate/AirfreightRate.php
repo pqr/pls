@@ -2,6 +2,7 @@
 
 namespace Forward\Module\AirfreightRate;
 
+use Forward\Application;
 use Forward\Field\GeneralFields;
 use Light\ModuleBase\ModuleAbstract;
 use Light\Msg;
@@ -18,6 +19,7 @@ class AirfreightRate extends ModuleAbstract
         parent::__construct();
 
         $this->textSaveBtn = 'Airfreight Rate';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
     protected function initFilters()

@@ -54,6 +54,8 @@ class Shipment extends ModuleAbstract
 
         $this->folders = true;
 
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
+
         $this->textSaveBtn = 'Shipment';
         $this->tableDefaultOrderBy = 'shipment.ID DESC';
         $this->tableLayouts['Default'] =

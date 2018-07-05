@@ -23,6 +23,7 @@ class Customer extends ModuleAbstract
         $this->folders = true;
         $this->textSaveBtn = 'Customer';
         $this->tableLayouts['Default'] = 'Name|Commodity|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->registerSubtable('CustomerAccounts');
         $this->registerSubtable('Responsibles');

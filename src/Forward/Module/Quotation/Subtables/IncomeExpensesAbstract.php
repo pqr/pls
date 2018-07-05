@@ -1,10 +1,12 @@
 <?php
 namespace Forward\Module\Quotation\Subtables;
 
+use Forward\Application;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\ObjAbstract;
 use Light\SubtableBase\Subtable;
+use Light\User;
 
 abstract class IncomeExpensesAbstract extends Subtable
 {
@@ -13,6 +15,7 @@ abstract class IncomeExpensesAbstract extends Subtable
         parent::__construct($masterObj);
 
         $this->_printHeadBlock = false;
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

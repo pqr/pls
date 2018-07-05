@@ -9,7 +9,6 @@ use Forward\Module\Customer\CustomerObj;
 use Forward\ModuleBase\Payments\PaymentModuleAbstract;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
-use Light\ObjAbstract;
 
 class CPayment extends PaymentModuleAbstract
 {

@@ -1,12 +1,14 @@
 <?php
 namespace Forward\Module\VInvoice\Subtables;
 
+use Forward\Application;
 use Forward\Field\GeneralFields;
 use Forward\Field\InvoiceFields;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\ObjAbstract;
 use Light\SubtableBase\Subtable;
+use Light\User;
 
 class Lines extends Subtable
 {
@@ -21,6 +23,7 @@ class Lines extends Subtable
         $this->tableLinkModule = 'Shipment';
         $this->tableLinkFieldKeys = ['FileNumber', 'MAWBNumber'];
         $this->tableLinkIdFieldKey = 'ShipmentID';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->folders = true;
         $this->folderBaseDir = 'Shipment';

@@ -1,9 +1,11 @@
 <?php
 namespace Forward\Module\AirfreightSurcharge;
 
+use Forward\Application;
 use Forward\Field\GeneralFields;
 use Forward\Field\RateFields;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 class AirfreightSurcharge extends ModuleAbstract
 {
@@ -12,6 +14,7 @@ class AirfreightSurcharge extends ModuleAbstract
         parent::__construct();
 
         $this->textSaveBtn = 'Airfreight Local';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
     protected function initFilters()

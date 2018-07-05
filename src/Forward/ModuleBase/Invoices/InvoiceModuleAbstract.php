@@ -1,6 +1,7 @@
 <?php
 namespace Forward\ModuleBase\Invoices;
 
+use Forward\Application;
 use Forward\Classes\Finance;
 use Forward\Classes\Traits\FirstLetterTrait;
 use Light\Db;
@@ -10,6 +11,7 @@ use Light\ModuleBase\ModuleAbstract;
 use Light\Msg;
 use Light\ObjAbstract;
 use Light\Response;
+use Light\User;
 
 abstract class InvoiceModuleAbstract extends ModuleAbstract
 {
@@ -20,6 +22,7 @@ abstract class InvoiceModuleAbstract extends ModuleAbstract
         parent::__construct();
 
         $this->folders = true;
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
         $this->tableDefaultOrderBy = 'ID DESC';
     }
 

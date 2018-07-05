@@ -1,9 +1,12 @@
 <?php
+
 namespace Forward\Module\Incoterm;
 
+use Forward\Application;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 class Incoterm extends ModuleAbstract
 {
@@ -15,6 +18,7 @@ class Incoterm extends ModuleAbstract
 
         $this->textSaveBtn = 'Incoterm';
         $this->tableDefaultOrderBy = 'OrderID';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

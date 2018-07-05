@@ -24,9 +24,7 @@ use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
 use Light\File;
-use Light\FilesFolder;
 use Light\Img;
-use Light\ModuleBase\MassactionAbstract;
 use Light\ModuleBase\MassactionUtils;
 use Light\Msg;
 use Light\ObjAbstract;
@@ -127,7 +125,7 @@ class CInvoice extends InvoiceModuleAbstract
 
         //Добавим больше фильтров по статусам - по каждому статусу отдельный чекбокс
         foreach (Finance::$cinvoiceStatuses as $status => $info) {
-            $this->addFilter(F::createCheckbox("Status$status",$info['text']));
+            $this->addFilter(F::createCheckbox("Status$status", $info['text']));
         }
 
         $this->addFiltersDatesFromUntil('DocDate', ['name' => 'Doc Date']);
@@ -150,8 +148,8 @@ class CInvoice extends InvoiceModuleAbstract
                 'ResponsibleSales',
                 'Status' => function () {
                     return Template::html('Status')
-                    . '<div><table id="statuses-checkboxes-table"'
-                    . ((is_numeric(Template::value('Status')) || Template::value('Status') == '%') ? ' class="display-none"' : '')
+                        . '<div><table id="statuses-checkboxes-table"'
+                        . ((is_numeric(Template::value('Status')) || Template::value('Status') == '%') ? ' class="display-none"' : '')
                         . '><tr valign="top"><td>'
                         . '<div class="invopen">'
                         . Template::html('Status' . Finance::INVOICESTATUS_OPEN)
@@ -199,9 +197,11 @@ class CInvoice extends InvoiceModuleAbstract
 
         if (!$this->_obj->getId()) {
             if ($dataFromPost['CompanyID'] == Constant::OC_PGL_OOO) {
-                $this->riseSaveErorr('от старой компании PGL OOO счета больше не выставляются, используйте PGL OOO new', 'CompanyID');
+                $this->riseSaveErorr('от старой компании PGL OOO счета больше не выставляются, используйте PGL OOO new',
+                    'CompanyID');
             } elseif ($dataFromPost['CompanyID'] == Constant::OC_PLS_OOO) {
-                $this->riseSaveErorr('от старой компании PLS OOO счета больше не выставляются, используйте PLS OOO new', 'CompanyID');
+                $this->riseSaveErorr('от старой компании PLS OOO счета больше не выставляются, используйте PLS OOO new',
+                    'CompanyID');
             }
         }
 
@@ -281,7 +281,8 @@ class CInvoice extends InvoiceModuleAbstract
         }
 
         if ($this->_obj['CompanyID']) {
-            $this->_obj['BankID'] = Db::getOne("SELECT ID FROM ourcompanybank WHERE CompanyID = @i ORDER BY ID LIMIT 1", $this->_obj['CompanyID']);
+            $this->_obj['BankID'] = Db::getOne("SELECT ID FROM ourcompanybank WHERE CompanyID = @i ORDER BY ID LIMIT 1",
+                $this->_obj['CompanyID']);
         } else {
             $this->_obj['CompanyID'] = Constant::OC_PLS;
             $this->_obj['BankID'] = Constant::OC_PLS;

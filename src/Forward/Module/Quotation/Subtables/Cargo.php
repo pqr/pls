@@ -1,9 +1,11 @@
 <?php
 namespace Forward\Module\Quotation\Subtables;
 
+use Forward\Application;
 use Light\Field\CommonFields as CF;
 use Light\ObjAbstract;
 use Light\SubtableBase\Subtable;
+use Light\User;
 
 class Cargo extends Subtable
 {
@@ -15,6 +17,7 @@ class Cargo extends Subtable
         $this->_title = 'Cargo';
         $this->textAddLink = 'Add Cargo';
         $this->_printHeadBlock = false;
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

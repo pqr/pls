@@ -1,6 +1,7 @@
 <?php
 namespace Forward\ModuleBase\Payments;
 
+use Forward\Application;
 use Forward\Classes\Finance;
 use Forward\Classes\Traits\FirstLetterTrait;
 use Light\Css;
@@ -9,6 +10,7 @@ use Light\Js;
 use Light\ModuleBase\ModuleAbstract;
 use Light\Msg;
 use Light\ObjAbstract;
+use Light\User;
 
 /**
  * Обший предо для классов модулей CPayment и VPayment - много похожих вещей!
@@ -23,6 +25,8 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
 
         $this->folders = true;
         $this->tableDefaultOrderBy = 'ID DESC';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
+
     }
 
     protected function initCssJs()

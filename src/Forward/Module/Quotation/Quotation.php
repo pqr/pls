@@ -2,6 +2,7 @@
 
 namespace Forward\Module\Quotation;
 
+use Forward\Application;
 use Forward\Classes\BuAccess;
 use Forward\Classes\CompanyChild;
 use Forward\Classes\Constant;
@@ -21,6 +22,7 @@ use Light\ModuleBase\ModuleAbstract;
 use Light\Msg;
 use Light\ObjAbstract;
 use Light\Response;
+use Light\User;
 use Light\XlsWriter;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
@@ -36,6 +38,7 @@ class Quotation extends ModuleAbstract
         $this->setDbTable('quotation');
         $this->textSaveBtn = 'Quotation';
         $this->folders = true;
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

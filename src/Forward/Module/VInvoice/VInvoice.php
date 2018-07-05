@@ -18,7 +18,6 @@ use Light\File;
 use Light\FilesFolder;
 use Light\Link;
 use Light\Misc;
-use Light\ModuleBase\MassactionAbstract;
 use Light\ModuleBase\MassactionUtils;
 use Light\Msg;
 use Light\ObjAbstract;

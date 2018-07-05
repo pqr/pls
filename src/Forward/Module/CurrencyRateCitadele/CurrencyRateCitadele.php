@@ -1,10 +1,12 @@
 <?php
 namespace Forward\Module\CurrencyRateCitadele;
 
+use Forward\Application;
 use Light\Db;
 use Light\Field\FieldDate;
 use Light\Link;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 class CurrencyRateCitadele extends ModuleAbstract
 {
@@ -16,6 +18,7 @@ class CurrencyRateCitadele extends ModuleAbstract
         parent::__construct();
 
         $this->textSaveBtn = 'Currency Rate';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
     protected function initFilters()

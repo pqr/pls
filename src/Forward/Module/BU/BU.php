@@ -2,9 +2,11 @@
 
 namespace Forward\Module\BU;
 
+use Forward\Application;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 class BU extends ModuleAbstract
 {
@@ -15,6 +17,7 @@ class BU extends ModuleAbstract
         $this->setDbTable('bu');
         $this->textSaveBtn = 'Business Unit';
         $this->tableDefaultOrderBy = 'OrderID';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

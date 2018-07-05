@@ -1,10 +1,12 @@
 <?php
 namespace Forward\Module\Customer\Subtables;
 
+use Forward\Application;
 use Forward\Field\QuotationFields;
 use Light\Field\CommonFields as CF;
 use Light\ObjAbstract;
 use Light\SubtableBase\Subtable;
+use Light\User;
 
 class Quotations extends Subtable
 {
@@ -12,6 +14,7 @@ class Quotations extends Subtable
     {
         parent::__construct($masterObj);
 
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
         $this->_printHeadBlock = false;
         $this->tableLinkModule = 'Quotation';
         $this->_tableMsgIfEmpty = '';

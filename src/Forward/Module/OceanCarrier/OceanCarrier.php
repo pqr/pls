@@ -1,8 +1,10 @@
 <?php
 namespace Forward\Module\OceanCarrier;
 
+use Forward\Application;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 class OceanCarrier extends ModuleAbstract
 {
@@ -14,6 +16,8 @@ class OceanCarrier extends ModuleAbstract
         parent::__construct();
 
         $this->setDbTable('oceancarrier');
+
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
         $this->textSaveBtn = 'Ocean Carrier';
         $this->tableDefaultOrderBy = 'Name ASC';
 

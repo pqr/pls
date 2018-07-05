@@ -2015,10 +2015,15 @@ abstract class ModuleAbstract extends Table
         }
 
         // Правильно определим переменную _state
-        if ($this->allowExportToExcel && Request::isXls()) {
+        $this->_state = self::STATE_LIST;
+        if (Request::isXls()) {
+            if (!$this->allowExportToExcel) {
+                // Если в параметрах url передан xls=1, но при этом экспорт в Excel запрещён, то просто делаем редирект
+                $this->redirectToList();
+                return;
+            }
+            // Если же экспорт в Excel разрешен, то установим специальный _state
             $this->_state = self::STATE_LIST_EXCEL;
-        } else {
-            $this->_state = self::STATE_LIST;
         }
 
         // Параметр из класса Table: имя модуля на который автоматически делать ссылки в таблице

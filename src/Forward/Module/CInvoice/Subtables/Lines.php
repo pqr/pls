@@ -1,6 +1,7 @@
 <?php
 namespace Forward\Module\CInvoice\Subtables;
 
+use Forward\Application;
 use Forward\Classes\CInvoiceCommon;
 use Forward\Classes\Constant;
 use Light\Db;
@@ -18,6 +19,8 @@ class Lines extends Subtable
         $this->setDbTable('cinvoiceline');
 
         $this->allowTableLayouts = false;
+
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->tableLinkModule = 'Shipment';
         $this->tableLinkFieldKeys = ['FileNumber', 'ContainerName'];

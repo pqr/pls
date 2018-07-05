@@ -1,6 +1,7 @@
 <?php
 namespace Forward\Module\Port;
 
+use Forward\Application;
 use Forward\Module\Shipment\ShipmentObj;
 use Light\Db;
 use Light\Field\CommonFields as CF;
@@ -8,6 +9,7 @@ use Light\Field\FieldAbstract as F;
 use Light\ModuleBase\ModuleAbstract;
 use Light\Response;
 use Light\Session;
+use Light\User;
 
 class Port extends ModuleAbstract
 {
@@ -15,6 +17,7 @@ class Port extends ModuleAbstract
     {
         parent::__construct();
 
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
         $this->textSaveBtn = 'Port';
         $this->tableDefaultOrderBy = 'Name ASC';
         $this->tableLayouts['Default'] = 'ID|Name|NameRu|isPOL|isPOD';

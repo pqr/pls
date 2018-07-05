@@ -1,10 +1,12 @@
 <?php
 namespace Forward\Module\Customer\Subtables;
 
+use Forward\Application;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\ObjAbstract;
 use Light\SubtableBase\Subtable;
+use Light\User;
 
 class Agents extends Subtable
 {
@@ -16,6 +18,8 @@ class Agents extends Subtable
         $this->_title = 'Origins & Agents';
         $this->textAddLink = 'Add Origin Agent';
         $this->_printHeadBlock = false;
+
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

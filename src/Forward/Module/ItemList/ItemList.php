@@ -1,8 +1,10 @@
 <?php
 namespace Forward\Module\ItemList;
 
+use Forward\Application;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 class ItemList extends ModuleAbstract
 {
@@ -14,6 +16,7 @@ class ItemList extends ModuleAbstract
 
         $this->textSaveBtn = 'Item';
         $this->tableDefaultOrderBy = 'Name';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

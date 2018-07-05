@@ -1,9 +1,11 @@
 <?php
 namespace Forward\Module\Traffic;
 
+use Forward\Application;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 class Traffic extends ModuleAbstract
 {
@@ -15,6 +17,7 @@ class Traffic extends ModuleAbstract
         $this->textSaveBtn = 'Traffic';
         $this->tableDefaultOrderBy = 'OrderID';
         $this->tableLayouts['Default'] = 'OrderID|Name|FileNumberFrom|FileNumberUntil|NextFileNumber|Type';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $typeOptions = ['avia' => 'Avia', 'ocean' => 'Ocean', 'truck' => 'Truck'];
 

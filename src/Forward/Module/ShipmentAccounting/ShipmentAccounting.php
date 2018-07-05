@@ -2,6 +2,7 @@
 
 namespace Forward\Module\ShipmentAccounting;
 
+use Forward\Application;
 use Forward\Classes\Constant;
 use Forward\Classes\ShipmentDownloadDocs;
 use Forward\Field\GeneralFields;
@@ -14,6 +15,7 @@ use Light\File;
 use Light\FilesFolder;
 use Light\Img;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 /**
  * Created by PhpStorm.
@@ -36,6 +38,7 @@ class ShipmentAccounting extends ModuleAbstract
         $this->allowLog = false;
         $this->allowDelete = false;
 
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
         $this->textSaveBtn = 'Накладная';
         $this->tableDefaultOrderBy = 'shipment.ID DESC';
         $this->tableLayouts['Default'] =

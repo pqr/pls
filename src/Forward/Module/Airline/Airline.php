@@ -2,8 +2,10 @@
 
 namespace Forward\Module\Airline;
 
+use Forward\Application;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 class Airline extends ModuleAbstract
 {
@@ -14,6 +16,7 @@ class Airline extends ModuleAbstract
         $this->setDbTable('airline');
         $this->textSaveBtn = 'Airline';
         $this->continmethod = true;
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

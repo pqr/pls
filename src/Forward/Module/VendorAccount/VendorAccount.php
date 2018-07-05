@@ -1,9 +1,11 @@
 <?php
 namespace Forward\Module\VendorAccount;
 
+use Forward\Application;
 use Forward\Classes\Constant;
 use Light\Img;
 use Light\ModuleBase\ModuleAbstract;
+use Light\User;
 
 class VendorAccount extends ModuleAbstract
 {
@@ -14,6 +16,8 @@ class VendorAccount extends ModuleAbstract
         $this->textSaveBtn = 'Vendor Account';
         $this->tableDefaultOrderBy = 'Name ASC';
         $this->tableLayouts['Default'] = 'Name|InvoiceAddress|Comments|Active';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
+
         $this->registerSubtable('Vendors');
     }
 

@@ -1,10 +1,12 @@
 <?php
 namespace Forward\Module\Customer\Subtables;
 
+use Forward\Application;
 use Forward\Field\GeneralFields;
 use Light\ObjAbstract;
 use Light\SubtableBase\Subtable;
 use Light\Field\FieldAbstract as F;
+use Light\User;
 
 class Consignee extends Subtable
 {
@@ -16,6 +18,8 @@ class Consignee extends Subtable
         $this->_title = 'Consignee';
         $this->textAddLink = 'Add Consignee';
         $this->_printHeadBlock = false;
+
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

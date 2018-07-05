@@ -1,12 +1,14 @@
 <?php
 namespace Forward\ModuleBase\Invoices\Subtables;
 
+use Forward\Application;
 use Forward\Classes\Traits\FirstLetterTrait;
 use Forward\Field\PaymentFields;
 use Forward\Field\PaymentInvoiceFields;
 use Light\Field\FieldAbstract as F;
 use Light\ObjAbstract;
 use Light\SubtableBase\Subtable;
+use Light\User;
 
 abstract class PaymentsAbstract extends Subtable
 {
@@ -21,7 +23,9 @@ abstract class PaymentsAbstract extends Subtable
 
         $this->setDbTable(strtolower($firstLetter . 'payment_' . $firstLetter . 'invoice'));
         $this->_title = $customerOrVendor . ' Payments';
-        $this->allowExportToExcel = true;
+
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
+
         $this->allowTableLayouts = false;
         $this->_tablePrintTotalRecordsFound = false;
         $this->_tableMsgIfEmpty = 'No ' . $customerOrVendor . ' Payments yet';
