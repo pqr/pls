@@ -346,6 +346,16 @@ class FilesFolder
         return Config::$filesfolderLocal . '/' . $relativePath;
     }
 
+    /**
+     * Удаляет абсолютный путь в файловой системе
+     * @param string $relativePath
+     * @return string
+     */
+    public static function removeAbsolutePath(string $absPath)
+    {
+        return str_replace(Config::$filesfolderLocal . '/', '', $absPath);
+    }
+
     public static function getModuleRelative(string $module, int $id)
     {
         $sub = floor($id / 1000);
