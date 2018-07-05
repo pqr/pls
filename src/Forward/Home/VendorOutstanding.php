@@ -20,6 +20,7 @@ class VendorOutstanding extends HomeBlockAbstract
         parent::__construct($userId);
 
         $this->tableLinkModule = 'Vendor';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

@@ -2,9 +2,11 @@
 
 namespace Forward\Home;
 
+use Forward\Application;
 use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
 use Light\Field\FieldAbstract as F;
 use Light\HomeBase\HomeBlockAbstract;
+use Light\User;
 
 class ToBeClosed extends HomeBlockAbstract
 {
@@ -17,6 +19,7 @@ class ToBeClosed extends HomeBlockAbstract
         parent::__construct($userId);
 
         $this->tableLinkModule = 'Shipment';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
             F::createString('Name', ['name' => 'File Number']),

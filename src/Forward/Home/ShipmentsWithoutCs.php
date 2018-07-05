@@ -1,9 +1,11 @@
 <?php
 namespace Forward\Home;
 
+use Forward\Application;
 use Forward\Field\GeneralFields;
 use Forward\Field\ShipmentFields;
 use Light\HomeBase\HomeBlockAbstract;
+use Light\User;
 
 class ShipmentsWithoutCs extends HomeBlockAbstract
 {
@@ -15,6 +17,7 @@ class ShipmentsWithoutCs extends HomeBlockAbstract
         parent::__construct($userId);
 
         $this->tableLinkModule = 'Shipment';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->getFieldset()->addFieldsCreatedBy();
         $this->addField(ShipmentFields::name());

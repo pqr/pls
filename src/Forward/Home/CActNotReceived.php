@@ -1,14 +1,9 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: petr
- * Date: 18.07.17
- * Time: 19:13
- */
 
 namespace Forward\Home;
 
 
+use Forward\Application;
 use Forward\Classes\Constant;
 use Forward\Field\GeneralFields;
 use Forward\Field\HomeFields;
@@ -16,6 +11,7 @@ use Light\Db;
 use Light\File;
 use Light\FilesFolder;
 use Light\HomeBase\HomeBlockAbstract;
+use Light\User;
 
 class CActNotReceived extends HomeBlockAbstract
 {
@@ -27,6 +23,7 @@ class CActNotReceived extends HomeBlockAbstract
     {
         parent::__construct($userId);
         $this->tableLinkModule = 'Shipment';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
             HomeFields::name(),

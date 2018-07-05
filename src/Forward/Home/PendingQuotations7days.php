@@ -1,11 +1,13 @@
 <?php
 namespace Forward\Home;
 
+use Forward\Application;
 use Forward\Field\GeneralFields;
 use Forward\Field\QuotationFields;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\HomeBase\HomeBlockAbstract;
+use Light\User;
 
 class PendingQuotations7days extends HomeBlockAbstract
 {
@@ -18,6 +20,7 @@ class PendingQuotations7days extends HomeBlockAbstract
         parent::__construct($userId);
 
         $this->tableLinkModule = 'Quotation';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
             CF::id(),

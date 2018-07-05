@@ -19,6 +19,7 @@ class CheckVInvoice extends HomeBlockAbstract
     {
         parent::__construct($userId);
         $this->width = 550;
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->tableLinkModule = 'VInvoice';
 

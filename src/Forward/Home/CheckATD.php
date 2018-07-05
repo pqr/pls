@@ -18,6 +18,7 @@ class CheckATD extends HomeBlockAbstract
     {
         parent::__construct($userId);
         $this->tableLinkModule = 'Shipment';
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 

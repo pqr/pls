@@ -24,6 +24,7 @@ class CInvoice extends HomeBlockAbstract
         $this->width = 550;
         $this->tableLinkModule = 'CInvoice';
         $this->tableLinkFieldKeys = ['CInvoiceName'];
+        $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
 
