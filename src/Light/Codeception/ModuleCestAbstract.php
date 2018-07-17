@@ -174,6 +174,21 @@ abstract class ModuleCestAbstract
 
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
+     * @param string $action
+     */
+    protected function testMassaction($I, string $action)
+    {
+        $I->expect('See Massaction Ajax Dialog');
+        $url = "?a=".$this->getModule()."&p=massaction&action=$action";
+        $I->sendAjaxPostRequest($url, ['CheckedIds' => $this->getTestObjId()]);
+        $I->canSeeHttpHeader('x-light-showdialog');
+
+        $jsonSchema = ['html' => 'string'];
+        $I->seeResponseMatchesJsonType($jsonSchema);
+    }
+
+    /**
+     * @param \AcceptanceTester | \FunctionalTester $I
      * @param string $fieldKey
      * @param string $date
      */

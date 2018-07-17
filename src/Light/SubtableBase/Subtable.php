@@ -6,6 +6,7 @@ use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldAbstract;
 use Light\Field\FieldFloat;
 use Light\Field\FieldMoney;
 use Light\Img;
@@ -480,13 +481,32 @@ abstract class Subtable extends Table
         return '';
     }
 
+    public function hasTotalRow(array $dataTotal, array $allFields): bool
+    {
+        if ($dataTotal) {
+            // Если есть подсчитанные на стороне сервера данные $dataTotal, то total строку обязательно нужно выводить
+            return true;
+        }
+
+        // Ещё один случай, когда нужно выводить строку total: это в режиме Edit, если есть хотя бы одно поле со свойством total
+        if ($this->isStateEdit()) {
+            /** @var FieldAbstract $field */
+            foreach ($allFields as $field) {
+                if ($field->total) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     protected function getHtmlTableTrTotal(array $allFields, array $dataCalculated)
     {
         $outHtml = parent::getHtmlTableTrTotal($allFields, $dataCalculated);
         return str_replace('tr class="total"', 'tr class="total" id="' . $this->getTableName() . '-subtable-tr-total"',
             $outHtml);
     }
-
 
     /**
      * Возвращает JS код функции для добавления строк в таблицу

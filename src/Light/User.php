@@ -45,6 +45,10 @@ class User
 
     }
 
+    public static function resetCache() {
+        self::$usersCache = [];
+    }
+
     private static function getUserById(int $userId = null): self
     {
         if ($userId === null) {

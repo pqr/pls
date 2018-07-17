@@ -710,6 +710,7 @@ class Table implements \JsonSerializable
      */
     public function getTableTotal(array $dataCalculated, array $fields = null): array
     {
+        // Начальное значение для строки total
         $dataTotal = $this->tableTotal ?: [];
 
         if (!$dataCalculated) {
@@ -738,10 +739,24 @@ class Table implements \JsonSerializable
         return $dataTotal;
     }
 
+    /**
+     * Функция проверяет, нужно ли выводить total строку?
+     * Этот метод переопределяется в Subtable, где в режиме Edit строка total выводится обязательно,
+     * если есть хотя бы одно поле со свойством total
+     * @param array $dataTotal
+     * @return bool
+     */
+    protected function hasTotalRow(array $dataTotal, array $allFields): bool
+    {
+        // По умолчанию логика такая: если есть данные $dataTotal (которые собраны на основе колонок или заданы вручную)
+        // то total строку выводить нужно!
+        return (bool)$dataTotal;
+    }
+
     protected function getHtmlTableTrTotal(array $allFields, array $dataCalculated)
     {
         $dataTotal = $this->getTableTotal($dataCalculated, $allFields);
-        if (!$dataTotal) {
+        if (!$this->hasTotalRow($dataTotal, $allFields)) {
             return '';
         }
 

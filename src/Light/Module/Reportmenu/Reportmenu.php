@@ -52,8 +52,9 @@ class Reportmenu
      */
     private function getReportsForUser(int $userId, int $groupId, array $allReports): array
     {
-        return array_filter($allReports, function ($reportClass) use ($userId, $groupId) {
-            return $this->hasUserAccessToReport($userId, $groupId, $reportClass);
+        $ra = new ReportAccess();
+        return array_filter($allReports, function ($reportClass) use ($ra, $userId, $groupId) {
+            return $ra->checkAccess($userId, $groupId, $reportClass);
         });
     }
 
@@ -74,7 +75,7 @@ class Reportmenu
      * @param string $reportClass
      * @return string
      */
-    public function getReportTitle(string $reportClass): string
+    public static function getReportTitle(string $reportClass): string
     {
         /** @var ReportAbstract $reportFullClass */
         $reportFullClass = self::getReportFullClass($reportClass);
@@ -86,7 +87,7 @@ class Reportmenu
      * @param string $reportClass
      * @return string
      */
-    public function getReportDescription(string $reportClass): string
+    public static function getReportDescription(string $reportClass): string
     {
         /** @var ReportAbstract $reportFullClass */
         $reportFullClass = self::getReportFullClass($reportClass);
@@ -112,7 +113,7 @@ class Reportmenu
 
         foreach ($reportsForUser as $reportClass) {
 
-            $params = ['class' => $reportClass];
+            $params = ['class' => $reportClass, 'p' => 'AccessDialog'];
             $manageAccessLink = '';
             if ($hasWriteAcess) {
                 $manageAccessText = Config::$lang === 'ru' ? 'Доступ' : 'Access';
@@ -124,8 +125,8 @@ class Reportmenu
                     ->getHtml();
             }
 
-            $title = $this->getReportTitle($reportClass);
-            $descriptioon = $this->getReportDescription($reportClass);
+            $title = Reportmenu::getReportTitle($reportClass);
+            $descriptioon = Reportmenu::getReportDescription($reportClass);
             $imageHtml = $this->getReportImageHtml($reportClass);
 
             $out[$reportClass] = '<div class="reportblock">'
@@ -150,52 +151,6 @@ class Reportmenu
 
         return $out;
 
-    }
-
-    /**
-     * Проверяет, есть ли у указанного пользователя доступ к указанному отчёту?
-     * @param int $userId
-     * @param int $groupId
-     * @param string $reportClass
-     * @return bool
-     */
-    private function hasUserAccessToReport(int $userId, int $groupId, string $reportClass)
-    {
-        if (User::hasWriteAccess('Reportmenu', $userId)) {
-            // Если у пользователя есть доступ на запись в модуль отчётов, значит у него есть доступ ко всем отчётам
-            return true;
-        }
-
-        // Загрузим из базы настройки доступа по всем отсчётам сразу (может пригодиться потом)
-        static $allReportsAccess;
-        if ($allReportsAccess === null) {
-            $allReportsAccess = Db::getAssoc("SELECT ReportClass, UserIDs, GroupIDs FROM reportaccess");
-        }
-
-        if (!isset($allReportsAccess[$reportClass])) {
-            // Для данного запрашиваемого отчёта настроек вообще не найдено, значит и доступа нет
-            return false;
-        }
-
-        $thisReportUsers = $allReportsAccess[$reportClass]['UserIDs'];
-        if (strpos($thisReportUsers, '|%|') !== false) {
-            // У данного отчёта есть настройка "Доступ всем!"
-            return true;
-        }
-
-        if (strpos($thisReportUsers, "|$userId|") !== false) {
-            // У данного отчёта есть есть привязка к запрашиваемому пользователю
-            return true;
-        }
-
-        $thisReportGroups = $allReportsAccess[$reportClass]['GroupIDs'];
-        if (strpos($thisReportGroups, "|$groupId|") !== false) {
-            // У данного отчёта есть есть привязка к группе пользователя
-            return true;
-        }
-
-        // Никаких признаков доступа не нашлось
-        return false;
     }
 
     public function __invoke()
@@ -326,7 +281,7 @@ class Reportmenu
                     $reportsLinksForThisUser[] = "<span class=bad>$text</span>";
                 } else {
                     foreach ($reportsForThisUser as $reportClass) {
-                        $title = $this->getReportTitle($reportClass);
+                        $title = Reportmenu::getReportTitle($reportClass);
                         $reportsLinksForThisUser[] = $this->getReportLink($title, $reportClass)->blank();
                     }
                 }
@@ -350,7 +305,7 @@ class Reportmenu
 
     private function getAccessDialogFieldset()
     {
-        $usersOptions = ['%' => Config::$lang === 'ru' ? 'Все' : 'All'];
+        $usersOptions = ['-1' => Config::$lang === 'ru' ? 'Все' : 'All'];
         $usersOptions += Db::getAssoc("SELECT ID, Name FROM user WHERE Active = 1 ORDER BY Name");
 
         return new Fieldset(
@@ -370,24 +325,6 @@ class Reportmenu
         );
     }
 
-    private function getReportAccess(string $class): array
-    {
-        return Db::getRow("SELECT UserIDs, GroupIDs FROM reportaccess WHERE ReportClass = @s", $class);
-    }
-
-    private function writeDbLogText($oldValue, $newValue, $oldValueFormated, $newValueFormated, $text, $class)
-    {
-        $textData = [
-            'Text' => $text,
-            'OldValue' => $oldValue,
-            'NewValue' => $newValue,
-            'OldValueFormated' => $oldValueFormated,
-            'NewValueFormated' => $newValueFormated,
-            'ObjectDescription' => $class
-        ];
-        DbLog::write('Rerportmenu', 0, 'reportaccess', 0, 'UserIDs', 'Пользователи', $textData);
-    }
-
     public function proceedAccessDialog()
     {
         if (!User::hasWriteAccess()) {
@@ -399,23 +336,22 @@ class Reportmenu
         }
 
         $class = $_GET['class'];
-        $currentAccess = $this->getReportAccess($class);
+        $ra = new ReportAccess();
+        $userIds = $ra->getReportUsers($class);
+        $groupIds = $ra->getReportGroups($class);
 
         $fieldset = $this->getAccessDialogFieldset();
         $userIdsField = $fieldset['UserIDs'];
         $groupIdsField = $fieldset['GroupIDs'];
         $text = Config::$lang === 'ru' ? 'Разрешить доступ к данному отчёту' : 'Allow access for this report';
-        $usersText = Config::$lang === 'ru' ? 'Пользователи' : 'Users';
-        $groupsText = Config::$lang === 'ru' ? 'Группы' : 'Groups';
         $bodyHtml = '<form action="?a=Reportmenu&p=AccessDialogSubmit&class=' . $class . '#ajax" method="post" style="margin-bottom: 20px">'
             . "<p>$text:</p>"
-            . "<p><label>$usersText:<br>"
-            . $userIdsField->getHtmlInput($currentAccess['UserIDs'] ?? '')
+            . "<p><label>" . $userIdsField->getName() . ":<br>"
+            . $userIdsField->getHtmlInput(implode('|', $userIds))
             . "</label></p>"
-            . "<p><label>$groupsText:<br>"
-            . $groupIdsField->getHtmlInput($currentAccess['GroupIDs'] ?? '')
+            . "<p><label>" . $groupIdsField->getName() . ":<br>"
+            . $groupIdsField->getHtmlInput(implode('|', $groupIds))
             . "</label></p>"
-
             . '</form>';
 
 
@@ -426,6 +362,9 @@ class Reportmenu
         Response::showDialog($bodyHtml, $saveBtnText);
     }
 
+    /**
+     * @throws \Exception
+     */
     public function proceedAccessDialogSubmit()
     {
         if (!User::hasWriteAccess()) {
@@ -437,67 +376,18 @@ class Reportmenu
         }
 
         $reportClass = $_GET['class'];
-        $oldAccess = $this->getReportAccess($reportClass);
 
         $fieldset = $this->getAccessDialogFieldset();
-        $newAccess = $fieldset->getDataFromRequest($_POST);
+        ['UserIDs' => $userIdsString, 'GroupIDs' => $groupIdsString] = $fieldset->getDataFromRequest($_POST);
+        $newUserIds = array_filter(array_map('intval', explode('|', $userIdsString)));
+        $newGroupIds = array_filter(array_map('intval', explode('|', $groupIdsString)));
 
-        Db::insertRow([
-            'ReportClass' => $reportClass,
-            'UserIDs' => $newAccess['UserIDs'],
-            'GroupIDs' => $newAccess['GroupIDs']
-        ], 'reportaccess', true);
-
-        // Запишем логи
-        $reportTitle = $this->getReportTitle($reportClass);
-        $this->writeDbLogTextAccessChange($reportTitle, $oldAccess, $newAccess, $fieldset, 'UserIDs');
-        $this->writeDbLogTextAccessChange($reportTitle, $oldAccess, $newAccess, $fieldset, 'GroupIDs');
+        $ra = new ReportAccess();
+        $ra->setNewUsers($newUserIds, $reportClass);
+        $ra->setNewGroups($newGroupIds, $reportClass);
 
         $flashMsg = Config::$lang === 'ru' ? 'Сохранено' : 'Saved';
         Session::flashSuccess($flashMsg);
         Session::$showAsToast = true;
     }
-
-    private function writeDbLogTextAccessChange(
-        string $reportTitle,
-        array $oldAccess,
-        array $newAccess,
-        Fieldset $fieldset,
-        string $fieldKey
-    ) {
-        $field = $fieldset[$fieldKey];
-
-        $oldIds = array_filter(explode('|', $oldAccess[$fieldKey]));
-        $newIds = array_filter(explode('|', $newAccess[$fieldKey]));
-
-        if (Config::$lang === 'ru') {
-            $description = $fieldKey === 'UserIDs' ? 'пользователю' : 'группе';
-        } else {
-            $description = $fieldKey === 'UserIDs' ? 'user' : 'group';
-        }
-
-        foreach (array_diff($oldIds, $newIds) as $removedId) {
-            $userOrGroupName = $field->getHtml($removedId);
-            if (Config::$lang === 'ru') {
-                $dbLogText = "<span class=bad>Доступ $description <strong>$userOrGroupName</strong> к отчёту <strong>$reportTitle</strong> закрыт</span>";
-            } else {
-                $dbLogText = "<span class=bad>Access for $description <strong>$userOrGroupName</strong> report <strong>$reportTitle</strong> denied</span>";
-            }
-            $this->writeDbLogText($removedId, '', $userOrGroupName, '', $dbLogText, $reportTitle);
-        }
-
-
-        foreach (array_diff($newIds, $oldIds) as $addedId) {
-            $userOrGroupName = $field->getHtml($addedId);
-            if (Config::$lang === 'ru') {
-                $dbLogText = "<span class=good>Доступ $description <strong>$userOrGroupName</strong> к отчёту <strong>$reportTitle</strong> открыт</span>";
-            } else {
-                $dbLogText = "<span class=good>Access for $description <strong>$userOrGroupName</strong> for report <strong>$reportTitle</strong> granted</span>";
-            }
-            $userOrGroupName = $field->getHtml($addedId);
-            $this->writeDbLogText('', $addedId, '', $userOrGroupName, $dbLogText, $reportTitle);
-        }
-    }
-
-
 }

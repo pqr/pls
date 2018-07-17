@@ -1,4 +1,4 @@
-import {setUserParam, toastError} from "./Light";
+import {setUserParam, toastError, getOppositeString} from "./Light";
 
 $(function () {
     //Навесим обработчики на пункты меню
@@ -136,62 +136,6 @@ $(function () {
             document.getElementById("mainmenu__avatarinputfile")!.click();
         }
     });
-
-    const keypairs = [
-        ["q", "й"],
-        ["w", "ц"],
-        ["e", "у"],
-        ["r", "к"],
-        ["t", "е"],
-        ["y", "н"],
-        ["u", "г"],
-        ["i", "ш"],
-        ["o", "щ"],
-        ["p", "з"],
-        ["[", "х"],
-        ["]", "ъ"],
-        ["\\", "ё"],
-        ["a", "ф"],
-        ["s", "ы"],
-        ["d", "в"],
-        ["f", "а"],
-        ["g", "п"],
-        ["h", "р"],
-        ["j", "о"],
-        ["k", "л"],
-        ["l", "д"],
-        [";", "ж"],
-        ["z", "я"],
-        ["x", "ч"],
-        ["c", "с"],
-        ["v", "м"],
-        ["b", "и"],
-        ["n", "т"],
-        ["m", "ь"],
-        [",", "б"],
-        [".", "ю"]
-    ];
-
-    function findOppositeLetter(letter: string) {
-        for (let i = 0; i < keypairs.length; i++) {
-            const keypair = keypairs[i];
-            if (keypair[0] === letter) {
-                return keypair[1];
-            }
-            if (keypair[1] === letter) {
-                return keypair[0];
-            }
-        }
-
-        return letter;
-    }
-
-    function getOppositeString(str: string): string {
-        return str
-            .split("")
-            .map(findOppositeLetter)
-            .join("");
-    }
 
     $("#mainmenu__search").on("keyup", function (this: HTMLInputElement) {
         const filterValue = this.value.toLowerCase().trim();

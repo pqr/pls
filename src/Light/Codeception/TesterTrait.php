@@ -2,6 +2,7 @@
 
 namespace Light\Codeception;
 
+use Light\Db;
 use Light\File;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -55,9 +56,13 @@ trait TesterTrait
         $this->seeResponseMatchesJsonType($jsonSchema);
     }
 
-    public function assertDownloadingExcel($url)
+    public function assertDownloadingExcel($url, $method = 'GET', $postData = [])
     {
-        $this->sendGET($url);
+        if ($method === 'POST') {
+            $this->sendPOST($url, $postData);
+        } else {
+            $this->sendGET($url);
+        }
         $this->canSeeHttpHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
         $filepath = LIGHT_DIR_ROOT . '/tests/_output/' . File::getValidFilename($url) . '.xlsx';
@@ -97,5 +102,19 @@ trait TesterTrait
 
         return $spreadsheet;
 
+    }
+
+    public function setSpecialAccess(string $accessKey, int $newValue, callable $testFunc)
+    {
+        // Пользователь admin захардкожен в LightConnector - именно под ним запускаются все функциональные тесты
+        $user = Db::getRow("SELECT ID, SpecialAccessJSON FROM `user` WHERE Login='admin'");
+        $specialAccess = json_decode($user['SpecialAccessJSON'], true);
+        // Меняем в базе значение на требуемое
+        $specialAccess[$accessKey] = $newValue;
+        Db::updateRow(['SpecialAccessJSON' => json_encode($specialAccess)], 'user', $user['ID']);
+        // Вызываем callback функцию в которой определена вся логика теста
+        $testFunc();
+        // Возвращаем старое значение прав доступа
+        Db::updateRow(['SpecialAccessJSON' => $user['SpecialAccessJSON']], 'user', $user['ID']);
     }
 }

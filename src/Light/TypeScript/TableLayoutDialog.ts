@@ -1,6 +1,6 @@
 import { Dialog } from "./Dialog";
 import * as table from "./Table";
-import { isLangRu, myParseInt, toastSuccess, loadSortableJs } from "./Light";
+import { isLangRu, myParseInt, toastSuccess, loadSortableJs, getOppositeString } from "./Light";
 
 declare var Sortable: any;
 
@@ -97,20 +97,22 @@ function initDialogListeners() {
     $hiddenUl = $("#tablelayoutdialog__hideul");
 
     $filter = $("#tablelayoutdialog__filter").on("keyup change", (e: any) => {
-        const filterValLower = (<HTMLInputElement>e.currentTarget).value.toLowerCase();
-        if (filterValLower === "") {
+        const filterLower = (<HTMLInputElement>e.currentTarget).value.toLowerCase();
+        if (filterLower === "") {
             $hiddenUl.find("li.display-none").removeClass("display-none");
         } else {
+            const filterLowerOpposite = getOppositeString(filterLower);
             $hiddenUl.find("li").each(function(this: HTMLLIElement) {
                 const $li = $(this);
-                $li.toggleClass(
-                    "display-none",
-                    $li
-                        .text()
-                        .toLowerCase()
-                        .indexOf(filterValLower) === -1 &&
-                        ($li.attr("title") || "").toLowerCase().indexOf(filterValLower) === -1
-                );
+                const currentTextLower = $li.text().toLowerCase();
+                const currentTitleLower = ($li.attr("title") || "").toLowerCase();
+                const hide =
+                    currentTextLower.indexOf(filterLower) === -1 &&
+                    currentTextLower.indexOf(filterLowerOpposite) === -1 &&
+                    currentTitleLower.indexOf(filterLower) === -1 &&
+                    currentTitleLower.indexOf(filterLowerOpposite) === -1;
+
+                $li.toggleClass("display-none", hide);
             });
         }
     });

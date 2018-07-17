@@ -5,6 +5,7 @@ use Codeception\Lib\Connector\Universal;
 
 use Light\Css;
 use Light\Js;
+use Light\User;
 use Symfony\Component\BrowserKit\Request;
 use Symfony\Component\BrowserKit\Response;
 
@@ -54,6 +55,7 @@ class LightConnector extends Universal
 
         // Выставляем значения по умолчанияю во все статические переменные
         // внутри объекта Response (важно для функциональных тестов)
+        User::resetCache();
         \Light\Request::reset();
         \Light\Response::reset();
         Js::reset();

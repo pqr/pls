@@ -72,13 +72,13 @@ class FilesFolder
 
         // Относительный путь обычно выглядит так: <ModuleName>/<thousand>/<RecordID>
         $parts = explode('/', $relativePath);
-        if (count($parts) < 2) {
+        if (!isset($parts[2])) {
             // Странный относительный путь, по которому невозможно посроить ссылку на ModuleAbstract
             return '';
         }
 
         $module = $parts[0];
-        $recordId = (int)end($parts);
+        $recordId = $parts[2];
 
         return Link::create($module)->view($recordId)->params(['elfinder' => 'dialog'])->getHref();
     }
@@ -493,7 +493,7 @@ class FilesFolder
      */
     public static function copyToTmpDirAndRename(array $files)
     {
-        $tmpDirAbs = LIGHT_DIR_TEMP . '/FilesFolder_copyToTmpDirAndRename/' . uniqid('', true);
+        $tmpDirAbs = LIGHT_DIR_TEMP . '/FilesFolder_copyToTmpDirAndRename/' . User::getId() . '_' . time();
         if (!@mkdir($tmpDirAbs, 0777, true) && !is_dir($tmpDirAbs)) {
             throw new \Exception('Cant create temp dir ' . $tmpDirAbs);
         }

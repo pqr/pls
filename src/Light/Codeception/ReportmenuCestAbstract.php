@@ -60,8 +60,8 @@ abstract class ReportmenuCestAbstract
         foreach ($allReports as $reportClass) {
             $out[] = [
                 'reportClass' => $reportClass,
-                'title' => $reportmenu->getReportTitle($reportClass),
-                'description' => $reportmenu->getReportDescription($reportClass)
+                'title' => Reportmenu::getReportTitle($reportClass),
+                'description' => Reportmenu::getReportDescription($reportClass)
             ];
         }
 
