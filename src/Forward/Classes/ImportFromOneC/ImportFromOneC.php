@@ -33,9 +33,7 @@ class ImportFromOneC
         } elseif (!isset($_SERVER['HTTP_X_AUTH'])) {
             $authErr = 'Нет http заголовка x-auth';
         } else {
-            if ($_SERVER['HTTP_X_AUTH'] !== ForwardConfig::$onecAuthToken
-                    // todo: старый токен - удалить
-                && $_SERVER['HTTP_X_AUTH'] !== 'Q8FHCZkjEocGntGx7YDP4LeRnw7p2a2E') {
+            if ($_SERVER['HTTP_X_AUTH'] !== ForwardConfig::$onecAuthToken) {
                 $authErr = 'Не верное значение x-auth ' . $_SERVER['HTTP_X_AUTH'];
             }
         }
