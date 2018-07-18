@@ -113,13 +113,13 @@ class Reportmenu
 
         foreach ($reportsForUser as $reportClass) {
 
-            $params = ['class' => $reportClass, 'p' => 'AccessDialog'];
+            $params = ['class' => $reportClass];
             $manageAccessLink = '';
             if ($hasWriteAcess) {
                 $manageAccessText = Config::$lang === 'ru' ? 'Доступ' : 'Access';
                 $innerHtml = Img::icon('fa-user-plus') . " $manageAccessText";
                 $manageAccessLink = Link::create('Reportmenu', $innerHtml)
-                    ->params($params)
+                    ->params($params + ['p' => 'AccessDialog'])
                     ->ajax()
                     ->attrs(['class' => 'reportblock__accesslink'])
                     ->getHtml();
