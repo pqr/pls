@@ -116,7 +116,7 @@ if (isset($_GET['elfinder'])) {
 
 <h2>Полезная информация</h2>
 <ul>
-    <li><?= \Light\FilesFolder::getLink('Help/0', 'Открыть папку с файлами с полезной информацией') ?></li>
+    <li><?= \Light\FilesFolder::getLink('Help/0/0', 'Открыть папку с файлами с полезной информацией') ?></li>
 </ul>
 
 <?php
