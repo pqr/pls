@@ -9,11 +9,6 @@ class ShipmentCest extends ModuleCestAbstract
 {
     use ModuleCestWithMultipleUpdateTrait;
 
-    protected function getTestObjId():int
-    {
-        return 8458;
-    }
-
     /**
      * Переопределяем метод, чтобы не проверять в шапке наличие (ID: ...) - в модуле Shipment этого текста нет!
      * @param \FunctionalTester|\AcceptanceTester $I
