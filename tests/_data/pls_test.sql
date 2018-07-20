@@ -3213,7 +3213,7 @@ INSERT INTO `vpayment_vinvoice` VALUES (890,10,'2012-09-25 13:59:52',100,1018,'Ð
 /*!40000 ALTER TABLE `vpayment_vinvoice` ENABLE KEYS */;
 UNLOCK TABLES;
 
-
+DROP TABLE IF EXISTS `log_access`;
 CREATE TABLE `log_access` (
   `ID` int(11) NOT NULL AUTO_INCREMENT,
   `CreatedBy` int(11) NOT NULL,
