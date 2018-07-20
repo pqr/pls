@@ -746,7 +746,7 @@ class Table implements \JsonSerializable
      * @param array $dataTotal
      * @return bool
      */
-    protected function hasTotalRow(array $dataTotal, array $allFields): bool
+    protected function hasTotalRow(array $dataTotal): bool
     {
         // По умолчанию логика такая: если есть данные $dataTotal (которые собраны на основе колонок или заданы вручную)
         // то total строку выводить нужно!

@@ -1075,15 +1075,19 @@ abstract class FieldAbstract implements \JsonSerializable
 
         $viewCssClass = $this->viewCssClass;
         if ($viewCssClass && is_callable($viewCssClass)) {
-            $result .= ' ' . $viewCssClass($value, $data, $forTable, $this);
+            $callResult = trim($viewCssClass($value, $data, $forTable, $this));
+            if ($callResult) {
+                $result .= " $callResult";
+            }
         } else {
+            $viewCssClass = trim($viewCssClass);
             if ($viewCssClass) {
                 $result .= ' ' . $viewCssClass;
             }
             // В случае когда viewCssClass не является определённой пользователем функцией
             // можем закешировать результат для данного поля раз и навсегда!
             // Чтобы больше не проверять nobr, viewMaxWidth300 и не склеивать по кусочкам.
-            $this->evaluatedViewCssClass = $result;
+            $this->evaluatedViewCssClass = trim($result);
         }
 
         return $result;

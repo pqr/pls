@@ -2,6 +2,8 @@
 
 namespace Light;
 
+use Symfony\Component\Process\Process;
+
 class Pdf
 {
     /**
@@ -267,7 +269,8 @@ class Pdf
         passthru($cmd);
 
         if ($timer->get() > 1) {
-            Metric::record('Pdf::concatenateAndStreamFromFilesFolder >1s', $timer->getMs(), 'files: ' . count($filesRelative));
+            Metric::record('Pdf::concatenateAndStreamFromFilesFolder >1s', $timer->getMs(),
+                'files: ' . count($filesRelative));
         }
 
         ApplicationAbstract::terminate();
@@ -277,8 +280,7 @@ class Pdf
         array $filesRelative,
         string $outAbsFilepathEnc,
         Msg $msgBuff = null
-    )
-    {
+    ) {
         $cmd = self::getCmdConcatenatePdf($filesRelative, $outAbsFilepathEnc);
         Misc::procOpen($cmd, $msgBuff);
     }
@@ -301,6 +303,7 @@ class Pdf
      * @param array $srcFilepaths массив абсолютных путей к файлам источникам (не encoded)
      * @param string $destFilepath путь к файлу назначения (не encoded).
      * @param Msg $msgBuff опционально буфер для сообщений об ошибках.
+     * @return bool|string
      */
     public static function concatenatePdfs(array $srcFilepaths, string $destFilepath, Msg $msgBuff = null)
     {
@@ -310,11 +313,12 @@ class Pdf
         foreach ($srcFilepaths as $filepathAbsEnc) {
             $cmd .= ' "' . File::encode($filepathAbsEnc) . '"';
         }
-        $cmd .= ' output ' . File::encode($destFilepath);
+        $cmd .= ' output "' . File::encode($destFilepath) . '"';
 
-        Misc::procOpen($cmd, $msgBuff);
+        $result = Misc::procOpen($cmd, $msgBuff);
         Metric::record('Pdf::concatenatePdfs', $timer->getMs(), 'files: ' . count($srcFilepaths));
 
+        return $result;
     }
 
     /**
@@ -368,5 +372,18 @@ class Pdf
 
         //Если одно из условий в алгоритме выше не выполнилось, значит pdf файл нуждается в перегенерации
         return true;
+    }
+
+    public static function getNumberOfPages(string $file): int
+    {
+        $cmd = '"' . Config::$pdftkPath . '" "' . $file . '" dump_data';
+
+        $process = new Process($cmd);
+        $process->mustRun();
+        $out = $process->getOutput();
+
+        preg_match_all('/NumberOfPages: (\d+)/', $out, $matches);
+
+        return (int)($matches[1][0] ?? 0);
     }
 }

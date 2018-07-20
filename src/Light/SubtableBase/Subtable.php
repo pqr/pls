@@ -481,7 +481,7 @@ abstract class Subtable extends Table
         return '';
     }
 
-    public function hasTotalRow(array $dataTotal, array $allFields): bool
+    public function hasTotalRow(array $dataTotal): bool
     {
         if ($dataTotal) {
             // Если есть подсчитанные на стороне сервера данные $dataTotal, то total строку обязательно нужно выводить
@@ -491,7 +491,7 @@ abstract class Subtable extends Table
         // Ещё один случай, когда нужно выводить строку total: это в режиме Edit, если есть хотя бы одно поле со свойством total
         if ($this->isStateEdit()) {
             /** @var FieldAbstract $field */
-            foreach ($allFields as $field) {
+            foreach ($this->getFieldset() as $field) {
                 if ($field->total) {
                     return true;
                 }

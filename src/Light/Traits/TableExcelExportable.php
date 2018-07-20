@@ -55,6 +55,12 @@ trait TableExcelExportable
 
         $dataCalculated = $this->getTableDataCalculated();
         $dataTotal = $this->getTableTotal($dataCalculated);
+        if (!$this->hasTotalRow($dataTotal)) {
+            // Если в текущей таблице метод hasTotalRow был переопределён так, что возвращает false
+            // это значит что для данной таблицы total строка не нужна. Чтобы не выдавать её в Excel,
+            // обнулим массив $dataTotal
+            $dataTotal = [];
+        }
 
         $xls->writeTableData(
             1,
