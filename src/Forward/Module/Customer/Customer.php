@@ -5,6 +5,7 @@ namespace Forward\Module\Customer;
 use Forward\Application;
 use Forward\Classes\BuAccess;
 use Forward\Classes\CustomerAccess;
+use Forward\Field\CreditFields;
 use Forward\Field\GeneralFields;
 use Forward\Module\Customer\StandartRateDialog\StandartRateDialog;
 use Forward\Module\SearchAirfreightRateDialog\SearchAirfreightRateDialog;
@@ -40,6 +41,16 @@ class Customer extends ModuleAbstract
 
         //Инициализируем дополнительные поля только для режима List
         $this->addFields(
+
+            CreditFields::creditPeriod()
+                ->setGroupconcat(true)
+                ->setSqlSelect(
+                    "SELECT GROUP_CONCAT(DISTINCT CreditPeriod ORDER BY CreditPeriod SEPARATOR '\\n')
+                FROM customeraccount ca, customer_customeraccount cca
+                WHERE ca.ID = cca.CustomerAccountID
+                    AND cca.CustomerID = customer.ID"
+                ),
+
             F::createSelect('CustomerAccount', [
                 'name' => "Customer Accounts",
                 'modes' => F::MODE_LIST,
@@ -99,15 +110,6 @@ class Customer extends ModuleAbstract
         $tdata = parent::getTplData();
         $tdata['activeTab'] = User::getParam('CustomerActiveTab');
         return $tdata;
-    }
-
-    protected function validateMandatory(array $dataFromPost)
-    {
-        parent::validateMandatory($dataFromPost);
-
-        if (isset($_POST['CreditPeriod']) && $_POST['CreditPeriod'] === '') {
-            $this->riseSaveErorr('Empty credit period. If no credit put 0.', 'CreditPeriod');
-        }
     }
 
     protected function viewGetStandartRateDialog()

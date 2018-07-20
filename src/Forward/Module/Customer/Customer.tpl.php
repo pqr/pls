@@ -37,7 +37,6 @@
             <h2>Internal Info</h2>
             <table class="form">
                 <?= t::c('CompanyID') ?>
-                <?= t::c('CreditPeriod') ?>
                 <?= t::c('CreditAmount') ?>
                 <?= t::c('OpenInvoicesAmounts'); ?>
                 <?= t::c('OverdueInvoicesAmounts'); ?>

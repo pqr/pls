@@ -268,7 +268,7 @@ abstract class InvoiceObjAbstract extends ObjAbstract
             return;
         }
 
-        //Сначала определим дату от которой отсчитывать на основе поля CreditPeriodFromDateType
+        // Сначала определим дату от которой отсчитывать
         if ($this->_data['DocDate'] == '0000-00-00') {
             return;
         }
@@ -277,29 +277,28 @@ abstract class InvoiceObjAbstract extends ObjAbstract
 
 
         if ($this->getFirstLetter() == 'C') {
-            $contrDbTable = 'customer';
-            $contrId = $this->_data['CustomerID'];
+            $contrDbTable = 'customeraccount';
+            $contrId = $this->_data['CustomerAccountID'];
         } else {
             $contrDbTable = 'vendor';
             $contrId = $this->_data['VendorID'];
         }
 
-        //Загрузим информацию из карточки клиента
-        $creditPeriodInfo = Db::getRow(
+        // Загрузим информацию из карточки аккаунта
+        $creditPeriod = (int)Db::getOne(
             "SELECT CreditPeriod
             FROM {$contrDbTable}
             WHERE ID = " . (int)$contrId
         );
 
-        if (!$creditPeriodInfo) {
-            //Не смогли найти информацию по кредитным условиям в базе, автокалькуляцию не делаем
+        if (!$creditPeriod) {
+            // Не смогли найти информацию по кредитным условиям в базе, автокалькуляцию не делаем
             return;
         }
 
-        $daysAdd = $creditPeriodInfo['CreditPeriod'];
-        $dueDate = date('Y-m-d', strtotime($dateFrom . ' +' . $daysAdd . ' days'));
+        $dueDate = date('Y-m-d', strtotime("$dateFrom +$creditPeriod days"));
 
-        //Обновляем в базе
+        // Обновляем в базе
         if ($dbLogMsg) {
             $dbLogMsg .= "\n";
         }

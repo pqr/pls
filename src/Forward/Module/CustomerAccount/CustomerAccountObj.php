@@ -1,6 +1,7 @@
 <?php
 namespace Forward\Module\CustomerAccount;
 
+use Forward\Field\CreditFields;
 use Forward\Field\GeneralFields;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
@@ -27,6 +28,7 @@ class CustomerAccountObj extends ObjAbstract
             F::createText('InvoiceAddress', ['name' => 'Billing Address']),
 
             GeneralFields::ratePercent(),
+            CreditFields::creditPeriod(),
 
             CF::comments(),
 

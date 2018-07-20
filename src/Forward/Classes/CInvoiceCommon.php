@@ -7,7 +7,7 @@ use Light\Db;
 class CInvoiceCommon
 {
     /**
-     * Возвращает данные из переводки для заполнения шапки счёта при создании
+     * Возвращает данные из перевозки для заполнения шапки счёта при создании
      * Пригождается при создании счёта из Cost-sheet'а кнопкой "Create Customer Invoice" и при массовом создании
      * счетов из Shipments Massaction: Создать Customer Invoice
      * @param int $shipmentId
@@ -22,8 +22,8 @@ class CInvoiceCommon
                  shipment.CustomerAccountID,
                  ca.RatePercent,
                  CONCAT(ca.Name, '\\n', ca.InvoiceAddress) AS InvoiceTo,
-                 DATE_ADD(CURDATE(), INTERVAL c.CreditPeriod DAY) AS DueDate,
-                 IF(c.CreditPeriod > 0, CONCAT(c.CreditPeriod, ' days'), '') AS PaymentTerms,
+                 DATE_ADD(CURDATE(), INTERVAL ca.CreditPeriod DAY) AS DueDate,
+                 IF(ca.CreditPeriod > 0, CONCAT(ca.CreditPeriod, ' days'), '') AS PaymentTerms,
                  IF(shipment.TrafficID = " . Constant::TRAFFIC_OCEAN . ", (SELECT Name FROM port WHERE ID = shipment.POLID), shipment.DepartureLocationName) AS DepartureLocationName,
                  IF(shipment.TrafficID = " . Constant::TRAFFIC_OCEAN . ", (SELECT Name FROM port WHERE ID = shipment.PODID) , shipment.ArrivalLocationName) AS ArrivalLocationName,
                  shipment.Pieces,

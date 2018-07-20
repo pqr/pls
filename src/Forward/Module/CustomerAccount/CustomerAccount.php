@@ -20,7 +20,7 @@ class CustomerAccount extends ModuleAbstract
 
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
         $this->textSaveBtn = 'Customer Account';
-        $this->tableLayouts['Default'] = 'Name|ContractNo|InvoiceAddress|Comments|Active';
+        $this->tableLayouts['Default'] = 'Name|CreditPeriod|ContractNo|InvoiceAddress|Comments|Active';
         $this->registerSubtable('Customers');
     }
 

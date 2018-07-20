@@ -44,7 +44,8 @@ class CustomerObj extends ObjAbstract
 
             GeneralFields::companyId(),
 
-            CreditFields::creditPeriod(),
+            // Кредитный период перенесён в Customer Account
+            // CreditFields::creditPeriod(),
 
             CreditFields::creditAmount(),
 
