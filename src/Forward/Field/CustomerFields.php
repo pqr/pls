@@ -22,7 +22,7 @@ class CustomerFields
                 'groupconcatRemoveEmpty' => true,
                 'tableOrderBy' => false,
                 'sqlSelect' => "SELECT GROUP_CONCAT(CONCAT(CurrencyISO, ' ', OpenAmount) SEPARATOR '\\n') FROM customer_openinvoices WHERE CustomerID = customer.ID GROUP BY CustomerID",
-                'sqlSelectRequires' => ['CreditAmount', 'CreditCurrencyISO'],
+                'sqlSelectRequires' => 'CreditAmount',
                 'getHtmlFunction' => function ($value, $data, $outHtml, $forTable) {
                     if ($value && isset($data['ID'])) {
                         $currencyIso = explode(' ', $value)[0];
@@ -31,7 +31,7 @@ class CustomerFields
                     return $outHtml;
                 },
                 'viewCssClass' => function ($value, array $data, $forTable) {
-                    if ($value && isset($data['CreditAmount']) && strpos($data['CreditAmount'], ' ') !== false) {
+                    if ($value && $forTable !== 'total' && isset($data['CreditAmount']) && strpos($data['CreditAmount'], ' ') !== false) {
                         list($currencyIso, $amount) = explode(' ', $value);
                         list($creditCurrencyIso, $creditAmount) = explode(' ', $data['CreditAmount']);
                         if ($amount > 0 && $creditCurrencyIso == $currencyIso) {
