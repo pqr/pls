@@ -1,3 +1,5 @@
+declare const Light: any;
+
 namespace Customer {
     export function onApplyAddonDialogSubmit(dialog) {
         //Возьмём все значения из диалога и применим их к блоку selling
@@ -177,4 +179,32 @@ $(function() {
             form.getFieldValue("SellingCurrencyISO");
         $.ajax(url);
     };
+
+    $(".standartrates__exporttoexcel").on("click", function(e) {
+        e.preventDefault();
+
+        if (!Light.table.has("StandartRates")) {
+            return;
+        }
+
+        const standartRatesTable = Light.table.get("StandartRates");
+        if (standartRatesTable.getDivNode().find("tr").length === 0) {
+            alert('Для данного клиента нет ставок. Нажмите кнопку "+ New Standart Rate", чтобы создать.');
+            return;
+        }
+
+        const selectedRateIds = standartRatesTable.getSelectedValues();
+        if (selectedRateIds.length === 0) {
+            alert("Отметьте нужные ставки галочками");
+            return;
+        }
+
+        const url =
+            "?a=Customer&id=" +
+            Light.module.getObjectId() +
+            "&func=StandartRatesExcel&RateIDs=" +
+            selectedRateIds.join(",");
+
+        document.location.href = url;
+    });
 });

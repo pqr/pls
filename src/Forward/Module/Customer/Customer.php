@@ -8,6 +8,7 @@ use Forward\Classes\CustomerAccess;
 use Forward\Field\CreditFields;
 use Forward\Field\GeneralFields;
 use Forward\Module\Customer\StandartRateDialog\StandartRateDialog;
+use Forward\Module\Customer\StandartRateDialog\StandartRatesExcel;
 use Forward\Module\SearchAirfreightRateDialog\SearchAirfreightRateDialog;
 use Light\Currency;
 use Light\Field\CommonFields as CF;
@@ -144,6 +145,13 @@ class Customer extends ModuleAbstract
     protected function getAccessSqlWhere(): string
     {
         return BuAccess::getSqlWhereBu() . " AND " . CustomerAccess::getSqlWhere("ID");
+    }
+
+    protected function viewGetStandartRatesExcel()
+    {
+        $rateIds = array_map('intval', explode(',', $_GET['RateIDs']));
+        $table = new StandartRatesExcel($this->_obj->getId(), $rateIds);
+        $table->sendStandartRatesExcel($this->_obj['Name'], $this->_obj['CompanyID'], 'en');
     }
 
 }

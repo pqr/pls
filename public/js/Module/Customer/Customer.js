@@ -147,5 +147,26 @@ $(function () {
             form.getFieldValue("SellingCurrencyISO");
         $.ajax(url);
     };
+    $(".standartrates__exporttoexcel").on("click", function (e) {
+        e.preventDefault();
+        if (!Light.table.has("StandartRates")) {
+            return;
+        }
+        var standartRatesTable = Light.table.get("StandartRates");
+        if (standartRatesTable.getDivNode().find("tr").length === 0) {
+            alert('Для данного клиента нет ставок. Нажмите кнопку "+ New Standart Rate", чтобы создать.');
+            return;
+        }
+        var selectedRateIds = standartRatesTable.getSelectedValues();
+        if (selectedRateIds.length === 0) {
+            alert("Отметьте нужные ставки галочками");
+            return;
+        }
+        var url = "?a=Customer&id=" +
+            Light.module.getObjectId() +
+            "&func=StandartRatesExcel&RateIDs=" +
+            selectedRateIds.join(",");
+        document.location.href = url;
+    });
 });
 //# sourceMappingURL=Customer.js.map

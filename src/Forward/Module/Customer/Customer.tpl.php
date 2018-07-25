@@ -116,7 +116,11 @@
                     <div class="buttonsbar">
                         <a href="?a=Customer&id=<?= t::_id() ?>&func=StandartRateDialog&action=new#ajax"><?= \Light\Img::iconPlus(); ?>
                             New Standart Rate</a>
+
+                        <a href="#" class="standartrates__exporttoexcel"><?= \Light\Img::iconExcel() ?> Export to Excel</a>
                     </div>
+
+
 
                     <?= t::subtableHtml('StandartRates') ?>
                 <?php endif; ?>

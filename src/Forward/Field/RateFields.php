@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Field;
 
 use Light\Field\FieldAbstract as F;
@@ -16,19 +17,19 @@ class RateFields
     public static function minAmount($prefix = '')
     {
         return F::createMoney($prefix . 'MinAmount',
-            ['name' => 'Min', 'nameDbLog' => trim($prefix . ' Min'), 'editWidth' => 'mini']);
+            ['name' => 'Min', 'nameDbLog' => trim($prefix . ' Min'), 'editWidth' => 'mini', 'total' => false]);
     }
 
     public static function maxAmount($prefix = '')
     {
         return F::createMoney($prefix . 'MaxAmount',
-            ['name' => 'Max', 'nameDbLog' => trim($prefix . ' Max'), 'editWidth' => 'mini']);
+            ['name' => 'Max', 'nameDbLog' => trim($prefix . ' Max'), 'editWidth' => 'mini', 'total' => false]);
     }
 
     public static function amountN($prefix = '')
     {
         return F::createMoney($prefix . 'AmountN',
-            ['name' => 'N', 'nameDbLog' => trim($prefix . ' N'), 'editWidth' => 'mini']);
+            ['name' => 'N', 'nameDbLog' => trim($prefix . ' N'), 'editWidth' => 'mini', 'total' => false]);
     }
 
     public static function amount45($prefix = '')
@@ -77,29 +78,30 @@ class RateFields
             [
                 'name' => $weight . '+',
                 'nameDbLog' => trim($prefix . ' ' . $weight . '+'),
-                'editWidth' => 'mini'
+                'editWidth' => 'mini',
+                'total' => false
             ]);
     }
 
     public static function fscAmount($prefix = '')
     {
         return F::createMoney($prefix . 'FSCAmount',
-            ['name' => 'FSC', 'nameDbLog' => trim($prefix . ' FSC'), 'editWidth' => 'mini']);
+            ['name' => 'FSC', 'nameDbLog' => trim($prefix . ' FSC'), 'editWidth' => 'mini', 'total' => false]);
     }
 
     public static function sscAmount($prefix = '')
     {
         return F::createMoney($prefix . 'SSCAmount',
-            ['name' => 'SSC', 'nameDbLog' => trim($prefix . ' SSC'), 'editWidth' => 'mini']);
+            ['name' => 'SSC', 'nameDbLog' => trim($prefix . ' SSC'), 'editWidth' => 'mini', 'total' => false]);
     }
 
     public static function perKgAmount()
     {
-        return F::createMoney('PerKgAmount', ['name' => 'Per Kg', 'editWidth' => 'mini']);
+        return F::createMoney('PerKgAmount', ['name' => 'Per Kg', 'editWidth' => 'mini', 'total' => false]);
     }
 
     public static function baseAmount()
     {
-        return F::createMoney('BaseAmount', ['name' => 'Base', 'editWidth' => 'mini']);
+        return F::createMoney('BaseAmount', ['name' => 'Base', 'editWidth' => 'mini', 'total' => false]);
     }
 } 
