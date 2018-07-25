@@ -29,6 +29,7 @@ use Light\Field\FieldMoneyWithCurrency;
 use Light\File;
 use Light\FilesFolder;
 use Light\Img;
+use Light\InvStatus;
 use Light\Link;
 use Light\Mailer;
 use Light\Misc;
@@ -1212,11 +1213,19 @@ class Shipment extends ModuleAbstract
     {
         //Найдём число привязанных счетов
         $cinvCount = (int)Db::getOne(
-            "SELECT count(*) FROM cinvoice_file_amount WHERE FileNumber = @i",
+            "SELECT count(*) 
+              FROM cinvoice_file_amount cfa, cinvoice ci 
+              WHERE cfa.FileNumber = @i
+                  AND cfa.CInvoiceID = ci.ID
+                  AND ci.Status NOT IN (" . InvStatus::getDeletedStatusesSql() . ")",
             $this->_obj['Name']
         );
         $vinvCount = (int)Db::getOne(
-            "SELECT count(*) FROM vinvoice_file_amount WHERE FileNumber = @i",
+            "SELECT count(*)
+            FROM vinvoice_file_amount vfa, vinvoice vi
+            WHERE vfa.FileNumber = @i
+                AND vfa.VInvoiceID = vi.ID
+                AND vi.Status NOT IN (" . InvStatus::getDeletedStatusesSql() . ")",
             $this->_obj['Name']
         );
 
