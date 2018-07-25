@@ -9,10 +9,10 @@ use Forward\Field\GeneralFields;
 use Forward\Field\RateFields;
 use Light\A;
 use Light\Db;
-use Light\Table;
-use Light\Traits\TableExcelExportable;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
+use Light\Table;
+use Light\Traits\TableExcelExportable;
 use Light\XlsWriter;
 
 class StandartRatesExcel extends Table
@@ -65,14 +65,14 @@ class StandartRatesExcel extends Table
         $localChargesPerRateId = A::groupBy($localCharges, 'CustomerStandartRateID');
 
         // Дополнительно приклеим LocalCharges
-        foreach($data as &$row) {
+        foreach ($data as &$row) {
             $rateId = $row['ID'];
             if (!isset($localChargesPerRateId[$rateId])) {
                 continue;
             }
 
             $lines = [];
-            foreach($localChargesPerRateId[$rateId] as $localCharge) {
+            foreach ($localChargesPerRateId[$rateId] as $localCharge) {
                 $line = $localCharge['Name'] . ' ' . $localCharge['CurrencyISO'] . ': ';
                 $baseParts = [];
                 if ($localCharge['BaseAmount'] != 0) {
@@ -127,8 +127,9 @@ class StandartRatesExcel extends Table
         $template = __DIR__ . "/standartrates_{$companyName}_{$lang}.xlsx";
         $xls = new XlsWriter($template);
         $xls->insertTable(1, 6, $this);
+        $xls->replaceData(['CustomerName' => $customerName]);
 
-        $filename = "Standart Rates for $customerName.xlsx";
+        $filename = "Standart Rates for $customerName (" . date('Y-m-d') . ").xlsx";
         $xls->send($filename);
     }
 
