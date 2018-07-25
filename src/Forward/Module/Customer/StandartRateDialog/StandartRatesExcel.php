@@ -38,7 +38,7 @@ class StandartRatesExcel extends Table
             F::createText('LocalCharges', ['name' => 'Local charges']),
             CF::validFrom(),
             CF::validUntil(),
-            F::createText('Comments')
+            F::createText('CommentsCustomer', ['name' => 'Comments'])
         );
 
         $this->loadData($customerId, $rateIds);
