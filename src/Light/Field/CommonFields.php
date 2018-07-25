@@ -408,6 +408,7 @@ class CommonFields
         return F::createSelect('Incoterms', [
             'name' => Config::$lang === 'ru' ? 'Условия поставки' : 'Incoterms',
             'options' => Incoterms::getOptions(),
+            'tableAlign' => 'center',
             'editWidth' => 'mini',
         ]);
     }

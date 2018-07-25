@@ -132,12 +132,12 @@ class Pdf
         $cmd .= " --load-media-error-handling \"ignore\"";
 
         // for macOS and wkhtmltopdf version 0.12.4 https://github.com/wkhtmltopdf/wkhtmltopdf/issues/3241
-        if (stristr(PHP_OS, 'DAR')) {
-            $cmd .= " --dpi 800 --zoom 1.5";
-        } else {
+        //if (stristr(PHP_OS, 'DAR')) {
+        //    $cmd .= " --dpi 800 --zoom 1.5";
+        //} else {
             //Если принудительно не поставить dpi, то размеры указанные в css в милиметрах на печати будут совсем не такими!
             $cmd .= " --dpi 96";
-        }
+        //}
 
         /*
          * Баг исправлен, теперь не нужно делать zoom

@@ -40,6 +40,7 @@ class EmailQueueModule extends ModuleAbstract
             F::createText('Bcc', ['sqlSelect' => "REPLACE(`Bcc`, ',', '\\n')"]),
             F::createString('ReplyTo'),
             F::createString('Subject'),
+            F::createText('Attachements'),
             F::createString('Body', ['modes' => F::MODE_VIEW]),
             F::createString('ContentType'),
             F::createInt('RetryCount', ['tableAlign' => 'center', 'cssClassZero' => 'bad'])

@@ -20,7 +20,12 @@ abstract class FieldOptionsAbstract extends FieldAbstract
     protected $_cacheEvaluatedOptions;
 
     public $options;
+
+    // В режиме view сделать в виде ссылки на модуль указанный в linkModule (на просмотр записи справочника)
     public $linkModule;
+
+    // Ссылка linkModule должна открывать диалоговое окно (по умочланию false - открывается новая страница)
+    public $linkModuleDialog = false;
 
     /**
      * @param string|array $options
@@ -87,10 +92,13 @@ abstract class FieldOptionsAbstract extends FieldAbstract
         $outHtml = htmlspecialchars($text);
 
         if (!$forTable && $this->linkModule) {
-            $outHtml = Link::create($this->linkModule, $outHtml)
-                ->view((int)$originalValue)
-                ->funcDialog()
-                ->getHtml();
+            $link = Link::create($this->linkModule, $outHtml)
+                ->view((int)$originalValue);
+
+            if ($this->linkModuleDialog) {
+                $link->funcDialog();
+            }
+            $outHtml = $link->getHtml();
         }
 
         if (is_array($option) && isset($option['cssClass'])) {

@@ -144,8 +144,8 @@ export class Subtable {
             that.addRow(data);
         });
 
-        // бработчик на копирование строки
-        $div.find(".subtable-copy-link").on("click", (e: any) => {
+        // обработчик на копирование строки
+        $div.on("click", ".subtable-copy-link", (e: any) => {
             e.preventDefault();
 
             let data: { [key: string]: string } = {};

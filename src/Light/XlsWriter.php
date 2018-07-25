@@ -313,6 +313,8 @@ class XlsWriter
         //Очистим ячейку от названия таблицы
         $sheet->setCellValueByColumnAndRow($col, $row, '');
 
+        $insertedRows = 0;
+
         $numRows = $table->getTableDataCount();
         if ($numRows > 0 || $tableOpts & self::TABLES_WITH_HEADER) {
 
@@ -323,15 +325,30 @@ class XlsWriter
                 $rowStyleFunction = null;
             }
 
-            // Вставлять строки будем между текущей строкой (на которой обнаружили плейсхолдер) и следующей
-            // таким образом на вновь вставленных строках будет скопирован стиль строки с плейсхолдером
-            if ($numRows > 1 || $tableOpts & self::TABLES_WITH_HEADER) {
-                $sheet->insertNewRowBefore($row + 1, $numRows);
-            }
-
             //Теперь приступаем непосредственно к записи
             $dataCalculated = $table->getTableDataCalculated();
             $dataTotal = $table->getTableTotal($dataCalculated);
+
+            // Подготовим пустые строки под таблицу
+            // Вставлять строки будем между текущей строкой (на которой обнаружили плейсхолдер) и следующей
+            // таким образом на вновь вставленных строках будет скопирован стиль строки с плейсхолдером
+            // Как минимум нужно вставить число строк на основе данных, минус одна (одна строка будет переиспользована)
+            $insertedRows = $numRows - 1;
+            // Если нужо вывести заголовок, это ещё плюс одна строка
+            if ($tableOpts & self::TABLES_WITH_HEADER) {
+                $insertedRows++;
+            }
+            // Если есть строка total, это ещё +1
+            if ($dataTotal) {
+                $insertedRows++;
+            }
+            // Если накопилось какое-то число строк для вставки, то сделаем эту вставку новых пустых строк
+            // куда позже будут записаны данные таблицы
+            if ($insertedRows) {
+                $sheet->insertNewRowBefore($row + 1, $insertedRows);
+            }
+
+            // Записываем данные таблицы
             $this->writeTableData(
                 $col,
                 $row,
@@ -344,7 +361,7 @@ class XlsWriter
 
         }
 
-        return $numRows;
+        return $insertedRows;
     }
 
     /**
@@ -474,6 +491,7 @@ class XlsWriter
      * @param Fieldset $fieldset
      * @param callable|null $rowStyleFunction
      * @param int $tableOpts битовая маска, определяет нужно ли писать заголовок таблицы, фиксировать первую строку, накладывать автофильтры, менять ширину колонок
+     * @return int $insertedRows
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function writeTableData(
@@ -484,7 +502,8 @@ class XlsWriter
         Fieldset $fieldset,
         callable $rowStyleFunction = null,
         $tableOpts = 0
-    ): void {
+    ): int {
+
         $ws = $this->spreadsheet->getActiveSheet();
 
         $currentRow = $row;
@@ -525,6 +544,9 @@ class XlsWriter
             $ws->setAutoFilterByColumnAndRow($col, $row, $lastCol, $lastRow);
         }
         $ws->setSelectedCellByColumnAndRow($col, $row);
+
+        $insertedRows = $lastRow - $row + 1;
+        return $insertedRows;
     }
 
     /**

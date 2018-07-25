@@ -7,6 +7,7 @@
     <?= t::c('Bcc') ?>
     <?= t::c('ReplyTo') ?>
     <?= t::c('Subject') ?>
+    <?= t::c('Attachements') ?>
     <?= t::c('ContentType') ?>
     <?= t::c('RetryCount') ?>
 </table>

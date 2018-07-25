@@ -154,6 +154,24 @@ export class Dialog {
                 this.defaultSubmitHandler = () => {
                     // Функция отправки по умолчанию дополнительно проверяет заполненность всех полей типа file
                     let hasErrors = false;
+                    $form.find(".input-error").removeClass("input-error");
+
+                    const $required = $form.find("input[required], select[required], textarea[required]");
+                    if ($required.length > 0) {
+                        $required.each((_: any, input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement) => {
+                            if (input.value.trim() === "") {
+                                $(input).addClass("input-error");
+                                if (!hasErrors) {
+                                    // Если ошибок раньше не было, значит это первое найденное поле с ошибкой
+                                    const msg = isLangRu ? "Заполните обязательные поля" : "Input mandatory fields";
+                                    toastError(msg);
+                                    input.focus();
+                                }
+                                hasErrors = true;
+                            }
+                        });
+                    }
+
                     const $files = $form.find("input[type=file]");
                     if ($files.length > 0) {
                         $files.each((_: any, file: HTMLInputElement) => {
@@ -161,15 +179,17 @@ export class Dialog {
                                 $(file).addClass("input-error");
                                 const msg = isLangRu ? "Выберите файл" : "Choose file";
                                 toastError(msg);
-                                this.unblockButtons();
                                 hasErrors = true;
                             }
                         });
                     }
 
-                    if (!hasErrors) {
-                        $form.submit();
+                    if (hasErrors) {
+                        this.unblockButtons();
+                        return;
                     }
+
+                    $form.submit();
                 };
 
                 // Проверим, нужно ли отправлять эту форму через ajax?
