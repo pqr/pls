@@ -20,11 +20,7 @@ class ImportCPayment extends ImporterAbstract
         }
 
         $paymenDate = FieldDate::parse($data['PaymentDate']);
-        if (!$paymenDate) {
-            // Если дата по каким-то прична не пришла из 1С, то примем текущий день
-            $paymenDate = date('Y-m-d');
-        }
-        if ($paymenDate < '2016-11-01') {
+        if ($paymenDate && $paymenDate < '2016-11-01') {
             $this->msgBuff->addSkipp('Оплата до 1 ноября 2016, пропускаем');
             return 0;
         }
@@ -68,11 +64,10 @@ class ImportCPayment extends ImporterAbstract
 
         // Если дошли до этого момента, значит в JSON структуре из 1С не было пометки на удаление
         // Подготовим массив с данными для записи в базу
-        $cpaymentUpdateData = [
+        $cpaymentData = [
             'CompanyID' => $companyId,
             'CustomerAccountID' => (int)$data['CustomerAccountID'],
             'Name' => $data['Name'] . ' (from 1С)',
-            'PaymentDate' => $paymenDate,
             'Amount' => $data['Amount'],
             'CurrencyISO' => $data['CurrencyISO'],
             'Comments' => $data['Comments']
@@ -82,7 +77,7 @@ class ImportCPayment extends ImporterAbstract
         $customerIds = Db::getCol("SELECT CustomerID FROM customer_customeraccount WHERE CustomerAccountID = @i",
             $data['CustomerAccountID']);
         if (count($customerIds) === 1) {
-            $cpaymentUpdateData['CustomerID'] = reset($customerIds);
+            $cpaymentData['CustomerID'] = reset($customerIds);
         }
 
         if ($existCPaymentId) {
@@ -91,14 +86,23 @@ class ImportCPayment extends ImporterAbstract
             $oldPaymentData = $cpaymentObj->getData();
             $oldPaymentData['InvoiceIds'] = $cpaymentObj->getInvoiceIds();
 
-            $cpaymentObj->updateDb($cpaymentUpdateData, $dbLogMsg);
+            // При обновлении обновляем PaymentDate, только если на самом деле дата была указана
+            if ($paymenDate) {
+                $cpaymentData['PaymentDate'] = $paymenDate;
+            }
+
+            $cpaymentObj->updateDb($cpaymentData, $dbLogMsg);
 
 
         } else {
 
             $oldPaymentData = [];
-            $cpaymentUpdateData['OneCGUID'] = $data['GUID'];
-            $cpaymentObj->insertDb($cpaymentUpdateData, $dbLogMsg);
+            $cpaymentData['OneCGUID'] = $data['GUID'];
+
+            // При вставке, если в 1С не была указана дата оплаты, то принимаем сегодняшний день
+            $cpaymentData['PaymentDate'] = $paymenDate ?: date('Y-m-d');
+
+            $cpaymentObj->insertDb($cpaymentData, $dbLogMsg);
 
         }
 
