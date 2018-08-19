@@ -428,7 +428,6 @@ class Quotation extends ModuleAbstract
         $sheet = $xls->getSpreadsheet()->getActiveSheet();
 
         $excelData = $this->_obj->getExcelData();
-        $excelData['CompanyID'] = str_replace(['(USD)', '(EUR)', 'new'], '', $excelData['CompanyID']);
 
         //Добавим общие данные по грузу
         $query = "SELECT sum(Pieces) AS TotalQuantity

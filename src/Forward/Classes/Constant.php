@@ -65,12 +65,22 @@ class Constant
             "SELECT BeneficiaryBank, CorrespondentBank FROM ourcompanybank WHERE ID = @i",
             $bankId
         );
+
         return [
-            'OurCompanyName_raw' => str_replace(['(USD)', '(EUR)'], '', $company['Name'] ?? ''),
+            'OurCompanyName_raw' => self::getCompanyNameBeforePartnthesis($company['Name'] ?? ''),
             'OurCompanyAddress_raw' => $company['Address'] ?? '',
             'OurCompanyBeneficiaryBank_raw' => $bank['BeneficiaryBank'] ?? '',
             'OurCompanyCorrespondentBank_raw' => $bank['CorrespondentBank'] ?? ''
         ];
+    }
+
+    public static function getCompanyNameBeforePartnthesis(string $companyName): string
+    {
+        $parPos = strpos($companyName, '(');
+        if ($parPos) {
+            $companyName = trim(substr($companyName, $parPos));
+        }
+        return $companyName;
     }
 
     public static function generageQuotationName(
