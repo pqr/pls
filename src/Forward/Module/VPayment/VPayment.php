@@ -24,7 +24,7 @@ class VPayment extends PaymentModuleAbstract
     {
         $this->addFilters(
 
-            GeneralFields::companyId(),
+            GeneralFields::filterCompanyId(),
 
             GeneralFields::vendorId(),
 

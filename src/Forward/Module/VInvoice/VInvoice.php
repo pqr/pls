@@ -91,7 +91,7 @@ class VInvoice extends InvoiceModuleAbstract
 
         $this->addFilters(
 
-            GeneralFields::companyId(),
+            GeneralFields::filterCompanyId(),
             GeneralFields::vendorId(),
             GeneralFields::vendorAccountId(),
             F::createText('Reference', [

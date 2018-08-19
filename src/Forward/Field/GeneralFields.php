@@ -25,6 +25,14 @@ class GeneralFields
         ]);
     }
 
+    public static function filterCompanyId()
+    {
+        return F::createSelect('CompanyID', [
+            'name' => 'Our Company',
+            'options' => "SELECT ID, Name, IF(Active, '', 'Inactive') as optgroup FROM ourcompany ORDER BY OrderID",
+        ]);
+    }
+
     public static function bankId()
     {
         return F::createSelectChild('BankID', [

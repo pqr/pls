@@ -298,7 +298,7 @@ class Shipment extends ModuleAbstract
             ),
             ShipmentFields::filterMawbs(),
             GeneralFields::trafficId(),
-            GeneralFields::companyId(),
+            GeneralFields::filterCompanyId(),
             GeneralFields::customerId(),
             GeneralFields::customerAccountId(),
             GeneralFields::consigneeId(),

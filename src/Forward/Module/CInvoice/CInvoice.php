@@ -69,7 +69,7 @@ class CInvoice extends InvoiceModuleAbstract
     {
         $this->addFilters(
 
-            GeneralFields::companyId(),
+            GeneralFields::filterCompanyId(),
             GeneralFields::customerId(false, true),
             GeneralFields::customerAccountId(),
             F::createText('InvoiceNumbers', [
@@ -284,8 +284,8 @@ class CInvoice extends InvoiceModuleAbstract
             $this->_obj['BankID'] = Db::getOne("SELECT ID FROM ourcompanybank WHERE CompanyID = @i ORDER BY ID LIMIT 1",
                 $this->_obj['CompanyID']);
         } else {
-            $this->_obj['CompanyID'] = Constant::OC_PLS;
-            $this->_obj['BankID'] = Constant::OC_PLS;
+            $this->_obj['CompanyID'] = Constant::OC_PLS_USD;
+            $this->_obj['BankID'] = Constant::OC_PLS_USD;
         }
 
         parent::proceedAddNew();

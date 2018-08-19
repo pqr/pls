@@ -154,7 +154,7 @@ class ShipmentAccounting extends ModuleAbstract
 
             ShipmentFields::filterMawbs()->setName('Накладные'),
 
-            GeneralFields::companyId()
+            GeneralFields::filterCompanyId()
                 ->setName('Наша компания')
                 ->setOptions("SELECT ID, Name FROM ourcompany WHERE ID IN ($compnayIdsSql) ORDER BY OrderID, ID"),
             GeneralFields::customerId()

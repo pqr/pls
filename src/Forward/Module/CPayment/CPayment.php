@@ -42,7 +42,7 @@ class CPayment extends PaymentModuleAbstract
                 }
             ]),
 
-            GeneralFields::companyId(),
+            GeneralFields::filterCompanyId(),
 
             GeneralFields::customerId(),
 
