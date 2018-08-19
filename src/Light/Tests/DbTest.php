@@ -1,14 +1,17 @@
 <?php
 namespace Light\Tests;
 
+use Light\Config;
 use Light\Db;
+use PHPUnit\Framework\TestCase;
 
-class DbTest extends \PHPUnit_Framework_TestCase
+class DbTest extends TestCase
 {
     public static function setUpBeforeClass()
     {
         //Инициализируем singleton объект базы
-        dbConnect();
+        Db::connect();
+        Config::$sqlErrorThrowException = true;
     }
 
     public function testParse()

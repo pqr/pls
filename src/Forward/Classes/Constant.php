@@ -78,7 +78,7 @@ class Constant
     {
         $parPos = strpos($companyName, '(');
         if ($parPos) {
-            $companyName = trim(substr($companyName, $parPos));
+            $companyName = trim(substr($companyName, 0, $parPos));
         }
         return $companyName;
     }

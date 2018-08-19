@@ -2,18 +2,11 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 define('PROJECT_NAMESPACE', 'Forward');
-// require __DIR__ . '/../src/Light/Autoloader.php';
 
 include __DIR__ . '/../config/config.php';
 
+// Чтобы загрузить глобкальные Define
 require_once __DIR__ . '/../src/Light/ApplicationAbstract.php';
 
-\Light\Db::connect(
-    \Light\Config::$mysqlHost,
-    \Light\Config::$mysqlUser,
-    \Light\Config::$mysqlPassword,
-    \Light\Config::$mysqlDb,
-    \Light\Config::$mysqlPort
-);
+\Light\Db::connect();
 
-//include __DIR__ . '/../src/Light/ErrorHandler.php';
