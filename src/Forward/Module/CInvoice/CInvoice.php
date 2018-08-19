@@ -457,6 +457,8 @@ class CInvoice extends InvoiceModuleAbstract
                     . ' Вы пытаетесь изменить дату в большую сторону на <strong>' . FieldDate::beautify($cinvObj['DocDate']) . '</strong>, это может привести к нарушению нумерации, выгрузка отменена.';
                 Session::flashError($errMsg);
                 $this->redirectToView();
+                return;
+
             }
         } else {
             // Если же дата не была зафиксирована, то выгружать можно только на сегодняшний день или ранее (нельзя выгружать за будущую дату)
@@ -467,6 +469,7 @@ class CInvoice extends InvoiceModuleAbstract
                 $errMsg = 'Этот счёт был внесён в базу вручную и не подпадает под синхронизацию с 1С. Если выгрузить его в 1С, то там может появиться дубликат! Выгрузка отменена.';
                 Session::flashError($errMsg);
                 $this->redirectToView();
+                return;
 
             } else {
 
@@ -474,6 +477,7 @@ class CInvoice extends InvoiceModuleAbstract
                     $errMsg = 'Нельзя создавать счета в 1С будущей датой (' . FieldDate::beautify($cinvObj['DocDate']) . '), это может привести к нарушению нумерации, выгрузка отменена.';
                     Session::flashError($errMsg);
                     $this->redirectToView();
+                    return;
                 }
 
             }
@@ -495,6 +499,7 @@ class CInvoice extends InvoiceModuleAbstract
             $msg = 'Не удалось подключиться к серверу 1С.<br>' . $e->getMessage();
             Session::flashError($msg);
             $this->redirectToView();
+            return;
 
         }
 
@@ -509,6 +514,7 @@ class CInvoice extends InvoiceModuleAbstract
             Session::flashError('Не удалось прочитать ответ от 1С');
             Session::flashError('<pre>' . htmlspecialchars($resBody) . '</pre>');
             $this->redirectToView();
+            return;
         }
 
         if (isset($resData['Errors']) && $resData['Errors']) {
@@ -518,6 +524,7 @@ class CInvoice extends InvoiceModuleAbstract
         if (!isset($resData['DocNumber']) || !$resData['DocNumber']) {
             Session::flashError('От 1С не получен номер счёта');
             $this->redirectToView();
+            return;
         }
 
         $this->_obj->updateDb(['Name' => $resData['DocNumber'], 'OneCDocDate' => $dataForOneC['DocDate']],
