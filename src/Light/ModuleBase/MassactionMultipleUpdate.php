@@ -48,7 +48,7 @@ trait MassactionMultipleUpdate
      */
     public function proceedMultipleUpdateSubmit()
     {
-        if (!$this->allowDelete || !User::hasWriteAccess()) {
+        if (!$this->allowEdit || !User::hasWriteAccess()) {
             MassactionUtils::sendErrorDialog('No access to edit');
             return;
         }

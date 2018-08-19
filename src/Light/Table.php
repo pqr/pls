@@ -343,6 +343,7 @@ class Table implements \JsonSerializable
             return $this->_tableMsgIfEmpty ?? (Config::$lang === 'ru' ? 'Нет данных' : 'No data available');
         }
 
+        $this->getFieldset()->prefetchSelectOptionsViewTableData($this->_tableData);
         $allFields = $this->getAllFields();
 
         //Сначала блок <p>...</p> над таблицей с различными ссылками: пажинация, экспорт в Excel и т.п.
@@ -756,7 +757,7 @@ class Table implements \JsonSerializable
     protected function getHtmlTableTrTotal(array $allFields, array $dataCalculated)
     {
         $dataTotal = $this->getTableTotal($dataCalculated, $allFields);
-        if (!$this->hasTotalRow($dataTotal, $allFields)) {
+        if (!$this->hasTotalRow($dataTotal)) {
             return '';
         }
 

@@ -31,6 +31,8 @@ class Logviewer extends Table
     {
         parent::__construct('Logviewer');
 
+        $this->tableReloadUrl = "?a=Logviewer";
+
         $formatExcel = function ($value) {
             return html_entity_decode(strip_tags($value));
         };

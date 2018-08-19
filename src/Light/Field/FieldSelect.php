@@ -47,23 +47,6 @@ class FieldSelect extends FieldOptionsAbstract
         $this->editWidth = 'auto';
     }
 
-    /**
-     * Возвращает текстовое значение для полей типа Select на основе индекса $value
-     * Ищет значение в массиве $this->options
-     * @param string $value
-     * @return string
-     */
-    protected function getOption($value)
-    {
-        $options = $this->getEvaluatedOptions();
-        if (isset($options[$value])) {
-            $outValue = $options[$value];
-        } else {
-            $outValue = $value ?: '';
-        }
-        return $outValue;
-    }
-
     protected function getEditCssClass($value, array $data)
     {
         $cssClass = parent::getEditCssClass($value, $data);
@@ -254,7 +237,7 @@ class FieldSelect extends FieldOptionsAbstract
 
             // После добавления нового значения в базу очистим кеширующее поле _cacheEvaluatedOptions, чтобы при записи
             // логов все значения снова подтянулись из базы, включая только что вставленное
-            $this->_cacheEvaluatedOptions = null;
+            $this->evaluatedOptions = null;
         }
 
         return $value;

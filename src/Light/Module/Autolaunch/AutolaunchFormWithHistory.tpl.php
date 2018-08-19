@@ -1,14 +1,23 @@
 <?php use Light\Template as t; ?>
 <div class="submenu filters">
-    <form action="?a=Autolaunch&class=<?= $className ?>&run=1" class="well form-inline" id="autolaunch-form" onsubmit="return false;"
+    <form action="?a=Autolaunch&class=<?= $className ?>&run=1" class="well form-inline" id="autolaunch-form"
+          onsubmit="return false;"
           method="post">
         <?= t::csrfHidden() ?>
-        <table class="filters">
+        <table>
             <tr>
                 <?php if (isset($_fieldset)): ?>
                     <?php foreach ($_fieldset as $field): ?>
-                            <th><?= t::label($field->key) ?></th>
-                            <td><?= t::html($field->key) ?></td>
+                        <td>
+                            <ul class="filters__list">
+                                <li>
+                                    <div>
+                                        <div class=filter__label><?= t::label($field->key) ?></div>
+                                        <div><?= t::html($field->key) ?></div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </td>
                     <?php endforeach; ?>
                 <?php endif; ?>
                 <td style="padding-left: 15px;">

@@ -7,6 +7,7 @@ use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldSelect;
 use Light\Fieldset;
 use Light\FilesFolder;
 use Light\Img;
@@ -325,6 +326,7 @@ abstract class ModuleAbstract extends Table
         return $templateFile;
     }
 
+
     /**
      * @return array
      */
@@ -334,7 +336,7 @@ abstract class ModuleAbstract extends Table
             $this->disableAllFieldsEdit();
         }
 
-        //Если есть поле Color и режим View - добавим ему параметр source
+        // Если есть поле Color и режим View - добавим ему параметр source
         if ($this->_state === self::STATE_VIEW && $this->hasField('Color')) {
             $this->getField('Color')->setParam(
                 'source',
@@ -811,6 +813,8 @@ abstract class ModuleAbstract extends Table
         $this->initViewFlash();
         $this->initPrintForms();
 
+        $this->getFieldset()->prefetchSelectOptionsView($this->_obj->getData());
+
         $tdata = [
             'id' => $this->_obj->getId(),
             'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
@@ -820,6 +824,7 @@ abstract class ModuleAbstract extends Table
 
         Template::includeTpl('module/view.tpl.php', $tdata);
     }
+
 
     protected function getPageHeadHtml($stateText = '')
     {
@@ -1113,6 +1118,11 @@ abstract class ModuleAbstract extends Table
     {
     }
 
+    protected function getLogTable()
+    {
+        return new ModuleAbstractLog($this->_obj->getId());
+    }
+
     protected function proceedLog()
     {
         $this->_state = self::STATE_LOG;
@@ -1126,7 +1136,7 @@ abstract class ModuleAbstract extends Table
         }
 
         //В момент создания объект CrudModuleLog загрузит данные из базы и инициализирует фильты
-        $logTable = new ModuleAbstractLog($this->_obj->getId());
+        $logTable = $this->getLogTable();
 
         if (Request::isXls()) {
 
@@ -2467,7 +2477,7 @@ abstract class ModuleAbstract extends Table
     protected function disableAllFieldsEdit()
     {
         foreach ($this->getFieldset() as $field) {
-            $field->setModes($field->getModes() & ~F::MODE_EDIT);
+            $field->setModes($field->getModes() & ~F::MODE_EDITSUBMIT);
         }
     }
 
@@ -2503,50 +2513,62 @@ abstract class ModuleAbstract extends Table
                 );
                 $this->getFieldsetFirst()->addField($colorField);
             }
-
-            if ($this->allowDelete || $this->allowEdit) {
-
-                $params = [
-                    'nameTable' => '',
-                    'tableOrderBy' => '',
-                    'tableAlign' => 'center',
-                ];
-                //Ширина колонки Del зависит от наличия иконки удаления
-                if ($this->allowDelete && $this->allowEdit) {
-                    $params['tableWidthHtml'] = 60;
-                } else {
-                    $params['tableWidthHtml'] = 20;
-                }
-                $params['getHtmlFunction'] = function ($value, array $data) use ($module) {
-
-                    if (!isset($data['ID'])) {
-                        return '';
-                    }
-
-                    $outHtml = '';
-
-                    if ($this->allowEdit) {
-                        $outHtml .= Link::create($module, Img::iconEdit())
-                            ->edit($data['ID'])
-                            ->params(['fromList' => 1] + $this->getModuleSessionUrlParams())
-                            ->getHtml();
-                    }
-
-                    if ($this->allowDelete) {
-                        $outHtml .= Link::create($module, Img::iconDelete())
-                            ->params(['delid' => $data['ID'], 'fromList' => 1] + $this->getModuleSessionUrlParams())
-                            ->ajax()
-                            ->cssClass("del-link")
-                            ->title(Config::$lang === 'ru' ? 'Удалить' : 'Delete')
-                            ->getHtml();
-                    }
-
-                    return $outHtml;
-                };
-
-                $this->getFieldsetLast()->addField(F::createHtml('Actions', $params));
-            }
         }
+
+        $this->initTableFieldAction();
+    }
+
+    protected function initTableFieldAction()
+    {
+        if (!$this->allowDelete && !$this->allowEdit) {
+            return;
+        }
+
+        if (!User::hasWriteAccess()) {
+            return;
+        }
+
+        $module = $this->getModule();
+
+        $params = [
+            'nameTable' => '',
+            'tableOrderBy' => '',
+            'tableAlign' => 'center',
+        ];
+        //Ширина колонки Del зависит от наличия иконки удаления
+        if ($this->allowDelete && $this->allowEdit) {
+            $params['tableWidthHtml'] = 60;
+        } else {
+            $params['tableWidthHtml'] = 20;
+        }
+        $params['getHtmlFunction'] = function ($value, array $data) use ($module) {
+
+            if (!isset($data['ID'])) {
+                return '';
+            }
+
+            $outHtml = '';
+
+            if ($this->allowEdit) {
+                $outHtml .= Link::create($module, Img::iconEdit())
+                    ->edit($data['ID'])
+                    ->params(['fromList' => 1] + $this->getModuleSessionUrlParams())
+                    ->getHtml();
+            }
+
+            if ($this->allowDelete) {
+                $outHtml .= Link::create($module, Img::iconDelete())
+                    ->params(['delid' => $data['ID'], 'fromList' => 1] + $this->getModuleSessionUrlParams())
+                    ->ajax()
+                    ->cssClass("del-link")
+                    ->title(Config::$lang === 'ru' ? 'Удалить' : 'Delete')
+                    ->getHtml();
+            }
+
+            return $outHtml;
+        };
+
+        $this->getFieldsetLast()->addField(F::createHtml('Actions', $params));
     }
 
     /** @var  \mysqli_result */

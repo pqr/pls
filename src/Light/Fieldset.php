@@ -4,6 +4,7 @@ namespace Light;
 
 use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldOptionsAbstract;
 
 class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 {
@@ -168,19 +169,19 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     {
         //Специально выставляем Read Only, чтобы поле автоматически не превращалось в Input в режиме Edit
         $this->addField(
+            F::createDateTime('UpdatedDateTime', [
+                'name' => Config::$lang === 'ru' ? 'Дата и время обновления' : 'Updated Date, Time',
+                'modes' => F::MODE_READONLY,
+            ])
+        );
+
+        $this->addField(
             F::createSelect('UpdatedBy', [
                 'name' => Config::$lang === 'ru' ? 'Автор обновления' : 'Updated By',
                 'modes' => F::MODE_READONLY,
                 'nobr' => true,
                 'tableWidthExcel' => 18,
                 'options' => 'user'
-            ])
-        );
-
-        $this->addField(
-            F::createDateTime('UpdatedDateTime', [
-                'name' => Config::$lang === 'ru' ? 'Дата и время обновления' : 'Updated Date, Time',
-                'modes' => F::MODE_READONLY,
             ])
         );
 
@@ -401,7 +402,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      */
     public function getTplData($data, $fieldMode)
     {
-        //Разложим default данные в отсутсвующие поля $data
+        // Разложим default данные в отсутсвующие поля $data
         foreach ($this->_fields as $field) {
             if (!array_key_exists($field->key, $data)) {
                 $data[$field->key] = $field->default;
@@ -622,5 +623,31 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     public function jsonSerialize()
     {
         return $this->_fields;
+    }
+
+    public function prefetchSelectOptionsView(array $data)
+    {
+        foreach ($this->_fields as $field) {
+            if ($field->hasMode(F::MODE_VIEW) && $field instanceof FieldOptionsAbstract) {
+                $fieldKey = $field->key;
+                if (isset($data[$fieldKey])) {
+                    $value = $data[$fieldKey];
+                    $field->prefetchViewOptions([$value]);
+                }
+            }
+        }
+    }
+
+    public function prefetchSelectOptionsViewTableData(array $tableData)
+    {
+        foreach ($this->_fields as $field) {
+            if ($field->hasMode(F::MODE_VIEW) && $field instanceof FieldOptionsAbstract) {
+                $fieldKey = $field->key;
+                $columnValues = array_column($tableData, $fieldKey);
+                if ($columnValues) {
+                    $field->prefetchViewOptions($columnValues);
+                }
+            }
+        }
     }
 }

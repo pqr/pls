@@ -19,8 +19,8 @@ class ModuleAbstractLog extends Table
 {
     use TableExcelExportable, TableFilterable;
 
-    private $_moduleId;
-    private $_masterId;
+    protected $_moduleId;
+    protected $_masterId;
 
     public function __construct($masterId)
     {
@@ -168,7 +168,7 @@ class ModuleAbstractLog extends Table
         return 'Log';
     }
 
-    private function tableLoadData()
+    protected function tableLoadData()
     {
         //формируем query
         $query = "SELECT

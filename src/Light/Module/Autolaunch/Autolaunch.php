@@ -2,16 +2,12 @@
 
 namespace Light\Module\Autolaunch;
 
-use Light\ApplicationAbstract;
-use Light\Db;
 use Light\Field\FieldAbstract as F;
-use Light\Field\CommonFields as CF;
 use Light\Js;
 use Light\Link;
 use Light\Request;
 use Light\Response;
 use Light\Session;
-use Light\SimpleObj;
 use Light\Template;
 use Light\Traits\ModuleSessionTrait;
 
@@ -80,7 +76,6 @@ class Autolaunch
         $autolaunchMenuTable = new AutolaunchMenuTable();
 
 
-
         //Теперь выведем все найденные скрипты в форме таблицы
         print $autolaunchMenuTable->getHtmlTable(false);
     }
@@ -88,6 +83,7 @@ class Autolaunch
     /**
      * Отображает форму запуска отдельного Autolaunch скрипта и таблицу с историей его запусков
      * @param string $className
+     * @throws \Exception
      */
     private function renderFormAndHistory(string $className)
     {
@@ -189,7 +185,7 @@ class Autolaunch
 
         $this->addModuleSessionNextPrevLinks($logObj, 'id', ['class' => $className]);
 
-        $tdata = $logObj->getTplData( F::MODE_VIEW);
+        $tdata = $logObj->getTplData(F::MODE_VIEW);
         $tdata['description'] = $className::getDescription();
 
         //Добавим css файл в котором описан div.subtableblock для обрамления текста лога

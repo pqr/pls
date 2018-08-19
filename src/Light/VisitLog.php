@@ -8,7 +8,7 @@ class VisitLog
     public static function write()
     {
         self::writeCsv();
-        self::writeDb();
+        // self::writeDb();
     }
 
     private static function writeCsv()

@@ -180,7 +180,7 @@ trait TableFilterable
     public function addFilterNameComaSeparated(array $params = [], $sqlVarName = 'Name', $normalStrLen = 0, $fullLike = false, $isIntField = false)
     {
         if (!isset($params['name'])) {
-            $params['name'] = Config::$lang === 'ru' ? 'Номера' : 'IDs';
+            $params['name'] = Config::$lang === 'ru' ? 'Номера' : 'Text';
         }
 
         if (!isset($params['sqlWhere'])) {
@@ -203,23 +203,23 @@ trait TableFilterable
      */
     public function addFiltersDatesFromUntil($field, array $params = [])
     {
-        //Первым параметром может быть передано готовое поле (FieldAbstract) со всеми настройами
-        //а может быть передан только ключ (string)
+        // Первым параметром может быть передано готовое поле (FieldAbstract) со всеми настройами
+        // а может быть передан только ключ (string)
         if ($field instanceof F) {
             $fieldKey = $field->key;
             $baseField = $field;
         } else {
-            //первый параметр это не целое поле, а всего лишь ключ (string)
+            // первый параметр это не целое поле, а всего лишь ключ (string)
             $fieldKey = $field;
             $baseField = new FieldDate('tmp');
         }
 
         $params['filterFromUntil'] = true;
 
-        //Добавим фильтр From
+        // Добавим фильтр From
         $this->addFilter($baseField->getClone($fieldKey . 'From', $params));
 
-        //Добавим фильтр Until
+        // Добавим фильтр Until
         $this->addFilter($baseField->getClone($fieldKey . 'Until', $params));
 
         return $this;

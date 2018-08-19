@@ -147,24 +147,34 @@ class FieldDate extends FieldInputAbstract
         $sqlWhere = '';
 
         if ($this->filterFromUntil) {
+
             //Одно из полей тандема "From ... until ..."
             $dbKey = preg_replace('/(From|Until)$/', '', $this->key);
             if (substr($this->key, -4) === 'From') {
                 if (strlen($value) === 10) {
                     $value .= ' 00:00';
                 }
-                $dbKey .= $this->asInterval ? 'Until' : '';
-                $sqlWhere = $dbKey . " >= '" . Db::esc($value) . "'";
+                if ($this->asInterval) {
+                    $dbKey .= 'Until';
+                }
+                // $dbKeyQuoted = Db::quote($dbKey);
+                $sqlWhere = "$dbKey >= '" . Db::esc($value) . "'";
             } elseif (substr($this->key, -5) === 'Until') {
                 if (strlen($value) === 10) {
                     $value .= ' 23:59';
                 }
-                $dbKey .= $this->asInterval ? 'From' : '';
-                $sqlWhere = $dbKey . " <= '" . Db::esc($value) . "'";
+                if ($this->asInterval) {
+                    $dbKey .= 'From';
+                }
+                //$dbKeyQuoted = Db::quote($dbKey);
+                $sqlWhere = "$dbKey <= '" . Db::esc($value) . "' AND $dbKey != '0000-00-00'";
             }
+
         } else {
+
             //Обычная дата, проверяем на полное совпадение
             $sqlWhere = "{fieldKey} = '{value}'";
+
         }
 
         return $sqlWhere;

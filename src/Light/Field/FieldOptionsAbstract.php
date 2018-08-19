@@ -15,11 +15,25 @@ abstract class FieldOptionsAbstract extends FieldAbstract
 {
     //Если опции заданы sql запросом или названием таблицы к которой делать запрос и несколько полей использут один
     //и тот же запрос, то нет смысла делать одинаковый запрос к базе несколько раз
-    private static $_queryCache;
+    private static $queryCache;
 
-    protected $_cacheEvaluatedOptions;
+    protected $evaluatedOptions;
+    protected $prefetchedOptions;
 
+    /**
+     * @var string|array|callable
+     */
     public $options;
+
+    /**
+     * @var string параметр optionsView для режима View - имя таблицы из которой выбирать ID и Name
+     * либо SQL запрос без WHERE части (WHERE часть будет сгенерирована автоматически)
+     * Второй враиант подходит для полей у которых текстовые значения выглядят как СONCAT из нескольких значений
+     *
+     * Если задано или если стандартный параметр 'options' содержит имя таблицы, то движок сделает оптимизацию
+     * в режиме View - загрузит только одно значение из таблицы, добавив WHERE ID = ...
+     */
+    public $optionsView;
 
     // В режиме view сделать в виде ссылки на модуль указанный в linkModule (на просмотр записи справочника)
     public $linkModule;
@@ -36,26 +50,101 @@ abstract class FieldOptionsAbstract extends FieldAbstract
         $this->options = $options;
 
         // При установке новых опций сбрасываем вычеселенный ранее кеширующий массив (если он, конечно, вычислялся)
-        $this->_cacheEvaluatedOptions = null;
+        $this->evaluatedOptions = null;
 
         return $this;
     }
 
+    /**
+     * Метод вызывается в ModuleAbstract в режимах View и List, чтобы предзагрузить только нужные записи из базы
+     * @param array $ids
+     */
+    public function prefetchViewOptions(array $ids)
+    {
+        if (is_array($this->options)) {
+            // Если массив опций задан статически, то нет смысла обращаться к базе и делать предзагрузку каких-то значений
+            return;
+        }
+
+        if (count($ids) === 1 && reset($ids) == 0) {
+            $this->prefetchedOptions[0] = '';
+            return;
+        }
+
+        if (is_string($this->optionsView) && strpos($this->optionsView, ' ') !== false) {
+            // Это некий SQL запрос без WHERE части
+            $this->prefetchedOptions = Db::getAssoc($this->optionsView . " WHERE ID IN (@a)", $ids);
+            return;
+        }
+
+        $dbtable = null;
+        if (is_string($this->optionsView)) {
+            // Задана таблица из которой выбирать ID
+            $dbtable = $this->optionsView;
+        }
+
+        // Если специальный параметр 'optionsView' не задан, то попробуем использовать стандартный options
+        // только если это имя таблицы (а не callable или какой-то кастомный sql запрос)
+        if (!$dbtable && is_string($this->options) && strpos($this->options, ' ') === false) {
+
+            $dbtable = $this->options;
+        }
+
+        if (!$dbtable) {
+            // Не удалось определить таблицу из которой предзагружать данные для режимов View и List
+            return;
+        }
+
+        // Здесь также может быть вертикальная черта, после которой указывается поле для сортировки
+        // Например: usergroup|OrderID
+
+        $pipePos = strpos($dbtable, '|');
+        if ($pipePos !== false) {
+            $dbtable = substr($dbtable, 0, $pipePos);
+        }
+
+        $this->prefetchedOptions = Db::getAssoc("SELECT ID, Name FROM " . Db::quote($dbtable) . " WHERE ID IN (@a)",
+            $ids);
+
+    }
+
+    /**
+     * Возвращает текстовое значение для полей типа Select на основе индекса $value
+     * Ищет значение в массиве $this->options
+     * @param string $value
+     * @return string
+     */
+    public function getOption($value)
+    {
+        if (isset($this->prefetchedOptions[$value])) {
+            return $this->prefetchedOptions[$value];
+        }
+
+        $evaluatedOptions = $this->getEvaluatedOptions();
+        if (isset($evaluatedOptions[$value])) {
+            return $evaluatedOptions[$value];
+        }
+
+        // Если такой опции нет ни в prefetchedOptions, ни в evaluatedOptions(), то возвращаем исходное value
+        // (в случае если value пусто, в том числе 0, возвращаем пустую строку
+        return $value ?: '';
+    }
+
     public function getEvaluatedOptions()
     {
-        if ($this->_cacheEvaluatedOptions === null) {
-            $this->_cacheEvaluatedOptions = [];
+        if ($this->evaluatedOptions === null) {
+            $this->evaluatedOptions = [];
             $options = $this->options;
             if ($options !== null) {
                 if (is_array($options)) {
-                    $this->_cacheEvaluatedOptions = $options;
+                    $this->evaluatedOptions = $options;
                 } elseif (is_callable($options)) {
-                    $this->_cacheEvaluatedOptions = $options($this);
+                    $this->evaluatedOptions = $options($this);
                 } elseif (is_string($options)) {
 
-                    if (isset(self::$_queryCache[$options])) {
+                    if (isset(self::$queryCache[$options])) {
 
-                        $this->_cacheEvaluatedOptions = self::$_queryCache[$options];
+                        $this->evaluatedOptions = self::$queryCache[$options];
 
                     } else {
 
@@ -69,21 +158,21 @@ abstract class FieldOptionsAbstract extends FieldAbstract
                             $query = "SELECT ID, Name FROM @n ORDER BY @n";
                             $tableName = $parts[0];
                             $orderBy = $parts[1] ?? 'Name';
-                            $this->_cacheEvaluatedOptions = Db::getAssoc($query, $tableName, $orderBy);
+                            $this->evaluatedOptions = Db::getAssoc($query, $tableName, $orderBy);
 
                         } else {
 
                             //В переменной options лежит строка с sql запросом
-                            $this->_cacheEvaluatedOptions = Db::getAssoc($options);
+                            $this->evaluatedOptions = Db::getAssoc($options);
                         }
 
                         //Запомним в статическом кеше запросов, чтобы не повторять однаковые запросы для разных полей
-                        self::$_queryCache[$options] = $this->_cacheEvaluatedOptions;
+                        self::$queryCache[$options] = $this->evaluatedOptions;
                     }
                 }
             }
         }
-        return $this->_cacheEvaluatedOptions;
+        return $this->evaluatedOptions;
     }
 
     protected function getOptionHtml($option, $originalValue, $forTable)
