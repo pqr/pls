@@ -27,6 +27,7 @@ pipelines:
 
           - php public/index.php Light/Migrate
 
+          - vendor/bin/phpunit -c tests/phpunit.xml --log-junit ./test-reports/phpunit2.xml
           - vendor/bin/codecept build
           - vendor/bin/codecept run functional --skip-group download --xml test-reports/junit.xml
 
