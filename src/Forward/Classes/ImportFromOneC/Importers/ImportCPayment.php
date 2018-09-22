@@ -149,7 +149,7 @@ class ImportCPayment extends ImporterAbstract
             $result = false;
         } else {
             if (!is_numeric($data['CustomerAccountID'])) {
-                $this->msgBuff->addError('Поле CustomerAccountID должно быть числом получено "' . htmlspecialchars($data['Amount']) . '"');
+                $this->msgBuff->addError('Поле CustomerAccountID должно быть числом получено "' . htmlspecialchars($data['CustomerAccountID']) . '"');
                 $result = false;
             }
         }
@@ -271,7 +271,7 @@ class ImportCPayment extends ImporterAbstract
              WHERE Name = @s 
                 AND DocDate = @s 
                 AND CompanyID = @i",
-            $lineFromOneC['CInvoiceName'],
+            $lineFromOneC['CInvoiceNumber'],
             $docDate->format('Y-m-d'),
             $companyId);
 
@@ -282,11 +282,11 @@ class ImportCPayment extends ImporterAbstract
 
         if (count($possibleInvoices) > 1) {
             // Если же нашлось несколько подходящих счетов, то выведем сообщение и вернём пустой массив
-            $this->msgBuff->addWarning('От 1С не пришел CInvoiceID, а по номеру (' . htmlspecialchars($lineFromOneC['CInvoiceName']) . ') и дате (' . htmlspecialchars($lineFromOneC['CInvoiceDate']) . ') счёта нашлось несколько результатов');
+            $this->msgBuff->addWarning('От 1С не пришел CInvoiceID, а по номеру (' . htmlspecialchars($lineFromOneC['CInvoiceNumber']) . ') и дате (' . htmlspecialchars($lineFromOneC['CInvoiceDocDate']) . ') счёта нашлось несколько результатов');
             return [];
         }
 
-        $this->msgBuff->addWarning('От 1С не пришел CInvoiceID, а по номеру (' . htmlspecialchars($lineFromOneC['CInvoiceName']) . ') и дате (' . htmlspecialchars($lineFromOneC['CInvoiceDate']) . ') счёт не найден');
+        $this->msgBuff->addWarning('От 1С не пришел CInvoiceID, а по номеру (' . htmlspecialchars($lineFromOneC['CInvoiceNumber']) . ') и дате (' . htmlspecialchars($lineFromOneC['CInvoiceDocDate']) . ') счёт не найден');
         return [];
 
     }

@@ -69,13 +69,7 @@ class ImportFromOneC
 
         $knownTypes = '"cinvoice", "cact", "cpayment", "vinvoice", "vpayment"';
 
-        if (!isset($data['type'])) {
-            $this->msgBuff->addError("Отсутствует обязательное поле type ($knownTypes)");
-            $log = $this->msgBuff->getText();
-            Db::updateRow(['Log' => $log], 'log_onecimport', $this->importId);
-            Response::abort(400, $log);
-            return;
-        }
+
 
         $importer = null;
         switch ($data['type']) {
