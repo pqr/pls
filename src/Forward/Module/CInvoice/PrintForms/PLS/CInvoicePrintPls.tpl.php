@@ -55,13 +55,13 @@
                     <td style="padding-right: 10px; width: 25%; font-family: Verdana, Arial; font-size: 9px;">
                         <strong>Beneficiary Bank:</strong>
 
-                        <p><?= nl2br(htmlspecialchars($OurCompanyBeneficiaryBank_raw)) ?></p>
+                        <p style="white-space: pre"><?= htmlspecialchars($OurCompanyBeneficiaryBank_raw) ?></p>
                     </td>
 
                     <td style="padding: 0 10px 0 10px; width: 35%; font-family: Verdana, Arial; font-size: 9px;">
                         <strong>Correspondent Bank:</strong>
 
-                        <p><?= nl2br(htmlspecialchars($OurCompanyCorrespondentBank_raw)) ?></p>
+                        <p style="white-space: pre"><?= htmlspecialchars($OurCompanyCorrespondentBank_raw) ?></p>
                     </td>
 
                     <td style="font-family: Verdana, Arial; font-size: 11px; text-align: right; width: 40%">

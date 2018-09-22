@@ -205,6 +205,22 @@ class CInvoice extends InvoiceModuleAbstract
             }
         }
 
+        if ($this->_obj->getId()) {
+            // Это не новый счёт, это обновление существующего
+            $oldCompanyId = $this->_obj['CompanyID'];
+            $newCompanyId = $dataFromPost['CompanyID'];
+
+            if ($oldCompanyId != $newCompanyId && Constant::isOneCCompany($oldCompanyId)) {
+                // По рублёвым компаниям нельзя менять компанию, чтобы не запуталась синхронизация с 1С
+                // Запрещаем, только если уже синхронизировано (для этого проверим наличие даты OneCDocDate)
+                $onecDocDate = Db::getOne("SELECT OneCDocDate FROM cinvoice WHERE ID = @i", $this->_obj->getId());
+                if ($onecDocDate && $onecDocDate !== '0000-00-00') {
+                    // Счёт уже выгружался в 1С, значит запрещяем менять компанию
+                    $this->riseSaveErorr('Счёт уже был выгружен в 1С, изменить нашу компанию теперь нельзя.<br>Если счёт был выпущен ошибочно, то его нужно удалить в 1С (при этом базе автоматически появится статус "Deleted") и выпустить новый счёт от другой нашей компании.', 'CompanyID');
+                }
+            }
+        }
+
         /*
         if ($this->_obj->getId() && $dataFromPost['Name'] === '') {
             $this->riseSaveErorr('Empty Inv. No', 'Name');
