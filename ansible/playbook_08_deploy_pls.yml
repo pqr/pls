@@ -115,8 +115,8 @@
     become: false
     cron:
       name: "pls UpdateCustomerOutstandingCache"
-      minute: "0"
-      hour: "8"
+      minute: "7"
+      hour: "0"
       job: "php {{ project_dir_pls }}/public/index.php UpdateCustomerOutstandingCache"
     tags: cron
 
@@ -134,6 +134,7 @@
     cron:
       name: "pls Light/Email"
       minute: "*"
+      hour: "8-23"
       job: "php {{ project_dir_pls }}/public/index.php Light/Email"
     tags: cron
 

@@ -108,8 +108,8 @@
     become: false
     cron:
       name: "flowerbase UpdateCustomerOutstandingCache"
-      minute: "0"
-      hour: "8"
+      minute: "7"
+      hour: "0"
       job: "php {{ project_dir_flowerbase }}/public/index.php UpdateCustomerOutstandingCache"
     tags: cron
 
@@ -127,6 +127,7 @@
     cron:
       name: "flowerbase Light/Email"
       minute: "*"
+      hour: "8-23"
       job: "php {{ project_dir_flowerbase }}/public/index.php Light/Email"
     tags: cron
 
