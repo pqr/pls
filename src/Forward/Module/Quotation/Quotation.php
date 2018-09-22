@@ -73,7 +73,7 @@ class Quotation extends ModuleAbstract
                 'modes' => F::MODE_ALL & ~F::MODE_LIST,
                 'getHtmlFunction' => function ($value, array $data, $outHtml, $forTable, $field) {
                     if ($value) {
-                        $outHtml = Link::moduleView($outHtml, $value);
+                        $outHtml = Link::create('Quotation', $outHtml)->view($value)->getHtml();
                     }
 
                     return $outHtml;
@@ -330,7 +330,7 @@ class Quotation extends ModuleAbstract
             $this->addSubmenuItemUrl(
                 'View Shipment',
                 Img::iconSearch(),
-                Link::url(['id' => $shipmentId], 'Shipment')
+                Link::create('Shipment')->view($shipmentId)->getHref()
             );
 
         } elseif ($this->_obj['Status'] === 'win') {
@@ -338,7 +338,7 @@ class Quotation extends ModuleAbstract
             $this->addSubmenuItemUrl(
                 'Create Shipment',
                 Img::iconPlus(),
-                Link::url(['addnew' => 1, 'qid' => $this->_obj->getId()], 'Shipment')
+                Link::create('Shipment')->params(['addnew' => 1, 'qid' => $this->_obj->getId()])->getHref()
             );
 
         }

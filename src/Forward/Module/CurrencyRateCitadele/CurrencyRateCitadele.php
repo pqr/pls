@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Module\CurrencyRateCitadele;
 
 use Forward\Application;
@@ -40,7 +41,10 @@ class CurrencyRateCitadele extends ModuleAbstract
             $msg = 'Курс ' . htmlspecialchars($dataFromPost['Name'])
                 . ' на дату ' . FieldDate::beautify($dataFromPost['ValidDate'])
                 . ' уже существует, '
-                . Link::moduleViewBlank('посмотреть...', $existId);
+                . Link::create('CurrencyRateCitadele', 'посмотреть...')
+                    ->view($existId)
+                    ->blank()
+                    ->getHtml();
 
             $this->riseSaveErorr($msg, 'ValidDate');
 

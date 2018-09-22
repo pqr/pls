@@ -2,6 +2,7 @@
 
 namespace Light\Module\Autolaunch;
 
+use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Js;
 use Light\Link;
@@ -186,6 +187,7 @@ class Autolaunch
         $this->addModuleSessionNextPrevLinks($logObj, 'id', ['class' => $className]);
 
         $tdata = $logObj->getTplData(F::MODE_VIEW);
+        $tdata['Report'] = Db::getOne("SELECT Report FROM log_autolaunch_text WHERE ID = @i", $logId);
         $tdata['description'] = $className::getDescription();
 
         //Добавим css файл в котором описан div.subtableblock для обрамления текста лога

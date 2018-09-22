@@ -289,7 +289,10 @@ class VInvoice extends InvoiceModuleAbstract
             $vendorName = strip_tags($this->getField('VendorID')->getHtml($dataFromPost['VendorID']));
             $msg = 'Vendor Invoice с таким Reference <strong>' . htmlspecialchars($dataFromPost['Name'])
                 . '</strong> от перевозчика ' . $vendorName . ' уже есть в базе, '
-                . Link::moduleViewBlank('посмотреть...', $id);
+                . Link::create('VInvoice', 'посмотреть...')
+                    ->view($id)
+                    ->blank()
+                    ->getHtml();
             $fieldKey = 'Name';
             $hint = 'уже существует';
             $this->riseSaveWarning($msg, $fieldKey, $hint);

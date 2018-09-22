@@ -542,4 +542,22 @@ class Core
 
         print Currency::getRate((string)$_GET['from'], (string)$_GET['to'], FieldDate::parse($_GET['date']));
     }
+
+    public static function acSearchCountry($value)
+    {
+        if (Config::$lang === 'ru') {
+            $sqlSelectName = "IF(Name!='', Name, NameEn)";
+        } else {
+            $sqlSelectName = "IF(NameEn!='', NameEn, Name)";
+        }
+
+        $query = "SELECT `Code` AS value, $sqlSelectName AS text
+                  FROM list_country
+                  WHERE Code LIKE '" . Db::esc($value) . "%'
+                    OR NameEn LIKE '" . Db::esc($value) . "%'
+                    OR Name LIKE '" . Db::esc($value) . "%'
+                  ORDER BY `Code`, $sqlSelectName
+                  LIMIT 10";
+        return Db::getAll($query);
+    }
 }

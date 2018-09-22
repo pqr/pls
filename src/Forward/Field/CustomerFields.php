@@ -93,13 +93,10 @@ class CustomerFields
                 'getHtmlFunction' => function ($value, $data, $outHtml, $forTable) {
                     if ($value && isset($data['ID'])) {
                         $currencyIso = explode(' ', $value)[0];
-                        $outHtml = Link::moduleList(
-                            $outHtml,
-                            ['CustomerID' => $data['ID'], 'CurrencyISO' => $currencyIso],
-                            null,
-                            'CPayment',
-                            'View Customer Payments'
-                        );
+                        $outHtml = Link::create('CPayment', $outHtml)
+                            ->filters(['CustomerID' => $data['ID'], 'CurrencyISO' => $currencyIso])
+                            ->title('View Customer Payments')
+                            ->getHtml();
                     }
                     return $outHtml;
                 },

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width"/>
     <style type="text/css">
         <?= file_get_contents(LIGHT_DIR_LIGHTPUBLIC . '/css/Table.css') ?>
-        .emailbody body, .cinvoicerequestemail td, .cinvoicerequestemail th {
+        .emailbody body {
             font-size: 14px;
             font-family: Arial, Helvetica, sans-serif;
         }

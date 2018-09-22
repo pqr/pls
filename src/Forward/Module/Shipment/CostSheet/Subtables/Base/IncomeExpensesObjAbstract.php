@@ -132,12 +132,10 @@ abstract class IncomeExpensesObjAbstract extends ObjAbstract
                                 //Счёт найден, делаем ссылку на просмотр счёта!
                                 //В ссылке передаём GET параметр fromFileNumber - для подсветки строк в подтаблице
                                 //Lines внутри счёта
-                                $outHtml = $outHtml = Link::moduleView(
-                                    $outHtml,
-                                    $invId,
-                                    ['fromFileNumber' => $this->_fileNumber],
-                                    $invNumLinkModule
-                                );
+                                $outHtml = $outHtml = Link::create($invNumLinkModule, $outHtml)
+                                    ->view($invId)
+                                    ->params(['fromFileNumber' => $this->_fileNumber])
+                                    ->getHtml();
                             } else {
                                 //Обернём в красный цвет
                                 $outHtml = '<span class="bad" title="Invoice not found">' . $outHtml . "</span>";

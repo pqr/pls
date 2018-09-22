@@ -48,6 +48,11 @@ abstract class ApplicationAbstract
         return self::$app;
     }
 
+    public static function isCli()
+    {
+        return isset($GLOBALS['argv']);
+    }
+
     private function checkCsrf()
     {
         if (defined("CODECEPTION_FUNCTIONAL_TEST")) {
@@ -263,6 +268,8 @@ abstract class ApplicationAbstract
             exit(1);
         }
 
+        $this->init();
+
         $className = self::getAutolaunchFullClassName($autolaunchCliName);
 
         /** @var AutolaunchAbstract $autolaunchObj */
@@ -286,6 +293,12 @@ abstract class ApplicationAbstract
 
         // Пытаемся инициализировать пользователя на основе данных сессии
         User::loadFromSession();
+        if (User::getId() && extension_loaded('newrelic')) {
+            // https://docs.newrelic.com/docs/agents/php-agent/php-agent-api/newrelic_add_custom_parameter
+            // Record custom data about this web transaction
+            newrelic_add_custom_parameter('user', User::getName());
+            newrelic_add_custom_parameter('user_id', User::getId());
+        }
 
         if (!defined("CODECEPTION_FUNCTIONAL_TEST") && Config::$sentry && Config::$sentry['dns']) {
             $options = Config::$sentry['options'] + [

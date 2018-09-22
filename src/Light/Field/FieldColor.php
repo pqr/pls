@@ -78,7 +78,13 @@ class FieldColor extends FieldAbstract
             return '';
         }
         self::initColorPallete();
-        return $this->getHtmlImg($data);
+        $html = $this->getHtmlImg($data);
+        if (!$forTable && $value) {
+            $colorCssClass = self::getColorCssClass($value);
+            $html = '<div class="color-container' . $colorCssClass . '">' . $html . '</div>';
+        }
+
+        return $html;
     }
 
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
@@ -92,7 +98,7 @@ class FieldColor extends FieldAbstract
 
         $tdata = $this->getHtmlInputTplData($value, $data, $idPrefix);
 
-        $colorCssClass = $value ? " color$value" : '';
+        $colorCssClass = self::getColorCssClass($value);
 
         return '<div class="color-container' . $colorCssClass . '">'
             . $this->getHtmlImg($data)
@@ -100,6 +106,11 @@ class FieldColor extends FieldAbstract
             . '" name="' . $tdata['editName']
             . '" class="color-input" value="' . htmlspecialchars($tdata['value']) . '">'
             . '</div>';
+    }
+
+    public static function getColorCssClass($value): string
+    {
+        return $value ? " color$value" : '';
     }
 
     protected function getDataFromRequestInner(array $request)

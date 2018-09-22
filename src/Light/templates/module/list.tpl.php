@@ -21,6 +21,4 @@
 <?php endif; ?>
 <?= $filters ?>
 
-<div data-ajaxchangefieldurl="?a=<?= \Light\Request::getModule() ?>&func=ChangeField&id=">
-    <?= $table ?>
-</div>
+<?= $table ?>

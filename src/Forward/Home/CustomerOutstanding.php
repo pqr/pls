@@ -90,7 +90,10 @@ class CustomerOutstanding extends HomeBlockAbstract
 
         $overdueCount = Db::getOne($query);
 
-        return Link::moduleList($overdueCount, ['Overdue' => 'Overdue'], null, 'CInvoice', 'Число просроченных счетов');
+        return Link::create('CInvoice', $overdueCount)
+            ->filters(['Overdue' => 'Overdue'])
+            ->title('Число просроченных счетов')
+            ->getHtml();
 
     }
 

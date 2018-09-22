@@ -4,6 +4,7 @@ namespace Light\Module\EmailLogModule;
 
 
 use Light\ApplicationAbstract;
+use Light\Db;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleBase\ModuleAbstract;
@@ -35,7 +36,6 @@ class EmailLogModule extends ModuleAbstract
             F::createText('Bcc', ['sqlSelect' => "REPLACE(`Bcc`, ',', '\\n')"]),
             F::createString('ReplyTo'),
             F::createString('Subject'),
-            F::createString('Body', ['modes' => F::MODE_VIEW]),
             F::createString('ContentType'),
             F::createInt('RetryCount', ['tableAlign' => 'center', 'cssClassZero' => 'bad']),
             F::createText('Attachements')
@@ -44,10 +44,12 @@ class EmailLogModule extends ModuleAbstract
 
     }
 
-    protected function viewGetShowBody()
+    public static function proceedGetBody()
     {
-        $body = $this->_obj['Body'];
-        if ($this->_obj['ContentType'] !== 'text/html') {
+        $id = (int)$_GET['id'];
+        $body = Db::getOne("SELECT Body FROM log_email_text WHERE ID = $id");
+        $contentType = Db::getOne("SELECT ContentType FROM log_email WHERE ID = $id");
+        if ($contentType !== 'text/html') {
             $body = nl2br($body);
         }
         print $body;

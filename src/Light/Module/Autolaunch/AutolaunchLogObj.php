@@ -14,7 +14,6 @@ class AutolaunchLogObj extends ObjAbstract
         $this->addFields(
             CF::id(),
             F::createHtml('ShortMessage', ['name' => 'Message']),
-            F::createHtml('Report'),
             F::createFloat('WorkTime', ['name' => 'Working Time', 'uom' => 'sec'])
         );
 

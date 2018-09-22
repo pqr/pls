@@ -615,9 +615,11 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return null;
     }
 
-    public function getLinkView(): Link
+    public function getLinkView(string $innerHtml = null): Link
     {
-        $innerHtml = $this->getDescriptionHtml();
+        if (!$innerHtml) {
+            $innerHtml = $this->getDescriptionHtml();
+        }
         $module = $this->getMasterModuleForDbLog();
         $id = (int)($this->_masterIdForDbLog ?: $this->_id);
         return Link::create($module, $innerHtml)->view($id);

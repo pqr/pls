@@ -58,7 +58,7 @@ class ImportCInvoice extends ImporterAbstract
 
         $cinvObj->updateDb($updateData, $dbLogMsg);
 
-        $link = Link::moduleViewBlank($cinvObj->getDescriptionHtml(), $cinvObj->getId(), null, 'CInvoice');
+        $link = $cinvObj->getLinkView();
 
         // Запишем файл PDF файл и Excel файл в папку
         $folderpath = 'CInvoice/' . (floor($cinvObj->getId() / 1000)) . '/' . $cinvObj->getId();

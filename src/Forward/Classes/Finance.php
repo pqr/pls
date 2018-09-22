@@ -152,7 +152,10 @@ class Finance
         $filterValues['Status' . Finance::INVOICESTATUS_OPEN] = 1;
         $filterValues['Status' . Finance::INVOICESTATUS_PARTCLEARED] = 1;
 
-        return Link::moduleList($text, $filterValues, null, 'CInvoice', 'View Customer Invoices');
+        return Link::create('CInvoice', $text)
+            ->title('View Customer Invoices')
+            ->filters($filterValues)
+            ->getHtml();
     }
 
     /**
@@ -201,7 +204,10 @@ class Finance
         $filterValues['Status' . Finance::INVOICESTATUS_UNDERDISPUTE] = 1;
         $filterValues['Status' . Finance::INVOICESTATUS_PARTCLEARED] = 1;
 
-        return Link::moduleList($text, $filterValues, null, 'VInvoice', 'View Vendor Invoices');
+        return Link::create('VInvoice', $text)
+            ->title('View Vendor Invoices')
+            ->filters($filterValues)
+            ->getHtml();
     }
 
     /**

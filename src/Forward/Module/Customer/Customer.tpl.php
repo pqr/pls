@@ -127,8 +127,7 @@
             </div>
             <div id="tabs-addon">
                 <?php if (\Light\User::hasReadAccess('DefaultAddons')) {
-                    print \Light\Link::moduleBlank('<small style="float: right">View default addons</small>', null,
-                        'DefaultAddons');
+                    print \Light\Link::create('DefaultAddons', '<small style="float: right">View default addons</small>')->blank()->getHtml();
                 } ?>
                 <table class="form">
                     <?= t::c('UseDefaultAddon'); ?>

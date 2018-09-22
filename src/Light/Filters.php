@@ -113,7 +113,7 @@ class Filters
             // Сохраним в историю последних 10 комбинаций в таблицу user_filter_history, чтобы показывать пользователю в интерфейсе
             $this->saveToHistory($notDefaultValues);
 
-            // Дополнительно запишем в лог таблицу user_filter_log для последующего анализа используемых фильтров
+            // Дополнительно запишем в лог таблицу log_filtes для последующего анализа используемых фильтров
             $this->saveToLog($notDefaultValues);
             return;
 
@@ -261,7 +261,7 @@ class Filters
             $insertQueryArr[] = "($userId,$this->tableId,$fieldId," . Db::escString($value) . ")";
         }
 
-        $insertQuery = "INSERT INTO user_filter_log (CreatedBy, TableID, FieldID, Value) VALUES "
+        $insertQuery = "INSERT INTO log_filter (CreatedBy, TableID, FieldID, Value) VALUES "
             . implode(',', $insertQueryArr);
 
         Db::query($insertQuery);

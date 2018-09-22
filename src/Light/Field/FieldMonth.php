@@ -148,7 +148,7 @@ class FieldMonth extends FieldInputAbstract
             return '';
         }
 
-        list($month, $year) = explode('/', $value);
+        [$month, $year] = explode('/', $value);
         if (!is_numeric($month) || $month < 1 || $month > 12
             || !is_numeric($year) || $year < 2000
         ) {

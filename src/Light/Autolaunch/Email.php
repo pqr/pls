@@ -2,14 +2,10 @@
 
 namespace Light\Autolaunch;
 
-use Light\Config;
 use Light\Db;
 use Light\DbLog;
-use Light\File;
-use Light\Html;
 use Light\Mailer;
 use Light\Module\Autolaunch\AutolaunchAbstract;
-use function Light\reportException;
 use Light\Timer;
 
 class Email extends AutolaunchAbstract
@@ -25,14 +21,17 @@ class Email extends AutolaunchAbstract
     protected function run(array $params)
     {
         $pid = uniqid('', false);
+        $alreadyDoneIds = [];
 
         $totalSent = 0;
         $errors = 0;
 
+
+
         $count = $this->maxLoops;
         while ($count--) {
 
-            $record = $this->pickOneRecord($pid);
+            $record = $this->pickOneRecord($pid, $alreadyDoneIds);
             if (!$record) {
                 // Следующей записи для обработки не нашлось, прерываем цикл
                 break;
@@ -46,6 +45,8 @@ class Email extends AutolaunchAbstract
             }
             // Сбросим накопившийся буфер логов, чтобы не накопилось слишком много
             DbLog::flush();
+
+            $alreadyDoneIds[] = $record['ID'];
 
         }
 
@@ -74,10 +75,15 @@ class Email extends AutolaunchAbstract
         }
     }
 
-    private function pickOneRecord($pid)
+    private function pickOneRecord($pid, $alreadyDoneIds)
     {
         // Для одной записи из таблицы установим флаг блокировки (PID)
-        $updateQuery = "UPDATE queue_email SET PID = @s WHERE RetryCount < 3 AND PID IS NULL ORDER BY ID LIMIT 1";
+        $updateQuery = "UPDATE queue_email SET PID = @s WHERE RetryCount < 3 AND PID IS NULL";
+        if ($alreadyDoneIds) {
+            //Если передан массив ID уже обработанных на предыдущих шагах записей, то добавим условие, чтобы не выбирать эти записи заново
+            $updateQuery .= " AND ID NOT IN(" . implode(',', $alreadyDoneIds) . ")";
+        }
+        $updateQuery .= " ORDER BY ID LIMIT 1";
         $res = Db::query($updateQuery, $pid);
         if (!$res || !Db::getAffectedRows()) {
             // Ничего не обновилось, значит нет больше записей доступных для обработки
@@ -86,38 +92,13 @@ class Email extends AutolaunchAbstract
 
         // Попробуем выбрать из базы только что заблокированную с помощью PID запись
         // Эту операцию нужно сделать атомарно, поэтому сначала ставим PID, а только потом выбираем из очереди ID
-        $selectQuery = "SELECT * FROM queue_email WHERE PID = @s ORDER BY ID LIMIT 1";
-        return Db::getRow($selectQuery, $pid);
-    }
-
-    private function getMailer()
-    {
-        static $mailer;
-
-        if (!$mailer) {
-
-            $transport = new \Swift_SmtpTransport(Config::$swiftmailerHost, Config::$swiftmailerPort,
-                Config::$swiftmailerSecuriy);
-
-            if (Config::$swiftmailerUser) {
-                $transport->setUsername(Config::$swiftmailerUser);
-            }
-
-            if (Config::$swiftmailerPassword) {
-                $transport->setPassword(Config::$swiftmailerPassword);
-            }
-
-            $mailer = new \Swift_Mailer($transport);
-
+        $selectQuery = "SELECT * FROM queue_email WHERE PID=@s";
+        if ($alreadyDoneIds) {
+            //Если передан массив ID уже обработанных на предыдущих шагах записей, то добавим условие, чтобы не выбирать эти записи заново
+            $selectQuery .= " AND ID NOT IN(" . implode(',', $alreadyDoneIds) . ")";
         }
-
-        return $mailer;
-    }
-
-    private static function emailsStringToArray(string $emails): array
-    {
-        return array_values(array_unique(array_filter(array_map('strtolower',
-            array_map('trim', explode(',', $emails))))));
+        $selectQuery .= " ORDER BY ID LIMIT 1";
+        return Db::getRow($selectQuery, $pid);
     }
 
     /**
@@ -129,132 +110,46 @@ class Email extends AutolaunchAbstract
     {
         $timer = new Timer();
 
-        // Заготовим переменную для возможного сообщения об ошибке в перехваченном Exception
-        $emsg = null;
+        $mail = Mailer::create($record['To'], $record['Subject'], $record['Body'])
+            ->from($record['From'])
+            ->cc($record['Cc'])
+            ->bcc($record['Bcc'])
+            ->replyTo($record['ReplyTo'])
+            ->attachements(explode("\n", $record['Attachements']));
 
-        // Массив прикреплённых файлов для логов
-        $attachedFiles = [];
-
-        try {
-
-            $message = new \Swift_Message($record['Subject'], $record['Body'], $record['ContentType']);
-
-            $to = self::emailsStringToArray($record['To']);
-
-            $message->setFrom($record['From'])
-                ->setTo($to);
-
-            if ($record['Cc']) {
-                $cc = self::emailsStringToArray($record['Cc']);
-                // Уберём из массив Cc те адреса, которые уже встречались в To (чтобы пользователю не приходило по два письма)
-                $cc = array_diff($cc, $to);
-                if ($cc) {
-                    $message->setCc($cc);
-                }
-            }
-
-            if ($record['Bcc']) {
-                $bcc = self::emailsStringToArray($record['Bcc']);
-                if ($bcc) {
-                    $message->setBcc($bcc);
-                }
-            }
-
-            if ($record['ReplyTo']) {
-                $message->setReplyTo(self::emailsStringToArray($record['ReplyTo']));
-            }
-
-            // Проверим, нужно ли прикладывать какие-то файлы к письму?
-            $attachementsDir = Mailer::getAttachementsDir($record['ID']);
-            if (is_dir($attachementsDir)) {
-                foreach (scandir($attachementsDir) as $filenameEnc) {
-                    if ($filenameEnc[0] === '.') {
-                        continue;
-                    }
-
-                    $message->attach(\Swift_Attachment::fromPath($attachementsDir . '/' . $filenameEnc));
-
-                    $attachedFiles[] = File::decode($filenameEnc);
-                }
-            }
-
-            $mailer = $this->getMailer();
-            $sent = $mailer->send($message);
-
-        } catch (\Exception $e) {
-
-            $sent = 0;
-            $emsg = $e->getMessage();
-            if (PHP_OS === 'WINNT') {
-                $emsg = mb_convert_encoding($e->getMessage(), 'UTF-8', 'cp1251');
-            }
+        if ($record['ContentType'] == 'text/html') {
+            $mail->asHtml();
+        } else {
+            $mail->asText();
         }
 
+        $mail->setFromQueue($record['CreatedBy'], $record['CreatedDateTime'], $record['RetryCount'] + 1);
+
+        $sent = $mail->sendImmideatelly($this->_msgBuff);
         if ($sent) {
-
-            $this->_msgBuff->addInfo('From: ' . $record['From']);
-            $this->_msgBuff->addInfo('To: ' . $record['To']);
-            if ($record['Cc']) {
-                $this->_msgBuff->addInfo('Cc: ' . $record['Cc']);
-            }
-            if ($record['Bcc']) {
-                $this->_msgBuff->addInfo('Bcc: ' . $record['Bcc']);
-            }
-            if ($record['ReplyTo']) {
-                $this->_msgBuff->addInfo('Reply To: ' . $record['ReplyTo']);
-            }
-            $this->_msgBuff->addInfo('Subject: ' . $record['Subject']);
-            if ($attachedFiles) {
-                $this->_msgBuff->addInfo('Attachements: ' . implode(", ", $attachedFiles));
-            }
-            $this->_msgBuff->addHtml('Body: ' . Html::getTruncatedText($record['Body'], 0));
-
-            // Если отправить удалось, то перемещаем запись из queue_email в log_email
-            $this->moveToLog($record);
-
+            $this->removeFromQueue($record['ID']);
         } else {
-
-            $msg = 'Не удалось отправить E-mail.';
-            if ($emsg) {
-                // Есть какое-то сообщение из Exception
-                $msg .= ' ' . $emsg;
-            }
-            $this->_msgBuff->addError($msg);
-
-            reportException(new \Exception($msg));
-
             // Если отправить не удалось, просто увеличим счётчик RetryCount
-            Db::query("UPDATE queue_email SET RetryCount = RetryCount + 1 WHERE ID = @i", $record['ID']);
-
+            $this->incRetryCount($record['ID']);
         }
 
         $this->_msgBuff->addHtml('<p class="note">Время выполнения: ' . $timer->getHtml() . '</p>');
         $this->_msgBuff->addEmptyLine();
 
-        // Перед отправкой следующего письма сделаем задержку в 5 секунд
-        sleep(5);
+        // Перед отправкой следующего письма сделаем задержку в 2 секунды
+        sleep(2);
 
         return $sent;
     }
 
-    private function moveToLog(array $record)
+    private function removeFromQueue(int $queueId)
     {
-        $recordId = $record['ID'];
-        Db::query("DELETE FROM queue_email WHERE ID = @i", $recordId);
-        unset($record['ID']);
-        unset($record['PID']);
-        $record['RetryCount']++;
-        $logId = Db::insertRow($record, 'log_email');
+        Db::query("DELETE FROM queue_email WHERE ID = $queueId");
+    }
 
-        // Переместим все файлы вложений в отдельную папку log
-        $attachementsDir = Mailer::getAttachementsDir($recordId);
-        if (is_dir($attachementsDir)) {
-            // Сначала подготовим папку назначения
-            $destFolder = LIGHT_DIR_LOGS . "/QueueEmailAttachementsLog/" . floor($logId / 1000);
-            File::mkdir($destFolder);
-
-            rename($attachementsDir, "$destFolder/$logId");
-        }
+    private function incRetryCount(int $queueId)
+    {
+        Db::query("UPDATE queue_email SET RetryCount = RetryCount + 1 WHERE ID = $queueId");
     }
 
 }

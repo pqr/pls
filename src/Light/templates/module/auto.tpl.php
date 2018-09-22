@@ -12,8 +12,10 @@
             </table>
 
             <?php
-            foreach ($_subtables as $subtableName => $_) {
-                print t::subtable($subtableName);
+            if (isset($_subtables)) {
+                foreach ($_subtables as $subtableName => $_) {
+                    print t::subtable($subtableName);
+                }
             }
             ?>
 

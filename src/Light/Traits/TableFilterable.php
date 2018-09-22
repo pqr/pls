@@ -5,9 +5,11 @@ namespace Light\Traits;
 use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldAbstract;
 use Light\Field\FieldDate;
 use Light\Field\FieldMonth;
 use Light\Field\FieldSelect;
+use Light\Field\FieldSelect2ChildMultiple;
 use Light\Field\FieldSelect2Multiple;
 use Light\Field\FieldText;
 use Light\Fieldset;
@@ -85,7 +87,7 @@ trait TableFilterable
     protected function addFilter(F $field)
     {
         //В зависимости от типа поля, навесим доп параметры
-        if ($field instanceof FieldSelect2Multiple) {
+        if ($field instanceof FieldSelect2Multiple || $field instanceof FieldSelect2ChildMultiple) {
 
             if (!isset($field->initialParams['any'])) {
                 $field->any = false;

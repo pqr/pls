@@ -327,15 +327,9 @@ class ImportCPayment extends ImporterAbstract
             return;
         }
 
-        Mailer::sendMail(
-            Config::$mailFrom,
-            $responsibleEmails,
-            null,
-            $subject,
-            Mailer::wrapBody($body),
-            null,
-            $this->msgBuff
-        );
+        Mailer::create($responsibleEmails, $subject, $body)
+            ->wrapBodyWithHtmlTemplate()
+            ->send($this->msgBuff);
 
     }
 }

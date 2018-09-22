@@ -310,14 +310,19 @@ final class ShipmentObj extends ObjAbstract
                                 $value);
                             if ($customerId) {
                                 //Формируем ссылку, только если такой тариф найден!
-                                $outHtml = Link::moduleView($outHtml, $customerId, ['StandartRates_findid' => $value],
-                                    'Customer',
-                                    'View Standart Rate');
+                                $outHtml = Link::create('Customer', $outHtml)
+                                    ->view($customerId)
+                                    ->title('View Standart Rate')
+                                    ->findId('StandartRates', $value)
+                                    ->getHtml();
                             } else {
                                 $outHtml = '<span class="bad" title="Standart Rate ' . $value . ' not found">' . $outHtml . '</span>';
                             }
                         } else {
-                            $outHtml = Link::moduleView($outHtml, $value, null, 'Quotation', 'View Quotation');
+                            $outHtml = Link::create('Quotation', $outHtml)
+                                ->view($value)
+                                ->title('View Quotation')
+                                ->getHtml();
                         }
                     }
 

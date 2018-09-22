@@ -11,4 +11,4 @@
     <?= t::c('RetryCount') ?>
 </table>
 
-<iframe src="?a=<?= \Light\Request::getModule() ?>&id=<?= t::_id() ?>&func=ShowBody" style="width: 100%; height: 550px"></iframe>
+<iframe src="?a=<?= \Light\Request::getModule() ?>&ps=GetBody&id=<?= t::_id() ?>" style="width: 100%; height: 550px"></iframe>

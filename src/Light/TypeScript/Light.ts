@@ -135,7 +135,9 @@ function initSelectChild($root: JQuery) {
                     if (lastChildValue !== "" && $child.find(`option[value="${lastChildValue}"]`).length === 1) {
                         $child.val(lastChildValue);
                     } else {
-                        $child.prop("selectedIndex", 0);
+                        if (!$child.hasClass("select-select2multiple")) {
+                            $child.prop("selectedIndex", 0);
+                        }
                     }
                 }
 
@@ -219,10 +221,12 @@ function formatResultSelect2(option: any) {
 export function initSelect2($root: JQuery) {
     if (jQuery().select2) {
         $root.find("select.select-select2").select2({
+            width: 'resolve',
             templateResult: formatResultSelect2,
             templateSelection: formatResultSelect2
         });
         $root.find("select.select-select2multiple").select2({
+            width: 'resolve',
             templateResult: formatResultSelect2,
             templateSelection: formatResultSelect2,
             placeholder: "",
@@ -1144,6 +1148,7 @@ export function getFieldNode($root: JQuery, fieldName: string, type?: string): J
                 break;
 
             case "Select2Multiple":
+            case "Select2ChildMultiple":
                 __cacheFieldNodes[cacheKey] = $root.find("#" + fieldName);
                 break;
 
@@ -1195,6 +1200,7 @@ export function getNodeValue($node: JQuery, type?: string): string | number {
             break;
 
         case "Select2Multiple":
+        case "Select2ChildMultiple":
             value = $node.val();
             if (value) {
                 value = (value as string[]).join("|");
@@ -1375,6 +1381,7 @@ export function setNodeValue($node: JQuery, newValue: any, type?: string, trigge
             break;
 
         case "Select2Multiple":
+        case "Select2ChildMultiple":
             const parts = newValue.split("|").filter((n: string) => n !== "");
             $node.val(parts);
             break;
@@ -1405,6 +1412,7 @@ export function onNodeChange(
             break;
 
         case "Select2Multiple":
+        case "Select2ChildMultiple":
             $node.on("change", changeHandlerWrapper);
             break;
 

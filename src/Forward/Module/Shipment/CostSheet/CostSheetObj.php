@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Module\Shipment\CostSheet;
 
 use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
@@ -118,11 +119,12 @@ class CostSheetObj
             F::createHtml('View', [
                 'name' => '',
                 'getHtmlFunction' => function ($value, $data) {
-                    return Link::moduleBlank('View', [
-                        'id' => $this->_shipmentObj->getId(),
-                        'func' => 'cs',
-                        'histid' => $data['ID']
-                    ]);
+                    return Link::create('Shipment', 'View')
+                        ->view($this->_shipmentObj->getId())
+                        ->func('cs')
+                        ->blank()
+                        ->params(['histid' => $data['ID']])
+                        ->getHtml();
                 }
             ])
         );
@@ -214,7 +216,8 @@ class CostSheetObj
         //Принудительно выключаем редактирование (чтобы не рендрить кнопку Save)
 
         Css::add('CostSheet.css');
-        $printHtml = Template::parseTpl(LIGHT_DIR_PROJECT .'/Module/Shipment/CostSheet/CostSheetHistory.tpl.php', $tdata);
+        $printHtml = Template::parseTpl(LIGHT_DIR_PROJECT . '/Module/Shipment/CostSheet/CostSheetHistory.tpl.php',
+            $tdata);
         //Преждем чем сохранять файл создадим папку под текущий shipment
         $folder = $this->getHistoryFolder();
         FilesFolder::mkdir($folder);

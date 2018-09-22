@@ -4,6 +4,7 @@ namespace Light;
 
 use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldFloat;
 use Light\Field\FieldMoneyWithCurrency;
 use Light\Table\TableUserParamsRepository;
 use Light\Traits\FieldsetAwareTrait;
@@ -79,7 +80,11 @@ class Table implements \JsonSerializable
         if ($tableName) {
             $this->tableName = $tableName;
         } else {
-            $this->tableName = str_replace('\\', '_', get_class($this));
+            $tableClass = get_class($this);
+            if (strpos($tableClass, 'class@anonymous') === 0) {
+                $tableClass = 'Table' . uniqid();
+            }
+            $this->tableName = str_replace('\\', '_', $tableClass);
         }
 
         //Инициализируем внутреннюю переменную _obj хитрым способом -  возможно, на основе файла в этой же папке
@@ -89,15 +94,18 @@ class Table implements \JsonSerializable
 
     protected function createObj()
     {
-        //Если объект не задан явно, попробуем найти соответсвующий класс рядом с текущим файлом модуля
-        $objClass = get_class($this) . 'Obj';
-        $filepath = LIGHT_DIR_ROOT . '/src/' . str_replace('\\', '/', $objClass) . '.php';
-        if (file_exists($filepath)) {
-            //Файл найден, создаём объект именно этого класса
-            return new $objClass();
+        // Если объект не задан явно, попробуем найти соответсвующий класс рядом с текущим файлом модуля
+        $tableClass = get_class($this);
+        if (strpos($tableClass, 'class@anonymous') !== 0) {
+            $objClass = $tableClass . 'Obj';
+            $filepath = LIGHT_DIR_ROOT . '/src/' . str_replace('\\', '/', $objClass) . '.php';
+            if (file_exists($filepath)) {
+                //Файл найден, создаём объект именно этого класса
+                return new $objClass();
+            }
         }
 
-        //Отдельного файла для класса найдено не было, создадим на основе обычного Obj
+        // Отдельного файла для класса найдено не было, создадим на основе обычного Obj
         $obj = new SimpleObj();
         $obj->setDbTable(strtolower($this->getTableName()));
         return $obj;
@@ -301,7 +309,12 @@ class Table implements \JsonSerializable
 
         $reloadurl = $this->tableReloadUrl ? ' data-reloadurl="' . htmlspecialchars($this->tableReloadUrl) . '"' : '';
 
-        return '<div class="table-div"' . $id . $dataTablename . $linkmodule . $reloadurl . '>';
+        $ajaxChangeFieldUrl = $this->getTableAjaxChangeFieldUrl();
+        if ($ajaxChangeFieldUrl) {
+            $ajaxChangeFieldUrl = ' data-ajaxchangefieldurl="' . $ajaxChangeFieldUrl . '"';
+        }
+
+        return '<div class="table-div"' . $id . $dataTablename . $linkmodule . $reloadurl . $ajaxChangeFieldUrl . '>';
     }
 
     /**
@@ -892,9 +905,14 @@ class Table implements \JsonSerializable
             return implode("\n", $resultAmountsWithCurrency);
         }
 
+        $precision = 2;
+        if ($field instanceof FieldFloat) {
+            $precision = $field->getPrecision();
+        }
+
         $totalAmount = 0;
         foreach ($amounts as $amount) {
-            $totalAmount += round($amount, 2);
+            $totalAmount += round($amount, $precision);
         }
 
         return $totalAmount;
@@ -995,5 +1013,13 @@ class Table implements \JsonSerializable
     public function jsonSerialize()
     {
         return $this->_tableData;
+    }
+
+    protected function getTableAjaxChangeFieldUrl(): string
+    {
+        if (!$this->tableLinkModule) {
+            return '';
+        }
+        return "?a=" . $this->tableLinkModule . "&func=ChangeField&id=";
     }
 }

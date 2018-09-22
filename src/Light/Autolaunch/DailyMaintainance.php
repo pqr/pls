@@ -45,6 +45,8 @@ class DailyMaintainance extends AutolaunchAbstract
             }
         }
 
+        Db::query("DELETE FROM log_autolaunch_text WHERE NOT EXISTS(SELECT 1 FROM log_autolaunch la WHERE la.ID = log_autolaunch_text.ID)");
+
         $msg = 'Autolaunchlog deleted records: ' . $deleted;
         $this->_msgBuff->addSuccessOrInfo($msg, $deleted);
         $this->_msgBuffShort->addSuccessOrInfo($msg, $deleted);

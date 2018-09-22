@@ -112,7 +112,7 @@ abstract class ReportAbstract extends Table
             $tdata = [
                 'filters' => $this->getFiltersHtml(),
                 'table' => $this->getHtmlTable(),
-                'description' => static::getDescription()
+                'description' => static::getDescription(),
             ];
 
             Template::includeTpl('Submodules/Report.tpl.php', $tdata);

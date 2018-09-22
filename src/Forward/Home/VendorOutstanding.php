@@ -158,7 +158,10 @@ class VendorOutstanding extends HomeBlockAbstract
         $overdueCount = Db::getOne("SELECT count(*) FROM vinvoice WHERE Status IN (@a) AND DueDate < CURDATE()",
             Finance::$vinvoiceOpenStatuses);
 
-        return Link::moduleList($overdueCount, ['Overdue' => 'Overdue'], null, 'VInvoice', 'Число просроченных счетов');
+        return Link::create('VInvoice', $overdueCount)
+            ->filters(['Overdue' => 'Overdue'])
+            ->title('Число просроченных счетов')
+            ->getHtml();
 
     }
 }

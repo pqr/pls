@@ -6,6 +6,8 @@ use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\File;
+use Light\Metric;
+use Light\Misc;
 use Light\Msg;
 use Light\Timer;
 use Light\Traits\FieldsetAwareTrait;
@@ -65,17 +67,22 @@ abstract class AutolaunchAbstract
         }
 
         $this->saveLogToDb($workTime);
+
+        $eventName = 'Autolaunch';
+        $hasError = $this->_msgBuff->hasError() || $this->_msgBuffShort->hasError();
+        $attributes = ['WorkTime' => $workTime, 'HasError' => $hasError, 'ClassName' => get_class($this)];
+        Metric::newrelicEvent($eventName, $attributes);
     }
 
     private function saveLogToDb($workTime)
     {
         $fieldsData = [
-            'Report' => $this->_msgBuff->getHtml(),
             'ShortMessage' => $this->_msgBuffShort->getHtml(),
             'WorkTime' => $workTime
         ];
 
         Db::updateRow($fieldsData, 'log_autolaunch', $this->_logId);
+        Db::insertRow(['ID' => $this->_logId, 'Report' => $this->_msgBuff->getHtml()], 'log_autolaunch_text');
     }
 
     private function saveLogToFile($workTime)

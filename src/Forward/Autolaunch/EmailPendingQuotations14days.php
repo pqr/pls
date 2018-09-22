@@ -84,7 +84,9 @@ class EmailPendingQuotations14days extends AutolaunchAbstract
                 $to = $emails[1];
             }
 
-            Mailer::sendMail(Config::$mailFrom, $to, $cc, $subject, $body, null, $this->_msgBuff);
+            Mailer::create($to, $subject, $body)
+                ->cc($cc)
+                ->send($this->_msgBuff);
 
         }
 

@@ -547,7 +547,10 @@ class Shipment extends ModuleAbstract
             if ($id = Db::getOne($query)) {
                 $this->riseSaveErorr(
                     'MAWB ' . htmlspecialchars($dataFromRequest['MAWBNumber']) . ' already exists, ' .
-                    Link::moduleView('view...', 'id=' . $id),
+                    Link::create('Shipment', 'view...')
+                        ->view($id)
+                        ->blank()
+                        ->getHtml(),
                     'MAWBNumber'
                 );
             }
@@ -608,15 +611,10 @@ class Shipment extends ModuleAbstract
             $customerCompanyId = Db::getOne("SELECT CompanyID FROM customer WHERE ID = @i", $customerId);
             if (!$customerCompanyId) {
                 $msg = 'В целях наполнения базы невозможно сохранить перевозку, пока в карточке клиента не заполнено поле Our Company.';
-                $msg .= '<br>' . Link::moduleEdit(
-                        'Отредактировать карточку клиента',
-                        $customerId,
-                        null,
-                        'Customer',
-                        null,
-                        null,
-                        true
-                    );
+                $msg .= '<br>' . Link::create('Customer', 'Отредактировать карточку клиента')
+                        ->view($customerId)
+                        ->blank()
+                        ->getHtml();
                 $this->riseSaveErorr($msg);
             }
         }
@@ -772,7 +770,7 @@ class Shipment extends ModuleAbstract
         $menuItems = parent::getViewEditLogTabsmenuItems();
         $menuItems[] = [
             'text' => 'Cost-sheets',
-            'url' => Link::url(['id' => $this->_obj->getId(), 'func' => 'cs'] + $this->getModuleSessionUrlParams()),
+            'url' => $this->_obj->getLinkView()->func('cs')->params($this->getModuleSessionUrlParams())->getHref(),
             'active' => isset($_GET['func']) && $_GET['func'] === 'cs'
         ];
 
@@ -1011,7 +1009,8 @@ class Shipment extends ModuleAbstract
         $body .= $this->_justInserted ? 'Created' : 'Updated';
         $body .= ' by ' . htmlspecialchars(User::getName()) . '</small>';
 
-        Mailer::sendMail(Config::$mailFrom, $to, null, $subject, $body, null, $msgBuff);
+        Mailer::create($to, $subject, $body)
+            ->send($msgBuff);
     }
 
     /**

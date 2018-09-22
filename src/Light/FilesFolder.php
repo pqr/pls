@@ -121,7 +121,7 @@ class FilesFolder
     public static function getModuleLink(string $module, int $id, string $innerHtml)
     {
         $relativePath = self::getModuleRelative($module, $id);
-        self::getLink($relativePath, $innerHtml);
+        return self::getLink($relativePath, $innerHtml);
     }
 
     public static function isDir(string $relativePath): bool
@@ -348,10 +348,10 @@ class FilesFolder
 
     /**
      * Удаляет абсолютный путь в файловой системе
-     * @param string $relativePath
+     * @param string $absPath
      * @return string
      */
-    public static function removeAbsolutePath(string $absPath)
+    public static function getRelativePath(string $absPath)
     {
         return str_replace(Config::$filesfolderLocal . '/', '', $absPath);
     }

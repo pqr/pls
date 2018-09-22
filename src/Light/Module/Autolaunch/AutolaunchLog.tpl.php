@@ -9,7 +9,7 @@
 <div class="subtableblock">
     <h2>Report</h2>
     <div>
-        <?= t::html('Report') ?>
+        <?= $Report ?>
     </div>
 </div>
 

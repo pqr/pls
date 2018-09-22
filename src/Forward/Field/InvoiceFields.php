@@ -1,7 +1,7 @@
 <?php
+
 namespace Forward\Field;
 
-use Forward\Classes\Constant;
 use Forward\Classes\Finance;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldMoneyWithCurrency;
@@ -157,6 +157,9 @@ class InvoiceFields
 
                     $firstLetter = $field->key[0];
 
+                    $link = Link::create("{$firstLetter}Invoice", $outHtml)
+                        ->view($data['RealInvoiceID']);
+
                     if (isset($data['ShipmentID'])) {
                         $urlParams = ['Lines_findid' => 'ShipmentID|' . $data['ShipmentID']];
                         if (isset($data['FinalAmount']) || isset($data['Amount'])) {
@@ -164,16 +167,13 @@ class InvoiceFields
                             $findidAmountFieldKey = $firstLetter === 'C' ? 'Amount' : 'FinalAmount';
                             $urlParams['Lines_findid'] .= '+' . $findidAmountFieldKey . '|' . $amount;
                         }
-                    } else {
-                        $urlParams = null;
+
+                        $link->params($urlParams);
+
                     }
 
-                    $outHtml = Link::moduleView(
-                        $outHtml,
-                        $data['RealInvoiceID'],
-                        $urlParams,
-                        $firstLetter . 'Invoice'
-                    );
+                    $outHtml = $link->getHtml();
+
                 }
 
                 return $outHtml;

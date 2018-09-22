@@ -197,7 +197,7 @@ export class Dialog {
                 if (action) {
                     if (action.indexOf("#ajax") !== -1) {
                         // Поскольку в action встретился якорь #ajax - это значит будем отправлять через ajax
-                        $form.on("submit", e => {
+                        $form.on("submit", (e:any) => {
                             e.preventDefault();
                             this.blockButtons();
                             const url: string = $form.attr("action")!;
@@ -271,7 +271,7 @@ export class Dialog {
         if ($div) {
             // Поставим фокус на первый элемент формы, только если это не виджет выбора даты (он некрасиво раскрывается)
             const $firstInput = $div.find(
-                "input[type=text]:first, select[data-type=Select2Multiple]:first, textarea:first"
+                "input[type=text]:first, select[data-type=Select2Multiple]:first, select[data-type=Select2ChildMultiple]:first, textarea:first"
             );
             if ($firstInput.length > 0 && !$firstInput.hasClass("input-date")) {
                 $firstInput.get(0).focus();

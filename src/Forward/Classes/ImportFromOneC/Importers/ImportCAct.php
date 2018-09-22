@@ -58,7 +58,7 @@ class ImportCAct extends ImporterAbstract
 
         $actName = $data['DocNumber'];
 
-        $cinvoiceLink = Link::moduleViewBlank((string)$cinvoiceObj, $cinvoiceId, null, 'CInvoice');
+        $cinvoiceLink = $cinvoiceObj->getLinkView();
         $cinvoiceFolder = "CInvoice/" . floor($cinvoiceId / 1000) . "/$cinvoiceId";
 
         $pdfDataBase64 = $data['Data'];
@@ -87,7 +87,9 @@ class ImportCAct extends ImporterAbstract
         $shipmentIds = Db::getAll("SELECT s.ID, s.Name FROM cinvoice_file_amount cfa, shipment s WHERE cfa.CInvoiceID = $cinvoiceId AND cfa.FileNumber = s.Name");
         foreach ($shipmentIds as ['ID' => $shipmentId, 'Name' => $fileNumber]) {
 
-            $shipmentLink = Link::moduleViewBlank($fileNumber, $shipmentId, null, 'Shipment');
+            $shipmentLink = Link::create('Shipment', $fileNumber)
+                ->view($shipmentId)
+                ->getHtml();
 
             // Перекладываем файл в папку для акта 3
             $sub = floor($shipmentId / 1000);

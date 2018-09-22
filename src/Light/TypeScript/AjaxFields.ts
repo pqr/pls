@@ -64,13 +64,22 @@ $body.on("click", "a.ajax-input", function(this: HTMLAnchorElement, e: JQuery.Ev
     let url: string = $container.attr("data-ajaxchangefieldurl")!;
     url += `${id}&fieldKey=${encodeURIComponent(fieldKey)}`;
     $.ajax(url)
-        .done((inputHtml: string) => {
+        .done((editHtml: string) => {
             // Полученный html код поля для ввода вставляем после ссылки на редактирование
-            const $input: JQuery = $(inputHtml);
-            $input.insertAfter($link);
+            const $editHtml: JQuery = $(editHtml);
+            $editHtml.insertAfter($link);
             // Саму ссылку удаляем из DOM (при этом она сохраняется в переменной $link на случай cancel)
             $link.remove();
 
+            // Найдём внутри пришедшего edit блока поле для ввода
+            let $input: JQuery;
+            if ($editHtml.is("input,textarea")) {
+                // Пришедший блок html кода целиком является полем ввода
+                $input = $editHtml;
+            } else {
+                // Найдём поле ввода где-то внутри
+                $input = $editHtml.find("input,textarea");
+            }
             // Если пришеднее input поле - это поле для ввода даты, то добавим datepicker виджет
             if ($input.hasClass("input-date") && $input.attr("type") === "text") {
                 // Добавим специальный класс, чтобы поле выглядело поменьше и не дёргался экран в таблице
@@ -78,22 +87,22 @@ $body.on("click", "a.ajax-input", function(this: HTMLAnchorElement, e: JQuery.Ev
                 // Добавим к нему виджет выбора даты
                 $input.datepicker({
                     onClose: () => {
-                        handleAjaxInputSave($input, url);
+                        handleAjaxInputSave($editHtml, $input, url);
                     }
                 });
             } else {
                 // Если же это не поле input-date, то добавим пару ссылок сохранить и отмена
                 $(`<a href="#" style="padding-left: 15px">${textCancel}</a>`)
-                    .on("click", function(e) {
+                    .on("click", function(e: any) {
                         e.preventDefault();
-                        handleAjaxInputCancel($input, $link);
+                        handleAjaxInputCancel($editHtml, $input, $link);
                     })
                     .insertAfter($input);
 
                 $(`<a href="#">${textSave}</a>`)
-                    .on("click", function(e) {
+                    .on("click", function(e: any) {
                         e.preventDefault();
-                        handleAjaxInputSave($input, url);
+                        handleAjaxInputSave($editHtml, $input, url);
                     })
                     .insertAfter($input);
             }
@@ -101,16 +110,15 @@ $body.on("click", "a.ajax-input", function(this: HTMLAnchorElement, e: JQuery.Ev
             // Навесим обработчики кнопок на поле ввода
             $input.on("keydown", function(this: HTMLInputElement, e: JQuery.Event) {
                 if (e.keyCode === 13) {
-                    console.log($input.get(0).tagName);
                     if ($input.get(0).tagName.toLowerCase() === "textarea" && !e.ctrlKey && !e.metaKey) {
                         // В случае textarea реагируем на enter только при зажатем control
                         return;
                     }
                     e.preventDefault();
-                    handleAjaxInputSave($input, url);
+                    handleAjaxInputSave($editHtml, $input, url);
                 } else if (e.keyCode === 27) {
                     e.preventDefault();
-                    handleAjaxInputCancel($input, $link);
+                    handleAjaxInputCancel($editHtml, $input, $link);
                 }
             });
 
@@ -126,7 +134,7 @@ $body.on("click", "a.ajax-input", function(this: HTMLAnchorElement, e: JQuery.Ev
         });
 });
 
-function handleAjaxInputSave($input: JQuery, url: string) {
+function handleAjaxInputSave($editHtml: JQuery, $input: JQuery, url: string) {
     if ($input.prop("disabled")) {
         // поле ввода уже заблокировано, значит предыдущий ajax запрос на сохранение ещё в процессе
         return;
@@ -138,13 +146,13 @@ function handleAjaxInputSave($input: JQuery, url: string) {
     // сохранение
     const postData = { newValue: $input.val() };
     $.post(url, postData)
-        .done(newHtml => {
+        .done((newHtml: string) => {
             // удаляем те две кнопки (сохранить  и отмена)
             removeSaveCancelButtons($input);
-            // вставляем новый html код поля в режиме view после поля для ввода
-            $(newHtml).insertAfter($input);
-            // удаляем само поле для ввода
-            $input.remove();
+            // вставляем новый html код поля в режиме view после поля блока для ввода
+            $(newHtml).insertAfter($editHtml);
+            // удаляем сам блок для ввода
+            $editHtml.remove();
         })
         .fail(() => {
             // В случае ошибки ajax запроса возвращаем поле ввода в режим редактирования
@@ -153,14 +161,14 @@ function handleAjaxInputSave($input: JQuery, url: string) {
         });
 }
 
-function handleAjaxInputCancel($input: JQuery, $originalLink: JQuery) {
+function handleAjaxInputCancel($editHtml: JQuery, $input: JQuery, $originalLink: JQuery) {
     // удаляем те две кнопки (сохранить  и отмена)
     removeSaveCancelButtons($input);
     // возвращаем на место старую ссылку
-    $originalLink.insertAfter($input);
+    $originalLink.insertAfter($editHtml);
     $originalLink.removeClass("disabled");
-    // удаляем само поле для ввода
-    $input.remove();
+    // удаляем блок для редактирования
+    $editHtml.remove();
 }
 
 function removeSaveCancelButtons($input: JQuery) {

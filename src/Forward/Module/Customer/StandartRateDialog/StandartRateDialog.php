@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Module\Customer\StandartRateDialog;
 
 use Forward\Classes\Constant;
@@ -73,12 +74,14 @@ class StandartRateDialog
     private static function getTplData(StandartRatesObj $srObj, CustomerObj $customerObj)
     {
         $tdata = $srObj->getTplData(F::MODE_EDIT);
-        $tdata['formActionUrl'] = Link::url([
-            'id' => $customerObj->getId(),
-            'func' => 'StandartRateDialog',
-            'action' => 'submit',
-            'srid' => $srObj->getId()
-        ]);
+        $tdata['formActionUrl'] = Link::create('Customer')
+            ->view($customerObj->getId())
+            ->func('StandartRateDialog')
+            ->params([
+                'action' => 'submit',
+                'srid' => $srObj->getId()
+            ])
+            ->getHref();
 
         $buyingSurcharges = new BuyingSurcharges($srObj);
         $tdata['BuyingSurchargesHtml'] = $buyingSurcharges->getHtmlEdit();
@@ -152,14 +155,17 @@ class StandartRateDialog
             ApplicationAbstract::terminate();
         }
 
-        $formActionUrl = Link::url([
-            'id' => $customerObj->getId(),
-            'func' => 'StandartRateDialog',
-            'action' => 'del',
-            'srid' => $srObj->getId(),
-            'confirm' => 1
-        ]);
-        $bodyHtml = '<form action="' . $formActionUrl . '#ajax">Delete <strong>' . $srObj->getDescriptionHtml() . '</strong>?</form>';
+        $formActionUrl = Link::create('Customer')
+            ->view($customerObj->getId())
+            ->func('StandartRateDialog')
+            ->params([
+                'action' => 'del',
+                'srid' => $srObj->getId(),
+                'confirm' => 1
+            ])
+            ->ajax()
+            ->getHref();
+        $bodyHtml = '<form action="' . $formActionUrl . '">Delete <strong>' . $srObj->getDescriptionHtml() . '</strong>?</form>';
 
         Response::showDialog($bodyHtml, 'Delete');
     }

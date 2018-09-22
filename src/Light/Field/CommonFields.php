@@ -462,4 +462,17 @@ class CommonFields
             'zeroEmpty' => true,
         ]);
     }
+
+    public static function countryCode()
+    {
+        return F::createString('CountryCode', [
+            'name' => Config::$lang === 'ru' ? 'Код страны' : 'Country Code',
+            'editWidth' => 'mini',
+            'editMaxLength' => 2,
+            'tableAlign' => 'center',
+            'upper' => true,
+            F::PARAM_AC_SOURCE => '?a=Core&ac=SearchCountry',
+            F::PARAM_AC_RESULTFORMATTERJSFUNCTION => '(item) => `${item.value} ${item.text}`'
+        ]);
+    }
 }

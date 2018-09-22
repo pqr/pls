@@ -101,7 +101,7 @@ class FiltersLog extends Table
         //После этого достанем все поля, указав в условии WHERE ID IN (...)
         //Это значительно ускорит запрос, т.к. сортировка сначала LIMIT будут производиться на лёгком наборе ID
         //При выборке остальных колонок объём данных будет уже меньше за счёт ограниченного набора WHERE ID IN (...)
-        $queryIds = "SELECT ID FROM user_filter_log";
+        $queryIds = "SELECT ID FROM log_filter";
 
         $sqlWhere = $this->getFiltersSqlWhere();
         if ($sqlWhere) {
@@ -123,7 +123,7 @@ class FiltersLog extends Table
             //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->_tableData
             $query = "SELECT "
                 . $this->getSqlSelect()
-                . " FROM user_filter_log
+                . " FROM log_filter
                     WHERE ID IN ($idsString)
                     ORDER BY ID DESC";
 

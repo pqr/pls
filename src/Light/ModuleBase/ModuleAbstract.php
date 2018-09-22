@@ -7,7 +7,6 @@ use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
-use Light\Field\FieldSelect;
 use Light\Fieldset;
 use Light\FilesFolder;
 use Light\Img;
@@ -316,7 +315,7 @@ abstract class ModuleAbstract extends Table
 
     protected function getViewEditTemplate()
     {
-        //Проверим, есть ли шаблон для отображения объектов этого модуля?
+        // Проверим, есть ли шаблон для отображения объектов этого модуля?
         $module = $this->getModule();
         $templateFile = $module . '.tpl.php';
         if (!Template::findfile($templateFile)) {
@@ -744,7 +743,7 @@ abstract class ModuleAbstract extends Table
     }
 
     /**
-     * Метод запускается если у печатной формы определён какой-то fieldset и, соответсвенно, при клике на ссылку в меню
+     * Метод запускается если у печатной формы определён какой-то fieldset и, соответственно, при клике на ссылку в меню
      * отправляется ajax GET запрос, чтобы вывести форму
      */
     private function viewGetPrint()
@@ -1257,6 +1256,8 @@ abstract class ModuleAbstract extends Table
         }
 
         $this->flash->addSuccess($msg);
+
+        Metric::newrelicMetric(Request::getModule() . '/save', $timer->getMs());
 
         $this->redirectAfterSubmit();
     }
@@ -2040,7 +2041,6 @@ abstract class ModuleAbstract extends Table
         // Этот параметр также определяем модуль для перехода при двойном клике
         $this->tableLinkModule = $this->tableLinkModule ?: $this->getModule();
 
-
         if (!$this->isStateListExcel()) {
             // Инициализируем пажинацию, только если это не экспорт в Excel
             $this->initPaginatable();
@@ -2106,7 +2106,7 @@ abstract class ModuleAbstract extends Table
         $this->initPrintForms();
         if ($this->printForms) {
             // Если в классе потомке были добавлены какие-то опции печати, то добавим massaction действие
-            // Это массовое действие соответсвенно вызовет метод massactionPrint, в котором будет выведен диалог
+            // Это массовое действие соответственно вызовет метод massactionPrint, в котором будет выведен диалог
             // для выбора формы печати подходящей всем выбранным объектам
             $this->addMassaction('Print', 'Печать (выбрать форму...)', '', 'Печать');
         }
@@ -2754,7 +2754,7 @@ abstract class ModuleAbstract extends Table
      * Метод вызывается через GET ajax запросы на url ?a=<module>&id=123&func=changeField
      * когда пользователь кликнул на ссылку .ajax-input - в этот момент нужно подгрузить с сервера HTML код поля ввода
      */
-    private function viewGetChangeField()
+    protected function viewGetChangeField()
     {
         $this->_state = self::STATE_VIEW_CHANGE_FIELD;
         if (!Request::isAjax()) {
@@ -2782,7 +2782,7 @@ abstract class ModuleAbstract extends Table
      * Метод вызывается через POST ajax запросы на url ?a=<module>&id=123&func=changeField&fieldKey=...&newValue=...
      * когда пользователь отправляет на сервер значение какого-то ajax поля
      */
-    private function viewPostChangeField()
+    protected function viewPostChangeField()
     {
         $this->_state = self::STATE_VIEW_CHANGE_FIELD;
         if (!Request::isAjax()) {
@@ -2798,6 +2798,8 @@ abstract class ModuleAbstract extends Table
         if (!$this->hasWriteAccessAjaxChnageField($field)) {
             Response::abort(403, 'Edit not allowed');
         }
+
+        $timer = new Timer();
 
         $value = $_REQUEST['newValue'];
         $data = [$fieldKey => $value];
@@ -2818,6 +2820,8 @@ abstract class ModuleAbstract extends Table
         Db::commit();
 
         print $this->_obj->getFieldHtml($fieldKey);
+
+        Metric::newrelicMetric(Request::getModule() . '/ChangeField', $timer->getMs());
 
         // Если при изменении поля в $this->afterChangeField накопились какие-то Flash сообщения,
         // отправим их в виде Toast блоков

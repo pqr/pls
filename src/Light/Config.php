@@ -64,7 +64,10 @@ class Config
     /** @var string путь к исполняемому файлу convert входящему в ImageMagic - используется для наложения картинки печати на PNG изображения и склеивания PNG в PDF */
     public static $imageMagickPath = 'convert';
 
-    /** @var string путь к папке с бекапами - нужно для модуля Console */
+    /**
+     * @var string путь к папке с бекапами
+     * @deprecated
+     */
     public static $backupFolder;
 
     /** @var string параметры для Swiftmailer */

@@ -770,17 +770,17 @@ abstract class Subtable extends Table
 
         $this->loadData();
 
-        // Обернём подтаблицу в div контейнер с атрибутом data-ajaxchangefieldurl, чтобы различные ajax поля внутри
-        // подтаблицы знали по какому url отправлять POST запрос на изменение (например, галочки Yes/No)
-        $ajaxChangeFieldUrl = "?a=" . Request::getModule()
+        return '<div class="subtable-div" data-subtablename="' . htmlspecialchars($this->getTableName()) . '">'
+            . $this->getHtmlTable($this->_printHeadBlock)
+            . '</div>';
+    }
+
+    protected function getTableAjaxChangeFieldUrl(): string
+    {
+        return "?a=" . Request::getModule()
             . "&id=" . $this->_masterObj->getId()
             . "&subtable=" . htmlspecialchars($this->getTableName())
             . "&func=ChangeField&subid=";
-
-        return '<div data-ajaxchangefieldurl="' . $ajaxChangeFieldUrl . '">'
-            . '<div class="subtable-div" data-subtablename="' . htmlspecialchars($this->getTableName()) . '">'
-            . $this->getHtmlTable($this->_printHeadBlock)
-            . '</div></div>';
     }
 
     final public function proceedExcel()
@@ -943,6 +943,12 @@ abstract class Subtable extends Table
         //Если определена мастер-таблица в которой нужно обновить некоторые кешируюище поля и определны эти поля - обновим кеш!
         if ($this->_cacheFieldsKeys) {
             $this->updateCache();
+        }
+
+        if ($this->folders) {
+            foreach($this->_data as $rowData) {
+                $this->createFolder($rowData);
+            }
         }
 
         $this->afterSubmit($notDeletedDataFromReqeust, $affectedRows, $oldData, $msgBuff);
@@ -1238,7 +1244,7 @@ abstract class Subtable extends Table
                 $this->updateCache();
             }
 
-// Возвращаем новое HTML значение для вставки в вёрстку
+            // Возвращаем новое HTML значение для вставки в вёрстку
             print $this->_obj->getFieldHtml($fieldKey);
         }
     }

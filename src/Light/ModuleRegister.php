@@ -65,9 +65,14 @@ class ModuleRegister
             'order' => 108,
             'section' => 'System'
         ],
+        'SettingsBackup' => [
+            'name' => 'Backup',
+            'order' => 109,
+            'section' => 'System'
+        ],
         'ColorHint' => [
             'name' => 'Color Hints',
-            'order' => 109,
+            'order' => 110,
             'section' => 'System'
         ],
         'FiltersLog' => [

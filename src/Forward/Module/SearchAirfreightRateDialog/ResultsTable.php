@@ -90,7 +90,10 @@ class ResultsTable extends Table
 
                     //Если у пользователя есть доступ к модулю редактирования Airfreight Surcharges, то сделаем ссылку!
                     if (User::hasReadAccess('AirfreightSurcharge')) {
-                        $html = Link::moduleViewBlank($html, $surcharge['ID'], null, 'AirfreightSurcharge');
+                        $html = Link::create('AirfreightSurcharge', $html)
+                            ->view($surcharge['ID'])
+                            ->blank()
+                            ->getHtml();
                     }
 
                     $outHtml[] = $html;
@@ -110,14 +113,17 @@ class ResultsTable extends Table
                 F::createHtml('AirfreightRateLink')
                     ->setName('')
                     ->setGetHtmlFunction(function ($value, array $data) {
-                        return Link::moduleViewBlank('View', $data['ID'], null, 'AirfreightRate');
+                        return Link::create('AirfreightRate', 'View')
+                            ->view($data['ID'])
+                            ->blank()
+                            ->getHtml();
                     }));
         }
 
         //Сразу загружаем данные
         $query = "SELECT * 
                   FROM airfreightrate 
-                  WHERE ". $this->getFiltersSqlWhere()." 
+                  WHERE " . $this->getFiltersSqlWhere() . " 
                   ORDER BY ID DESC 
                   LIMIT 50";
 

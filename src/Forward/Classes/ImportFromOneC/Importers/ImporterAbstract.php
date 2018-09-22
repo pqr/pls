@@ -68,7 +68,10 @@ abstract class ImporterAbstract
 
     protected function getImportLink()
     {
-        return Link::moduleViewBlank($this->importId, $this->importId, null, 'ImportFromOneCLog');
+        return Link::create('ImportFromOneCLog', $this->importId)
+            ->view($this->importId)
+            ->blank()
+            ->getHtml();
     }
 
 

@@ -5,6 +5,7 @@ namespace Light;
 use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldOptionsAbstract;
+use Light\Field\FieldSelect;
 
 class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 {
@@ -582,7 +583,9 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
                 || $dataFromRequest[$field->key] === ''
                 || ($type === 'Int' && $dataFromRequest[$field->key] === 0)
                 || ($type === 'Float' && $dataFromRequest[$field->key] === 0.0)
-                || ($type === 'Money' && $dataFromRequest[$field->key] === 0.0)) {
+                || ($type === 'Money' && $dataFromRequest[$field->key] === 0.0)
+                || ($field instanceof FieldSelect && $dataFromRequest[$field->key] === '0')
+            ) {
 
                 $msg = 'empty ' . $field->getName();
 

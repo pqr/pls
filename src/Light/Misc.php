@@ -184,7 +184,20 @@ class Misc
 
         $index = $number - 1;
 
-        $start = ["Январ", "Феврал", "Март", "Апрел", "Ма", "Июн", "Июл", "Август", "Сентябр", "Октябр", "Ноябр", "Декабр"];
+        $start = [
+            "Январ",
+            "Феврал",
+            "Март",
+            "Апрел",
+            "Ма",
+            "Июн",
+            "Июл",
+            "Август",
+            "Сентябр",
+            "Октябр",
+            "Ноябр",
+            "Декабр"
+        ];
         $end = ["ь", "ь", "", "ь", "й", "ь", "ь", "", "ь", "ь", "ь", "ь"];
         $endGen = ["я", "я", "а", "я", "я", "я", "я", "а", "я", "я", "я", "я"];
 
@@ -502,14 +515,14 @@ class Misc
 
     public static function makeLinksAbsolute($html)
     {
-        $host = $_SERVER['HTTP_HOST'];
         if (isset($_SERVER['REQUEST_URI'])) {
             $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         } else {
             $path = $_SERVER['PHP_SELF'];
         }
         $path = str_replace('index.php', '', $path);
-        $url = 'http://' . $host . $path;
+        $path = ltrim('/', $path);
+        $url = Config::$localUrl . "/$path";
         $replacement = [
             ' src="' => ' src="' . $url,
             ' href="' => ' href="' . $url,
@@ -598,7 +611,8 @@ class Misc
 
         if (!isset($cacheCalendar[$year])) {
             // Закешируем список исключений на год указанный в $startDate
-            $cacheCalendar[$year] = Db::getAssoc("SELECT Date, WorkingDay FROM production_calendar WHERE YEAR(Date) = @i", $year);
+            $cacheCalendar[$year] = Db::getAssoc("SELECT Date, WorkingDay FROM production_calendar WHERE YEAR(Date) = @i",
+                $year);
         }
 
         if (isset($cacheCalendar[$year][$date])) {
@@ -908,7 +922,8 @@ class Misc
 
     public static function getClass($obj)
     {
-        return (new \ReflectionClass($obj))->getShortName();
+        $ref = new \ReflectionClass($obj);
+        return $ref->isAnonymous() ? 'Anonymous' . $ref->getParentClass()->getShortName() : $ref->getShortName();
     }
 
     /**
@@ -951,4 +966,17 @@ class Misc
         $power = $size > 0 ? floor(log($size, 1024)) : 0;
         return number_format(($size / (1024 ** $power)), 1, '.', ' ') . ' ' . $units[$power];
     }
+
+    public static function validateEmails($string)
+    {
+        $regex = "/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/iu";
+        $result = preg_split("/,|;/", preg_replace("/\s/", "", $string));
+        foreach ($result as $value) {
+            if (!preg_match($regex, $value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

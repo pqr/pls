@@ -106,6 +106,7 @@ use Light\Html;
  * @method static FieldSelect createSelect(string $fieldKey, array $params = [])
  * @method static FieldSelectChild createSelectChild(string $fieldKey, array $params = [])
  * @method static FieldSelect2Multiple createSelect2Multiple(string $fieldKey, array $params = [])
+ * @method static FieldSelect2ChildMultiple createSelect2ChildMultiple(string $fieldKey, array $params = [])
  * @method static FieldYesNo createYesNo(string $fieldKey, array $params = [])
  * @method static FieldMonth createMonth(string $fieldKey, array $params = [])
  */
@@ -614,7 +615,7 @@ abstract class FieldAbstract implements \JsonSerializable
 
                 $html = $this->getHtmlOneLine($lineValue, $data, $forTable, $groupconcatLinesCount, $forLog);
 
-                //Проверим, если есть специальный флаг пропускать пустые линии и эта линия действительно пустая - пропустим её!
+                // Проверим, если есть специальный флаг пропускать пустые линии и эта линия действительно пустая - пропустим её!
                 if ($groupconcatRemoveEmpty && trim(strip_tags($html)) === '') {
                     //Не записываем эту строку в $outLines
                     continue;
@@ -757,20 +758,21 @@ abstract class FieldAbstract implements \JsonSerializable
         }
 
         //Проверим, возможно значение $value состоит из нескольких, которые необходимо разбить через перевод строки
-        if ($this->groupconcat) {
+        if ($this->groupconcat && $value) {
             $lines = explode("\n", $value);
 
             $groupconcatLinesCount = count($lines);
-            //Если число линий больше 1 - будем рекурсивно обрабатывать каждую линию
-            if ($groupconcatLinesCount > 1) {
-                //Обработаем каждую строку через метод $this->getExcelOneLine() и соберём все строки в текст
-                //через перевод строки
-                foreach ($lines as &$lineValue) {
-                    $lineValue = $this->getExcelOneLine(trim($lineValue), $data, $groupconcatLinesCount);
+            $groupconcatRemoveEmpty = $this->groupconcatRemoveEmpty;
+            $outLines = [];
+            foreach ($lines as $lineValue) {
+                $lineValue = $this->getExcelOneLine(trim($lineValue), $data, $groupconcatLinesCount);
+                if ($groupconcatRemoveEmpty && trim($lineValue) === '') {
+                    continue;
                 }
-                unset($lineValue);
-                return implode("\n", $lines);
+
+                $outLines[] = $lineValue;
             }
+            return implode("\n", $outLines);
         }
 
         return $this->getExcelOneLine($value, $data);

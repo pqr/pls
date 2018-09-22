@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Module\CInvoice\Subtables;
 
 use Forward\Application;
@@ -46,7 +47,8 @@ class Lines extends Subtable
                 }
 
                 // Попробуем найти перевод и приклеить к описанию услуги
-                $translation = Db::getRow("SELECT ID, NameRu FROM list_chargedescription WHERE Name = @s LIMIT 1", $value);
+                $translation = Db::getRow("SELECT ID, NameRu FROM list_chargedescription WHERE Name = @s LIMIT 1",
+                    $value);
 
                 if ($translation && $translation['NameRu'] !== '') {
 
@@ -55,14 +57,14 @@ class Lines extends Subtable
                 } elseif (User::hasWriteAccess('ItemList')) {
 
                     $linkText = 'Перевести';
+                    $link = Link::create('ItemList', $linkText);
                     if ($translation) {
 
-                        $link = Link::moduleEdit($linkText, $translation['ID'], null, 'ItemList', null, null, true);
+                        $link->edit($translation['ID']);
 
                     } else {
 
-                        $link = Link::module($linkText, ['addnew' => 1, 'Name' => $value], 'ItemList', null, null,
-                            true);
+                        $link->params(['addnew' => 1, 'Name' => $value])->blank();
 
                     }
                     $outHtml .= '<br><small>' . $link . '</small>';
