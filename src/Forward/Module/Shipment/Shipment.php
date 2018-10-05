@@ -560,6 +560,7 @@ class Shipment extends ModuleAbstract
     protected function validateMandatory(array $dataFromRequest)
     {
         if ($dataFromRequest['FileClosed'] == ShipmentObj::SHIPMENT_CLOSED) {
+
             //Если пользователь пытается закрыть перевозку - добавим mandatory поля!
             //Они будут проверены при запуске стандартной проверки parent::validateMandatory($dataFromRequest); (ниже)
             $mandatoryFieldKeys = [
@@ -590,7 +591,7 @@ class Shipment extends ModuleAbstract
                 $this->riseSaveErorr('ATA in future', 'ATA');
             }
 
-            //Проверим, что хотя бы один инвойс выставлен и получен по этому файлу
+            // Проверим, что хотя бы один инвойс выставлен и получен по этому файлу
             if ($this->_obj['Name']
                 && !Db::getOne("SELECT ID FROM cinvoiceline WHERE FileNumber = " . $this->_obj['Name'] . " LIMIT 1")
                 && !Db::getOne("SELECT ID FROM vinvoiceline WHERE FileNumber = " . $this->_obj['Name'] . " LIMIT 1")
@@ -601,10 +602,18 @@ class Shipment extends ModuleAbstract
             }
         }
 
-        //Запускаем стандартную проверку обязательных полей
+        // Запускаем стандартную проверку обязательных полей
         parent::validateMandatory($dataFromRequest);
 
-        //Задача из плана: При заведении файла нужно проверить карточку клиента - если OurCompany там не заполнен - не давать сохранить файл с соответвующим сообщением.
+        // Если у пользователя есть опция сохранения без заполнения обязательных полей, то все накопленные критические ошибки
+        // превратим в некритические
+        if (User::hasSpecialAccess(Application::SA_SHIPMENT_SAVE_WITHOUT_MANDATORY)) {
+            foreach ($this->_saveErrors as &$saveError) {
+                $saveError['critical'] = false;
+            }
+        }
+
+        // Задача из плана: При заведении файла нужно проверить карточку клиента - если OurCompany там не заполнен - не давать сохранить файл с соответвующим сообщением.
         $customerId = (int)$dataFromRequest['CustomerID'];
         if ($customerId) {
             //Загрузим поле Our Company из клиента

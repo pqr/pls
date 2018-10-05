@@ -26,6 +26,7 @@ class Application extends ApplicationAbstract
     const SA_VINVOICE_ALLOW_ALL_COMPANYID = 'VInvoice3';
     const SA_SHIPMENT_DELETE = 'Shipment1';
     const SA_SHIPMENT_CHANGECLOSED = 'Shipment2';
+    const SA_SHIPMENT_SAVE_WITHOUT_MANDATORY = 'SA_SHIPMENT_SAVE_WITHOUT_MANDATORY';
     const SA_HOME_VOUTSTANDING = 'Home1';
     const SA_HOME_CINVOICE = 'Home2';
     const SA_HOME_VINVOICE = 'Home3';
@@ -136,6 +137,7 @@ class Application extends ApplicationAbstract
             ['Home', self::SA_HOME_CHECKATA, 'Show "Check ATA"'],
             ['Shipment', self::SA_SHIPMENT_DELETE, 'Allow delete'],
             ['Shipment', self::SA_SHIPMENT_CHANGECLOSED, 'Allow change after close'],
+            ['Shipment', self::SA_SHIPMENT_SAVE_WITHOUT_MANDATORY, 'Allow save without mandatory fields'],
             ['VInvoice', self::SA_VINVOICE_ALLOW_STATUS_ACCEPT, 'Allow status Acceepted'],
             ['VInvoice', self::SA_VINVOICE_ALLOW_STATUS_CLEAR, 'Allow status Cleared'],
             ['VInvoice', self::SA_VINVOICE_ALLOW_ALL_COMPANYID, 'Any company - Yes; Only PLS - No.'],

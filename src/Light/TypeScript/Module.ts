@@ -196,6 +196,7 @@ function showErrorDialog(responseText: string) {
 
     const options: DialogOptions = {
         buttonCancelText: hasCriticalError ? "Close" : "Cancel",
+        width: "500px",
         afterClose: () => {
             $(".input-error:first").focus();
         }
