@@ -68,10 +68,9 @@ abstract class AutolaunchAbstract
 
         $this->saveLogToDb($workTime);
 
-        $eventName = 'Autolaunch';
         $hasError = $this->_msgBuff->hasError() || $this->_msgBuffShort->hasError();
         $attributes = ['WorkTime' => $workTime, 'HasError' => $hasError, 'ClassName' => get_class($this)];
-        Metric::newrelicEvent($eventName, $attributes);
+        Metric::newrelicEvent('Autolaunch', $attributes);
     }
 
     private function saveLogToDb($workTime)

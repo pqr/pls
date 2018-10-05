@@ -137,7 +137,7 @@ class DbLog
             Metric::record('DbLog:flush >1s', $timer->get() * 1000, count(self::$_buffer));
         }
 
-        Metric::newrelicEvent('DbLog/Submit', ['DbLogRecords' => count(self::$_buffer)]);
+        Metric::newrelicEvent('DbLog:Submit', ['DbLogRecords' => count(self::$_buffer)]);
 
         // На всякий случай очистим буфер
         self::$_buffer = [];

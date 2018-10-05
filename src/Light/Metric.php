@@ -28,10 +28,21 @@ class Metric
         }
     }
 
-    public static function newrelicEvent($eventName, array $attributes = [])
+    /**
+     * https://docs.newrelic.com/docs/insights/insights-data-sources/custom-data/insights-custom-data-requirements-limits
+     * https://docs.newrelic.com/docs/insights/insights-data-sources/custom-data/insert-custom-events-insights-api#json-format
+     *
+     * Naming syntax
+     * Event and attribute names can be a combination of alphanumeric characters, underscores _, and colons :.
+     * Do not use words reserved for use by NRQL and Insights.
+     *
+     * @param string $eventName Can be a combination of alphanumeric characters, _ underscores, and : colons.
+     * @param array $attributes
+     */
+    public static function newrelicEvent(string $eventName, array $attributes = [])
     {
         if (extension_loaded('newrelic')) { // Ensure PHP agent is available
-            newrelic_record_custom_event("Custom/$eventName", $attributes);
+            newrelic_record_custom_event("Custom:$eventName", $attributes);
         }
     }
 
