@@ -1,5 +1,5 @@
-import { myParseInt } from "./Light";
-import { Filters } from "./Filters";
+import {myParseInt} from "./Light";
+import {Filters} from "./Filters";
 
 export type FilterChangeHandler = (newValue: string, $node: JQuery) => void;
 export type SelectRowHandler = (selected: boolean, $tr: JQuery) => void;
@@ -69,23 +69,23 @@ export class Table {
             const $body = $(document.body);
             if ($body.scrollTop()! > tableTop) {
                 //window.scrollTo($body.scrollLeft(), tableTop - 10);
-                $("html,body").animate({ scrollTop: tableTop - 10 }, 500);
+                $("html,body").animate({scrollTop: tableTop - 10}, 500);
             }
 
             const newPage = myParseInt((<HTMLAnchorElement>e.currentTarget).hash.substring(1));
-            this.reload({ page: newPage });
+            this.reload({page: newPage});
         });
 
         $div.on("click", "a.table-showall-link", (e: any) => {
             e.preventDefault();
             const showall = (<HTMLAnchorElement>e.currentTarget).hash.substring(1);
-            this.reload({ showall: showall, page: 1 });
+            this.reload({showall: showall, page: 1});
         });
 
         $div.on("click", "a.table-sort-link", (e: any) => {
             e.preventDefault();
             const params = (<HTMLAnchorElement>e.currentTarget).hash.substring(1).split("|");
-            this.reload({ sort: params[0], order: params[1], page: 1 });
+            this.reload({sort: params[0], order: params[1], page: 1});
         });
 
         // Переход по ссылке зашитой внутри строки таблицы при двойном клике
@@ -296,7 +296,7 @@ export class Table {
      * у которых есть чекбокс с классом cb
      */
     selectAll(selected: boolean): void {
-        this.$tbody.find("tr").each(function(this: HTMLTableRowElement) {
+        this.$tbody.find("tr").each(function (this: HTMLTableRowElement) {
             const $tr = $(this);
             const $cb = $tr.find("input[type=checkbox].cb");
             if ($cb.length > 0) {
@@ -334,19 +334,19 @@ export class Table {
         const {fieldsShow, page, showall, sort, order, ...other} = reloadParams;
         const postData: any = {...other};
         if (typeof fieldsShow !== "undefined") {
-            postData[this.name + '_fieldsShow'] = fieldsShow;
+            postData[this.name + "_fieldsShow"] = fieldsShow;
         }
         if (typeof page !== "undefined") {
-            postData[this.name + '_page'] = page;
+            postData[this.name + "_page"] = page;
         }
         if (typeof showall !== "undefined") {
-            postData[this.name + '_showall'] = showall;
+            postData[this.name + "_showall"] = showall;
         }
         if (typeof sort !== "undefined") {
-            postData[this.name + '_sort'] = sort;
+            postData[this.name + "_sort"] = sort;
         }
         if (typeof order !== "undefined") {
-            postData[this.name + '_order'] = order;
+            postData[this.name + "_order"] = order;
         }
 
         // Запоминаем ссылку на текущий запрос обновления этой таблицы
@@ -362,23 +362,20 @@ export class Table {
                 this.$table = this.$div.find("table.table");
                 this.$tbody = this.$table.find("tbody");
                 // Вернём отметки галочками к состоянию до перезагрузки
-                selectedValues.forEach((value) => {
-                    this.$tbody
-                        .find("input[type=checkbox].cb")
-                        .each(function(this:HTMLInputElement) {
-                            if (this.value == value) {
-                                this.checked = true;
-                                const $tr = $(this).closest('tr');
-                                $tr.toggleClass("selected", true);
-                            }
-                        });
+                selectedValues.forEach(value => {
+                    this.$tbody.find("input[type=checkbox].cb").each(function (this: HTMLInputElement) {
+                        if (this.value == value) {
+                            this.checked = true;
+                            const $tr = $(this).closest("tr");
+                            $tr.toggleClass("selected", true);
+                        }
+                    });
                 });
 
                 // После выделения текущей строки, проверим, есть ли чекбокс в заголовке таблицы, нужно ли его переключить?
                 this.updateHeadCheckbox();
                 // Обновим счётчик выделенных строк рядом со ссылкой "Export to Excel"
                 this.updateExcelSelectedCountSpan();
-                
             })
             .always(() => {
                 this.currentReloadXhr = null;
@@ -408,8 +405,8 @@ export class Table {
     }
 
     /**
-             * Возвращает массив из значений заключённых внутри чекбоксов в таблице table-tableName-table
-             */
+     * Возвращает массив из значений заключённых внутри чекбоксов в таблице table-tableName-table
+     */
     getSelectedValues(): string[] {
         return this.$tbody
             .find("input[type=checkbox].cb:checked")
@@ -462,7 +459,7 @@ export class Table {
 const tablesStore: { [key: string]: Table } = {};
 
 export function init($root: JQuery) {
-    $root.find("div.table-div").each(function(this: HTMLDivElement) {
+    $root.find("div.table-div").each(function (this: HTMLDivElement) {
         const $div = $(this);
         const tableObj = new Table($div);
         const name = tableObj.getName();

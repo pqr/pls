@@ -127,21 +127,19 @@ trait TableLayoutable
 
     protected function showTableLayoutSettingsDialog()
     {
-        $fieldset = $this->getFieldset();
-        $shownFieldKeys = $this->getTableFieldsShow() ?? $fieldset->getKeys();
+        $fieldsetList = $this->getFieldset()->filterByMode(F::MODE_LIST);
+        $shownFieldKeys = $this->getTableFieldsShow() ?? $fieldsetList->getKeys();
 
         $allFields = [];
         $fieldNames = [];
-        foreach ($fieldset->getFieldsArr() as $field) {
-            if ($field->modes & F::MODE_LIST) {
-                $name = $field->getNameTableSettings();
-                $allFields[] = [
-                    'key' => $field->key,
-                    'name' => $name,
-                    'title' => $field->title
-                ];
-                $fieldNames[] = $name;
-            }
+        foreach ($fieldsetList as $field) {
+            $name = $field->getNameTableSettings();
+            $allFields[] = [
+                'key' => $field->key,
+                'name' => $name,
+                'title' => $field->title
+            ];
+            $fieldNames[] = $name;
         }
 
         // Сортируем массив по полю name

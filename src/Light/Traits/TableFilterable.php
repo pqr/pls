@@ -2,10 +2,10 @@
 
 namespace Light\Traits;
 
+use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
-use Light\Field\FieldAbstract;
 use Light\Field\FieldDate;
 use Light\Field\FieldMonth;
 use Light\Field\FieldSelect;
@@ -14,6 +14,7 @@ use Light\Field\FieldSelect2Multiple;
 use Light\Field\FieldText;
 use Light\Fieldset;
 use Light\Filters;
+use Light\Response;
 
 trait TableFilterable
 {
@@ -114,7 +115,7 @@ trait TableFilterable
                 $field->default = '%';
             }
 
-            // Принудильено отключаем возможность добавления новых элементов в выпадающий список для фильтров
+            // Принудительно отключаем возможность добавления новых элементов в выпадающий список для фильтров
             $field->addNew = false;
 
         } elseif ($field instanceof FieldMonth) {
@@ -148,10 +149,18 @@ trait TableFilterable
 
         }*/
 
-        // В случае когда фильтры инициализируются из другого Fieldset, обязательно проставим режим редактирования
-        $field->modes |= F::MODE_EDIT;
+        // Обязательно проставим режим редактирования
+        $field->setModes(F::MODE_ALL);
 
         $this->filters->addField($field);
+
+        if ($field->filterNot) {
+            $this->filters->addField(F::createCheckbox(
+                'Not' . $field->key, [
+                'name' => Config::$lang === 'ru' ? 'Кроме выбранных выше' : 'Except selected',
+                'sqlWhere' => ''
+            ]));
+        }
     }
 
     /**
@@ -179,14 +188,19 @@ trait TableFilterable
         return $this;
     }
 
-    public function addFilterNameComaSeparated(array $params = [], $sqlVarName = 'Name', $normalStrLen = 0, $fullLike = false, $isIntField = false)
-    {
+    public function addFilterNameComaSeparated(
+        array $params = [],
+        $sqlVarName = 'Name',
+        $normalStrLen = 0,
+        $fullLike = false,
+        $isIntField = false
+    ) {
         if (!isset($params['name'])) {
             $params['name'] = Config::$lang === 'ru' ? 'Номера' : 'Text';
         }
 
         if (!isset($params['sqlWhere'])) {
-            $params['sqlWhere'] = function($filterValue) use ($sqlVarName, $normalStrLen, $fullLike, $isIntField) {
+            $params['sqlWhere'] = function ($filterValue) use ($sqlVarName, $normalStrLen, $fullLike, $isIntField) {
                 return Db::getSqlWhereSeparatedByComa($filterValue, $sqlVarName, $normalStrLen, $fullLike, $isIntField);
             };
         }
@@ -340,12 +354,43 @@ trait TableFilterable
         // В методе initFilters() в классе потомке должны были быть определены все фильтры
         $this->filters = new Filters($this->getTableName());
         $this->initFilters();
+
+        if (isset($_GET['select2ajax'])) {
+            $this->proceedFiltersSelect2ajax();
+            ApplicationAbstract::terminate();
+            return;
+        }
+
         if (!$this->hasFilters()) {
             // В классе потомке фильтры так и не были определены, ничего не делаем
             return;
         }
 
         $this->filters->loadAndSave();
+    }
+
+    protected function proceedFiltersSelect2ajax()
+    {
+        // Иначе ищем поле среди полей объекта или подтаблиц
+        $fieldKey = $_GET['select2ajax'];
+
+        // Это может быть multiple поле, в этом случае fieldKey на конце содержит '[]'
+        $fieldKey = str_replace('[]', '', $fieldKey);
+
+        $field = $this->getFiltersFieldset()->getField($fieldKey);
+
+        if (!$field) {
+            Response::abort(400, "Unknown field $fieldKey");
+            return;
+        }
+
+        if ($field->getType() !== F::TYPE_SELECT) {
+            Response::abort(400, "Field is not Select ($fieldKey)");
+            return;
+        }
+
+        /** @var FieldSelect $field */
+        $field->proceedSelect2ajax();
     }
 
     public function getFiltersHtml()

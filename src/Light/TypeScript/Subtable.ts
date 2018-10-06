@@ -15,8 +15,8 @@ import {
     setNodeValue,
     loadSortableJs
 } from "./Light";
-import {getObjectId} from "./Module";
-import {Dialog} from "./Dialog";
+import { getObjectId } from "./Module";
+import { Dialog } from "./Dialog";
 
 declare var Sortable: any;
 
@@ -275,6 +275,9 @@ export class Subtable {
             this.delRow(deleteRowNum);
         });
 
+        // Отключим стандартный обработчик на талбицах (который установлен в Table.ts)
+        $div.find("div.table-div").off("click", "a.table-sort-link");
+        // Добавим особый обработчик в режиме edit
         $div.on("click", "a.table-sort-link", (e: any) => {
             e.preventDefault();
 
@@ -289,7 +292,7 @@ export class Subtable {
             this.eachRow((rowNum: RowNum) => {
                 const $row = this.getRowNode(rowNum);
                 rows.push({
-                    row: $row,
+                    rowEl: $row.get(0),
                     sortValue: this.getFieldValue(rowNum, sortFieldKey)
                 });
                 $row.find("input.input-date").datepicker("destroy");
@@ -305,7 +308,9 @@ export class Subtable {
                 return 0;
             });
 
-            this.$tbody.append(rows.map(r => r.row));
+            rows.forEach(({ rowEl }: { rowEl: HTMLTableRowElement }) => {
+                this.tbodyEl.insertBefore(rowEl, this.totalRowEl);
+            });
 
             addStandardListeners(this.$tbody);
 
@@ -345,18 +350,19 @@ export class Subtable {
                     animation: 50, // ms, animation speed moving items when sorting, `0` — without animation
                     handle: ".subtable-sort-link", // Restricts sort start click/touch to the specified element
                     draggable: "tr", // Specifies which items inside the element should be sortable
-                    onUpdate: function () {
+                    onUpdate: function() {
                         that.updateSort();
                     }
                 });
             });
         }
-
     }
 
     updateSort() {
-        this.$tbody.find(">tr").each(function (this: any, sortIndex: number) {
-            $(this).find('input[name$="[OrderID]"]').val(sortIndex);
+        this.$tbody.find(">tr").each(function(this: any, sortIndex: number) {
+            $(this)
+                .find('input[name$="[OrderID]"]')
+                .val(sortIndex);
         });
     }
 
@@ -376,7 +382,7 @@ export class Subtable {
         const dialog = new Dialog('<textarea class="paste-textarea" rows="24"></textarea>', {
             width: "560px",
             buttonOkText: isLangRu ? "Вставить" : "Paste",
-            buttonOkHandler: function (dialog: Dialog) {
+            buttonOkHandler: function(dialog: Dialog) {
                 const startMs = performance.now();
 
                 //Переберём все строки из вставленного текста
@@ -424,7 +430,7 @@ export class Subtable {
 
         const $textarea = dialog.$div!.find("textarea");
         $textarea.focus();
-        $textarea.on("keydown", function (e: any) {
+        $textarea.on("keydown", function(e: any) {
             const key = e.keyCode,
                 st = $textarea.prop("scrollTop"),
                 selStart = $textarea.prop("selectionStart"),
@@ -498,15 +504,11 @@ export class Subtable {
             if (totalValue === 0) {
                 totalHtml = "";
             } else {
-
                 // Если это тип Money или MoneyWithCurrency - нужно привести к красивому виду перед записью в таблицу
                 const type = this.fields[fieldKey].type;
                 if (type === "Money" || type === "MoneyWithCurrency") {
-
                     totalHtml = getBeautyValue(totalValue, type);
-
                 } else {
-
                     //Это не деньги, значит простой числовой тип (вес или объём)
                     //Округлим до того количества знаков после запятой, которое указано в параметре precision
                     let precision = this.fields[fieldKey].precision;
@@ -514,7 +516,6 @@ export class Subtable {
                         precision = 2;
                     }
                     totalHtml = round(<number>totalValue, precision).toString();
-
                 }
             }
 
@@ -691,7 +692,7 @@ export class Subtable {
             this.updateSort();
         }
 
-        return {newRowNum: newRowNum, newRowNode: $newRow};
+        return { newRowNum: newRowNum, newRowNode: $newRow };
     }
 
     setRowData(rowNum: RowNum, data: RowData) {
@@ -725,7 +726,7 @@ export class Subtable {
                     //Проверим наличие option с таким же текстом, как value
                     if (field._optionsHash === undefined) {
                         field._optionsHash = {};
-                        $fieldNode.find("option").each(function (this: HTMLOptionElement) {
+                        $fieldNode.find("option").each(function(this: HTMLOptionElement) {
                             field._optionsHash![this.innerHTML] = this.value;
                         });
                     }
@@ -871,7 +872,13 @@ export class Subtable {
         return out;
     }
 
-    setFieldValue(rowNum: RowNum, fieldKey: string, newValue: FieldValue, triggerChange = true, updateDisabled = false) {
+    setFieldValue(
+        rowNum: RowNum,
+        fieldKey: string,
+        newValue: FieldValue,
+        triggerChange = true,
+        updateDisabled = false
+    ) {
         if (this.fields[fieldKey] === undefined) {
             return;
         }
@@ -984,7 +991,7 @@ export class Subtable {
 const subtablesStore: { [key: string]: Subtable } = {};
 
 export function init($root: JQuery) {
-    $root.find("div.subtable-div").each(function (this: HTMLElement) {
+    $root.find("div.subtable-div").each(function(this: HTMLElement) {
         // Проверим, есть ли в этом div атрибут data-fields с описанием полей? Если есть, создадим объект Subtable
         const $div = $(this);
         // Проверим, что эта таблица находится в режиме редактирования по атрибуту data-fields

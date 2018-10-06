@@ -118,7 +118,7 @@ abstract class ReportAbstract extends Table
             Template::includeTpl('Submodules/Report.tpl.php', $tdata);
         }
 
-        Metric::record('Reportmenu::' . Misc::getClass($this), $timer->getMs(),
+        Metric::record('Reportmenu/' . Misc::getClass($this), $timer->getMs(),
             'Filters: ' . json_encode($this->getFiltersValues()));
     }
 

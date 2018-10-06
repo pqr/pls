@@ -143,7 +143,7 @@ class Pdf
          * Баг исправлен, теперь не нужно делать zoom
         if (PHP_OS !== 'WINNT') {
             //https://github.com/wkhtmltopdf/wkhtmltopdf/issues/2171#issuecomment-139164039
-            $cmd .= " --zoom 0.78125";
+            //$cmd .= " --zoom 0.78125";
         }
         */
 
@@ -268,10 +268,8 @@ class Pdf
         $cmd = self::getCmdConcatenatePdf($filesRelative, '-');
         passthru($cmd);
 
-        if ($timer->get() > 1) {
-            Metric::record('Pdf::concatenateAndStreamFromFilesFolder >1s', $timer->getMs(),
-                'files: ' . count($filesRelative));
-        }
+        Metric::record('Pdf::concatenateAndStreamFromFilesFolder', $timer->getMs(),
+            'files: ' . count($filesRelative));
 
         ApplicationAbstract::terminate();
     }
@@ -341,9 +339,7 @@ class Pdf
 
         passthru($cmd);
 
-        if ($timer->get() > 1000) {
-            Metric::record('Pdf::concatenatePdfsAndStream >1s', $timer->getMs(), 'files: ' . count($srcFilepaths));
-        }
+        Metric::record('Pdf::concatenatePdfsAndStream', $timer->getMs(), 'files: ' . count($srcFilepaths));
     }
 
     /**

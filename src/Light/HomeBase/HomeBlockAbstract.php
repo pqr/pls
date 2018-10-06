@@ -3,9 +3,12 @@
 namespace Light\HomeBase;
 
 use Light\Db;
+use Light\Metric;
 use Light\Misc;
+use Light\Request;
 use Light\Table;
 use Light\Template;
+use Light\Timer;
 use Light\Traits\SubmoduleTrait;
 use Light\Traits\TableExcelExportable;
 
@@ -107,10 +110,12 @@ abstract class HomeBlockAbstract extends Table
 
     protected function tableLoadData(int $userId)
     {
+        $timer = new Timer();
         $query = $this->getDataQuery($userId);
         if ($query) {
             $this->_tableData = Db::getAll($query);
         }
+        Metric::record(Request::getModule() . '/' . Misc::getClass($this), $timer->getMs(), ['UserID' => $userId]);
     }
 
     public function proceedSendExcel()

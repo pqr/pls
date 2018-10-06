@@ -184,7 +184,7 @@ class Autolaunch
         $titleWithLink = Link::create('Autolaunch', $title)->params($backUrlParams);
         Response::setPageHeadHtml("$link $img <strong>$titleWithLink Log $logId</strong>");
 
-        $this->addModuleSessionNextPrevLinks($logObj, 'id', ['class' => $className]);
+        $this->addModuleSessionNextPrevLinks($logId, 'id', ['class' => $className]);
 
         $tdata = $logObj->getTplData(F::MODE_VIEW);
         $tdata['Report'] = Db::getOne("SELECT Report FROM log_autolaunch_text WHERE ID = @i", $logId);

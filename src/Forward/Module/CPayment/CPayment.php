@@ -5,7 +5,6 @@ namespace Forward\Module\CPayment;
 use Forward\Classes\BuAccess;
 use Forward\Classes\CustomerAccess;
 use Forward\Field\GeneralFields;
-use Forward\Module\Customer\CustomerObj;
 use Forward\ModuleBase\Payments\PaymentModuleAbstract;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
@@ -67,16 +66,5 @@ class CPayment extends PaymentModuleAbstract
     protected function getAccessSqlWhere(): string
     {
         return BuAccess::getSqlWhereCustomerId() . " AND " . CustomerAccess::getSqlWhere();
-    }
-
-    protected function afterChangeField($fieldKey, array $oldData)
-    {
-        //Если была кликнуна галочка "Overpay Cleared", то нужно пересчитать сумму открытых оплат по клиенту
-        if ($this->_obj['CustomerID']) {
-            $customerObj = new CustomerObj();
-            $customerObj->setId($this->_obj['CustomerID']);
-            $customerObj->loadData();
-            $customerObj->updateCacheOpenPaymentsAmount();
-        }
     }
 }

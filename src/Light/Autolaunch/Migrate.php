@@ -17,6 +17,7 @@ class Migrate extends AutolaunchAbstract
 
         $success = 0;
         $errors = 0;
+        $skipped = 0;
         // Читаем все файлы из папки sql
         $dir = LIGHT_DIR_ROOT . '/sql';
         foreach (scandir($dir) as $file) {
@@ -26,20 +27,23 @@ class Migrate extends AutolaunchAbstract
 
             // Имя файла должно начинаться с даты
             if (!preg_match('/^\d{4}_\d{2}_\d{2}/', $file)) {
-                $this->_msgBuff->addSkipp('Skipping ' . htmlspecialchars($file) . ' - not valid filename');
+                $skipped++;
+                // $this->_msgBuff->addSkipp('Skipping ' . htmlspecialchars($file) . ' - not valid filename');
                 continue;
             }
 
             // Проверим, есть ли в таблице migration?
             $existId = Db::getOne("SELECT ID FROM migration WHERE Name = @s", $file);
             if ($existId) {
-                $this->_msgBuff->addSkipp('Skipping ' . htmlspecialchars($file) . ' - already migrated');
+                $skipped++;
+                // $this->_msgBuff->addSkipp('Skipping ' . htmlspecialchars($file) . ' - already migrated');
                 continue;
             }
 
             $content = file_get_contents("$dir/$file");
             if (!$content) {
-                $this->_msgBuff->addSkipp('Skipping ' . htmlspecialchars($file) . ' - empty content');
+                $skipped++;
+                // $this->_msgBuff->addSkipp('Skipping ' . htmlspecialchars($file) . ' - empty content');
                 continue;
             }
 
@@ -85,6 +89,11 @@ class Migrate extends AutolaunchAbstract
         $this->_msgBuff->addSuccessOrInfo($msg, $success);
         $this->_msgBuffShort->addSuccessOrInfo($msg, $success);
 
+        if ($skipped) {
+            $msg = "Skipped: $skipped";
+            $this->_msgBuff->addSkipp($msg);
+            $this->_msgBuffShort->addSkipp($msg);
+        }
         if ($errors) {
             $msg = "Errors: $errors";
             $this->_msgBuff->addError($msg);

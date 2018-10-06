@@ -78,34 +78,16 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this->_data[$offset] ?? null;
     }
 
-    public function loadDataForDescription()
-    {
-        // Используем массив из одного обязательного поля $this->nameFieldKey
-        // Если класс потомок использует другие поля для вывода описания
-        // этим другим полям нужно сделать sqlSelectMandatory => true
-        $query = $this->getDataQuery([$this->getNameFieldKey()]);
-        if ($this->_data = Db::getRow($query)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    protected function getDataQuery(array $fieldKeys)
+    protected function getDataQuery()
     {
         $fieldset = $this->getFieldset();
-
-        if (!$fieldKeys) {
-            //Если не указан какой-то определённый массив полей, то загружаем все поля
-            $fieldKeys = $fieldset->getKeys();
-        }
+        $fieldKeys = $fieldset->getKeys();
 
         // Соберём массив только тех полей, которые реально нужно загружать - это поля с режимами VIEW и EDIT и LOG (изменения в которых проверяются при записи в лог)
         $correctKeys = [];
         $correctMode = F::MODE_VIEW | F::MODE_EDIT | F::MODE_LOG;
         foreach ($fieldKeys as $fieldKey) {
-            $field = $fieldset->getField($fieldKey);
-            if ($field && $field->hasMode($correctMode)) {
+            if ($fieldset->hasField($fieldKey) && $fieldset->getField($fieldKey)->hasMode($correctMode)) {
                 $correctKeys[] = $fieldKey;
             }
         }
@@ -266,8 +248,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         if ($affectedRows = Db::updateRow($fieldsData, $this->getDbTable(), $this->_id)) {
             //Если обновление реально произошло (что-то изменилось), запишем логи
             $this->loadData();
-            $newData = $this->_data;
-            $this->writeCompareLog($oldData, $newData, $fieldKeys, $dbLogMsg);
+            $this->writeCompareLog($oldData, $fieldKeys, $dbLogMsg);
 
             //Обновим дату обновления
             $sqlUpdatedBy = [];
@@ -327,13 +308,12 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
     /**
      * Устанавилвает id этого объекта и загружает его из базы. Возвращает true в случае удачной загрузки
-     * @param array $fieldKeys
      * @return bool
      * @throws \Exception
      */
-    public function loadData(array $fieldKeys = [])
+    public function loadData()
     {
-        $query = $this->getDataQuery($fieldKeys);
+        $query = $this->getDataQuery();
         if ($this->_data = Db::getRow($query)) {
             //Для каждого поля описанного в $this->_fieldset дополнительно вызовем метод getCalculatedValue()
             //Сохраним результат обратно в массив $this->_data
@@ -394,9 +374,10 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this;
     }
 
-    protected function writeCompareLog(array $oldData, array $newData, array $fieldKeys, $dbLogMsg)
+    protected function writeCompareLog(array $oldData, array $fieldKeys, $dbLogMsg)
     {
         $fieldset = $this->getFieldset();
+        $newData = $this->getData();
 
         foreach ($fieldKeys as $fieldKey) {
 
@@ -411,13 +392,13 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
                 continue;
             }
 
-            if (!$field->hasMode(F::MODE_LOG)) {
+            if (!$field->hasMode(F::MODE_LOG, $newData)) {
                 //Если у поля отключён modes LOG - пропускаем
                 continue;
             }
 
             $oldValue = $oldData[$field->key] ?? null;
-            $newValue = $newData[$field->key];
+            $newValue = $newData[$field->key] ?? null;
 
             //Поле должно существовать и его значени должно отличаться от старого
             //Если нет массива $oldData (он пуст) - скорее всего это создание новой записи и нет смысла формировать old html
@@ -505,14 +486,13 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         $this->setId($id);
         $this->loadData();
 
-        //Запишем логи о вставке, в качестве oldData передаём пустой массив
-        $newData = $this->_data;
-
         $msg = '<span class="good">' . (Config::$lang === 'ru' ? 'Создан' : 'Created') . '</span>';
         if ($dbLogMsg) {
             $msg .= ' ' . $dbLogMsg;
         }
-        $this->writeCompareLog([], $newData, $fieldKeys, $msg);
+
+        //Запишем логи о вставке, в качестве oldData передаём пустой массив
+        $this->writeCompareLog([], $fieldKeys, $msg);
 
         return $id;
     }
@@ -576,18 +556,81 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this->getFieldset()->getTplData($this->_data, $fieldMode);
     }
 
-    public function getOnlySubmitFieldsData(array $fieldsData)
+    /**
+     * Оставляет только те данные в $fieldsData, поля у которых имеют F::MODE_SUBMIT
+     * @param array $fieldsData
+     * @return array
+     */
+    final public function filterDataByModeSubmit(array $fieldsData): array
     {
-        $outData = [];
         foreach ($fieldsData as $fieldKey => $value) {
-            if ((strpos($fieldKey, 'CurrencyISO') !== false && !$this->hasField($fieldKey))
-                || ($this->hasField($fieldKey) && $this->getField($fieldKey)->hasMode(F::MODE_SUBMIT))
-            ) {
-                $outData[$fieldKey] = $value;
+            if (!$this->hasFieldModeSubmit($fieldKey)) {
+                unset($fieldsData[$fieldKey]);
             }
         }
 
-        return $outData;
+        return $fieldsData;
+    }
+
+    final public function hasFieldModeSubmit(string $fieldKey): bool
+    {
+        if (!$this->hasField($fieldKey)) {
+            // Это может быть поле с фуффикстом CurrencyISO, но нужно проверить по основному полю Amount
+            // например: TruckingBuyingRateCurrencyISO и TruckingBuyingRateAmount
+            if (strpos($fieldKey, 'CurrencyISO') !== false) {
+                // Это часть составного поля MoneyWithCurrency, тогда всё зависит от прав доступа на основное поле
+                $baseFieldKey = str_replace('CurrencyISO', '', $fieldKey);
+                if (!$this->hasField($baseFieldKey)) {
+                    $baseFieldKey .= 'Amount';
+                }
+                return $this->hasFieldModeSubmit($baseFieldKey);
+            }
+
+            // Если поля нет в fieldset, значит и доступа на сохранение (submit) нет
+            return false;
+        }
+
+        return $this->getField($fieldKey)->hasMode(F::MODE_SUBMIT);
+    }
+
+    /**
+     * Оставляет только те данные в $fieldsData, поля у которых имеют проходят проверку через editAccessFunction
+     * @param array $fieldsData
+     * @return array
+     */
+    final public function filterDataByEditAccessFunction(array $fieldsData): array
+    {
+        // Если вставляем ноую запись (id=0), то используем только что введённые пользователем данные в качестве $currentObjData
+        // Если рарботаем с обновлением уже существующей записи, то используем текущие данные объекта до обновления $this->getData()
+        $currentObjData = $this->getId() === 0 ? $fieldsData : $this->getData();
+
+        foreach ($fieldsData as $fieldKey => $value) {
+            if (!$this->checkFieldEditAccessFunction($fieldKey, $currentObjData)) {
+                unset($fieldsData[$fieldKey]);
+            }
+        }
+
+        return $fieldsData;
+    }
+
+    private function checkFieldEditAccessFunction(string $fieldKey, array $currentObjData): bool
+    {
+        if (!$this->hasField($fieldKey)) {
+            // Пример: TruckingBuyingRateAmount и TruckingBuyingRateCurrencyISO
+            if (strpos($fieldKey, 'CurrencyISO') !== false) {
+                // Это часть составного поля MoneyWithCurrency, тогда всё зависит от прав доступа на основное поле
+                $baseFieldKey = str_replace('CurrencyISO', '', $fieldKey);
+                if (!$this->hasField($baseFieldKey)) {
+                    $baseFieldKey .= 'Amount';
+                }
+                return $this->checkFieldEditAccessFunction($baseFieldKey, $currentObjData);
+            }
+
+            // Если поля нет в fieldset, значит editAccessFunction проверить не удастся
+            return false;
+        }
+
+        return $this->getField($fieldKey)->checkEditAccessFunction($currentObjData);
     }
 
     final public function __call($method, $args)

@@ -58,15 +58,15 @@ class FieldCheckbox extends FieldAbstract
 
     protected function ajaxify($value, array $data, $forTable, $outHtml)
     {
-        if (!$this->hasMode(self::MODE_EDIT)) {
-            return $outHtml;
-        }
-
         if ($this->groupconcat) {
             return $outHtml;
         }
 
         if (!isset($data['ID']) || !$data['ID']) {
+            return $outHtml;
+        }
+
+        if (!$this->hasMode(self::MODE_EDIT) || !$this->checkEditAccessFunction($data)) {
             return $outHtml;
         }
 

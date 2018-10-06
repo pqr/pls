@@ -142,17 +142,28 @@ export class Filters {
         if (this.table.isLoading()) {
             // Если в момент нажатия RESET уже происходила какая-то загрузка данных, то её нужно прервать,
             this.table.cancelReload();
-            this.afterStopFiltering();
         }
-
+        this.unblockFilterButton();
         this.reset();
         this.resetHandlers.forEach(handler => handler());
     };
 
+    private blockFilterButton() {
+        this.$form
+            .addClass("loading-opacity")
+            .find(".btn-filter")
+            .prop("disabled", true);
+    }
+
+    private unblockFilterButton() {
+        this.$form
+            .removeClass("loading-opacity")
+            .find(".btn-filter")
+            .prop("disabled", false);
+    }
+
     submit() {
-        const $form = this.$form;
-        $form.find(".btn-filter").prop("disabled", true);
-        $form.addClass("loading-opacity");
+        this.blockFilterButton();
         const reloadParams = {
             filterValues: JSON.stringify(buildObjFromMap(this.form.getFieldsValues())),
             page: 1
@@ -173,15 +184,8 @@ export class Filters {
                 this.refreshInvisibleClasses();
             }
 
-            this.afterStopFiltering();
+            this.unblockFilterButton();
         });
-    }
-
-    private afterStopFiltering() {
-        this.$form
-            .removeClass("loading-opacity")
-            .find(".btn-filter")
-            .prop("disabled", false);
     }
 
     private showWidget(clickTarget: HTMLElement): JQuery {
@@ -264,7 +268,15 @@ export class Filters {
 
         this.resetHandlers.forEach(handler => handler());
 
-        this.submit();
+        // Делаем задержку в сабмите формы, чтобы успели загрузиться selec2ajax опции
+        // это грязный хак - совсем не факт, что опции успеют загрузиться за 1 секунду
+        setTimeout(() => {
+            this.submit();
+        }, 1000);
+
+        // Кнопку фильтрации блокируем сразу, чтобы у пользователя сложилось впечатление, что загрузка уже идёт
+        // хотя на самом деле мы ждём 1 сек перед реальным submit()
+        this.blockFilterButton();
 
         this.hideWidget();
     };

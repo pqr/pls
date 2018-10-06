@@ -130,7 +130,7 @@ abstract class FieldOptionsAbstract extends FieldAbstract
         return $value ?: '';
     }
 
-    public function getEvaluatedOptions()
+    public function getEvaluatedOptions(): array
     {
         if ($this->evaluatedOptions === null) {
             $this->evaluatedOptions = [];

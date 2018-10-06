@@ -5,7 +5,6 @@ namespace Light;
 class Response
 {
     private static $pageTitle = '';
-    private static $additionalHtml = '';
     private static $masterTemplate = 'Master.tpl.php';
     private static $pageHeadHtml = '';
     private static $pageHeadRightHtml = '';

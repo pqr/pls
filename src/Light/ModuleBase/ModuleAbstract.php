@@ -7,6 +7,8 @@ use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldOptionsAbstract;
+use Light\Field\FieldSelect;
 use Light\Fieldset;
 use Light\FilesFolder;
 use Light\Img;
@@ -50,8 +52,6 @@ abstract class ModuleAbstract extends Table
     const STATE_LOG = 'log';
     const STATE_DELETE = 'delete';
     const STATE_SUBMIT = 'submit';
-    const STATE_INSERT = 'insert';
-    const STATE_UPDATE = 'update';
     const STATE_LIST_FUNC = 'list_func';
     const STATE_VIEW_ELFINDER = 'view_elfinder';
     const STATE_VIEW_FUNC = 'view_func';
@@ -130,21 +130,42 @@ abstract class ModuleAbstract extends Table
      */
     public function __invoke()
     {
+        if (isset($_GET['select2ajax'])
+            && (!isset($_GET['fromFilters']) || $_GET['fromFilters'] === $this->getTableName())) {
+            $this->proceedSelect2ajax();
+            return;
+        }
+
         if (isset($_GET['addnew'])) {
             $this->proceedAddNew();
-        } elseif (isset($_GET['id'])) {
-            $this->proceedView();
-        } elseif (isset($_GET['editid'])) {
-            $this->proceedEdit();
-        } elseif (isset($_GET['logid'])) {
-            $this->proceedLog();
-        } elseif (isset($_GET['submitid'])) {
-            $this->proceedSubmit();
-        } elseif (isset($_GET['delid'])) {
-            $this->proceedDelete();
-        } else {
-            $this->proceedList();
+            return;
         }
+
+        if (isset($_GET['id'])) {
+            $this->proceedView();
+            return;
+        }
+        if (isset($_GET['editid'])) {
+            $this->proceedEdit();
+            return;
+        }
+
+        if (isset($_GET['logid'])) {
+            $this->proceedLog();
+            return;
+        }
+
+        if (isset($_GET['submitid'])) {
+            $this->proceedSubmit();
+            return;
+        }
+
+        if (isset($_GET['delid'])) {
+            $this->proceedDelete();
+            return;
+        }
+
+        $this->proceedList();
     }
 
     protected function proceedAddNew()
@@ -444,7 +465,6 @@ abstract class ModuleAbstract extends Table
 
         }
 
-
         $contentHtml .= '</div>';
 
         return $contentHtml;
@@ -456,8 +476,9 @@ abstract class ModuleAbstract extends Table
      */
     protected function proceedView()
     {
+        $id = (int)$_GET['id'];
         // Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
-        $this->loadObjAndCheck($_GET['id']);
+        $this->loadObjAndCheck($id);
 
         // Проверим дополнительные GET параметры относящиеся к режиму просмотра
         if (isset($_GET['subtable'])) {
@@ -477,40 +498,32 @@ abstract class ModuleAbstract extends Table
 
     /**
      * Загружает данные в объект $this->_obj, проверяет права доступа к нему у текущего пользователя
+     * Если объект не найден или нет доступа, то перенаправляет на режим List
      * @param int $id
+     * @throws \Exception
      */
-    protected function loadObjAndCheck($id)
+    protected function loadObjAndCheck(int $id)
     {
-        //Проверим, что id числовой и больше 0
         $id = (int)$id;
-        if ($id <= 0) {
-            //Если id был не числовой (приведён к 0) или отрицательный - перенаправляем в режим List
-            $msg = Config::$lang === 'ru' ? "Не корректный ID=$id" : "Invalid ID=$id";
-            $this->loadObjAndCheckErrorReuslt(400, $msg);
-        }
-
-        //Проверим существование объекта в базе, попробовав его загрузить
         $this->_obj->setId($id);
+
+        $errMsg = null;
+
+        // Проверим существование объекта в базе, попробовав его загрузить
         if (!$this->_obj->loadData()) {
-            $msg = Config::$lang === 'ru' ? "Запись с ID=$id не найдена" : "Record with ID=$id not found";
-            $this->loadObjAndCheckErrorReuslt(404, $msg);
+
+            $errMsg = Config::$lang === 'ru' ? "Запись с ID=$id не найдена" : "Record with ID=$id not found";
+
+        } elseif (!$this->hasAccessRightToObj($this->_obj)) {
+
+            $errMsg = Config::$lang === 'ru' ? "Нет доступа к записи ID=$id" : "No access to record ID=$id";
+
         }
 
-        //Проверим, что у пользователя есть права доступа к этому объекту
-        if (!$this->hasAccessRightToObj($this->_obj)) {
-            $msg = Config::$lang === 'ru' ? "Нет доступа к записи ID=$id" : "No access to record ID=$id";
-            $this->loadObjAndCheckErrorReuslt(403, $msg);
-        }
-    }
-
-    private function loadObjAndCheckErrorReuslt($status, $text)
-    {
-        if (Request::isAjax()) {
-            Response::sendToast('error', $text);
-            Response::abort($status);
-        } else {
-            Session::flashError($text);
+        if ($errMsg) {
+            $this->flash->addError($errMsg);
             $this->redirectToList();
+            return;
         }
     }
 
@@ -540,14 +553,19 @@ abstract class ModuleAbstract extends Table
                 Response::abort(400, "Field not found");
             }
 
-            if (!$this->hasWriteAccessAjaxChnageField($field)) {
+            if (!$this->hasWriteAccessAjaxChangeField($field)) {
                 Response::abort(403, 'Edit not allowed');
             }
 
-            $subtableObj->proceedChangeField();
+            $oldData = [];
+            if (Request::isPost()) {
+                $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
+            }
+
+            $affectedRows = $subtableObj->proceedChangeField();
 
             if (Request::isPost()) {
-                $this->afterChangeFieldSubtable($fieldKey);
+                $this->afterSubmit($this->_obj, [], $affectedRows, $oldData, $this->flash, false);
             }
 
 
@@ -586,6 +604,9 @@ abstract class ModuleAbstract extends Table
         // sudo locale-gen ru_RU.UTF-8
         // sudo update-locale
         // sudo service php7.1-fpm restart
+
+        // Чтобы при скачивании архива имена файлов внутри архива были правильными, на сервере нужно установить zip
+        // apt install zip
 
         if ($_GET['elfinder'] === 'dialog') {
             $textFolder = Config::$lang === 'ru' ? 'Папка' : 'Folder';
@@ -806,13 +827,13 @@ abstract class ModuleAbstract extends Table
             $this->createFolder();
         }
 
-        $this->addModuleSessionNextPrevLinks($this->_obj, 'id');
+        $this->addModuleSessionNextPrevLinks($this->_obj->getId());
         $this->initViewSubmenu();
         $this->initViewIntro();
         $this->initViewFlash();
         $this->initPrintForms();
 
-        $this->getFieldset()->prefetchSelectOptionsView($this->_obj->getData());
+        $this->prefetchSelectOptionsView();
 
         $tdata = [
             'id' => $this->_obj->getId(),
@@ -824,6 +845,18 @@ abstract class ModuleAbstract extends Table
         Template::includeTpl('module/view.tpl.php', $tdata);
     }
 
+    protected function prefetchSelectOptionsView()
+    {
+        foreach ($this->getFieldset() as $field) {
+            if ($field instanceof FieldOptionsAbstract && $field->hasMode(F::MODE_VIEW)) {
+                $fieldKey = $field->key;
+                if (isset($this->_obj[$fieldKey])) {
+                    $value = $this->_obj[$fieldKey];
+                    $field->prefetchViewOptions([$value]);
+                }
+            }
+        }
+    }
 
     protected function getPageHeadHtml($stateText = '')
     {
@@ -1042,12 +1075,9 @@ abstract class ModuleAbstract extends Table
 
     protected function proceedEdit()
     {
-        if (isset($_GET['fromList'])) {
-            Metric::record('EditFromList', 0, $this->getModule());
-        }
-
+        $id = $_GET['editid'];
         //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
-        $this->loadObjAndCheck($_GET['editid']);
+        $this->loadObjAndCheck($id);
 
         $this->_state = self::STATE_EDIT;
 
@@ -1065,7 +1095,7 @@ abstract class ModuleAbstract extends Table
         Response::setPageTitle($headText);
 
         $this->initEditJsData();
-        $this->addModuleSessionNextPrevLinks($this->_obj, 'editid');
+        $this->addModuleSessionNextPrevLinks($this->_obj->getId(), 'editid');
         $this->initEditSubmenu();
         $this->initEdit();
 
@@ -1080,6 +1110,57 @@ abstract class ModuleAbstract extends Table
         ];
 
         Template::includeTpl('module/edit.tpl.php', $tdata);
+    }
+
+    protected function proceedSelect2ajax()
+    {
+        if (!Request::isAjax()) {
+            $this->redirectToList();
+            return;
+        }
+
+        if (isset($_GET['fromFilters'])) {
+            // Внутри proceedFilters есть обработка поля select2ajax
+            $this->proceedFilters();
+            return;
+        }
+
+        // Иначе ищем поле среди полей объекта или подтаблиц
+        $fieldKey = $_GET['select2ajax'];
+
+        // Это может быть multiple поле, в этом случае fieldKey на конце содержит '[]'
+        $fieldKey = str_replace('[]', '', $fieldKey);
+
+        $field = $this->getField($fieldKey);
+
+        if (!$field) {
+            // Если поле не найдено среди полей объекта, возможно это поле в подтаблице?
+            preg_match_all('/(\w+)\[(\d+)\]\[(\w+)\]/', $fieldKey, $mathes);
+            if (count($mathes) === 4) {
+                $subtableName = rtrim($mathes[1][0] ?? '', 'Subtable');
+                if ($this->hasSubtable($subtableName)) {
+                    $subtable = $this->getSubtableObject($this->_obj, $subtableName);
+
+                    $fieldKey = $mathes[3][0] ?? '';
+                    $field = $subtable->getFieldset()->getField($fieldKey);
+                }
+            }
+        }
+
+
+        if (!$field) {
+            Response::abort(400, "Unknown field $fieldKey");
+            return;
+        }
+
+        if ($field->getType() !== F::TYPE_SELECT) {
+            Response::abort(400, "Field is not Select ($fieldKey)");
+            return;
+        }
+
+        /** @var FieldSelect $field */
+        $field->proceedSelect2ajax();
+        return;
     }
 
     /**
@@ -1126,8 +1207,10 @@ abstract class ModuleAbstract extends Table
     {
         $this->_state = self::STATE_LOG;
 
+        $id = (int)$_GET['logid'];
+
         //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
-        $this->loadObjAndCheck($_GET['logid']);
+        $this->loadObjAndCheck($id);
 
         if (!$this->allowLog || !User::hasLogInPlaceAccess() || !$this->hasLogAccessRightToObj($this->_obj)) {
             Session::flashError('No access to log');
@@ -1153,8 +1236,8 @@ abstract class ModuleAbstract extends Table
             Response::setPageHeadHtml($headText);
             Response::setPageTitle($headText);
 
-            Response::addJsData(['state' => 'log', 'id' => $this->_obj->getId()]);
-            $this->addModuleSessionNextPrevLinks($this->_obj, 'logid');
+            Response::addJsData(['state' => 'log', 'id' => $id]);
+            $this->addModuleSessionNextPrevLinks($id, 'logid');
 
             $tdata = [
                 'table' => $logTable->getHtmlTable(),
@@ -1180,35 +1263,36 @@ abstract class ModuleAbstract extends Table
                 $urlParams = ['id' => $id];
             }
             Response::redirect($this->getModule(), $urlParams);
-        }
-
-        if ($id < 0 || ($_GET['submitid'] !== '' && !is_numeric($_GET['submitid']))) {
-            //Если id был не числовой (приведён к 0) или отрицательный - перенаправляем в режим List
-            $this->riseSaveErorr('Invalid object id');
-            $this->abortInsertUpdate(400);
+            return;
         }
 
         // Проверим, есть ли права на запись в этот модуль?
         if (!$this->allowEdit || !User::hasWriteAccess()) {
             $this->riseSaveErorr('No access to edit');
-            $this->abortInsertUpdate(403);
+            $this->abortSubmit(403);
+            return;
         }
 
-        // Проверим можно ли вообще добавлять новые элементы, если это режим добавления?
         if ($id === 0) {
+
+            // Проверим можно ли вообще добавлять новые элементы, если это режим добавления?
             if (!$this->allowAdd) {
                 $this->riseSaveErorr('Add new records not allowed');
-                $this->abortInsertUpdate(403);
+                $this->abortSubmit(403);
+                return;
             }
+
         } else {
+
             //Это режим редактирования - проверим, существует ли этот объект?
             //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
             $this->loadObjAndCheck($id);
 
             //Проверим права доступа к редактированию именно этого объекта
             if (!$this->hasWriteAccessRightToObj($this->_obj)) {
-                $this->riseSaveErorr('No access to edit');
-                $this->abortInsertUpdate(403);
+                $this->riseSaveErorr("No access to edit record with ID=$id");
+                $this->abortSubmit(403);
+                return;
             }
         }
 
@@ -1217,28 +1301,53 @@ abstract class ModuleAbstract extends Table
         $dataFromPost = $this->getDataFromPost();
         $this->validateUnique($dataFromPost);
         $this->validateMandatory($dataFromPost);
-        $this->validateMandatorySubtables();
+        $this->validateMandatorySubtables($dataFromPost);
         $this->afterValidation($dataFromPost, $this->_saveErrors);
 
         if ($this->hasCriticalErrors()) {
-            $this->abortInsertUpdate(400);
+            $this->abortSubmit(400);
+            return;
         }
 
-        //Были ли другие ошибки? Если были, нажал ли пользователь кнопку Save Anyway?
+        // Были ли другие ошибки? Если были, нажал ли пользователь кнопку Save Anyway?
         if (!isset($_REQUEST['saveanyway']) && count($this->_saveErrors) > 0) {
-            $this->abortInsertUpdate(400);
+            $this->abortSubmit(400);
+            return;
         }
 
         $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
 
+        // Оставим только те поля, у которых есть F::MODE_SUBMIT
+        $fieldsData = $this->_obj->filterDataByModeSubmit($dataFromPost);
+
+        // Проверим по оставшимся полям функцию editAccessFunction
+        $fieldsData = $this->_obj->filterDataByEditAccessFunction($fieldsData);
+
+
         Db::begin();
 
-        $affectedRows = $this->proceedInsertUpdateObj($dataFromPost);
+        if ($this->_obj->getId() === 0) {
+            $this->_obj->insertDb($fieldsData);
+            $this->_justInserted = true;
+            $affectedRows = 1;
+        } else {
+            $affectedRows = $this->_obj->updateDb($fieldsData);
+        }
+
+        $subtablesAffectedRows = $this->proceedSubmitSubtables();
+        if ($subtablesAffectedRows) {
+            // Если в подтаблицах что-то поменялось, заново загрузим основной объект, т.к. в нём могут быть
+            // вычисляемые или кешируюище поля зависящие от подтаблиц, это может быть важно
+            $this->_obj->loadData();
+        }
+
+        $affectedRows += $subtablesAffectedRows;
 
         if ($this->folders) {
             $this->createFolder();
         }
 
+        $afterSubmitTimer = new Timer();
         if ($this->_justInserted) {
             $this->afterInsert($this->_obj, $dataFromPost);
         } else {
@@ -1249,12 +1358,10 @@ abstract class ModuleAbstract extends Table
 
         Db::commit();
 
+        Metric::newrelicMetric(Request::getModule() . '/afterSubmit', $afterSubmitTimer->getMs());
+
         $textSaved = Config::$lang === 'ru' ? 'сохранён' : 'saved';
         $msg = "<strong>{$this->_obj}</strong> $textSaved";
-        if ($timer->get() > 3) {
-            $msg .= ' (' . $timer->getHtml() . ')';
-        }
-
         $this->flash->addSuccess($msg);
 
         Metric::newrelicMetric(Request::getModule() . '/save', $timer->getMs());
@@ -1307,17 +1414,15 @@ abstract class ModuleAbstract extends Table
     {
         $subtablesToLoad = [];
         foreach ($this->_subtables as $subtableName => $subtableParams) {
-            if (!$subtableParams['readonly']) {
-                $subtable = $this->getSubtableObject($obj, $subtableName);
-                if ($subtable instanceof Subtable) {
-                    $subtablesToLoad[] = $subtable;
-                }
+            $subtable = $this->getSubtableObject($obj, $subtableName);
+            if ($subtable instanceof Subtable) {
+                $subtablesToLoad[] = $subtable;
             }
         }
         return $obj->getDataWithSubtables(...$subtablesToLoad);
     }
 
-    private function abortInsertUpdate($code)
+    private function abortSubmit(int $code)
     {
         Response::abort($code, json_encode($this->_saveErrors));
     }
@@ -1419,14 +1524,13 @@ abstract class ModuleAbstract extends Table
     protected function validateMandatory(array $dataFromPost)
     {
         // Проверим заполненность полей, помеченных как editMandatory
-        $errors = $this->getFieldset()->validateMandatory($dataFromPost);
+        $errors = $this->getFieldset()->validateMandatory($dataFromPost, $this->_obj->getData());
         foreach ($errors as $error) {
             $this->riseSaveErorr($error['msg'], $error['fieldKey']);
         }
-
     }
 
-    protected function validateMandatorySubtables()
+    protected function validateMandatorySubtables(array $dataFromPost)
     {
         // Далее проверим заполненность полей внутри подтаблиц
         if (!$this->_subtables) {
@@ -1440,14 +1544,14 @@ abstract class ModuleAbstract extends Table
                 continue;
             }
 
-            $subtableObj = $this->getSubtableObject($this->_obj, $subtableName);
-            foreach ($subtableObj->getNotDeletedDataFromReqeust() as ['fieldsData' => $rowData, 'rowNum' => $rowNum]) {
-                $errors = $subtableObj->getFieldset()->validateMandatory($rowData);
+            $subtable = $this->getSubtableObject($this->_obj, $subtableName);
+            foreach ($subtable->getNotDeletedDataFromReqeust() as ['fieldsData' => $rowData, 'rowNum' => $rowNum]) {
+                $errors = $subtable->getFieldset()->validateMandatory($rowData);
                 if (!$errors) {
                     continue;
                 }
 
-                $lineObj = clone $subtableObj->getObj();
+                $lineObj = clone $subtable->getObj();
                 foreach ($errors as $error) {
                     $fieldKey = 'StatusSubtable[' . $rowNum . '][' . $error['fieldKey'] . ']';
                     $msg = $error['msg'];
@@ -1489,49 +1593,6 @@ abstract class ModuleAbstract extends Table
         return false;
     }
 
-    protected function proceedInsertUpdateObj(array $dataFromPost)
-    {
-        if ($this->_obj->getId() === 0) {
-            $this->proceedInsertObj($dataFromPost);
-            $this->_justInserted = true;
-            $affectedRows = 1;
-        } else {
-            $affectedRows = $this->proceedUpdateObj($dataFromPost);
-        }
-
-        $affectedRows += $this->proceedSubmitSubtables();
-
-        return $affectedRows;
-    }
-
-    /**
-     * Если нужно добавть какую-то дополнительную логику сохранения, следует переопределять метод afterSubmit(array $dataFromPost)
-     * В нём можно проверить флаг $this->_justInserted, чтобы определить вставку или обнвление
-     * @param array $dataFromPost
-     * @throws \Exception
-     */
-    private function proceedInsertObj(array $dataFromPost)
-    {
-        $this->_state = self::STATE_INSERT;
-
-        $dataFromPost = $this->_obj->getOnlySubmitFieldsData($dataFromPost);
-        $this->_obj->insertDb($dataFromPost);
-    }
-
-    /**
-     * Если нужно добавть какую-то дополнительную логику сохранения, следует переопределять метод afterSubmit(array $dataFromPost)
-     * В нём можно проверить флаг $this->_justInserted, чтобы определить вставку или обнвление
-     * @param array $dataFromPost
-     * @return int $affectedRows
-     * @throws \Exception
-     */
-    private function proceedUpdateObj(array $dataFromPost)
-    {
-        $this->_state = self::STATE_UPDATE;
-        $dataFromPost = $this->_obj->getOnlySubmitFieldsData($dataFromPost);
-        return $this->_obj->updateDb($dataFromPost);
-    }
-
     protected function proceedSubmitSubtables()
     {
         $affectedRows = 0;
@@ -1539,8 +1600,8 @@ abstract class ModuleAbstract extends Table
             //Перебираем все подтаблицы и вызываем метод getDataFromRequest у каждой из них
             foreach ($this->_subtables as $subtableName => $subtableParams) {
                 if (!$subtableParams['readonly']) {
-                    $subtableObj = $this->getSubtableObject($this->_obj, $subtableName);
-                    $affectedRows += $subtableObj->proceedSubmit($this->flash);
+                    $subtable = $this->getSubtableObject($this->_obj, $subtableName);
+                    $affectedRows += $subtable->proceedSubmit($this->flash);
                 }
             }
         }
@@ -1622,8 +1683,10 @@ abstract class ModuleAbstract extends Table
     {
         $this->_state = self::STATE_DELETE;
 
+        $id = (int)$_GET['delid'];
+
         //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
-        $this->loadObjAndCheck($_GET['delid']);
+        $this->loadObjAndCheck($id);
 
         if (!$this->allowDelete || !User::hasDeleteAccess() || !$this->hasDeleteAccessRightToObj($this->_obj)) {
             Response::abort(403, 'Delete not allowed');
@@ -2017,6 +2080,7 @@ abstract class ModuleAbstract extends Table
         }
 
         $this->proceedFilters();
+
         if (isset($_POST['filterValues']) && !Request::isAjax()) {
             // Пы попали на эту страницу каким-то POST запросом устанавилвающим значения фильтров
             // Чтобы при нажатии кнопки "Назад" в браузере не было смущающего сообщения, сделаем
@@ -2027,6 +2091,7 @@ abstract class ModuleAbstract extends Table
 
         // Правильно определим переменную _state
         $this->_state = self::STATE_LIST;
+
         if (Request::isXls()) {
             if (!$this->allowExportToExcel) {
                 // Если в параметрах url передан xls=1, но при этом экспорт в Excel запрещён, то просто делаем редирект
@@ -2377,6 +2442,11 @@ abstract class ModuleAbstract extends Table
         $this->_subtables[$subtableName] = [
             'readonly' => true
         ];
+    }
+
+    protected function hasSubtable(string $subtableName): bool
+    {
+        return isset($this->_subtables[$subtableName]);
     }
 
     /**
@@ -2742,12 +2812,12 @@ abstract class ModuleAbstract extends Table
         return $outHtml;
     }
 
-    protected function hasWriteAccessAjaxChnageField(FieldAbstract $field): bool
+    protected function hasWriteAccessAjaxChangeField(FieldAbstract $field): bool
     {
         return $this->allowEdit
             && User::hasWriteAccess()
             && $this->hasWriteAccessRightToObj($this->_obj)
-            && $field->hasMode(F::MODE_SUBMIT);
+            && $this->_obj->hasFieldModeSubmit($field->key);
     }
 
     /**
@@ -2767,7 +2837,7 @@ abstract class ModuleAbstract extends Table
             Response::abort(400, "Field not found");
         }
 
-        if (!$this->hasWriteAccessAjaxChnageField($field)) {
+        if (!$this->hasWriteAccessAjaxChangeField($field)) {
             Response::abort(403, 'Edit not allowed');
         }
 
@@ -2795,7 +2865,7 @@ abstract class ModuleAbstract extends Table
             Response::abort(400, "Field not found");
         }
 
-        if (!$this->hasWriteAccessAjaxChnageField($field)) {
+        if (!$this->hasWriteAccessAjaxChangeField($field)) {
             Response::abort(403, 'Edit not allowed');
         }
 
@@ -2812,10 +2882,11 @@ abstract class ModuleAbstract extends Table
 
         Db::begin();
 
-        $this->_obj->updateDb([$fieldKey => $normilizedValue], 'Ajax');
+        $updateData = [$fieldKey => $normilizedValue];
+        $affectedRows = $this->_obj->updateDb($updateData, 'Ajax');
 
         // Вызовем дополнительный обработчик, который, возможно, переопределён в классах потомках
-        $this->afterChangeField($fieldKey, $oldData);
+        $this->afterSubmit($this->_obj, $updateData, $affectedRows, $oldData, $this->flash, false);
 
         Db::commit();
 
@@ -2827,21 +2898,6 @@ abstract class ModuleAbstract extends Table
         // отправим их в виде Toast блоков
         Session::$showAsToast = true;
         ApplicationAbstract::terminate();
-    }
-
-    /**
-     * @param string $fieldKey
-     * @param array $oldData
-     */
-    protected function afterChangeField($fieldKey, array $oldData)
-    {
-    }
-
-    /**
-     * @param string $fieldKey
-     */
-    protected function afterChangeFieldSubtable(string $fieldKey)
-    {
     }
 
     /**
@@ -2875,7 +2931,7 @@ abstract class ModuleAbstract extends Table
      */
     protected function hasDeleteAccessRightToObj(ObjAbstract $obj)
     {
-        return true;
+        return $this->hasWriteAccessRightToObj($obj);
     }
 
     /**

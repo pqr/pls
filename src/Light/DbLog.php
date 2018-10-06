@@ -133,11 +133,18 @@ class DbLog
 
         Db::commit();
 
-        if ($timer->get() > 1) {
-            Metric::record('DbLog:flush >1s', $timer->get() * 1000, count(self::$_buffer));
-        }
+        $worktimeMs = $timer->getMs();
 
-        Metric::newrelicEvent('DbLog:Submit', ['DbLogRecords' => count(self::$_buffer)]);
+        Metric::newrelicMetric('DbLog::flush', $worktimeMs);
+
+        Metric::newrelicEvent('DbLog::flush', [
+                'DbLogRecords' => count(self::$_buffer),
+                'WorkTime' => $worktimeMs,
+                'UserID' => User::getId(),
+                'User' => User::getName(),
+                'Module' => Request::getModule(),
+            ]
+        );
 
         // На всякий случай очистим буфер
         self::$_buffer = [];

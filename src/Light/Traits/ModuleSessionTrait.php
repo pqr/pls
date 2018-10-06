@@ -85,43 +85,37 @@ trait ModuleSessionTrait
     }
 
     /**
-     * @param ObjAbstract $obj
+     * @param int $currentId
      * @param string $idUrlParam
      * @param array $additionalUrlParams дополнительные параметры для ссылок next/prev - нужно в Autolaunch log и Import log
      */
     final protected function addModuleSessionNextPrevLinks(
-        ObjAbstract $obj,
-        $idUrlParam,
+        int $currentId,
+        $idUrlParam = 'id',
         array $additionalUrlParams = []
     ) {
         $this->lazyInitModuleSessionFromRequest();
         if ($this->moduleSessionId) {
             //Попробуем найти текущий объект в массиве ID текущей сесии
-            $currentIndex = array_search($obj->getId(), $this->moduleSessionObjectsIds);
+            $currentIndex = array_search($currentId, $this->moduleSessionObjectsIds);
             if ($currentIndex !== false) {
                 //текущий объхект нашелся в массиве $this->_moduleSessionObjectsIds, попробуем найти следующий и предыдущий
                 $linksHtml = '';
-                $linkParams = $this->getModuleSessionNextPrevLink(
+                $prevUrl = $this->getModuleSessionNextPrevLink(
                     $currentIndex - 1,
-                    $obj,
                     $idUrlParam,
                     $additionalUrlParams
                 );
-                if ($linkParams) {
-                    $linksHtml .= '<a class="prev-link waves-effect btn-floating btn-small" title="' .
-                        htmlspecialchars($linkParams['title']) .
-                        ' (← Ctrl)" href="' . $linkParams['url'] . '">←</a>';
+                if ($prevUrl) {
+                    $linksHtml .= '<a class="prev-link waves-effect btn-floating btn-small" title="← Ctrl" href="' . $prevUrl . '">←</a>';
                 }
-                $linkParams = $this->getModuleSessionNextPrevLink(
+                $nextUrl = $this->getModuleSessionNextPrevLink(
                     $currentIndex + 1,
-                    $obj,
                     $idUrlParam,
                     $additionalUrlParams
                 );
-                if ($linkParams) {
-                    $linksHtml .= '<a class="next-link waves-effect btn-floating btn-small" title="' .
-                        htmlspecialchars($linkParams['title']) .
-                        ' (Ctrl →)" href="' . $linkParams['url'] . '">→</a>';
+                if ($nextUrl) {
+                    $linksHtml .= '<a class="next-link waves-effect btn-floating btn-small" title="Ctrl →" href="' . $nextUrl . '">→</a>';
                 }
 
                 Response::setPageHeadRightHtml($linksHtml);
@@ -131,42 +125,24 @@ trait ModuleSessionTrait
 
     /**
      * @param int $index текущая позиция в массиве $this->_moduleSessionObjectsIds
-     * @param ObjAbstract $obj текущий обхъект, который будет склонирован, получен следующий и предыдущий, чтобы вывести описание в title
      * @param string $idUrlParam имя url параметра в который нужно положить ID следущего и предыдущего объекта
      * @param array $additionalUrlParams
-     * @return array
+     * @return string
      */
     private function getModuleSessionNextPrevLink(
         $index,
-        ObjAbstract $obj,
         string $idUrlParam,
         array $additionalUrlParams
-    ) {
-        $newObj = null;
-
+    ): string {
         if (isset($this->moduleSessionObjectsIds[$index])) {
 
-            $objId = $this->moduleSessionObjectsIds[$index];
-            //Попробуем загрузить объект
-            $newObj = clone $obj;
-            $newObj->setId($objId);
-            if (!$newObj->loadDataForDescription()) {
-                //Загурзить не удалось, обнуляем переменную объекта
-                $newObj = null;
-            }
-        }
-
-        $out = false;
-        if ($newObj) {
-            $title = $newObj->getDescriptionHtml();
-            $params = [$idUrlParam => $newObj->getId()] + $additionalUrlParams + $this->getModuleSessionUrlParams();
-            $url = Link::create(Request::getModule())
-                ->params($params)
+            $id = $this->moduleSessionObjectsIds[$index];
+            return Link::create(Request::getModule())
+                ->params([$idUrlParam => $id] + $additionalUrlParams + $this->getModuleSessionUrlParams())
                 ->getHref();
-            $out = ['url' => $url, 'title' => $title];
         }
 
-        return $out;
+        return '';
     }
 
 }

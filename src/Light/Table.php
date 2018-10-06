@@ -6,6 +6,7 @@ use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldFloat;
 use Light\Field\FieldMoneyWithCurrency;
+use Light\Field\FieldOptionsAbstract;
 use Light\Table\TableUserParamsRepository;
 use Light\Traits\FieldsetAwareTrait;
 
@@ -181,6 +182,8 @@ class Table implements \JsonSerializable
             //Пробежимся по списку, проверим реальность этих полей, занесём правильные поля в $this->FieldsShow
             $this->tableFieldsShow = explode('|', $fieldsKeysString);
         }
+
+        $this->fieldsetShowedCache = null;
     }
 
     public function getTableFieldsShow()
@@ -188,20 +191,24 @@ class Table implements \JsonSerializable
         return $this->tableFieldsShow;
     }
 
+    private $fieldsetShowedCache;
+
     /**
      * Возвращает филдсет с полями, которые реально отображаются
      * @return Fieldset
      */
     public function getFieldsetShowed()
     {
-        /** @var $outFieldset Fieldset */
-        $outFieldset = $this->getFieldset()->filterByMode(F::MODE_LIST);
-        //Если _fieldsShow установлен в null - это сигнал к тому, что нужно выводить все поля!
-        if ($this->tableFieldsShow !== null) {
-            $outFieldset = $outFieldset->filterByKeys($this->tableFieldsShow);
+        if ($this->fieldsetShowedCache === null) {
+            /** @var $outFieldset Fieldset */
+            $this->fieldsetShowedCache = $this->getFieldset()->filterByMode(F::MODE_LIST);
+            // Если _fieldsShow установлен в null - это сигнал к тому, что нужно выводить все поля!
+            if ($this->tableFieldsShow !== null) {
+                $this->fieldsetShowedCache = $this->fieldsetShowedCache->filterByKeys($this->tableFieldsShow);
+            }
         }
 
-        return $outFieldset;
+        return $this->fieldsetShowedCache;
     }
 
     protected function addCheckboxCol($class = 'cb')
@@ -230,28 +237,9 @@ class Table implements \JsonSerializable
      * @param string $fieldKey
      * @return bool
      */
-    public function isFieldShowed($fieldKey)
+    public function isFieldShowed(string $fieldKey): bool
     {
-        $field = $this->getField($fieldKey);
-        if (!$field) {
-            //Такого поля вообще нет
-            return false;
-        }
-
-        if (!$field->hasMode(F::MODE_LIST)) {
-            //Это поле не предназначено для отображения в режиме таблицы, оно не может быть отображемым в таблице
-            return false;
-        }
-
-        /** @noinspection IfReturnReturnSimplificationInspection */
-        if ($this->tableFieldsShow !== null && !in_array($fieldKey, $this->tableFieldsShow)) {
-            //Если задан конкретный массив поле для отображения, но при этом требуемого нам поля нет в этом массиве
-            //значит поле не отображатеся в режиме таблицы
-            return false;
-        }
-
-        //Прошли все проверки
-        return true;
+        return $this->getFieldsetShowed()->hasField($fieldKey);
     }
 
     public function setTableData(array $data)
@@ -331,14 +319,7 @@ class Table implements \JsonSerializable
             }
         }
 
-        $fieldset = $this->getFieldset();
-        $shownFieldKeys = $this->getTableFieldsShow() ?? $fieldset->getKeys();
-        foreach ($shownFieldKeys as $fieldKey) {
-            $field = $fieldset[$fieldKey];
-            if ($field && $field->modes & F::MODE_LIST) {
-                $allFields[] = $field;
-            }
-        }
+        $allFields = array_merge($allFields, $this->getFieldsetShowed()->getFieldsArr());
 
         if ($this->fieldsetLast) {
             foreach ($this->fieldsetLast as $field) {
@@ -356,8 +337,8 @@ class Table implements \JsonSerializable
             return $this->_tableMsgIfEmpty ?? (Config::$lang === 'ru' ? 'Нет данных' : 'No data available');
         }
 
-        $this->getFieldset()->prefetchSelectOptionsViewTableData($this->_tableData);
         $allFields = $this->getAllFields();
+        $this->prefetchViewOptions($allFields);
 
         //Сначала блок <p>...</p> над таблицей с различными ссылками: пажинация, экспорт в Excel и т.п.
         $htmlHeadBlock = $printHeadBlock ? $this->getHtmlTableHeadBlock() : '';
@@ -389,6 +370,19 @@ class Table implements \JsonSerializable
         }
 
         return $outHtml;
+    }
+
+    protected function prefetchViewOptions(array $allFields)
+    {
+        foreach ($allFields as $field) {
+            if ($field instanceof FieldOptionsAbstract) {
+                $fieldKey = $field->key;
+                $columnValues = array_column($this->_tableData, $fieldKey);
+                if ($columnValues) {
+                    $field->prefetchViewOptions($columnValues);
+                }
+            }
+        }
     }
 
     protected function getHtmlTableTotalRecordsFound()
@@ -726,6 +720,13 @@ class Table implements \JsonSerializable
     {
         // Начальное значение для строки total
         $dataTotal = $this->tableTotal ?: [];
+
+        // Уберём из $dataCalculated строки, отмеченные флагом IsSeparator или IsTotal, чтобы не задваивались данные
+        foreach($dataCalculated as $i => $rowDataCalculated) {
+            if (isset($rowDataCalculated['IsSeparator']) || isset($rowDataCalculated['IsTotal'])) {
+                unset($dataCalculated[$i]);
+            }
+        }
 
         if (!$dataCalculated) {
             // Нет подсчитанных данных на основе строк таблицы (таблица пуста?)

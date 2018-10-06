@@ -41,7 +41,6 @@ class FieldSelect2Multiple extends FieldSelect
         return parent::getHtmlInputInner($value, $data, $idPrefix);
     }
 
-
     protected function getHtmlInputTplData($value, array $data, $idPrefix)
     {
         $tdata = parent::getHtmlInputTplData($value, $data, $idPrefix);
@@ -64,7 +63,7 @@ class FieldSelect2Multiple extends FieldSelect
             return $value;
         }
 
-        //Хитрость в select2 - если ничего не пришло из javascript, значит ничего не было выбрано (пустой вариант)
+        // Хитрость в select2 - если ничего не пришло из javascript, значит ничего не было выбрано (пустой вариант)
         return '';
     }
 

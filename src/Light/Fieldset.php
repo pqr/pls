@@ -248,14 +248,15 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     /**
      * Возвращает Fieldset из полей, у которых параметр 'modes' удовлетворяет переданному
      * Поля при этом не клонинуются, используются ссылки на поля текущего Fieldset
-     * @param int $modes битовая маска FieldAbstract::MODE_* - будут возвращены поля с удовлетворяющим параметром Modes
+     * @param int $testMode битовая маска FieldAbstract::MODE_* - будут возвращены поля с удовлетворяющим параметром Modes
+     * @param array $data
      * @return Fieldset|F[]
      */
-    public function filterByMode($modes)
+    public function filterByMode(int $testMode, array $data = [])
     {
         $outFieldset = new self();
         foreach ($this->_fields as $field) {
-            if ($field->hasMode($modes)) {
+            if ($field->hasMode($testMode, $data)) {
                 $outFieldset->addField($field);
             }
         }
@@ -567,12 +568,20 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
         return '(' . implode(' AND ', $sqlWhere) . ')';
     }
 
-    public function validateMandatory(array $dataFromRequest)
+    public function validateMandatory(array $dataFromRequest, array $currentObjData = [])
     {
         $errors = [];
-        //Проверим заполненность остальных полей, помеченных как editMandatory
+        // Проверим заполненность остальных полей, помеченных как editMandatory
         foreach ($this->_fields as $field) {
-            if (!$field->editMandatory || !($field->modes & F::MODE_SUBMIT)) {
+            if (!$field->editMandatory) {
+                continue;
+            }
+
+            if (!$field->hasMode(F::MODE_SUBMIT)) {
+                continue;
+            }
+
+            if (!$field->checkEditAccessFunction($currentObjData ?: $dataFromRequest)) {
                 continue;
             }
 
@@ -626,31 +635,5 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     public function jsonSerialize()
     {
         return $this->_fields;
-    }
-
-    public function prefetchSelectOptionsView(array $data)
-    {
-        foreach ($this->_fields as $field) {
-            if ($field->hasMode(F::MODE_VIEW) && $field instanceof FieldOptionsAbstract) {
-                $fieldKey = $field->key;
-                if (isset($data[$fieldKey])) {
-                    $value = $data[$fieldKey];
-                    $field->prefetchViewOptions([$value]);
-                }
-            }
-        }
-    }
-
-    public function prefetchSelectOptionsViewTableData(array $tableData)
-    {
-        foreach ($this->_fields as $field) {
-            if ($field->hasMode(F::MODE_VIEW) && $field instanceof FieldOptionsAbstract) {
-                $fieldKey = $field->key;
-                $columnValues = array_column($tableData, $fieldKey);
-                if ($columnValues) {
-                    $field->prefetchViewOptions($columnValues);
-                }
-            }
-        }
     }
 }

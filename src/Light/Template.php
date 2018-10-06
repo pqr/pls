@@ -230,7 +230,7 @@ class Template
         $mode = static::$tdata['_mode'];
         $data = static::$tdata['_data'] ?? [];
         $value = $data[$fieldKey] ?? null;
-        if ($mode === F::MODE_EDIT && $field->hasMode(F::MODE_EDIT)) {
+        if ($mode === F::MODE_EDIT && $field->hasMode(F::MODE_EDIT) && $field->checkEditAccessFunction($data)) {
             // Преобразуем поле в элемент ввода
             $html = $field->getHtmlInput($value, $data) . ' ' . $field->uom;
         } else {
@@ -409,7 +409,12 @@ class Template
             // может и не быть или они могут быть скрыты в форме Multiple Update
             $field = F::createSelect($field->key, $field->initialParams);
         }
-        $html = $field->getHtmlInput($field->default) . ' ' . $field->uom;
+        if ($field->getType() === F::TYPE_SELECT) {
+            //В форме Multiple Update превращаем поля SelectChild в обычные Select, т.к. родительских Select элементов
+            // может и не быть или они могут быть скрыты в форме Multiple Update
+            $field->setParentFieldKeys('');
+        }
+        $html = $field->getHtmlInput($field->default, [], 'mu') . ' ' . $field->uom;
         $html = '<div class="mufield display-none">' . $html . '</div>';
 
         return static::control($title, $label, $html);

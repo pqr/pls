@@ -216,7 +216,7 @@ abstract class Subtable2
                     //Ко всем кеширующим полям в отображаемые имена добавим префикс, чтобы пользователю на экране было понятно, что эти данные из подтбалицы
                     $newField->addNamePrefix($this->_cacheFieldsPrefix);
                     //Кеширующие поля выводятся только в режиме таблицы
-                    $newField->modes = F::MODE_LIST;
+                    $newField->setModes(F::MODE_LIST);
                     //Обязательно нужно наложить параметр groupconcat
                     $newField->groupconcat = true;
                     $newField->groupconcatTruncate = true;
@@ -581,8 +581,11 @@ abstract class Subtable2
             $fieldsData = $rowData['fieldsData'];
             $rowNum = $rowData['rowNum'];
 
-            //Оставим в fieldsData только те поля, которые имеют MODE_SUBMIT, причём в самом объекте!
-            $fieldsData = $this->_obj->getOnlySubmitFieldsData($fieldsData);
+            // Оставим в fieldsData только те поля, которые имеют MODE_SUBMIT
+            $fieldsData = $this->_obj->filterDataByModeSubmit($fieldsData);
+
+            // Оставим только те поля, по которым проходит проверку editAccessFunction
+            $fieldsData = $this->_obj->filterDataByEditAccessFunction($fieldsData);
 
             //Проверим $id и существование объекта в базе
             if ($id != 0) {
@@ -819,11 +822,11 @@ abstract class Subtable2
             Response::abort(404, 'Subtable object not found (id = ' . $sudid . ')');
         }
 
+        $data = $this->_obj->getData();
         if (Request::isGet()) {
 
             // Это GET запрос на получение поля ввода (input или textarea)
             $value = $this->_obj[$fieldKey];
-            $data = $this->_obj->getData();
             // Выводим в ajax ответ HTML код для поля ввода
             print $this->_obj->getField($fieldKey)->getHtmlInput($value, $data);
             ApplicationAbstract::terminate();

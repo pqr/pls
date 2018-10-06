@@ -1,4 +1,5 @@
 import * as _ from "lodash";
+import { initSelect2 } from "./Select2";
 
 declare var window: any;
 
@@ -158,81 +159,6 @@ function initSelectChild($root: JQuery) {
         // В самом начале после загрузки страницы переинициализируем дочерний список на основе значения родитея
         onParentChange(true);
     });
-}
-
-function escapeHtml(text: string) {
-    const map: { [key: string]: string } = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-    };
-
-    return text.replace(/[&<>"']/g, function(m) {
-        return map[m];
-    });
-}
-
-function formatResultSelect2(option: any) {
-    if (option.loading) {
-        return;
-    }
-
-    const originalOption = $(option.element);
-
-    let icon = originalOption.data("icon");
-    const cssClass = originalOption.attr("class");
-    if (!icon && !cssClass) {
-        return option.text;
-    }
-
-    const title = option.title;
-    const text = option.text;
-
-    let out = "";
-
-    if (title || cssClass) {
-        out = '<span class="' + cssClass;
-        if (title !== "") {
-            out += ' toggle-tooltip" title="' + escapeHtml(title) + '"';
-        } else {
-            out += '"';
-        }
-        out += ">";
-    }
-
-    if (icon !== undefined) {
-        if (icon.indexOf("fa-") !== 0) {
-            icon = "fa-" + icon;
-        }
-        out += '<i class="fa ' + icon + '"></i> ';
-    }
-
-    out += escapeHtml(text);
-
-    if (title || cssClass) {
-        out += "</span>";
-    }
-
-    return $(out);
-}
-
-export function initSelect2($root: JQuery) {
-    if (jQuery().select2) {
-        $root.find("select.select-select2").select2({
-            width: 'resolve',
-            templateResult: formatResultSelect2,
-            templateSelection: formatResultSelect2
-        });
-        $root.find("select.select-select2multiple").select2({
-            width: 'resolve',
-            templateResult: formatResultSelect2,
-            templateSelection: formatResultSelect2,
-            placeholder: "",
-            allowClear: true
-        });
-    }
 }
 
 let sortablejsLoaded = false;
@@ -1147,13 +1073,22 @@ export function getFieldNode($root: JQuery, fieldName: string, type?: string): J
                 );
                 break;
 
+            case "Select":
+                let $node = $root.find(`select[name="${fieldName}"]`);
+                if ($node.length === 0) {
+                    // Попробуем найти такое же поле, но с учётом возможного multiple, т.е. с [] в конце имени
+                    $node = $root.find(`select[name="${fieldName}[]"]`);
+                }
+                __cacheFieldNodes[cacheKey] = $node;
+                break;
+
             case "Select2Multiple":
             case "Select2ChildMultiple":
                 __cacheFieldNodes[cacheKey] = $root.find("#" + fieldName);
                 break;
 
             default:
-                __cacheFieldNodes[cacheKey] = $root.find(`*[name="${fieldName}"]`);
+                __cacheFieldNodes[cacheKey] = $root.find(`[name="${fieldName}"]`);
                 break;
         }
 
@@ -1196,6 +1131,18 @@ export function getNodeValue($node: JQuery, type?: string): string | number {
                 .join("|");
             if (value !== "") {
                 value = "|" + value + "|";
+            }
+            break;
+
+        case "Select":
+            value = $node.val();
+            if (Array.isArray(value)) {
+                value = value.filter((v: any) => v !== "");
+                if (value.length > 0) {
+                    value = "|" + value.join("|") + "|";
+                } else {
+                    value = "%";
+                }
             }
             break;
 
@@ -1374,9 +1321,20 @@ export function setNodeValue($node: JQuery, newValue: any, type?: string, trigge
 
         case "Select":
         case "SelectChild":
-            //Проверим, что новое значение есть среди option в этом select элементе
-            if ($node.find(`option[value='${newValue}']`).length > 0) {
-                $node.val(newValue);
+            const select2widget: any = ($node.get(0) as any).select2widget;
+            if (select2widget) {
+                // Это особый select2 описанный в Select2.ts
+                select2widget.change(newValue);
+            } else {
+                if ($node.attr("multiple")) {
+                    const parts = newValue.split("|").filter((n: string) => n !== "");
+                    $node.val(parts);
+                } else {
+                    // Проверим, что новое значение есть среди option в этом select элементе
+                    if ($node.find(`option[value='${newValue}']`).length > 0) {
+                        $node.val(newValue);
+                    }
+                }
             }
             break;
 

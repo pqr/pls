@@ -96,7 +96,8 @@ class Msg implements \Countable, \JsonSerializable
 
         $text = implode("\n", $text);
         $text = strip_tags($text);
-        $text = htmlspecialchars_decode($text);
+        $text = htmlspecialchars_decode($text, ENT_QUOTES);
+        $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
 
         return $text;
     }

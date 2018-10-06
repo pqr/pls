@@ -77,17 +77,25 @@ trait MassactionMultipleUpdate
                     continue;
                 }
 
-                //Проверим, что у пользователя есть права на запись к этому объекту
+                // Проверим, что у пользователя есть права на запись к этому объекту
                 // (права на чтение мы уже проверили в методе $this->getMassactionIdsFromPost();
                 if (!$this->hasWriteAccessRightToObj($obj)) {
                     $msgBuff->addError("No access to edit object with ID = $id");
                     continue;
                 }
 
+                $fieldsData = $obj->filterDataByModeSubmit($dataFromPost);
+
+                $fieldsData = $obj->filterDataByEditAccessFunction($fieldsData);
+                if (!$fieldsData) {
+                    $nothingChanged++;
+                    continue;
+                }
+
                 // На всякий случай запишем в $this->_obj ссылку на текущий объект,
                 // чтобы в переопределённых методах в классах потомках не возникло случайных ошибок
                 $this->_obj = $obj;
-                if ($this->muUpdateObj($obj, $dataFromPost, $msgBuff)) {
+                if ($this->muUpdateObj($obj, $fieldsData, $msgBuff)) {
                     $updated++;
                     $updatedObjects[] = $obj;
                 } else {
@@ -153,29 +161,25 @@ trait MassactionMultipleUpdate
         return Template::parseTpl($templateFile, $tdata);
     }
 
-    protected function muDataFromPost(Msg $msgBuff)
+    protected function muDataFromPost(Msg $msgBuff): array
     {
-        //Отфильтруем fieldset только теми полями, которые обозначены как доступные для Multiple Update
-        $muFieldset = $this->muFieldset();
-
         //Дополнительно, отфильтруем только теми полями, которые были на форме отмечены как редактируемые
         //На форме были скрытые поля со статусами 1 или 0 - все они оформлены виде массива multipleupdate
-        $allFieldKeys = $_POST['multipleupdate'];
-        $changebaleFieldKeys = array_keys(
-            array_filter(
-                $allFieldKeys,
-                function ($value) {
-                    return $value === 'showed';
-                }
-            )
-        );
+        $changebaleFieldKeys = [];
+        foreach($_POST['multipleupdate'] as $fieldKey => $value) {
+            if ($value === 'showed') {
+                $changebaleFieldKeys[] = $fieldKey;
+            }
+        }
 
         if (!$changebaleFieldKeys) {
             // Ни одно поле в диалоговом окне не было отмечено для изменения
             return [];
         }
 
-        $muFieldset = $muFieldset->filterByKeys($changebaleFieldKeys);
+        /** @var Fieldset $fieldset */
+        $fieldset = $this->getFieldset();
+        $muFieldset = $fieldset->filterByKeys($changebaleFieldKeys);
 
         //Соберём массив с данными по полям
         $requestData = [];

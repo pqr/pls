@@ -42,7 +42,7 @@ class Metric
     public static function newrelicEvent(string $eventName, array $attributes = [])
     {
         if (extension_loaded('newrelic')) { // Ensure PHP agent is available
-            newrelic_record_custom_event("Custom:$eventName", $attributes);
+            newrelic_record_custom_event("Custom_$eventName", $attributes);
         }
     }
 

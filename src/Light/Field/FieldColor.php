@@ -37,7 +37,6 @@ class FieldColor extends FieldAbstract
         $this->default = 0;
         $this->tableWidthHtml = 30;
         $this->tableAlign = 'center';
-        //$this->modes = self::MODE_VIEW | self::MODE_EDIT | self::MODE_SUBMIT | self::MODE_LOG | self::MODE_MULTIPLEUPDATE;
     }
 
     private static function initColorPallete()

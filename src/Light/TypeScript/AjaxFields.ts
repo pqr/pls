@@ -9,6 +9,8 @@ const textCancel = isLangRu ? "Отмена" : "Cancel";
 $body.on("click", "a.ajax-checkbox", function(this: HTMLAnchorElement, e: JQuery.Event) {
     e.preventDefault();
     const $link = $(this);
+    const handler = $link.closest("td").attr("ajax-success-handler");
+    const $parent = $link.parent();
 
     // Найдём ближайший тег контейнер в котором описан url на который делать запрос
     const $container = $link.closest("*[data-ajaxchangefieldurl]");
@@ -34,6 +36,11 @@ $body.on("click", "a.ajax-checkbox", function(this: HTMLAnchorElement, e: JQuery
             // Замещаем изображение загрузки на новую ссылку, пришедшую от сервера
             $(newHtml).insertAfter($img);
             $img.remove();
+
+            if (handler !== undefined) {
+                const fn = eval(handler!);
+                fn($link, $parent);
+            }
         })
         .fail(() => {
             // В случае ошибки ajax запроса возвращаем старое значение

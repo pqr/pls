@@ -158,6 +158,11 @@ class User
         return strpos($responsibleRoles, '|' . $role . '|') !== false;
     }
 
+    public static function hasResponsibleRoleSql(string $role)
+    {
+        return "LOCATE('|" . Db::esc($role) . "|', ResponsibleRoles)";
+    }
+
 
     /**
      * @desc проверяет, залогинен ли пользователь

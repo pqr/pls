@@ -105,8 +105,9 @@ trait TableExcelExportable
         if (method_exists($this, 'getFiltersValues')) {
             $payload['filterValues'] = $this->getFiltersValues();
         }
-        $act = isset($_GET['json']) ? '::sendJSON ' : '::sendExcel ';
-        Metric::record(Request::getModule() . $act . $this->getTableName(), $timer->getMs(), $payload);
+        $act = isset($_GET['json']) ? 'sendJSON ' : 'sendExcel ';
+        $actionType = Request::getModule() .'/' . $this->getTableName() . '::' . $act;
+        Metric::record($actionType, $timer->getMs(), $payload);
     }
 
     /**

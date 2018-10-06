@@ -34,6 +34,7 @@ use Light\Html;
  * @method $this setEditTitle($stringOrCallable)
  * @method $this setEditTagParams($stringOrCallable)
  * @method $this setEditMandatory($value)
+ * @method $this setEditAccessFunction($callable)
  * @method $this setPlaceholder(string $value)
  * @method $this setNobr(bool $value)
  * @method $this setClickable(bool $value)
@@ -52,8 +53,9 @@ use Light\Html;
  * @method $this setSqlSelectMandatory(bool $value)
  * @method $this setSqlWhere($stringOrCallable)
  * @method $this setSqlWhereFormatFunction(callable $function)
- * @method $this setAjax(bool $ajax)
  * @method $this setChangeAll(bool $changeAll)
+ * @method $this setAjax(bool $ajax)
+ * @method $this setFilterNot(bool $filterNot)
  *
  * @method $this setAcReadonly(bool $value)
  * @method $this setAcSource(string $value)
@@ -78,6 +80,7 @@ use Light\Html;
  * @method string getEditWidth()
  * @method string getEditAlign()
  * @method bool|string getEditMandatory()
+ * @method callable getEditAccessFunction()
  * @method string getPlaceholder()
  * @method bool getUpper()
  * @method callable getGetHtmlFunction()
@@ -88,6 +91,7 @@ use Light\Html;
  * @method callable getSqlWhereFormatFunction()
  * @method string|array getSqlSelectRequires()
  * @method bool getChangeAll()
+ * @method bool getFilterNot()
  * @method bool getAjax()
  *
  * @method static FieldHtml createHtml(string $fieldKey, array $params = [])
@@ -197,7 +201,7 @@ abstract class FieldAbstract implements \JsonSerializable
     /**
      * @var int Битовое поле с модификаторами MODE_* - режимы, в которых движок будет использовать это поле
      */
-    public $modes = self::MODE_ALL;
+    protected $modes = self::MODE_ALL;
 
     /**
      * Длеаем поле Public для прямого доступа из класса Template для увеличения производительности
@@ -327,6 +331,19 @@ abstract class FieldAbstract implements \JsonSerializable
      * @var bool|string используется в ModuleAbstract::validateMandatory()
      */
     public $editMandatory = false;
+
+    /**
+     * @var callable function(array $data): bool
+     *
+     * По умолчанию функция не определена, т.е. она не вызывается, а доступ на редактирование поля определется
+     * исключительно полем modes. Но поле modes задаётся вне зависимости от данных текущего редактируемого объекта.
+     * Чтобы ограничить права доступа на основе данных текущего объекта, необходимо задать editAccessFunction.
+     *
+     * Работает следующим образом:
+     * Если поле modes содерит F::MODE_EDIT | F::MODE_SUBMIT и editAccessFunction функция определена, то она вызывается
+     * с полным набором данных текущего объекта, чтобы определить, есть ли у текущего пользователя права редактирования
+     */
+    public $editAccessFunction;
 
     /**
      * @var string используется в полях типа input и в react-select
@@ -464,6 +481,11 @@ abstract class FieldAbstract implements \JsonSerializable
      */
     public $ajax = false;
 
+    /**
+     * @var bool добавить ли к фильтру галочку "исключая"?
+     */
+    public $filterNot = false;
+
     public $initialParams = [];
 
     /** @var string $typeCache кеширующее поле для метода getType() */
@@ -568,9 +590,26 @@ abstract class FieldAbstract implements \JsonSerializable
         return $this->typeCache;
     }
 
-    final public function hasMode($mode)
+    final public function hasMode(int $testMode)
     {
-        return $this->modes & $mode;
+        return $this->modes & $testMode;
+    }
+
+    /**
+     * Проверяет $this->modes & self::MODE_EDITSUBMIT
+     * и результат вызова функции $this->editAccessFunction
+     * @param array $data
+     * @return bool
+     */
+    final public function checkEditAccessFunction(array $data)
+    {
+        $editAccessFunction = $this->editAccessFunction;
+        if (is_callable($editAccessFunction)) {
+            // Для этого поля определена особая пользовательская фунция editAccessFunction - вызовем её
+            return $editAccessFunction($data);
+        }
+
+        return true;
     }
 
     final public function addNamePrefix($prefix)
@@ -721,15 +760,15 @@ abstract class FieldAbstract implements \JsonSerializable
      */
     protected function ajaxify($value, array $data, $forTable, $outHtml)
     {
-        if (!$this->hasMode(self::MODE_EDIT)) {
-            return $outHtml;
-        }
-
         if ($this->groupconcat) {
             return $outHtml;
         }
 
         if (!isset($data['ID']) || !$data['ID']) {
+            return $outHtml;
+        }
+
+        if (!$this->hasMode(self::MODE_EDIT, $data)) {
             return $outHtml;
         }
 
@@ -947,7 +986,11 @@ abstract class FieldAbstract implements \JsonSerializable
             //Если хоть какой-то запрос получился, проведём над ним последние операции
             if ($sqlWhere) {
                 $sqlWhere = str_replace(['{value}', '{fieldKey}'], [Db::esc($value), Db::quote($this->key)], $sqlWhere);
-                $sqlWhere = '(' . $sqlWhere . ')';
+                $sqlWhere = "($sqlWhere)";
+
+                if ($this->filterNot && isset($filtersValues['Not' . $this->key]) && $filtersValues['Not' . $this->key]) {
+                    $sqlWhere = "NOT $sqlWhere";
+                }
             }
         }
 

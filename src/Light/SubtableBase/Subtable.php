@@ -5,8 +5,8 @@ namespace Light\SubtableBase;
 use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Db;
-use Light\Field\FieldAbstract as F;
 use Light\Field\FieldAbstract;
+use Light\Field\FieldAbstract as F;
 use Light\Field\FieldFloat;
 use Light\Field\FieldMoney;
 use Light\Img;
@@ -275,7 +275,7 @@ abstract class Subtable extends Table
                     //Ко всем кеширующим полям в отображаемые имена добавим префикс, чтобы пользователю на экране было понятно, что эти данные из подтбалицы
                     $newField->addNamePrefix($this->_cacheFieldsPrefix);
                     //Кеширующие поля выводятся только в режиме таблицы
-                    $newField->modes = F::MODE_LIST;
+                    $newField->setModes(F::MODE_LIST);
                     //Обязательно нужно наложить параметр groupconcat
                     $newField->groupconcat = true;
                     $newField->groupconcatTruncate = true;
@@ -461,14 +461,15 @@ abstract class Subtable extends Table
 
     protected function getHtmlTableCell(array $rowDataCalculated, int $rowNum, F $field, array $fullLinkParams): string
     {
-
-        if ($this->isStateEdit() && ($field->hasMode(F::MODE_EDIT) || $field->getType() === 'Color')) {
+        if ($this->isStateEdit()
+            && ($field->hasMode(F::MODE_EDIT) && $field->checkEditAccessFunction($rowDataCalculated)
+                || $field->getType() === 'Color')
+        ) {
             $value = $rowDataCalculated[$field->key] ?? '';
             return (string)$this->getHtmlInput($field, $rowNum, $value, $rowDataCalculated);
         }
 
         return parent::getHtmlTableCell($rowDataCalculated, $rowNum, $field, $fullLinkParams);
-
     }
 
     protected function getTableRowTagParams(array $rowDataCalculated, int $rowNum): string
@@ -904,37 +905,27 @@ abstract class Subtable extends Table
             $this->_obj->setMasterIdForDbLog($this->_masterObj->getId());
         }
 
-        //Удаляем некоторые строки из базы, если разрешено удаление
+        // Удаляем некоторые строки из базы, если разрешено удаление
         if ($this->allowDelete) {
             foreach ($this->getRowsToBeDeleted($dataFromRequest) as $rowNum) {
-                //Узнаем ID записи лежащей в данной строке
+                // Узнаем ID записи лежащей в данной строке
                 $id = $this->getRowIdFromPost($rowNum, $dataFromRequest);
                 if ($id && isset($this->_data[$id])) {
-                    //Если ID существует среди текущих данных, удалим объект
-                    $this->proceedDeleteObj($id, $this->_data[$id]);
-                    //Удалим непосредсвенно из массива Data
+                    // Если ID существует среди текущих данных, удалим объект
+                    $this->proceedDeleteRow($id);
+                    // Удалим непосредсвенно из массива Data
                     unset($this->_data[$id]);
                 }
             }
         }
 
-        //Пройдём в цикле по всем данным из запроса и сделаем вставки или обновления
+        // Пройдём в цикле по всем данным из запроса и сделаем вставки или обновления
         $affectedRows = 0;
         $notDeletedDataFromReqeust = $this->getNotDeletedDataFromReqeust($dataFromRequest);
         foreach ($notDeletedDataFromReqeust as $notDeletedData) {
             $id = (int)$notDeletedData['ID'];
-            $fieldsData = $notDeletedData['fieldsData'];
-
-            //Оставим в fieldsData только те поля, которые имеют MODE_SUBMIT, причём в самом объекте!
-            $fieldsData = $this->_obj->getOnlySubmitFieldsData($fieldsData);
-
-            //Проверим $id и существование объекта в базе
-            if ($id != 0) {
-                $query = "SELECT ID FROM " . Db::quote($this->getDbTable()) . " WHERE ID = " . (int)$id;
-                $id = Db::getOne($query);
-            }
-
-            $affectedRows += $this->proceedInsertUpdateObj($id, $fieldsData);
+            $rowDataFromRequest = $notDeletedData['fieldsData'];
+            $affectedRows += $this->proceedSubmitRow($id, $rowDataFromRequest);
         }
 
         //Загружаем сохранённые данные
@@ -946,7 +937,7 @@ abstract class Subtable extends Table
         }
 
         if ($this->folders) {
-            foreach($this->_data as $rowData) {
+            foreach ($this->_data as $rowData) {
                 $this->createFolder($rowData);
             }
         }
@@ -954,6 +945,41 @@ abstract class Subtable extends Table
         $this->afterSubmit($notDeletedDataFromReqeust, $affectedRows, $oldData, $msgBuff);
 
         return $affectedRows;
+    }
+
+    /**
+     * @param int $id - может быть 0, если это новая строка
+     * @param $rowDataFromRequest
+     * @return int
+     * @throws \Exception
+     */
+    protected function proceedSubmitRow(int $id, array $rowDataFromRequest)
+    {
+        $obj = clone $this->_obj;
+
+        if ($id) {
+            $obj->setId($id);
+            $obj->loadData();
+        }
+
+        // Оставим в fieldsData только те поля, которые имеют MODE_SUBMIT
+        $fieldsData = $obj->filterDataByModeSubmit($rowDataFromRequest);
+        // Проверим editAccessFunction в каождом поле
+        $fieldsData = $obj->filterDataByEditAccessFunction($fieldsData);
+
+        // Добавим foreign key на родительский объект
+        $fieldsData[$this->getMasterFieldKey()] = $this->getMasterFieldValue();
+
+        if ($obj->getId()) {
+            // Если объект загрузился из базы успешно, значит обновим
+            return $obj->updateDb($fieldsData, 'Updated in subtable');
+        }
+
+        // Если же в базе не было такого объекта, то вставим новый
+        $obj->insertDb($fieldsData, 'in subtable');
+
+        // Возвращаем affected rows
+        return 1;
     }
 
     /**
@@ -969,8 +995,7 @@ abstract class Subtable extends Table
         $affectedRows,
         array $oldData,
         Msg $msgBuff
-    )
-    {
+    ) {
     }
 
     //Кеширующая переменная
@@ -1031,21 +1056,20 @@ abstract class Subtable extends Table
         return $rowsIds[$rowNum] ?? null;
     }
 
-    protected function proceedDeleteObj($id, array $currentData)
+    protected function proceedDeleteRow(int $id)
     {
-        $this->_obj->setId($id);
-        $this->_obj->setMasterIdForDbLog($this->_masterObj->getId());
-        $this->_obj->setData(
-            $currentData
-        ); //Заполням данные, чтобы при удалении правильно сработала функция _obj->getDescriptionHtml
-        $this->_obj->deleteDb('from subtable');
+        $obj = clone $this->_obj;
+        $obj->setId($id);
+        if ($obj->loadData()) {
+            $obj->deleteDb('from subtable');
+        }
     }
 
     public function deleteAll()
     {
         $this->loadData();
         foreach ($this->_data as $id => $row) {
-            $this->proceedDeleteObj($id, $row);
+            $this->proceedDeleteRow($id);
         }
         $this->_data = [];
     }
@@ -1076,41 +1100,6 @@ abstract class Subtable extends Table
         }
 
         return $notDeletedData;
-    }
-
-    protected function proceedInsertUpdateObj($id, array $rowDataFromPost)
-    {
-        $rowDataFromPost[$this->getMasterFieldKey()] = $this->getMasterFieldValue();
-        if ($id != 0) {
-            //Объект уже существует в базе, требует обновления и, возможно, привязан к текущему MasterID
-            $affectedRows = $this->proceedUpdateObj($id, $rowDataFromPost);
-        } else {
-            //Объект требует вставку в базу и привязки к MasterID
-            $this->proceedInsertObj($rowDataFromPost);
-            $affectedRows = 1;
-        }
-
-        return $affectedRows;
-    }
-
-    /**
-     * @param int $id
-     * @param array $rowDataFromPost
-     * @return int $affectedRows
-     */
-    protected function proceedUpdateObj($id, array $rowDataFromPost)
-    {
-        $this->_obj->setId($id);
-        return $this->_obj->updateDb($rowDataFromPost, 'Updated in subtable');
-    }
-
-    /**
-     * @param array $rowDataFromPost
-     * @return int ID новой строки
-     */
-    protected function proceedInsertObj(array $rowDataFromPost)
-    {
-        return $this->_obj->insertDb($rowDataFromPost, 'in subtable');
     }
 
     protected function getRowDataFromPost($rowNum, array $dataFromRequest)
@@ -1199,19 +1188,23 @@ abstract class Subtable extends Table
 
     /**
      * Изменение поля через ajax
+     * @return int affectedRows
+     * @throws \Exception
      */
-    public function proceedChangeField()
+    public function proceedChangeField(): int
     {
         $fieldKey = $_REQUEST['fieldKey'];
         $field = $this->_obj->getFieldset()->getField($fieldKey);
         if (!$field) {
             Response::abort(400, "Field $fieldKey not found");
+            return 0;
         }
 
         $sudid = $_REQUEST['subid'];
         $this->_obj->setId($sudid);
         if (!$this->_obj->loadData()) {
             Response::abort(404, 'Subtable object not found (id = ' . $sudid . ')');
+            return 0;
         }
 
         if (Request::isGet()) {
@@ -1221,32 +1214,34 @@ abstract class Subtable extends Table
             $data = $this->_obj->getData();
             // Выводим в ajax ответ HTML код для поля ввода
             print $this->_obj->getField($fieldKey)->getHtmlInput($value, $data);
+            return 0;
 
-        } else {
-
-            // Это POST запрос на изменение поля
-            if (!$field->hasMode(F::MODE_SUBMIT)) {
-                Response::abort(403, 'Field ' . $fieldKey . ' not editable');
-            }
-
-            $value = $_REQUEST['newValue'];
-            $data = [$fieldKey => $value];
-            $normilizedValue = $field->getDataFromRequest($data);
-            if ($normilizedValue === null) {
-                Response::abort(400, 'Invalid value ' . $value);
-            }
-
-            $this->_obj->setMasterIdForDbLog($this->_masterObj->getId());
-            $this->_obj->updateDb([$fieldKey => $normilizedValue]);
-
-            // Если определена мастер-таблица в которой нужно обновить некоторые кешируюище поля и определны эти поля - обновим кеш!
-            if ($this->_cacheFieldsKeys && in_array($fieldKey, $this->_cacheFieldsKeys)) {
-                $this->updateCache();
-            }
-
-            // Возвращаем новое HTML значение для вставки в вёрстку
-            print $this->_obj->getFieldHtml($fieldKey);
         }
+
+        // Это POST запрос на изменение поля
+        if (!$field->hasMode(F::MODE_SUBMIT, $this->_obj->getData())) {
+            Response::abort(403, "Field $fieldKey not editable");
+        }
+
+        $value = $_REQUEST['newValue'];
+        $data = [$fieldKey => $value];
+        $normilizedValue = $field->getDataFromRequest($data);
+        if ($normilizedValue === null) {
+            Response::abort(400, "Invalid value $value");
+        }
+
+        $this->_obj->setMasterIdForDbLog($this->_masterObj->getId());
+        $affectedRows = $this->_obj->updateDb([$fieldKey => $normilizedValue]);
+
+        // Если определена мастер-таблица в которой нужно обновить некоторые кешируюище поля и определны эти поля - обновим кеш!
+        if ($this->_cacheFieldsKeys && in_array($fieldKey, $this->_cacheFieldsKeys)) {
+            $this->updateCache();
+        }
+
+        // Возвращаем новое HTML значение для вставки в вёрстку
+        print $this->_obj->getFieldHtml($fieldKey);
+
+        return $affectedRows;
     }
 
     protected function getExcelFilename()

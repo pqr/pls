@@ -178,6 +178,7 @@ class Filters
     /**
      * Сохраняет текущие значения фильтров в таблицу user_filter
      * @param array $notDefaultValues
+     * @throws \Exception
      */
     private function saveAsCurrent(array $notDefaultValues)
     {
@@ -301,6 +302,19 @@ class Filters
         // если шаблон не задан - автоматически сгенерируем кортеж из 1 колонки
         $firstColumn = [];
         foreach ($this->fieldset as $field) {
+
+
+            if (strpos($field->key, 'Not') === 0) {
+                // Ключ этого поля начинается с Not - подозрительная ситуация,
+                // возможно это автосгенерированное поле на основе другого поля у которого стоит признак filterNot?
+                $originalFieldKey = substr($field->key, 3);
+                $originalField = $this->fieldset->getField($originalFieldKey);
+                if ($originalField && $originalField->filterNot) {
+                    // Действительно, существует оригинальное поле с признаком filterNot,
+                    // значит текущее поле пропускаем в вёрстке (не будем выводить отдельной строкой)
+                    continue;
+                }
+            }
 
             $templateKey = $field->key;
 
@@ -449,7 +463,7 @@ class Filters
             // Если же схема расположения фильтров была задана пользователем внутри $this->initFilters()
             // то её нужно её чуть-чуть улучшить
             // Для кракости в исходном массиве зачастую задаём поля без явного указания ключа в массиве $this->filtersLayout
-            // и получаются числовые ключи в $templateArray - преобразуем их в нормальные строковые ключи
+            // и получаются числовые ключи в $layout - преобразуем их в нормальные строковые ключи
             $layout = [];
             foreach ($filtersLayout as $colIndex => $col) {
                 foreach ($col as $key => $val) {
@@ -553,6 +567,13 @@ class Filters
                 $title = Template::title($field->key);
                 $label = Template::label($field->key);
                 $html = Template::html($field->key);
+
+                if ($field->filterNot) {
+                    $notField = $this->fieldset->getField('Not' . $field->key);
+                    if ($notField) {
+                        $html .= '<div>' . Template::html($notField->key) .' ' .Template::label($notField->key) . '</div>';
+                    }
+                }
 
                 return $this->getFilterLiHtml($templateKey, $isInvisible, $title, $label, $html);
             }

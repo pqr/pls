@@ -513,4 +513,17 @@ class FilesFolder
 
         return $resultFilesAbsEnc;
     }
+
+    public static function hasFiles(string $relativePath)
+    {
+        if (FilesFolder::isNotEmpty($relativePath)) {
+            $files = FilesFolder::scanDir($relativePath);
+            foreach ($files as $file) {
+                if (FilesFolder::isFile($relativePath . DIRECTORY_SEPARATOR . $file)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
