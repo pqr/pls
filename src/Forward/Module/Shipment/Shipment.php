@@ -1488,15 +1488,17 @@ class Shipment extends ModuleAbstract
         //Обернём вывод этого HTML контента в стандартный шаблон для ModuleAbstract
         if ($content) {
 
+            $shipmentId = $this->_obj->getId();
+
             $this->setPageHeadForObj('Cost-sheet');
-            $this->addModuleSessionNextPrevLinks($this->_obj, 'id', ['func' => 'cs']);
+            $this->addModuleSessionNextPrevLinks($shipmentId, 'id', ['func' => 'cs']);
             $this->initCsSubmenuItems();
 
             $tdata = [
                 'content' => $content,
                 'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
                 'submenuItems' => $this->getSubmenuItemsTplData(),
-                'id' => $this->_obj->getId()
+                'id' => $shipmentId
             ];
 
             Template::includeTpl('module/view.tpl.php', $tdata);
