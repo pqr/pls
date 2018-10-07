@@ -38,8 +38,14 @@ class CPaymentObj extends PaymentObjAbstract
 
             PaymentFields::overpayCleared(),
 
+            F::createDate('PrintedDate', [
+                'name' => 'Акт отправлен на печать',
+                'ajax' => true,
+            ]),
+
             PaymentFields::shipmentFileField(3),
             PaymentFields::shipmentFileField(4)
+
 
         );
     }

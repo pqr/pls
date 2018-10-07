@@ -24,8 +24,9 @@
         <td class="col-right">
             <?php if (\Forward\Classes\Constant::isOneCCompany((int)t::value('CompanyID'))): ?>
                 <table class="form">
-                        <?= t::c("File3") ?>
-                        <?= t::c("File4") ?>
+                    <?= t::c("File3") ?>
+                    <?= t::c("File4") ?>
+                    <?= t::c('PrintedDate') ?>
                 </table>
             <?php endif; ?>
         </td>
