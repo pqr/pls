@@ -75,26 +75,32 @@ class ShipmentFields
     public static function fileFields(): array
     {
         $outFields = [];
-        foreach (Constant::$standardFolders as $i => $standardFolder) {
-            $outFields[] = F::createYesNo("File$i", [
-                'name' => $standardFolder,
-                'nameTable' => "Файл:\n$standardFolder",
-                'sqlSelect' => '',
-                'modes' => F::MODE_READONLY,
-                'tableWidthExcel' => 10,
-                'calcFunction' => function ($value, array $data) use ($i) {
-                    if (isset($data['ID'])) {
-                        $folderRelative = "Shipment/" . (floor($data['ID']/1000)) . '/' . $data['ID'];
-                        if (FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[$i]))) {
-                            return 1;
-                        }
-                    }
-                    return 0;
-                }
-            ]);
+        foreach (Constant::$standardFolders as $i => $_) {
+            $outFields[] = self::fileField($i);
         }
 
         return $outFields;
+    }
+
+    public static function fileField(int $folderNo)
+    {
+        $standardFolder = Constant::$standardFolders[$folderNo];
+        return F::createYesNo("File$folderNo", [
+            'name' => $standardFolder,
+            'nameTable' => "Файл:\n$standardFolder",
+            'sqlSelect' => '',
+            'modes' => F::MODE_READONLY,
+            'tableWidthExcel' => 10,
+            'calcFunction' => function ($value, array $data) use ($folderNo) {
+                if (isset($data['ID'])) {
+                    $folderRelative = "Shipment/" . (floor($data['ID']/1000)) . '/' . $data['ID'];
+                    if (FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[$folderNo]))) {
+                        return 1;
+                    }
+                }
+                return 0;
+            }
+        ]);
     }
 
     public static function filterFileNumbers()

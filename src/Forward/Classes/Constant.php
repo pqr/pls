@@ -28,6 +28,9 @@ class Constant
     const BU_MOW = '1';
     const BU_LED = '2';
 
+    const ACTONDATETYPE_ATA = 1;
+    const ACTONDATETYPE_CPAYMENT = 2;
+
     public static $onecCompany = [
         Constant::OC_PLS_OOO => 'pls',
         Constant::OC_PGL_OOO => 'pgl',

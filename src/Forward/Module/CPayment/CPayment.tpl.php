@@ -1,7 +1,7 @@
 <?php use Light\Template as t; ?>
 <table>
     <tr>
-        <td>
+        <td class="col-left">
             <table class="form">
                 <?= t::h3('Name') ?>
                 <?= t::c('CompanyID') ?>
@@ -20,6 +20,14 @@
 
             <?= t::subtable('CInvoices') ?>
 
+        </td>
+        <td class="col-right">
+            <?php if (\Forward\Classes\Constant::isOneCCompany((int)t::value('CompanyID'))): ?>
+                <table class="form">
+                        <?= t::c("File3") ?>
+                        <?= t::c("File4") ?>
+                </table>
+            <?php endif; ?>
         </td>
     </tr>
 </table>

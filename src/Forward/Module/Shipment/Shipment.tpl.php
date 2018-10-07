@@ -198,12 +198,12 @@
                         </table>
 
                         <?php if (\Forward\Classes\Constant::isOneCCompany((int)t::value('CompanyID'))): ?>
-                        <h2>Files</h2>
-                        <table class="form">
-                            <?php foreach (\Forward\Classes\Constant::$standardFolders as $i => $_): ?>
-                                <?= t::c("File$i") ?>
-                            <?php endforeach; ?>
-                        </table>
+                            <h2>Files</h2>
+                            <table class="form">
+                                <?php foreach (\Forward\Classes\Constant::$standardFolders as $i => $_): ?>
+                                    <?= t::c("File$i") ?>
+                                <?php endforeach; ?>
+                            </table>
                         <?php endif; ?>
 
                     </td>

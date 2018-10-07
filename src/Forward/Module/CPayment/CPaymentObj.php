@@ -36,7 +36,10 @@ class CPaymentObj extends PaymentObjAbstract
 
             PaymentFields::cacheOverpayAmount(),
 
-            PaymentFields::overpayCleared()
+            PaymentFields::overpayCleared(),
+
+            PaymentFields::shipmentFileField(3),
+            PaymentFields::shipmentFileField(4)
 
         );
     }

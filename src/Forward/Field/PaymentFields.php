@@ -1,7 +1,12 @@
 <?php
+
 namespace Forward\Field;
 
+use Forward\Classes\Constant;
+use Light\Db;
 use Light\Field\FieldAbstract as F;
+use Light\File;
+use Light\FilesFolder;
 
 class PaymentFields
 {
@@ -57,5 +62,63 @@ class PaymentFields
                 'ajax' => true
             ]
         );
+    }
+
+    /**
+     * Добавить в Customer Payments колонки (в Table layout settings) как в модуле
+     * Shipments: "Файл: 3 Акт без подписи" и "Файл: 4 Акт подписанный".
+     * Если оплата содержит в себе несколько счетов и по некоторым счетам акты есть, а по другим нет,
+     * в этом случае нужно выводить слово "Частично".
+     * @param int $folderNo
+     * @return \Light\Field\FieldSelect
+     */
+    public static function shipmentFileField(int $folderNo)
+    {
+        return F::createSelect("File$folderNo", array_merge(ShipmentFields::fileField($folderNo)->initialParams, [
+            'empty' => true,
+            'tableAlign' => 'center',
+            'options' => [
+                1 => ['text' => 'Нет', 'cssClass' => 'bad'],
+                2 => ['text' => 'Частично', 'cssClass' => 'warning'],
+                3 => ['text' => 'Да', 'cssClass' => 'good'],
+            ],
+            'calcFunction' => function ($value, array $data) use ($folderNo) {
+                if (!isset($data['ID'])) {
+                    return '';
+                }
+
+                $shipmentIds = Db::getCol("SELECT DISTINCT shipment.ID 
+                      FROM cpayment_cinvoice cpi, cinvoice_file_amount cfa, shipment
+                      WHERE cpi.CInvoiceID = cfa.CInvoiceID
+                          AND cfa.FileNumber = shipment.Name
+                          AND cpi.CPaymentID = @i"
+                    , $data['ID']
+                );
+                if (!$shipmentIds) {
+                    return '';
+                }
+
+                $folderNoName = File::decode(Constant::$standardFolders[$folderNo]);
+
+                $somethingEmpty = null;
+                $somethingNotEmpty = null;
+                foreach ($shipmentIds as $shipmentId) {
+                    $folderRelative = FilesFolder::getModuleRelative('Shipment', $shipmentId);
+                    if (FilesFolder::isNotEmpty("$folderRelative/$folderNoName")) {
+                        $somethingNotEmpty = true;
+                    } else {
+                        $somethingEmpty = true;
+                    }
+
+                    if ($somethingEmpty === true && $somethingNotEmpty === true) {
+                        // Если что-то пусто, а что-то не пусто, то точно "Частично", дальше проверять нет смысла
+                        return 2;
+                    }
+                }
+
+                // Осталось два варианта: либо олностью пусто, либо полностью заполнено
+                return $somethingEmpty ? 1 : 3;
+            }
+        ]));
     }
 }

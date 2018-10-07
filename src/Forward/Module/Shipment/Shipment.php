@@ -970,6 +970,35 @@ class Shipment extends ModuleAbstract
                 FilesFolder::mkdir("$folderRelative/$standardFolder");
             }
         }
+
+        $this->emailOnAtaChange($obj, $oldData, $msgBuff);
+    }
+
+    /**
+     * Автоматическое E-mail уведомление из базы на адрес бухгалтерии по тем перевозкам,
+     * где просталена дата прилёта и если у клиента указана опция "Акт на дату прилёта".
+     * @param ObjAbstract $obj
+     * @param array $oldData
+     * @param Msg $msgBuff
+     */
+    private function emailOnAtaChange(ObjAbstract $obj, array $oldData, Msg $msgBuff)
+    {
+        $oldAta = $oldData['ATA'] ?? '0000-00-00';
+        $newAta = $obj['ATA'];
+
+        if ($newAta !== '0000-00-00' && $newAta != $oldAta) {
+            // Проверим настройки Customer Account
+            $actOnDateType = Db::getOne("SELECT ActOnDateType FROM customeraccount WHERE ID = @i",
+                $obj['CustomerAccountID']);
+            if ($actOnDateType == Constant::ACTONDATETYPE_ATA) {
+                $body = 'Изменилась дата ATA ' . FieldDate::beautify($newAta) . ' по накладной ' . $obj->getLinkView() . ' (' . $obj->getFieldText('CustomerAccountID') . ')';
+                $subject = strip_tags($body);
+                Mailer::create('accounting@proactive-ls.com', $subject, $body)
+                    ->wrapBodyWithHtmlTemplate()
+                    ->makeLinksAbsolute()
+                    ->send($msgBuff);
+            }
+        }
     }
 
     private function sendShipmentEmail(ShipmentObj $obj, $additionalText, Msg $msgBuff)

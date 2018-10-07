@@ -1,6 +1,7 @@
 <?php
 namespace Forward\Module\CustomerAccount;
 
+use Forward\Classes\Constant;
 use Forward\Field\CreditFields;
 use Forward\Field\GeneralFields;
 use Light\Field\CommonFields as CF;
@@ -44,8 +45,8 @@ class CustomerAccountObj extends ObjAbstract
                 'name' => 'Акт на дату',
                 'empty' => true,
                 'options' => [
-                    1 => 'На дату прилёта',
-                    2 => 'На дату оплаты счёта',
+                    Constant::ACTONDATETYPE_ATA => 'На дату прилёта',
+                    Constant::ACTONDATETYPE_CPAYMENT => 'На дату оплаты счёта',
                 ]
             ])
 
