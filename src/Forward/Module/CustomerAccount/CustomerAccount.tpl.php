@@ -11,6 +11,7 @@
                 <?= t::c('Comments') ?>
                 <?= t::c('RatePercent') ?>
                 <?= t::c('CreditPeriod') ?>
+                <?= t::c('ActOnDateType') ?>
                 <?= t::c('BUIDs') ?>
                 <tr class="vtop">
                     <th style="padding-top: 20px">

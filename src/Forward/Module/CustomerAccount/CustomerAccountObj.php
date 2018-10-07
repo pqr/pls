@@ -38,7 +38,16 @@ class CustomerAccountObj extends ObjAbstract
             GeneralFields::shipmentRequestStreet(),
             GeneralFields::shipmentRequestCity(),
             GeneralFields::shipmentRequestCountry(),
-            GeneralFields::shipmentRequestPhone()
+            GeneralFields::shipmentRequestPhone(),
+
+            F::createSelect('ActOnDateType', [
+                'name' => 'Акт на дату',
+                'empty' => true,
+                'options' => [
+                    1 => 'На дату прилёта',
+                    2 => 'На дату оплаты счёта',
+                ]
+            ])
 
         );
     }
