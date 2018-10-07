@@ -42,7 +42,8 @@ abstract class ModuleAbstract extends Table
 {
     use TablePaginatable, TableFilterable, TableSortable, TableLayoutable, TableExcelExportable,
         TableWithFoldersTrait, ModuleSessionTrait,
-        MassactionMultipleUpdate, MassactionCollectPdfs, MassactionDelete, MassactionUpload, MassactionPrint, MassactionDownloadAsZip;
+        MassactionMultipleUpdate, MassactionCollectPdfs, MassactionDelete, MassactionUpload, MassactionPrint, MassactionDownloadAsZip,
+        ViewEditDialogs;
 
     const STATE_LIST = 'list';
     const STATE_LIST_EXCEL = 'excel';
@@ -1016,57 +1017,7 @@ abstract class ModuleAbstract extends Table
         return $out;
     }
 
-    protected function isViewDialog()
-    {
-        return Request::isAjax() && Request::isGet() && isset($_GET['func']) && $_GET['func'] === 'Dialog';
-    }
 
-    /**
-     * Удобная фнуция, которую можно вызвать сделав ajax get запрос по адресу ?a=<module>&id=...&func=Dialog#ajax
-     * В итоге движок покажет диалоговое окно как бы из режима View
-     */
-    protected function viewGetDialog()
-    {
-        if (!Request::isAjax()) {
-            $this->redirectToView();
-            return;
-        }
-
-        $this->_state = self::STATE_VIEW;
-
-        $obj = $this->_obj;
-
-        $module = Request::getModule();
-        $id = $obj->getId();
-        $viewUrl = "?a=$module&id=$id";
-
-        $openExternalText = Config::$lang === 'ru' ? 'Открыть в новом окне' : 'Open in new window';
-        $moduleName = ModuleRegister::getModuleName($this->getModule());
-        $headLink = "$moduleName <strong>$obj</strong> <span class='note'>(ID: $id)</span>";
-
-        $html = '<div style="margin-bottom:10px; display: flex;  justify-content: space-between;">'
-            . '<h3 style="padding:0; margin: 0px">' . $headLink . '</h3>'
-            . "<a href=$viewUrl target=_blank>$openExternalText <i class='fa fa-external-link'></i></a>"
-            . '</div>';
-
-        // Добавляем кнопки подменю включая кнопки печати
-        $this->initViewSubmenu();
-        $this->initPrintForms();
-        $html .= Template::parseTpl('submenu.tpl.php', ['items' => $this->getSubmenuItemsTplData()]);
-
-        // Формируем HTML код страницы в режиме view
-        // Чтобы работали ajax ссылки на изменение полей, обернём в дополнительный div с параметрами для ajax запросов
-        $html .= '<div data-ajaxchangefieldurl="?a=' . $module . '&func=ChangeField&id=">'
-            . $this->getViewEditContentHtml()
-            . '<div>';
-
-        // Отправляем в диалоговом окне
-        Response::showDialog($html
-            , null
-            , null
-            , Config::$lang === 'ru' ? 'Закрыть' : 'Close'
-        );
-    }
 
     final protected function isStateView()
     {
@@ -1081,7 +1032,7 @@ abstract class ModuleAbstract extends Table
 
         $this->_state = self::STATE_EDIT;
 
-        //Проверим права на запись текущего объекта
+        // Проверим права на запись текущего объекта
         if (!$this->allowEdit || !User::hasWriteAccess() || !$this->hasWriteAccessRightToObj($this->_obj)) {
             //При обычном запросе сделаем редирект на режим просмотра с flash сообщенеим
             Session::flashError('No access to edit');
@@ -1099,17 +1050,23 @@ abstract class ModuleAbstract extends Table
         $this->initEditSubmenu();
         $this->initEdit();
 
-        $formActionUrlParams = ['submitid' => $this->_obj->getId()] + $this->getModuleSessionUrlParams() + $this->getSubtablesFindidUrlParams();
+
         $tdata = [
             'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
             'submenuItems' => $this->getSubmenuItemsTplData(),
-            'formActionUrl' => Link::create($this->getModule())->params($formActionUrlParams)->getHref(),
+            'formActionUrl' => $this->getEditFromActionUrl(),
             'content' => $this->getViewEditContentHtml(),
             'formactions' => $this->getFormactionsHtml(),
             'fields' => $this->getFieldsForFormJs()
         ];
 
         Template::includeTpl('module/edit.tpl.php', $tdata);
+    }
+
+    protected function getEditFromActionUrl()
+    {
+        $formActionUrlParams = ['submitid' => $this->_obj->getId()] + $this->getModuleSessionUrlParams() + $this->getSubtablesFindidUrlParams();
+        return Link::create($this->getModule())->params($formActionUrlParams)->getHref();
     }
 
     protected function proceedSelect2ajax()
