@@ -2504,6 +2504,16 @@ abstract class ModuleAbstract extends Table
     protected function disableAllFieldsEdit()
     {
         foreach ($this->getFieldset() as $field) {
+            // Для ajax полей особый подход к отключению редактирования: нужно отдельно вызвать функцию,
+            // которая может быть переопределена
+            if ($field->ajax) {
+                // Для ajax полей отдельный способ проверки прав на редактирование
+                if ($this->hasWriteAccessAjaxChangeField($field)) {
+                    // Это ajax поле можно редактировать, не смотря на то, что в целом для текущего пользователя
+                    // все поля должны быть отключены от редактирования
+                    continue;
+                }
+            }
             $field->setModes($field->getModes() & ~F::MODE_EDITSUBMIT);
         }
     }
@@ -2773,7 +2783,7 @@ abstract class ModuleAbstract extends Table
     {
         return $this->allowEdit
             && User::hasWriteAccess()
-            && $this->hasWriteAccessRightToObj($this->_obj)
+            && ($this->_obj->getId() === 0 || $this->hasWriteAccessRightToObj($this->_obj))
             && $this->_obj->hasFieldModeSubmit($field->key);
     }
 

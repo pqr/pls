@@ -67,4 +67,12 @@ class CPayment extends PaymentModuleAbstract
     {
         return BuAccess::getSqlWhereCustomerId() . " AND " . CustomerAccess::getSqlWhere();
     }
+
+    protected function hasWriteAccessAjaxChangeField(F $field): bool
+    {
+        if ($field->key === 'PrintedDate') {
+            return true;
+        }
+        return parent::hasWriteAccessAjaxChangeField($field);
+    }
 }
