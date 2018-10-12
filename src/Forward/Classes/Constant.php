@@ -24,6 +24,7 @@ class Constant
     const OC_PGL11_OOO = 11;
 
     const TRAFFIC_OCEAN = 7;
+    const TRAFFIC_FINANCE = 11;
 
     const BU_MOW = '1';
     const BU_LED = '2';

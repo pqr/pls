@@ -559,6 +559,10 @@ class Shipment extends ModuleAbstract
 
     protected function validateMandatory(array $dataFromRequest)
     {
+        if (isset($dataFromRequest['TrafficID']) && $dataFromRequest['TrafficID'] == Constant::TRAFFIC_FINANCE) {
+            return;
+        }
+
         if ($dataFromRequest['FileClosed'] == ShipmentObj::SHIPMENT_CLOSED) {
 
             //Если пользователь пытается закрыть перевозку - добавим mandatory поля!
