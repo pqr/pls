@@ -27,7 +27,6 @@ Config::$wkhtmltopdfPath = 'wkhtmltopdf';
 Config::$ghostScriptPath = 'gs';
 Config::$imageMagickPath = 'convert';
 
-Config::$mailFrom = '{{ mail_from }}';
 Config::$swiftmailerHost = '{{ mail_host }}';
 Config::$swiftmailerPort = '{{ mail_port }}';
 Config::$swiftmailerSecuriy = '{{ mail_security }}';
