@@ -18,7 +18,7 @@ class Responsibles extends Subtable
         $this->allowExportToExcel = false;
         $this->allowTableLayouts = false;
         $this->allowPaste = false;
-        $this->_tableMsgIfEmpty = 'No responsibles';
+        $this->tableEmptyText = 'No responsibles';
         $this->textAddLink = 'Add Responsible';
 
         $this->addFields(

@@ -84,18 +84,10 @@ trait MassactionMultipleUpdate
                     continue;
                 }
 
-                $fieldsData = $obj->filterDataByModeSubmit($dataFromPost);
-
-                $fieldsData = $obj->filterDataByEditAccessFunction($fieldsData);
-                if (!$fieldsData) {
-                    $nothingChanged++;
-                    continue;
-                }
-
                 // На всякий случай запишем в $this->_obj ссылку на текущий объект,
                 // чтобы в переопределённых методах в классах потомках не возникло случайных ошибок
                 $this->_obj = $obj;
-                if ($this->muUpdateObj($obj, $fieldsData, $msgBuff)) {
+                if ($this->muUpdateObj($obj, $dataFromPost, $msgBuff)) {
                     $updated++;
                     $updatedObjects[] = $obj;
                 } else {
@@ -178,10 +170,12 @@ trait MassactionMultipleUpdate
         }
 
         /** @var Fieldset $fieldset */
-        $fieldset = $this->getFieldset();
-        $muFieldset = $fieldset->filterByKeys($changebaleFieldKeys);
+        $muFieldset = $this->muFieldset();
 
-        //Соберём массив с данными по полям
+        // Оставим только те поля, которые указаны в $changebaleFieldKeys
+        $muFieldset = $muFieldset->filterByKeys($changebaleFieldKeys);
+
+        // Соберём массив с данными по полям
         $requestData = [];
         foreach ($changebaleFieldKeys as $fieldKey) {
             if (isset($_POST[$fieldKey])) {
@@ -204,9 +198,16 @@ trait MassactionMultipleUpdate
      */
     protected function muUpdateObj(ObjAbstract $obj, array $dataFromPost, Msg $msgBuff)
     {
+        $fieldsData = $obj->filterDataByModeSubmit($dataFromPost);
+
+        $fieldsData = $obj->filterDataByEditAccessFunction($fieldsData);
+        if (!$fieldsData) {
+            return 0;
+        }
+
         $oldData = $this->getOldDataBeforeSubmitOrDelete($obj);
-        $affectedRows = $obj->updateDb($dataFromPost,
-            Config::$lang === 'ru' ? 'Массовое редактирование' : 'Multiple Update');
+        $dbLogMsg = Config::$lang === 'ru' ? 'Массовое редактирование' : 'Multiple Update';
+        $affectedRows = $obj->updateDb($fieldsData, $dbLogMsg);
         $this->afterUpdate($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, true);
         $this->afterSubmit($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, true);
         return $affectedRows;

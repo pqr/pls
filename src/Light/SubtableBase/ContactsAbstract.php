@@ -19,7 +19,7 @@ abstract class ContactsAbstract extends Subtable
         parent::__construct($masterObj);
 
         $this->_title = 'Contacts';
-        $this->_tableMsgIfEmpty = 'No contacts';
+        $this->tableEmptyText = 'No contacts';
         $this->_printHeadBlock = false;
         $this->allowExportToExcel = false;
         $this->allowTableLayouts = false;

@@ -17,7 +17,7 @@ class Quotations extends Subtable
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
         $this->_printHeadBlock = false;
         $this->tableLinkModule = 'Quotation';
-        $this->_tableMsgIfEmpty = '';
+        $this->tableEmptyText = '';
         $this->_orderBy = 'ID DESC';
         $this->setDbTable('quotation');
 

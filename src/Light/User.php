@@ -158,9 +158,20 @@ class User
         return strpos($responsibleRoles, '|' . $role . '|') !== false;
     }
 
-    public static function hasResponsibleRoleSql(string $role)
+    public static function hasResponsibleRoleSql(string $role): string
     {
         return "LOCATE('|" . Db::esc($role) . "|', ResponsibleRoles)";
+    }
+
+    public static function getUsersEmailsByRole(string $role): array
+    {
+        return Db::getCol(
+            "SELECT Email
+            FROM `user`
+            WHERE Email != ''
+                AND Active = 1
+                AND " . self::hasResponsibleRoleSql($role)
+        );
     }
 
 

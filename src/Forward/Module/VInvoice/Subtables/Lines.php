@@ -18,7 +18,7 @@ class Lines extends Subtable
 
         $this->allowTableLayouts = false;
 
-        $this->_tableMsgIfEmpty = 'No lines info';
+        $this->tableEmptyText = 'No lines info';
 
         $this->tableLinkModule = 'Shipment';
         $this->tableLinkFieldKeys = ['FileNumber', 'MAWBNumber'];

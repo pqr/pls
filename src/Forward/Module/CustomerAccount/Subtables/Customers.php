@@ -28,7 +28,7 @@ class Customers extends Many2ManyAbstract
 
         $this->textAddLink = 'Add Customer';
 
-        $this->_tableMsgIfEmpty = 'No linked customers';
+        $this->tableEmptyText = 'No linked customers';
         $this->folders = true;
         $this->folderBaseDir = 'Customer';
         $this->_title = 'Customers';

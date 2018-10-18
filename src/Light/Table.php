@@ -16,7 +16,8 @@ class Table implements \JsonSerializable
 
     private $tableName;
 
-    protected $_tableMsgIfEmpty;
+    /** @var string */
+    public $tableEmptyText;
 
     /** @var ObjAbstract */
     protected $_obj;
@@ -334,7 +335,7 @@ class Table implements \JsonSerializable
     {
         //Если таблица пуста, возвращаем сообщение No data available
         if (!$printIfEmpty && $this->getTableDataCount() === 0) {
-            return $this->_tableMsgIfEmpty ?? (Config::$lang === 'ru' ? 'Нет данных' : 'No data available');
+            return $this->tableEmptyText ?? (Config::$lang === 'ru' ? 'Нет данных' : 'No data available');
         }
 
         $allFields = $this->getAllFields();

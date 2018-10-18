@@ -1,4 +1,4 @@
-import { addStandardListeners, isLangRu, parseJson, toastError } from "./Light";
+import { addStandardListeners, isLangRu, parseJson, toastError, toastInfo } from "./Light";
 import * as form from "./Form";
 import * as table from "./Table";
 import * as subtable from "./Subtable";
@@ -215,7 +215,21 @@ export class Dialog {
                         });
                     } else {
                         // Форму нужно отправить простым POST запросом, но при этом не забудем заблокировать кнопки диалога
-                        $form.on("submit", () => this.blockButtons());
+                        $form.on("submit", () => {
+
+                            // Если это не асинхронный ajax запрос, то проверим, возможно мы этим диалогом генерируем Excel файл?
+                            // если так, что post запрос не обновит страницу, а следовательно диалог никогда не закроется!
+                            // Сделаем проверку на xls=1 в строке action, если есть, то автоматически закрем диалог через пару секунд
+                            this.blockButtons();
+
+                            if (action.indexOf('xls=1') !== -1) {
+                                toastInfo('Excel file is being generated...');
+                                setTimeout(() => {
+                                    this.close();
+                                }, 5000);
+                            }
+
+                        });
                     }
                 }
             } else {

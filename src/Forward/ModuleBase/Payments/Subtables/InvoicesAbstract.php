@@ -34,7 +34,7 @@ abstract class InvoicesAbstract extends Subtable
 
         $this->allowTableLayouts = false;
         $this->_tablePrintTotalRecordsFound = false;
-        $this->_tableMsgIfEmpty = 'No ' . $customerOrVendor . ' Invoices';
+        $this->tableEmptyText = 'No ' . $customerOrVendor . ' Invoices';
 
         //Параметры для формирования ссылок на модули CInvoice или VInvoice
         $this->tableLinkModule = $firstLetter . 'Invoice';

@@ -6,6 +6,7 @@ use Light\Db;
 use Light\DbLog;
 use Light\Mailer;
 use Light\Module\Autolaunch\AutolaunchAbstract;
+use Light\Msg;
 use Light\Timer;
 
 class Email extends AutolaunchAbstract
@@ -25,8 +26,6 @@ class Email extends AutolaunchAbstract
 
         $totalSent = 0;
         $errors = 0;
-
-
 
         $count = $this->maxLoops;
         while ($count--) {
@@ -125,13 +124,17 @@ class Email extends AutolaunchAbstract
 
         $mail->setFromQueue($record['CreatedBy'], $record['CreatedDateTime'], $record['RetryCount'] + 1);
 
-        $sent = $mail->sendImmideatelly($this->_msgBuff);
+        $thisMsgBuff = new Msg();
+        $sent = $mail->sendImmideatelly($thisMsgBuff);
         if ($sent) {
             $this->removeFromQueue($record['ID']);
         } else {
             // Если отправить не удалось, просто увеличим счётчик RetryCount
-            $this->incRetryCount($record['ID']);
+            $report = $thisMsgBuff->getHtml();
+            $this->incRetryCount($record['ID'], $report);
         }
+
+        $this->_msgBuff->merge($thisMsgBuff);
 
         $this->_msgBuff->addHtml('<p class="note">Время выполнения: ' . $timer->getHtml() . '</p>');
         $this->_msgBuff->addEmptyLine();
@@ -147,9 +150,14 @@ class Email extends AutolaunchAbstract
         Db::query("DELETE FROM queue_email WHERE ID = $queueId");
     }
 
-    private function incRetryCount(int $queueId)
+    private function incRetryCount(int $queueId, string $report)
     {
-        Db::query("UPDATE queue_email SET RetryCount = RetryCount + 1 WHERE ID = $queueId");
+        Db::query(
+            "UPDATE queue_email 
+            SET RetryCount = RetryCount + 1,
+                Report = CONCAT(" . Db::escString($report) . ", '\\n\\n')
+            WHERE ID = $queueId"
+        );
     }
 
 }

@@ -15,7 +15,7 @@ class StandartRates extends Subtable
         parent::__construct($masterObj);
 
         $this->allowExportToExcel = false;
-        $this->_tableMsgIfEmpty = '';
+        $this->tableEmptyText = '';
         $this->_orderBy = 'ID DESC';
 
         $this->tableLayouts['Default'] = 'ID|Name|ResponsibleSalesID|DepartureIATA|ArrivalIATA|ValidFrom|ValidUntil|CommentsInternal';

@@ -28,7 +28,7 @@ abstract class PaymentsAbstract extends Subtable
 
         $this->allowTableLayouts = false;
         $this->_tablePrintTotalRecordsFound = false;
-        $this->_tableMsgIfEmpty = 'No ' . $customerOrVendor . ' Payments yet';
+        $this->tableEmptyText = 'No ' . $customerOrVendor . ' Payments yet';
 
         //Параметры для формирования ссылок на модули CPayment или VPayment
         $this->tableLinkModule = $firstLetter . 'Payment'; //имя модуля на который делать ссылку

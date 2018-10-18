@@ -975,6 +975,15 @@ abstract class ModuleAbstract extends Table
         // Добавим ссылки на различные режимы копирования
         if ($this->isStateView()) {
 
+            if (method_exists($this, 'filesDialogSubmenuItemHtml')){
+                // К этому модулю подключён FilesDialogTrait
+                /** @var FilesDialogTrait $obj  */
+                $obj = $this;
+                $out[] = [
+                    'html' => $obj->filesDialogSubmenuItemHtml()
+                ];
+            }
+
             //Добавим ссылки на копирование
             $this->initCopyModes();
             if ($this->_copyModes) {
@@ -1017,8 +1026,6 @@ abstract class ModuleAbstract extends Table
         return $out;
     }
 
-
-
     final protected function isStateView()
     {
         return $this->_state == self::STATE_VIEW;
@@ -1027,7 +1034,7 @@ abstract class ModuleAbstract extends Table
     protected function proceedEdit()
     {
         $id = $_GET['editid'];
-        //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
+        // Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
         $this->loadObjAndCheck($id);
 
         $this->_state = self::STATE_EDIT;
@@ -1049,7 +1056,6 @@ abstract class ModuleAbstract extends Table
         $this->addModuleSessionNextPrevLinks($this->_obj->getId(), 'editid');
         $this->initEditSubmenu();
         $this->initEdit();
-
 
         $tdata = [
             'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
@@ -2124,6 +2130,12 @@ abstract class ModuleAbstract extends Table
     {
         // Регистрируем массовые действия - метод initMassactions должен быть переопределён в классе потомке
         $this->initMassactions();
+
+        if (method_exists($this, 'massactionFilesDialog')) {
+            /** @var FilesDialogTrait $this */
+            $this->addMassaction('FilesDialog', $this->filesDialogButtonText());
+        }
+
         // Добавляем опции печати (они также отображаются в массовых действиях)
         $this->initPrintForms();
         if ($this->printForms) {
@@ -3020,8 +3032,15 @@ abstract class ModuleAbstract extends Table
     public function proceedMassaction()
     {
         $this->initMassactions();
+
         $action = $_GET['action'];
         $ids = $this->getMassactionIdsFromPost();
+
+        if ($action === 'FilesDialog') {
+            // Особый massaction которого нет в массиве $this->massactions
+            $this->massactionFilesDialog($ids);
+            return;
+        }
 
         if ($action === 'Print') {
             // Особый massaction которого нет в массиве $this->massactions

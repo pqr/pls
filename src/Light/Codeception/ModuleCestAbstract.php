@@ -3,6 +3,7 @@
 namespace Light\Codeception;
 
 use Light\Db;
+use Light\Field\FieldAbstract;
 use Light\Field\FieldDate;
 use Light\ModuleRegister;
 
@@ -179,7 +180,7 @@ abstract class ModuleCestAbstract
     protected function testMassaction($I, string $action)
     {
         $I->expect('See Massaction Ajax Dialog');
-        $url = "?a=".$this->getModule()."&p=massaction&action=$action";
+        $url = "?a=" . $this->getModule() . "&p=massaction&action=$action";
         $I->sendAjaxPostRequest($url, ['CheckedIds' => $this->getTestObjId()]);
         $I->canSeeHttpHeader('x-light-showdialog');
 
@@ -191,14 +192,45 @@ abstract class ModuleCestAbstract
      * @param \AcceptanceTester | \FunctionalTester $I
      * @param string $fieldKey
      * @param string $date
+     * @param null $testObjId
      */
-    protected function testChangeFieldDate($I, string $fieldKey, string $date)
+    protected function testChangeFieldDate($I, string $fieldKey, string $date, $testObjId = null)
     {
-        $I->wantTo('Change field ' . $fieldKey . ' via ajax');
-        $I->sendAjaxPostRequest('?a=' . $this->getModule() . '&id=' . $this->getTestObjId() . '&func=ChangeField&fieldKey=' . $fieldKey,
-            ['newValue' => $date]);
+        if ($testObjId === null) {
+            $testObjId = $this->getTestObjId();
+        }
+        $I->wantTo("Change field $fieldKey via ajax");
+        $module = $this->getModule();
+        $url = "?a=$module&id=$testObjId&func=ChangeField&fieldKey=$fieldKey";
+        $I->sendAjaxPostRequest($url,['newValue' => $date]);
         $I->canSeeResponseCodeIs(200);
         $response = $I->grabResponse();
-        $I->assertContains(FieldDate::beautify($date), $response);
+
+        $field = FieldAbstract::createDate($fieldKey)->setAjax(true);
+
+        $I->assertContains($field->getHtml($date, ['ID' => $testObjId]), $response);
+    }
+
+    /**
+     * @param \AcceptanceTester | \FunctionalTester $I
+     * @param string $fieldKey
+     * @param $newValue
+     * @param null $testObjId
+     */
+    protected function testChangeFieldCheckbox($I, string $fieldKey, $newValue, $testObjId = null)
+    {
+        if ($testObjId === null) {
+            $testObjId = $this->getTestObjId();
+        }
+        $I->wantTo("Change field $fieldKey via ajax");
+        $module = $this->getModule();
+        $url = "?a=$module&id=$testObjId&func=ChangeField&fieldKey=$fieldKey";
+        $I->sendAjaxPostRequest($url,['newValue' => $newValue]);
+        $I->canSeeResponseCodeIs(200);
+        $response = $I->grabResponse();
+
+        $field = FieldAbstract::createCheckbox($fieldKey)->setAjax(true);
+
+        $I->assertContains($field->getHtml($newValue, ['ID' => $testObjId]), $response);
     }
 }

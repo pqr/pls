@@ -37,8 +37,16 @@ class EmailLogModule extends ModuleAbstract
             F::createString('ReplyTo'),
             F::createString('Subject'),
             F::createString('ContentType'),
-            F::createInt('RetryCount', ['tableAlign' => 'center', 'cssClassZero' => 'bad']),
-            F::createText('Attachements')
+            F::createInt('RetryCount', [
+                'name' => 'Кол-во попыток отправки',
+                'tableAlign' => 'center'
+            ]),
+            F::createText('Attachements'),
+            F::createHtml('Report', [
+                'name' => 'Отчёт о попытках отправки',
+                'modes' => F::MODE_VIEW,
+                'sqlSelect' => "SELECT Report FROM log_email_text let WHERE let.ID = log_email.ID",
+            ])
 
         );
 

@@ -70,8 +70,10 @@ class Config
      */
     public static $backupFolder;
 
-    /** @var string параметры для Swiftmailer */
+    /** @deprecated  */
     public static $mailFrom;
+
+    /** @var string параметры для Swiftmailer */
     public static $swiftmailerHost;
     public static $swiftmailerPort = 25;
     public static $swiftmailerSecuriy; //можно указать ssl

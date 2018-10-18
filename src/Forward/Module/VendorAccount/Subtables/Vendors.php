@@ -28,7 +28,7 @@ class Vendors extends Many2ManyAbstract
 
         $this->textAddLink = 'Add Vendor';
 
-        $this->_tableMsgIfEmpty = 'No linked vendors';
+        $this->tableEmptyText = 'No linked vendors';
         $this->folders = true;
         $this->folderBaseDir = 'Vendor';
         $this->_title = 'Vendors';

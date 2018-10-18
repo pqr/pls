@@ -53,10 +53,12 @@ abstract class EmailDialogAbstract
     {
         $this->addFields(
 
-            F::createString('EmailTo', [
+            F::createText('EmailTo', [
                 'name' => Config::$lang === 'ru' ? 'Кому' : 'To',
                 'default' => $this->getDefaultTo(),
                 'editTagParams' => 'required',
+                'editWidth' => 'full',
+                'rows' => 2,
             ]),
 
             F::createCheckbox('EmailSeparateTo', [
@@ -64,9 +66,11 @@ abstract class EmailDialogAbstract
                 'default' => true,
             ]),
 
-            F::createString('EmailCc', [
+            F::createText('EmailCc', [
                 'name' => Config::$lang === 'ru' ? 'Копия' : 'Cc',
                 'default' => $this->getDefaultCc(),
+                'editWidth' => 'full',
+                'rows' => 2,
             ]),
 
             F::createString('EmailReplyTo', [
@@ -74,10 +78,12 @@ abstract class EmailDialogAbstract
                 'default' => $this->getDefaultReplyTo(),
             ]),
 
-            F::createString('EmailSubject', [
+            F::createText('EmailSubject', [
                 'name' => Config::$lang === 'ru' ? 'Тема' : 'Subject',
                 'default' => $this->getDefatulSubject(),
                 'editMandatory' => true,
+                'editWidth' => 'full',
+                'rows' => 2,
             ]),
 
             F::createText('EmailBody', [

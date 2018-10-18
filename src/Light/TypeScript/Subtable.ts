@@ -802,7 +802,7 @@ export class Subtable {
      */
     getFieldNode(rowNum: RowNum, fieldKey: string): JQuery {
         if (!this.fields[fieldKey]) {
-            throw new Error("Subtabe " + this.name + ": uknown field " + fieldKey);
+            throw new Error("Subtabe " + this.name + ": uknown field (3) " + fieldKey);
         }
 
         const cacheKey = rowNum + "-" + fieldKey;
@@ -842,12 +842,12 @@ export class Subtable {
             return $fieldNode;
         }
 
-        throw new Error("Subtabe " + this.name + ": uknown field " + fieldKey);
+        throw new Error("Subtabe " + this.name + ": uknown field (row " + rowNum + ") " + fieldKey);
     }
 
     getFieldValue(rowNum: RowNum, fieldKey: string): string | number {
         if (!this.fields[fieldKey]) {
-            throw new Error("Subtabe " + this.name + ": uknown field " + fieldKey);
+            throw new Error("Subtabe " + this.name + ": uknown field (2) " + fieldKey);
         }
 
         if (this.fields[fieldKey].mode === "view") {

@@ -19,7 +19,7 @@ class Shippers extends Subtable
         $this->_printHeadBlock = false;
         $this->allowExportToExcel = false;
         $this->allowTableLayouts = false;
-        $this->_tableMsgIfEmpty = 'No shippers';
+        $this->tableEmptyText = 'No shippers';
 
         $this->_title = 'Shippers';
         $this->textAddLink = 'Add Shipper';

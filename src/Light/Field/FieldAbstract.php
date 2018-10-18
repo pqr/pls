@@ -415,7 +415,7 @@ abstract class FieldAbstract implements \JsonSerializable
     public $getExcelFunction;
 
     /**
-     * @var callable($value, array $data, $outHtml, $field, $id)
+     * @var callable($value, array $data, $outHtml, $field, $idPrefix)
      */
     public $getHtmlInputFunction;
 

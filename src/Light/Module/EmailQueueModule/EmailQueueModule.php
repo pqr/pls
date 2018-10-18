@@ -35,15 +35,23 @@ class EmailQueueModule extends ModuleAbstract
                 }
             ]),
             F::createString('From'),
-            F::createText('To', ['sqlSelect' => "REPLACE(`To`, ',', '\\n')"]),
-            F::createText('Cc', ['sqlSelect' => "REPLACE(`Cc`, ',', '\\n')"]),
-            F::createText('Bcc', ['sqlSelect' => "REPLACE(`Bcc`, ',', '\\n')"]),
+            F::createText('To'),
+            F::createText('Cc'),
+            F::createText('Bcc'),
             F::createString('ReplyTo'),
             F::createString('Subject'),
             F::createText('Attachements'),
             F::createString('Body', ['modes' => F::MODE_VIEW]),
             F::createString('ContentType'),
-            F::createInt('RetryCount', ['tableAlign' => 'center', 'cssClassZero' => 'bad'])
+            F::createInt('RetryCount', [
+                'name' => 'Кол-во попыток отправки',
+                'tableAlign' => 'center',
+                'cssClassZero' => 'bad',
+            ]),
+            F::createHtml('Report', [
+                'name' => 'Отчёт о попытках отправки',
+                'modes' => F::MODE_VIEW
+            ])
 
         );
 

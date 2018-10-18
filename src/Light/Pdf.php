@@ -63,7 +63,9 @@ class Pdf
                 self::save($html, $filepathAbs, $landscape, $msgBuff, true);
             } else {
                 // если файл и повторно не смог сгенерироваться - выведем ошибку
-                $msgBuff->addError("Не удалось сгенерировать PDF файл");
+                if ($msgBuff) {
+                    $msgBuff->addError("Не удалось сгенерировать PDF файл");
+                }
                 $flagSuccess = false;
             }
         }
@@ -203,7 +205,9 @@ class Pdf
         unlink($tmpFilename);
 
         if (!$content) {
-            $msgBuff->addError('PDF content is empty');
+            if ($msgBuff) {
+                $msgBuff->addError('PDF content is empty');
+            }
             return false;
         }
 

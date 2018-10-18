@@ -336,7 +336,7 @@ class BackupMysqlData extends AutolaunchAbstract
     ): \Swift_Message {
         $subject = $this->getSubject($partNum, $partsCount);
         $message = new \Swift_Message($subject);
-        $message->setFrom(Config::$mailFrom);
+        $message->setFrom(Config::$swiftmailerUser);
         $message->setTo($to);
 
         $attachement = \Swift_Attachment::fromPath($attachement);

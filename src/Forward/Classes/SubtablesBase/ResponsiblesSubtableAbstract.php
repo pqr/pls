@@ -22,7 +22,7 @@ abstract class ResponsiblesSubtableAbstract extends Subtable
         $this->allowPaste = false;
 
         $this->textAddLink = 'Add Responsible';
-        $this->_tableMsgIfEmpty = 'No responsibles';
+        $this->tableEmptyText = 'No responsibles';
 
         $this->tableLinkModule = 'User';
         $this->tableLinkIdFieldKey = 'UserID';
