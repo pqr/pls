@@ -44,7 +44,7 @@ class Quotation extends ModuleAbstract
 
             CF::id(),
             QuotationFields::name(),
-            GeneralFields::filterCompanyId(),
+            GeneralFields::companyId(),
             GeneralFields::customerId(false, false),
             GeneralFields::vendorId(false, false),
             GeneralFields::responsibleSalesId(),
