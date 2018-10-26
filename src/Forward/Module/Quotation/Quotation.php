@@ -61,6 +61,7 @@ class Quotation extends ModuleAbstract
             CF::chargeableWeight(),
             QuotationFields::commentsInternal(),
             QuotationFields::commentsCustomer(),
+            QuotationFields::commentsLost(),
             GeneralFields::airlineAlphaCode(),
             GeneralFields::transitTime(),
             CF::incoterms(),
@@ -303,6 +304,15 @@ class Quotation extends ModuleAbstract
 
     protected function validateUnique(array $dataFromRequest)
     {
+    }
+
+    protected function validateMandatory(array $dataFromPost)
+    {
+        if ($dataFromPost['Status'] == 'lost') {
+            $this->getField('CommentsLost')->setEditMandatory('Fill Comments Lost');
+        }
+
+        parent::validateMandatory($dataFromPost);
     }
 
     protected function initViewSubmenu()

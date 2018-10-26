@@ -41,4 +41,9 @@ class QuotationFields
     {
         return F::createText('CommentsCustomer')->setName('Comments for Customer');
     }
+
+    public static function commentsLost()
+    {
+        return F::createText('CommentsLost')->setName('Comments Lost');
+    }
 }

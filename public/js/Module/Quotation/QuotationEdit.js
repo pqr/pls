@@ -70,6 +70,9 @@ var Quotation;
     Light.module.onFieldChange("GrossWeight", recalculateDensity);
     //При ручном изменении ChargeableWeight нужно пересчитать все суммы
     Light.module.onFieldChange("ChargeableWeight", recalculateAmounts);
+    Light.module.onFieldChange("Status", function (newStatus) {
+        $("#comments-lost-tr").toggleClass('display-none', newStatus != 'lost');
+    });
     /**
      * Этот метод вызывается в контексте Subtable
      * @param {int} rowNum

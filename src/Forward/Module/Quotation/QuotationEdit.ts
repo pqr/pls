@@ -88,6 +88,10 @@ namespace Quotation {
     //При ручном изменении ChargeableWeight нужно пересчитать все суммы
     Light.module.onFieldChange("ChargeableWeight", recalculateAmounts);
 
+    Light.module.onFieldChange("Status", function(newStatus: string) {
+        $("#comments-lost-tr").toggleClass('display-none', newStatus != 'lost');
+    });
+
     /**
      * Этот метод вызывается в контексте Subtable
      * @param {int} rowNum
@@ -308,4 +312,6 @@ namespace Quotation {
 
         dialog.close();
     }
+
+
 }

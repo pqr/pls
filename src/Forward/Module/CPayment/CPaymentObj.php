@@ -1,14 +1,15 @@
 <?php
+
 namespace Forward\Module\CPayment;
 
-use Forward\ModuleBase\Payments\PaymentObjAbstract;
 use Forward\Field\GeneralFields;
 use Forward\Field\PaymentFields;
 use Forward\Module\Customer\CustomerObj;
+use Forward\ModuleBase\Payments\PaymentObjAbstract;
 use Light\Db;
 use Light\Field\CommonFields as CF;
-use Light\Msg;
 use Light\Field\FieldAbstract as F;
+use Light\Msg;
 
 class CPaymentObj extends PaymentObjAbstract
 {
@@ -40,7 +41,7 @@ class CPaymentObj extends PaymentObjAbstract
 
             F::createDate('PrintedDate', [
                 'name' => 'Акт отправлен на печать',
-                'ajax' => true,
+                'ajax' => true
             ]),
 
             PaymentFields::shipmentFileField(3),

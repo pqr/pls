@@ -1,0 +1,1 @@
+ALTER TABLE quotation ADD CommentsLost TEXT NOT NULL;

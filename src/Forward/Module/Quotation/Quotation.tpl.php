@@ -26,8 +26,17 @@
                                     <?= t::html('Status') ?>
                                     <?php if (t::value('Status') == 'merged' || t::_state() != 'view'): ?>
                                         <span
-                                            id="mergedid-span"<?= t::value('Status') != 'merged' ? ' class="display-none"' : '' ?>>by <?= t::html('MergedQuotationID') ?></span>
+                                                id="mergedid-span"<?= t::value('Status') != 'merged' ? ' class="display-none"' : '' ?>>by <?= t::html('MergedQuotationID') ?></span>
                                     <?php endif; ?>
+                                </td>
+                            </tr>
+
+                            <tr id="comments-lost-tr" class="<?= t::value('Status') === 'lost' ? '' : 'display-none' ?>">
+                                <th>
+                                    <?= t::label('CommentsLost') ?>
+                                </th>
+                                <td>
+                                    <?= t::html('CommentsLost') ?>
                                 </td>
                             </tr>
                         </table>
@@ -52,10 +61,10 @@
                                 <th>Density</th>
                                 <td>
                                     <span
-                                        id="DensityKgPerM3-span"><?= t::value('DensityKgPerM3') ?></span> <?= t::uom('DensityKgPerM3') ?>
+                                            id="DensityKgPerM3-span"><?= t::value('DensityKgPerM3') ?></span> <?= t::uom('DensityKgPerM3') ?>
                                     <small style="margin: 0 10px">or</small>
                                     <span
-                                        id="DensityM3PerTon-span"><?= t::value('DensityM3PerTon') ?></span> <?= t::uom('DensityM3PerTon') ?>
+                                            id="DensityM3PerTon-span"><?= t::value('DensityM3PerTon') ?></span> <?= t::uom('DensityM3PerTon') ?>
                                 </td>
                             </tr>
                         </table>
@@ -77,10 +86,10 @@
                             <?php if (t::_state() !== 'view'): ?>
                                 <small>
                                     <a href="#" id="search-airfreightrate-link"><span
-                                            class="glyphicon glyphicon-search"></span>
+                                                class="glyphicon glyphicon-search"></span>
                                         Search Airfreight Rate</a>
                                     <a href="#" id="copy-to-selling-link"><span
-                                            class="glyphicon glyphicon-arrow-left"></span> Copy to Selling</a>
+                                                class="glyphicon glyphicon-arrow-left"></span> Copy to Selling</a>
                                 </small>
                             <?php endif; ?>
                         </h2>
