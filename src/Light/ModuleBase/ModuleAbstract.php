@@ -554,7 +554,7 @@ abstract class ModuleAbstract extends Table
                 Response::abort(400, "Field not found");
             }
 
-            if (!$this->hasWriteAccessAjaxChangeField($field)) {
+            if (!$this->hasWriteAccessAjaxChangeFieldSubtable($field)) {
                 Response::abort(403, 'Edit not allowed');
             }
 
@@ -2797,6 +2797,14 @@ abstract class ModuleAbstract extends Table
             && User::hasWriteAccess()
             && ($this->_obj->getId() === 0 || $this->hasWriteAccessRightToObj($this->_obj))
             && $this->_obj->hasFieldModeSubmit($field->key);
+    }
+
+    protected function hasWriteAccessAjaxChangeFieldSubtable(FieldAbstract $field): bool
+    {
+        return $this->allowEdit
+            && User::hasWriteAccess()
+            && ($this->_obj->getId() === 0 || $this->hasWriteAccessRightToObj($this->_obj))
+            && $field->hasMode(F::MODE_SUBMIT);
     }
 
     /**

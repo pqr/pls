@@ -482,6 +482,14 @@ abstract class FieldAbstract implements \JsonSerializable
     public $ajax = false;
 
     /**
+     * @var string имя JavaScript функции и небольшой фрагмент javascript кода, который запустить при успешном обновлении
+     * поля через ajax. Этот значение будет записано в тег ссылки как атрибут data-ajax-success-handler и запущено в AjaxFields.ts
+     * Пример: 'ajaxSuccessHandeler' => 'Basis.doSomething'
+     * После успешного ajax обновления в браузере будет выполнен код `Basis.doSomething($link)`
+     */
+    public $ajaxSuccessHandler;
+
+    /**
      * @var bool добавить ли к фильтру галочку "исключая"?
      */
     public $filterNot = false;
@@ -772,7 +780,9 @@ abstract class FieldAbstract implements \JsonSerializable
             return $outHtml;
         }
 
-        return '<a href="#" class="ajax-input" data-id="' . $data['ID'] . '" data-fieldkey="' . htmlspecialchars($this->key) . '">' . $outHtml . '</a>';
+        $ajaxSuccessHandler = $this->ajaxSuccessHandler ? ' data-ajax-success-handler="' . $this->ajaxSuccessHandler . '"' : '';
+
+        return '<a href="#" class="ajax-input" data-id="' . $data['ID'] . '" data-fieldkey="' . htmlspecialchars($this->key) . '"' . $ajaxSuccessHandler . '>' . $outHtml . '</a>';
     }
 
     public function getHtmlForLog($value, array $data)

@@ -1,5 +1,5 @@
 # Example: ansible-playbook playbook_deploy_webserver.yml -i inventory.test --tags=nginx
-- hosts: []
+- hosts: all
   become: false
   vars_files:
   - vars_decrypted.yml

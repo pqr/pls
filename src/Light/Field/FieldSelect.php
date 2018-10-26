@@ -19,6 +19,7 @@ use Light\Response;
  * @method $this setSelect2(bool $value)
  * @method $this setSelect2ajax(bool $value)
  * @method $this setParentFieldKeys(string | array $value)
+ * @method $this setRelations(string | callable $value)
  * @method $this setMultiple(bool $value)
  * @method $this setMultipleSqlWhereOperator(string $value)
  * @method $this setMultipleViewSeparator(string $value)
@@ -32,6 +33,7 @@ use Light\Response;
  * @method bool getSelect2()
  * @method bool getSelect2ajax()
  * @method string|array getParentFieldKeys()
+ * @method string|callable getRaltions()
  * @method bool getMultiple()
  * @method string getMultipleSqlWhereOperator()
  * @method string getMultipleViewSeparator()
@@ -91,6 +93,9 @@ class FieldSelect extends FieldOptionsAbstract
         $cssClass = parent::getEditCssClass($value, $data);
         if ($this->select2) {
             $cssClass .= ' select-select2';
+
+            // Для select2 полей нельзя делать input-auto - они скукоживаются
+            $cssClass = str_replace('input-auto', 'input-default', $cssClass);
 
             if ($this->select2ajax) {
                 $cssClass .= ' select2-ajax';
@@ -411,7 +416,7 @@ class FieldSelect extends FieldOptionsAbstract
             // обычно это происходит, когда в фильтрах вызывается ранее сохранённый набор фильтров
             $ids = array_filter(explode(',', $_GET['loadOptionIds']));
             $returnOptions = [];
-            foreach($ids as $id) {
+            foreach ($ids as $id) {
                 if (isset($options[$id])) {
                     $returnOptions[$id] = $options[$id];
                 }

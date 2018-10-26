@@ -507,7 +507,19 @@ class PrintForm
 
     public function getIcon()
     {
-        return $this->format === PrintForm::FORMAT_EXCEL ? Img::iconExcel() : Img::iconPrint();
+        switch ($this->format) {
+            case PrintForm::FORMAT_EXCEL:
+                return Img::iconExcel();
+
+            case PrintForm::FORMAT_PDF:
+                return Img::iconPdf();
+
+            case PrintForm::FORMAT_DOC:
+            case PrintForm::FORMAT_DOCX:
+                return Img::iconWord();
+
+        }
+        return Img::iconPrint();
     }
 
 }

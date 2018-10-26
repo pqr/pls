@@ -77,7 +77,7 @@ class Email extends AutolaunchAbstract
     private function pickOneRecord($pid, $alreadyDoneIds)
     {
         // Для одной записи из таблицы установим флаг блокировки (PID)
-        $updateQuery = "UPDATE queue_email SET PID = @s WHERE RetryCount < 3 AND PID IS NULL";
+        $updateQuery = "UPDATE queue_email SET PID = @s WHERE RetryCount < 1 AND PID IS NULL";
         if ($alreadyDoneIds) {
             //Если передан массив ID уже обработанных на предыдущих шагах записей, то добавим условие, чтобы не выбирать эти записи заново
             $updateQuery .= " AND ID NOT IN(" . implode(',', $alreadyDoneIds) . ")";

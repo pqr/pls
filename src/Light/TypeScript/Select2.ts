@@ -121,7 +121,15 @@ class Select2 {
 
         if (!url) {
             // Похоже, мы не внутри фильтров (или из фильтров не удалось определить url)
-            // тогда используем адрес текущей страницы
+            // Попробуем найти ближайший узел с атрибутом data-select2ajaxurl
+            const container = <HTMLFormElement | null>this.select.closest("*[data-select2ajaxurl]");
+            if (container) {
+                url = container.getAttribute('data-select2ajaxurl')
+            }
+        }
+
+        if (!url) {
+            // Если ничего не получилось, используем адрес текущей страницы
             url = window.location.href;
             if (!url.includes("?")) {
                 url += "?";

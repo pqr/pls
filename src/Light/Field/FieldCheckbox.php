@@ -73,7 +73,9 @@ class FieldCheckbox extends FieldAbstract
         $cssClass = $this->getViewCssClass($value, $data, $forTable);
         $cssClass = trim($cssClass . ' ajax-checkbox');
 
-        return '<a href="#" class="' . $cssClass . '" data-id="' . $data['ID'] . '" data-fieldkey="' . $this->key . '" data-value="' . $value . '">'
+        $ajaxSuccessHandler = $this->ajaxSuccessHandler ? ' data-ajax-success-handler="' . $this->ajaxSuccessHandler . '"' : '';
+
+        return '<a href="#" class="' . $cssClass . '" data-id="' . $data['ID'] . '" data-fieldkey="' . $this->key . '" data-value="' . $value . '"' . $ajaxSuccessHandler . '>'
             . $this->getText($value)
             . '</a>';
     }

@@ -211,7 +211,7 @@ class XlsWriter
                         // Внутри этой ячейки ровно один плейсхолдер, сделаем замену,
                         // если в массиве data есть соответсвующий элемент
                         $placeholder = reset($matches[1]);
-                        if (isset($data[$placeholder])) {
+                        if (array_key_exists($placeholder, $data)) {
 
                             $value = $data[$placeholder];
                             if ($value instanceof Table) {

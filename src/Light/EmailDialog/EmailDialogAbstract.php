@@ -282,6 +282,14 @@ abstract class EmailDialogAbstract
             ->replyTo($formData['EmailReplyTo'])
             ->asText();
 
+        $userEmail = User::getEmail();
+        if ($userEmail) {
+            // Попробуем отправить почту от имени текущего пользователя
+            // From будет установлено в $userEmail при отправке, если у пользователя заполнено поле user.EmailPassword
+            // в противном случае отправка произойдёт от Config::$swiftmailerUser
+            $email->from($userEmail);
+        }
+
         $validAttachements = $this->getAttachementsFullPaths($formData);
         if ($validAttachements) {
             $email->attachements($validAttachements);

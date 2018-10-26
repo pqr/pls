@@ -9,8 +9,6 @@ const textCancel = isLangRu ? "Отмена" : "Cancel";
 $body.on("click", "a.ajax-checkbox", function(this: HTMLAnchorElement, e: JQuery.Event) {
     e.preventDefault();
     const $link = $(this);
-    const handler = $link.closest("td").attr("ajax-success-handler");
-    const $parent = $link.parent();
 
     // Найдём ближайший тег контейнер в котором описан url на который делать запрос
     const $container = $link.closest("*[data-ajaxchangefieldurl]");
@@ -20,6 +18,7 @@ $body.on("click", "a.ajax-checkbox", function(this: HTMLAnchorElement, e: JQuery
 
     // Ставим на время load-картинку
     const $img = $('<img src="lightpublic/i/circle.gif">').insertAfter($link);
+
     // Оригинальную ссылку удаляем из Dom (но сохраняем в переменной $link на случай ajax fail
     $link.remove();
 
@@ -30,16 +29,20 @@ $body.on("click", "a.ajax-checkbox", function(this: HTMLAnchorElement, e: JQuery
     let url = $container.attr("data-ajaxchangefieldurl");
     url += `${id}&fieldKey=${encodeURIComponent(fieldKey)}&newValue=${newValue}`;
 
-    //Отправим сам запрос!
+    // Отправим сам запрос!
     $.post(url)
         .done((newHtml: string) => {
             // Замещаем изображение загрузки на новую ссылку, пришедшую от сервера
-            $(newHtml).insertAfter($img);
+            const $newLink = $(newHtml);
+            $newLink.insertAfter($img);
             $img.remove();
 
+            // На ссылке может быть определен специальный handler - имя JavaScript функции, которую нужно запустить
+            // после успешного обновления этого чекбокса через ajax
+            const handler = $newLink.attr("data-ajax-success-handler");
             if (handler !== undefined) {
-                const fn = eval(handler!);
-                fn($link, $parent);
+                const fn = eval(handler);
+                fn($newLink);
             }
         })
         .fail(() => {
@@ -157,9 +160,18 @@ function handleAjaxInputSave($editHtml: JQuery, $input: JQuery, url: string) {
             // удаляем те две кнопки (сохранить  и отмена)
             removeSaveCancelButtons($input);
             // вставляем новый html код поля в режиме view после поля блока для ввода
-            $(newHtml).insertAfter($editHtml);
+            const $newLink = $(newHtml);
+            $newLink.insertAfter($editHtml);
             // удаляем сам блок для ввода
             $editHtml.remove();
+
+            // На ссылке может быть определен специальный handler - имя JavaScript функции, которую нужно запустить
+            // после успешного обновления этого чекбокса через ajax
+            const handler = $newLink.attr("data-ajax-success-handler");
+            if (handler !== undefined) {
+                const fn = eval(handler);
+                fn($newLink);
+            }
         })
         .fail(() => {
             // В случае ошибки ajax запроса возвращаем поле ввода в режим редактирования
