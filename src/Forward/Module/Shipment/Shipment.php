@@ -634,6 +634,7 @@ class Shipment extends ModuleAbstract
 
         // Если пользователь вручную заполнил поле ShipmentRequestNo, то проверим, что это значение не выходит далеко впедёр от максимального
         if (isset($dataFromRequest['ShipmentRequestNo'])
+            && isset($dataFromRequest['CompanyID'])
             && $dataFromRequest['ShipmentRequestNo'] !== '0000-00-00'
             && $dataFromRequest['CustomerAccountID']
             && (Constant::isOneCCompany($dataFromRequest['CompanyID']))
