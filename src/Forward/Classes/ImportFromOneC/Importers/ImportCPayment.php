@@ -264,6 +264,13 @@ class ImportCPayment extends ImporterAbstract
             return Db::getRow("SELECT * FROM cinvoice WHERE ID = @i", $lineFromOneC['CInvoiceID']);
         }
 
+        if (!$lineFromOneC['CInvoiceNumber'] || !$lineFromOneC['CInvoiceDate']) {
+            // Из 1С не пришла дата или номер счёта - это основные ключевые поля по которым возможен поиск после CInvoiceID
+            // Если их нет, то и найти ничего не можем!
+            return [];
+        }
+
+
         // Если же в json строке нет конкретного ID в нашей базе, то осуществим поиск по номеру и дате
         $docDate = new \DateTime($lineFromOneC['CInvoiceDate']);
         $possibleInvoices = Db::getAll("SELECT * 
