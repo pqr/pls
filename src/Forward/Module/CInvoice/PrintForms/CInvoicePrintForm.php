@@ -25,12 +25,12 @@ class CInvoicePrintForm extends PrintForm
             || $obj['CompanyID'] == Constant::OC_PLS_USD;
     }
 
-    protected function getHtmlTitle(ObjAbstract $obj)
+    protected function getTitleHtml(ObjAbstract $obj): string
     {
         return 'Invoice ' . strip_tags($obj->getDescriptionHtml());
     }
 
-    protected function getHtmlTitleMultiple(int $count)
+    protected function getTitleHtmlMultiple(int $count): string
     {
         return 'Invoices (' . $count . ')';
     }
