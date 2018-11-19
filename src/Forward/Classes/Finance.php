@@ -3,7 +3,9 @@
 namespace Forward\Classes;
 
 use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
+use Forward\Module\CInvoice\CInvoice;
 use Forward\Module\CInvoice\CInvoiceObj;
+use Forward\Module\VInvoice\VInvoice;
 use Forward\Module\VInvoice\VInvoiceObj;
 use Light\Db;
 use Light\Link;
@@ -152,7 +154,7 @@ class Finance
         $filterValues['Status' . Finance::INVOICESTATUS_OPEN] = 1;
         $filterValues['Status' . Finance::INVOICESTATUS_PARTCLEARED] = 1;
 
-        return Link::create('CInvoice', $text)
+        return Link::create(CInvoice::class, $text)
             ->title('View Customer Invoices')
             ->filters($filterValues)
             ->getHtml();
@@ -204,7 +206,7 @@ class Finance
         $filterValues['Status' . Finance::INVOICESTATUS_UNDERDISPUTE] = 1;
         $filterValues['Status' . Finance::INVOICESTATUS_PARTCLEARED] = 1;
 
-        return Link::create('VInvoice', $text)
+        return Link::create(VInvoice::class, $text)
             ->title('View Vendor Invoices')
             ->filters($filterValues)
             ->getHtml();

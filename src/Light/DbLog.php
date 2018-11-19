@@ -16,8 +16,8 @@ class DbLog
         $fieldDescription,
         array $textData
     ) {
-        //Если буфер ещё не инициалирован, значит это вообще первое обращение к DbLog::write()
-        //Одновременно с этим инициализируем register_shutdown_function
+        // Если буфер ещё не инициалирован, значит это вообще первое обращение к DbLog::write()
+        // Одновременно с этим инициализируем register_shutdown_function
         if (self::$_buffer === null) {
             self::$_buffer = [];
             register_shutdown_function('\\Light\\DbLog::flush');

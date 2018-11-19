@@ -841,7 +841,7 @@ abstract class Subtable2
             $value = $_REQUEST['newValue'];
             $data = [$fieldKey => $value];
             $normilizedValue = $field->getDataFromRequest($data);
-            if ($normilizedValue === null) {
+            if ($normilizedValue === null && !$field->nullable) {
                 Response::abort(400, 'Invalid value ' . $value);
             }
 

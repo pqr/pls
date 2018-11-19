@@ -9,6 +9,9 @@ use Forward\Classes\InvoicesCommon;
 use Forward\Field\GeneralFields;
 use Forward\Field\InvoiceFields;
 use Forward\ForwardConfig;
+use Forward\Module\VInvoice\Subtables\Lines;
+use Forward\Module\VInvoice\Subtables\Responsibles;
+use Forward\Module\VInvoice\Subtables\VPayments;
 use Forward\ModuleBase\Invoices\InvoiceModuleAbstract;
 use Light\ApplicationAbstract;
 use Light\Db;
@@ -27,18 +30,13 @@ use Light\User;
 
 class VInvoice extends InvoiceModuleAbstract
 {
+    protected $textSaveBtn = 'Vendor Invoice';
+    protected $tableLinkFieldKeys = ['VendorID'];
+    protected $tableLayoutDefault = 'VendorID|Name|Amount|CurrencyISO|StatusIco|CacheResponsibleUserID|ReceivedDate|DocDate|DueDate|CacheLastPaymentDate|Comments';
+
     public function __construct()
     {
         parent::__construct();
-
-        $this->textSaveBtn = 'Vendor Invoice';
-        $this->tableLinkFieldKeys = ['VendorID'];
-        $this->tableLayouts['Default'] = 'VendorID|Name|Amount|CurrencyISO|StatusIco|CacheResponsibleUserID|' .
-            'ReceivedDate|DocDate|DueDate|CacheLastPaymentDate|Comments';
-
-        $this->registerSubtable('Responsibles');
-        $this->registerSubtable('Lines');
-        $this->registerSubtableReadonly('VPayments');
 
         //Если у пользователя нет прав на изменения поля Status, исправим набор options
         $statusOptions = Finance::$vinvoiceStatuses;
@@ -53,6 +51,13 @@ class VInvoice extends InvoiceModuleAbstract
             $statusOptions[Finance::INVOICESTATUS_DELETED]['Active'] = 0;
         }
         $this->getField('Status')->setParam('options', $statusOptions);
+    }
+
+    protected function registerSubtables()
+    {
+        $this->registerSubtable(Responsibles::class);
+        $this->registerSubtable(Lines::class);
+        $this->registerSubtableReadonly(VPayments::class);
     }
 
     protected function initMassactions()
@@ -289,7 +294,7 @@ class VInvoice extends InvoiceModuleAbstract
             $vendorName = strip_tags($this->getField('VendorID')->getHtml($dataFromPost['VendorID']));
             $msg = 'Vendor Invoice с таким Reference <strong>' . htmlspecialchars($dataFromPost['Name'])
                 . '</strong> от перевозчика ' . $vendorName . ' уже есть в базе, '
-                . Link::create('VInvoice', 'посмотреть...')
+                . Link::create(VInvoice::class, 'посмотреть...')
                     ->view($id)
                     ->blank()
                     ->getHtml();

@@ -163,6 +163,11 @@ class InvStatus
         return isset($openStatuses[$status]);
     }
 
+    public static function isClearedStatus(int $status): bool
+    {
+        return $status == self::CLEARED || $status == self::PARTCLEARED;
+    }
+
     public static function isDeletedStatus(int $status): bool
     {
         return isset(self::$invDeleted[$status]);

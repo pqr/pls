@@ -9,13 +9,14 @@ use Light\User;
 
 class Airline extends ModuleAbstract
 {
+    protected $textSaveBtn = 'Airline';
+    protected $continmethod = true;
+    protected $tableLayoutDefault = 'AlphaCode|DigitalCode|Name';
+
     public function __construct()
     {
         parent::__construct();
 
-        $this->setDbTable('airline');
-        $this->textSaveBtn = 'Airline';
-        $this->continmethod = true;
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
@@ -41,8 +42,6 @@ class Airline extends ModuleAbstract
             ])
 
         );
-
-        $this->tableLayouts['Default'] = 'AlphaCode|DigitalCode|Name';
     }
 
     protected function initFilters()

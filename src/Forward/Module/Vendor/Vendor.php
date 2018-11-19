@@ -1,25 +1,32 @@
 <?php
+
 namespace Forward\Module\Vendor;
 
 use Forward\Application;
+use Forward\Module\Vendor\Subtables\Contacts;
+use Forward\Module\Vendor\Subtables\Responsibles;
+use Forward\Module\Vendor\Subtables\VendorAccounts;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleBase\ModuleAbstract;
 use Light\User;
 
 class Vendor extends ModuleAbstract
 {
+    protected $folders = true;
+    protected $textSaveBtn = 'Vendor';
+    protected $tableLayoutDefault = 'Name|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
+
     public function __construct()
     {
         parent::__construct();
-
-        $this->folders = true;
-        $this->textSaveBtn = 'Vendor';
-        $this->tableLayouts['Default'] = 'Name|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
+    }
 
-        $this->registerSubtable('Responsibles');
-        $this->registerSubtable('VendorAccounts');
-        $this->registerSubtable('Contacts');
+    protected function registerSubtables()
+    {
+        $this->registerSubtable(Responsibles::class);
+        $this->registerSubtable(VendorAccounts::class);
+        $this->registerSubtable(Contacts::class);
     }
 
     protected function initFilters()
@@ -48,7 +55,7 @@ class Vendor extends ModuleAbstract
                 'options' => "SELECT ID, Name FROM `user` WHERE Active AND EXISTS(SELECT UserID FROM vendor_responsible WHERE UserID = user.ID) ORDER BY Name",
                 'sqlWhere' => function ($value) {
                     return ($value ? '' : 'NOT ')
-                    . "EXISTS (SELECT VendorID FROM vendor_responsible WHERE VendorID = vendor.ID AND UserID = " . (int)$value . ")";
+                        . "EXISTS (SELECT VendorID FROM vendor_responsible WHERE VendorID = vendor.ID AND UserID = " . (int)$value . ")";
                 }
             ])
 

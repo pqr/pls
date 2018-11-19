@@ -6,6 +6,7 @@ namespace Light\Module\SettingsBackup;
 
 use Light\Field\FieldAbstract as F;
 use Light\Link;
+use Light\Module\Autolaunch\Autolaunch;
 use Light\ModuleBase\SettingsPageAbstract;
 
 class SettingsBackup extends SettingsPageAbstract
@@ -34,7 +35,7 @@ class SettingsBackup extends SettingsPageAbstract
 
     protected function getDescription(): string
     {
-        return Link::create('Autolaunch', 'Run Backup >>')
+        return Link::create(Autolaunch::class, 'Run Backup >>')
             ->params(['class' => 'Light\Autolaunch\BackupMysqlData'])
             ->getHtml();
     }

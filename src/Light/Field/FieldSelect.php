@@ -19,6 +19,7 @@ use Light\Response;
  * @method $this setSelect2(bool $value)
  * @method $this setSelect2ajax(bool $value)
  * @method $this setParentFieldKeys(string | array $value)
+ * @method $this setParentFieldKeysMandatory(string | array $value)
  * @method $this setRelations(string | callable $value)
  * @method $this setMultiple(bool $value)
  * @method $this setMultipleSqlWhereOperator(string $value)
@@ -33,6 +34,7 @@ use Light\Response;
  * @method bool getSelect2()
  * @method bool getSelect2ajax()
  * @method string|array getParentFieldKeys()
+ * @method string|array getParentFieldKeysMandatory()
  * @method string|callable getRaltions()
  * @method bool getMultiple()
  * @method string getMultipleSqlWhereOperator()
@@ -52,6 +54,7 @@ class FieldSelect extends FieldOptionsAbstract
 
     public $select2 = false;
     public $select2ajax = false;
+    public $select2ajaxMin = 1;
     public $multiple = false;
 
     /**
@@ -68,6 +71,13 @@ class FieldSelect extends FieldOptionsAbstract
      * @var string|array здесь может быть указано одно поле или несколько в массиве
      */
     public $parentFieldKeys;
+
+    /**
+     * Для child поля обязательно требуется какое-нибудь не пустое parent заначение
+     * (работает только в select2ajax)
+     * @var string|array
+     */
+    public $parentFieldKeysMandatory;
 
     /**
      * Строка запроса или метод, который должен возвращать простой массив содержащий ассоциативные массивы
@@ -124,6 +134,10 @@ class FieldSelect extends FieldOptionsAbstract
 
             if ($this->multiple) {
                 $editTagParams .= ' multiple size=1';
+            }
+
+            if ($this->select2ajax && $this->select2ajaxMin > 1) {
+                $editTagParams = ' data-minimum-input-length=' . $this->select2ajaxMin;
             }
         }
 
@@ -350,7 +364,7 @@ class FieldSelect extends FieldOptionsAbstract
             }
 
             // С помощью уже имеющейся оптимизированной функции prefetchViewOptions загружаем из базы только то, что нужно
-            $this->prefetchViewOptions($ids);
+            $this->prefetchOptions($ids);
 
             $editOptions = [];
             foreach ($ids as $id) {
@@ -493,7 +507,6 @@ class FieldSelect extends FieldOptionsAbstract
                 continue;
             }
 
-            // в режиме $flatAndOnlyActive никогда не добавляем во вложенные группы
             if (is_array($option) && isset($option['optgroup']) && $option['optgroup'] !== '') {
                 $optgroup = $option['optgroup'];
                 $optgroups[$optgroup][$optionValue] = $option;
@@ -558,6 +571,21 @@ class FieldSelect extends FieldOptionsAbstract
             $parentValue = (string)$parentValue;
             return $parentValue !== '' && $parentValue !== '%' && $parentValue !== '0';
         });
+
+        if ($this->parentFieldKeysMandatory) {
+            $parentFieldKeysMandatory = is_string($this->parentFieldKeysMandatory)
+                ? [$this->parentFieldKeysMandatory]
+                : $this->parentFieldKeysMandatory;
+            // Для данного поля определены некоторые parent поля, которые должны быть обязательно переданы
+            // Проверим, все ли обязательные parent поля переданы с этим запросом?
+            $fieldKeysDiff = array_diff($parentFieldKeysMandatory, array_keys($parentFieldValuesFromAjax));
+            if ($fieldKeysDiff) {
+                // Какие-то из обязательных полей указанных в $this->parentFieldKeysMandatory не переданы в запросе
+                // тогда выведем пользователю пустой массив
+                return [];
+            }
+        }
+
         if (!$parentFieldValuesFromAjax) {
             // Пришедшие от клиента по ajax значени parent полей все пустые, значит нет смысла фильтровать опции
             // текущиего child поля, возвращаем входящий массив как есть без фильтрации
@@ -678,4 +706,19 @@ class FieldSelect extends FieldOptionsAbstract
 
         return parent::getSqlWhereInner($value);
     }
+
+    public function prefetchOptions(array $ids)
+    {
+        parent::prefetchOptions($ids);
+        if (is_array($this->prefetchedOptions)) {
+            // Если удалось загрузить массив каких-то опций, т.е. options был не статический array или callback,
+            // то дозаполним prefetchedOptions типовыми пустыми значениями
+            $this->prefetchedOptions['0'] = $this->emptyText;
+            $this->prefetchedOptions[''] = $this->emptyText;
+            $this->prefetchedOptions[null] = $this->emptyText;
+            $this->prefetchedOptions['%'] = $this->anyPlaceholder;
+        }
+    }
+
+
 }

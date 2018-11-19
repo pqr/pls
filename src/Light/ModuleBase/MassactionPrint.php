@@ -6,9 +6,10 @@ namespace Light\ModuleBase;
 use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Field\FieldAbstract as F;
+use Light\FilesFolder;
 use Light\Img;
 use Light\ObjAbstract;
-use Light\PrintForm;
+use Light\PrintForm\PrintForm;
 use Light\Request;
 use Light\Response;
 use Light\Template;
@@ -46,8 +47,9 @@ trait MassactionPrint
              * @var PrintForm $printForm
              */
             foreach ($printForms as $key => $printForm) {
-                if (!$printForm->testForObj($obj)) {
-                    // Текущая печатная форма не подходит данному объету - убираем её из массива
+                if (!$printForm->allowMultiple || !$printForm->testForObj($obj)) {
+                    // Форма не предназначена для массовой печати
+                    // или не подходит данному объету - убираем её из массива
                     unset($printForms[$key]);
                 }
             }
@@ -112,21 +114,27 @@ trait MassactionPrint
 
         /** @var PrintForm $printForm */
         $printForm = $this->printForms[$form];
-        $objectsAndPaths = [];
+        $objects = [];
+        $targetDirs = [];
 
         foreach ($ids as $id) {
             /** @var ObjAbstract $obj */
             $obj = clone $objBase;
             $obj->setId($id);
+
             // Попробуем загрузить объект и ещё раз на всякий случай проверим, подходит ли он для данной формы?
             // (за то время, пока пользователь выбирал фомру в диалоге, сами объекты могли измениться)
             if ($obj->loadData() && $printForm->testForObj($obj)) {
+
+                $objects[] = $obj;
+
                 $relativePath = $this->getFolderRelativePath($obj->getData());
-                $objectsAndPaths[] = [$obj, $relativePath];
+                $targetDirs[] = FilesFolder::getAbsolutePath($relativePath);
+
             }
         }
 
-        if (!$objectsAndPaths) {
+        if (!$objects) {
             // Все переданные в ids объекты либо уже не существуют, либо уже не подходят для печати в выбанной печатной форме
             $msg = Config::$lang === 'ru' ? 'Выбранные записи не подходят для печатной формы' : 'Not sutable for print form';
             $printFormTitle = $printForm->getTitle();
@@ -136,7 +144,7 @@ trait MassactionPrint
 
         if ($printForm->getFieldset()->count() && !isset($_GET['fromDialog'])) {
             // Для данной формы задан какой-то fieldset, значит нужно вывести дополнительный диалог
-            $this->massactionPrintShowFieldsDialog($ids, $objectsAndPaths, $printForm);
+            $this->massactionPrintShowFieldsDialog($ids, $objects, $printForm);
             return;
         }
 
@@ -144,7 +152,7 @@ trait MassactionPrint
         if (!Request::isPost()) {
             throw new \Exception('HTTP method for print forms should be POST (' . $printForm->getKey() . ')');
         }
-        $printForm->proceedPrintMultiple($objectsAndPaths);
+        $printForm->proceedPrintMultiple($objects, $targetDirs);
         ApplicationAbstract::terminate();
     }
 

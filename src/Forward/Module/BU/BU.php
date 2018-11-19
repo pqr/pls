@@ -10,13 +10,13 @@ use Light\User;
 
 class BU extends ModuleAbstract
 {
+    protected $textSaveBtn = 'Business Unit';
+    protected $tableLayoutDefault = 'OrderID|Name';
+
     public function __construct()
     {
         parent::__construct();
 
-        $this->setDbTable('bu');
-        $this->textSaveBtn = 'Business Unit';
-        $this->tableDefaultOrderBy = 'OrderID';
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
@@ -29,7 +29,5 @@ class BU extends ModuleAbstract
             CF::orderId()
 
         );
-
-        $this->tableLayouts['Default'] = 'OrderID|Name';
     }
 }

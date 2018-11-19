@@ -5,12 +5,13 @@ namespace Light\Module\Core;
 use Carbon\Carbon;
 use Light\ApplicationAbstract;
 use Light\Config;
-use Light\CsvLog;
+use Light\LogerCsv;
 use Light\Currency;
 use Light\Db;
 use Light\DbLog;
 use Light\Field\FieldDate;
 use Light\FilesFolder;
+use Light\LoggerCsv;
 use Light\Metric;
 use Light\Misc;
 use Light\ModuleRegister;
@@ -184,7 +185,7 @@ class Core
             $_POST['domContentLoadedEventDuration']
         ];
 
-        CsvLog::write('jslog', $head, $data);
+        LoggerCsv::write('jslog', $head, $data);
 
         ApplicationAbstract::terminate();
     }

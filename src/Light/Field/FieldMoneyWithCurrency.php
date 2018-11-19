@@ -166,7 +166,7 @@ class FieldMoneyWithCurrency extends FieldMoney
             $amount = (new FieldMoney('Amount'))->getDataFromRequest(['Amount' => $request[$this->key]['Amount']]);
             $currencyIso = CF::currency()->getDataFromRequest(['CurrencyISO' => $request[$this->key]['CurrencyISO']]);
 
-            //Для вставки в базу нужны ключи как они определены в самом поле
+            // Для вставки в базу нужны ключи как они определены в самом поле
             $value = [$this->key => $amount, $this->getCurrencyIsoDbFieldKey() => $currencyIso];
         }
 

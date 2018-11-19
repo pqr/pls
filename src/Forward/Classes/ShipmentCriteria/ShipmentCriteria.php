@@ -2,6 +2,7 @@
 namespace Forward\Classes\ShipmentCriteria;
 
 use Forward\Application;
+use Light\ApplicationAbstract;
 use Light\Db;
 use Light\DbLog;
 
@@ -101,7 +102,7 @@ class ShipmentCriteria
         //Одновременно с этим регистрируем обработчик ApplicationAbstract::addFlushOnTerminate()
         if (self::$_buffer === null) {
             self::$_buffer = [];
-            Application::$flushShipmentCriteria = true;
+            ApplicationAbstract::onAfterSend([self::class, 'flush']);
         }
 
         self::$_buffer[$criterionId][$shipmentId] = $dbLogMsg;

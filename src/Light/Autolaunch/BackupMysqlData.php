@@ -170,7 +170,7 @@ class BackupMysqlData extends AutolaunchAbstract
 
     protected function getBackupSettingsLink()
     {
-        return Link::create('SettingsBackup', 'setup >>');
+        return Link::create(SettingsBackup::class, 'setup >>');
     }
 
     protected function checkArchive()

@@ -32,7 +32,6 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
 
         $this->tableWidthExcel = 10;
         $this->default = 0;
-        $this->tableAlign = 'right';
     }
 
     protected function getEditTagParams($value, array $data)

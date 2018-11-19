@@ -106,7 +106,34 @@ class Pdf
 
     private static function runLocal($html, $filepathAbs, $landscape = false, Msg $msgBuff = null)
     {
-        //Путь к исполняемому файлу wkhtmltopd должен быть в конфиге
+        $tmpfilepathAbs = LIGHT_DIR_TEMP . '/' . User::getId() . '_' . time() . '.pdf';
+        $cmd = self::getCmdPdfFromHtmlStdin($tmpfilepathAbs, $landscape);
+
+        $result = Misc::procOpen($cmd, $msgBuff, $html);
+        if (!$result) {
+            return false;
+        }
+
+        // Проверим, а сгенерировался ли pdf файл вообще?
+        if (!is_file($tmpfilepathAbs)) {
+            // Выходного pdf файла почему-то нет
+            if ($msgBuff) {
+                $msgBuff->addError('Destination file ' . htmlspecialchars($tmpfilepathAbs) . 'was not created ');
+            }
+            return false;
+        }
+
+        //Переименуем временный файл в реальный
+        $filepathAbsEnc = File::encode($filepathAbs);
+        rename($tmpfilepathAbs, $filepathAbsEnc);
+        @chmod($filepathAbsEnc, 0666);
+
+        return true;
+    }
+
+    public static function getCmdPdfFromHtmlStdin(string $targetFile, bool $landscape = false): string
+    {
+//Путь к исполняемому файлу wkhtmltopd должен быть в конфиге
         $cmd = '"' . Config::$wkhtmltopdfPath . '"';
 
         if ($landscape) {
@@ -137,8 +164,8 @@ class Pdf
         //if (stristr(PHP_OS, 'DAR')) {
         //    $cmd .= " --dpi 800 --zoom 1.5";
         //} else {
-            //Если принудительно не поставить dpi, то размеры указанные в css в милиметрах на печати будут совсем не такими!
-            $cmd .= " --dpi 96";
+        //Если принудительно не поставить dpi, то размеры указанные в css в милиметрах на печати будут совсем не такими!
+        $cmd .= " --dpi 96";
         //}
 
         /*
@@ -155,29 +182,10 @@ class Pdf
         //В качестве файла назначения указываем $filepathAbs
         //если имя файла содержит русские буквы, то в итоге получаем иероглифы в проводнике
         //поэтому сначала создадим временный файл, а потом переименуем
-        $tmpfilepathAbs = LIGHT_DIR_TEMP . '/' . User::getId() . '_' . time() . '.pdf';
-        $cmd .= ' "' . $tmpfilepathAbs . '"';
 
-        $result = Misc::procOpen($cmd, $msgBuff, $html);
-        if (!$result) {
-            return false;
-        }
+        $cmd .= ' "' . $targetFile . '"';
 
-        // Проверим, а сгенерировался ли pdf файл вообще?
-        if (!is_file($tmpfilepathAbs)) {
-            // Выходного pdf файла почему-то нет
-            if ($msgBuff) {
-                $msgBuff->addError('Destination file ' . htmlspecialchars($tmpfilepathAbs) . 'was not created ');
-            }
-            return false;
-        }
-
-        //Переименуем временный файл в реальный
-        $filepathAbsEnc = File::encode($filepathAbs);
-        rename($tmpfilepathAbs, $filepathAbsEnc);
-        @chmod($filepathAbsEnc, 0666);
-
-        return true;
+        return $cmd;
     }
 
     private static function runAthena($html, $filepathAbs, $landscape = false, Msg $msgBuff = null)
@@ -269,7 +277,8 @@ class Pdf
         // Чтобы окончательно победить баг с пропадающими символами при склейке PDF файлов, не будем использовать ghostscript
         // $cmd = '"' . Config::$ghostScriptPath . '" -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dSubsetFonts=false -sOutputFile=-';
         // будем использовать более простую утилиту pdftk
-        $cmd = self::getCmdConcatenatePdf($filesRelative, '-');
+        $files = FilesFolder::copyToTmpDirAndRename($filesRelative);
+        $cmd = self::getCmdConcatenatePdf($files, '-');
         passthru($cmd);
 
         Metric::record('Pdf::concatenateAndStreamFromFilesFolder', $timer->getMs(),
@@ -283,19 +292,18 @@ class Pdf
         string $outAbsFilepathEnc,
         Msg $msgBuff = null
     ) {
-        $cmd = self::getCmdConcatenatePdf($filesRelative, $outAbsFilepathEnc);
+        $files = FilesFolder::copyToTmpDirAndRename($filesRelative);
+        $cmd = self::getCmdConcatenatePdf($files, $outAbsFilepathEnc);
         Misc::procOpen($cmd, $msgBuff);
     }
 
-    private static function getCmdConcatenatePdf(array $files, string $outFilepathEnc)
+    public static function getCmdConcatenatePdf(array $files, string $resultFile): string
     {
-        $filesAbsEnc = FilesFolder::copyToTmpDirAndRename($files);
-
         $cmd = '"' . Config::$pdftkPath . '"';
-        foreach ($filesAbsEnc as $filepathAbsEnc) {
-            $cmd .= ' "' . $filepathAbsEnc . '"';
+        foreach ($files as $file) {
+            $cmd .= ' "' . $file . '"';
         }
-        $cmd .= ' output ' . $outFilepathEnc;
+        $cmd .= ' output ' . $resultFile;
 
         return $cmd;
     }

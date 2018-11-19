@@ -241,30 +241,38 @@ class CommonFields
 
     public static function quantity(): FieldInt
     {
-        return F::createInt('Quantity');
+        return F::createInt('Quantity', [
+            'name' => Config::$lang === 'ru' ? 'Кол-во' : 'Quantity',
+        ]);
     }
 
     public static function volume(): FieldFloat
     {
         return F::createFloat('Volume', [
-                'name' => 'Volume',
-                'tableWidthHtml' => 62,
-                'editCssClass' => 'input-weight',
-                'uom' => 'm<sup>3</sup>',
-                'precision' => 3,
-                'total' => true,
-            ]
-        );
+            'name' => Config::$lang === 'ru' ? 'Объём' : 'Volume',
+            'tableWidthHtml' => 62,
+            'editCssClass' => 'input-weight',
+            'uom' => Config::$lang === 'ru' ? 'м<sup>3</sup>' : 'm<sup>3</sup>',
+            'precision' => 3,
+            'total' => true,
+        ]);
     }
 
     public static function pieces(): FieldInt
     {
-        return F::createInt('Pieces', ['name' => 'Pieces', 'total' => true]);
+        return F::createInt('Pieces', [
+            'name' => Config::$lang === 'ru' ? 'Мест' : 'Pieces',
+            'total' => true
+        ]);
     }
 
-    public static function address($key = 'Address'): FieldText
+    public static function address($fieldKey = 'Address'): FieldText
     {
-        return F::createText($key, ['clickable' => true, 'ajax' => true]);
+        return F::createText($fieldKey, [
+            'name' => Config::$lang === 'ru' ? 'Адрес' : 'Address',
+            'clickable' => true,
+            'ajax' => true
+        ]);
     }
 
     public static function ets(): FieldDate
@@ -294,7 +302,9 @@ class CommonFields
 
     public static function synonyms(): FieldText
     {
-        return F::createText('Synonyms');
+        return F::createText('Synonyms', [
+            'name' => Config::$lang === 'ru' ? 'Синонимы' : 'Synonyms',
+        ]);
     }
 
     public static function email(): FieldString

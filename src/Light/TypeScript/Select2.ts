@@ -169,6 +169,10 @@ class Select2 {
             options["allowClear"] = true;
         }
 
+        if (this.select.hasAttribute('data-minimum-input-length')) {
+            options['minimumInputLength'] = this.select.getAttribute('data-minimum-input-length');
+        }
+
         if (this.select.classList.contains("select2-ajax")) {
             options["ajax"] = {
                 cache: true,

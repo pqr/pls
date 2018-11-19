@@ -4,6 +4,8 @@ namespace Forward\Module\SearchAirfreightRateDialog;
 
 use Forward\Classes\Constant;
 use Forward\Field\GeneralFields;
+use Forward\Module\AirfreightRate\AirfreightRate;
+use Forward\Module\AirfreightSurcharge\AirfreightSurcharge;
 use Light\Currency;
 use Light\Db;
 use Light\Field\CommonFields as CF;
@@ -89,8 +91,8 @@ class ResultsTable extends Table
                         . '</span>';
 
                     //Если у пользователя есть доступ к модулю редактирования Airfreight Surcharges, то сделаем ссылку!
-                    if (User::hasReadAccess('AirfreightSurcharge')) {
-                        $html = Link::create('AirfreightSurcharge', $html)
+                    if (User::hasReadAccess(AirfreightSurcharge::class)) {
+                        $html = Link::create(AirfreightSurcharge::class, $html)
                             ->view($surcharge['ID'])
                             ->blank()
                             ->getHtml();
@@ -113,7 +115,7 @@ class ResultsTable extends Table
                 F::createHtml('AirfreightRateLink')
                     ->setName('')
                     ->setGetHtmlFunction(function ($value, array $data) {
-                        return Link::create('AirfreightRate', 'View')
+                        return Link::create(AirfreightRate::class, 'View')
                             ->view($data['ID'])
                             ->blank()
                             ->getHtml();

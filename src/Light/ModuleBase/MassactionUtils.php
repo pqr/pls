@@ -5,11 +5,22 @@ namespace Light\ModuleBase;
 
 
 use Light\Config;
-use Light\Response;
 use Light\Field\FieldAbstract as F;
+use Light\Link;
+use Light\Request;
+use Light\Response;
 
 class MassactionUtils
 {
+    public static function getFormActionUrl(string $action)
+    {
+        // В качестве $action может прийти fully qualified class name и это нормально
+        // например <proj_namespace>\Module\<module>\Massactions\<massaction_class>
+        return Link::create(Request::getModule())
+            ->params(['p' => 'massaction', 'action' => $action])
+            ->getHref();
+    }
+
     public static function getHtmlHiddenCheckedIds(array $ids)
     {
         return '<input type="hidden" name="CheckedIds" value="' . implode(',', $ids) . '">';

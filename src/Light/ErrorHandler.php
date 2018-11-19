@@ -10,7 +10,7 @@ if (isset(Config::$rollbar['access_token']) && Config::$rollbar['access_token'])
 
     $config = Config::$rollbar;
     $config['person_fn'] = function () {
-        return ['id' => (string)User::getId(), 'username' => User::getLogin()];
+        return ['id' => (string)User::getId(), 'username' => (string)User::getLogin()];
     };
     if (!isset($config['allow_exec'])) {
         // Чтобы Rollbar не делал exec() с запуском git для получения хэша коммита
@@ -52,15 +52,15 @@ if (isset(Config::$rollbar['access_token']) && Config::$rollbar['access_token'])
                     $lastError['message']
                 ];
 
-                require_once __DIR__ . '/CsvLog.php';
+                require_once __DIR__ . '/LoggerCsv.php';
                 require_once __DIR__ . '/File.php';
-                CsvLog::write('fatalerror', $header, $data);
+                LoggerCsv::write('fatalerror', $header, $data);
             }
         }
     );
 }
 
-function reportException(\Exception $e)
+function reportException(\Throwable $e)
 {
     if (Config::$rollbar) {
         Rollbar::log(Level::ERROR, $e);
@@ -99,9 +99,9 @@ function errorHandlerCsvLog($errno, $errstr, $errfile, $errline)
     ];
 
     //Когда проваливаемся в ошбику - иногда перестаёт работать Autoloader
-    require_once __DIR__ . '/CsvLog.php';
+    require_once __DIR__ . '/LoggerCsv.php';
     require_once __DIR__ . '/File.php';
-    CsvLog::write('error', $header, $data);
+    LoggerCsv::write('error', $header, $data);
 
     //The error handler must return FALSE to populate $php_errormsg
     //http://www.php.net/manual/en/function.set-error-handler.php

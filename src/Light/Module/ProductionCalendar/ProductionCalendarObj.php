@@ -8,11 +8,11 @@ use Light\Field\FieldAbstract as F;
 
 class ProductionCalendarObj extends ObjAbstract
 {
+    protected $nameFieldKey = 'Date';
+
     public function __construct()
     {
         $this->setDbTable('production_calendar');
-
-        $this->setNameFieldKey('Date');
 
         $this->addFields(
             F::createDate('Date', [

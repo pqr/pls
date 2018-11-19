@@ -72,8 +72,8 @@
     </style>
 </head>
 <body>
-
+<?= \Light\PrintForm\ConcatinaterHtml::PLACEHOLDER_BEGIN ?>
 <?= $bodyHtml ?>
-
+<?= \Light\PrintForm\ConcatinaterHtml::PLACEHOLDER_END ?>
 </body>
 </html>

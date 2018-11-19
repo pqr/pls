@@ -62,10 +62,10 @@ abstract class Subtable extends Table
     protected $_additionalData;
 
     /**
-     * @var array поля из списка $_groupconcatFieldKeys будут добавлены в мастер-модуль для режима List, причём
+     * @var array поля из списка $groupconcatFieldKeys будут добавлены в мастер-модуль для режима List, причём
      * их значения будут вычисляться на лету с помощью GROUP_CONCAT подзапроса
      */
-    public $_groupconcatFieldKeys = [];
+    public $groupconcatFieldKeys = [];
     /**
      * @var array поля из списка $_cacheFieldsKeys будут добавлены в мастер-модуль для режима List, их значения будут
      * браться из базы из полей с такими же ключами с префиксом Cache.
@@ -79,7 +79,7 @@ abstract class Subtable extends Table
     protected $_cacheOnlyUniqueValues = false;
     /**
      * @var string префикс, который добавлять в параметр name у поля при выводе в режиме таблицы в мастер-модуле
-     * Этот же префикс используется для полей из списка $_groupconcatFieldKeys
+     * Этот же префикс используется для полей из списка $groupconcatFieldKeys
      */
     protected $_cacheFieldsPrefix = '';
 
@@ -259,7 +259,7 @@ abstract class Subtable extends Table
         $fieldsForMasterModuleList = [];
 
         //Существует два массива с ключами полей, которые нужно добавить в мастер-модуль
-        $arrays = ['Groupconcat' => $this->_groupconcatFieldKeys, 'Cache' => $this->_cacheFieldsKeys];
+        $arrays = ['Groupconcat' => $this->groupconcatFieldKeys, 'Cache' => $this->_cacheFieldsKeys];
         foreach ($arrays as $type => $fieldKeys) {
             /** @var array $fieldKeys */
             foreach ($fieldKeys as $fieldKey) {
@@ -866,6 +866,7 @@ abstract class Subtable extends Table
      * @param Msg $msgBuff
      * @param array|null $dataFromRequest
      * @return int
+     * @throws \Exception
      */
     public function proceedSubmit(Msg $msgBuff, array $dataFromRequest = null)
     {
@@ -1226,7 +1227,7 @@ abstract class Subtable extends Table
         $value = $_REQUEST['newValue'];
         $data = [$fieldKey => $value];
         $normilizedValue = $field->getDataFromRequest($data);
-        if ($normilizedValue === null) {
+        if ($normilizedValue === null && !$field->nullable) {
             Response::abort(400, "Invalid value $value");
         }
 

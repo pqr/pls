@@ -4,8 +4,16 @@ namespace Light\Codeception;
 
 use Light\Db;
 use Light\Field\FieldAbstract;
+use Light\Field\FieldCheckbox;
 use Light\Field\FieldDate;
+use Light\File;
+use Light\FilesFolder;
+use Light\ModuleBase\ModuleAbstract;
 use Light\ModuleRegister;
+use Light\ObjAbstract;
+use Light\PrintForm\PrintForm;
+use Light\User;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 abstract class ModuleCestAbstract
 {
@@ -13,8 +21,8 @@ abstract class ModuleCestAbstract
 
     protected function getDbTable()
     {
-        $module = $this->getModule();
-        return strtolower($module);
+        $moduleInstance = $this->getModuleInstance();
+        return $moduleInstance->getDbTable();
     }
 
     /**
@@ -35,6 +43,14 @@ abstract class ModuleCestAbstract
         return $this->minIdFromDb;
     }
 
+    /**
+     * В классе потомке можно переопределить, чтобы обозначит несколько тестовых объектов на которых проверять печатные формы
+     */
+    protected function getTestObjIdsForPrintForms()
+    {
+        return [$this->getTestObjId()];
+    }
+
     protected function getModule(): string
     {
         static $module;
@@ -44,6 +60,36 @@ abstract class ModuleCestAbstract
             $module = substr($class, 0, -4); //remove 'Cest' suffix
         }
         return $module;
+    }
+
+    protected function getModuleClassName(): string
+    {
+        $module = $this->getModule();
+        return PROJECT_NAMESPACE . '\\Module\\' . $module . '\\' . $module;
+    }
+
+    protected function getModuleInstance(): ModuleAbstract
+    {
+        // Обязательно загрузим текущего пользователя вне контекста запроса
+        //т.к. внутри конструкторов модулей или объектов
+        // бывают проверки на права доступа текущего пользователя
+        User::loadAsCurrent('admin');
+
+        // Придётся создать инстанс приложения, чтобы ниже $moduleInstance сработал
+        $appClass = PROJECT_NAMESPACE . '\\Application';
+        new $appClass;
+
+        $moduleClassName = $this->getModuleClassName();
+        /** @var ModuleAbstract $moduleInstance */
+        $moduleInstance = new $moduleClassName;
+
+        return $moduleInstance;
+    }
+
+    public function getModuleClassReflection(): \ReflectionClass
+    {
+        $moduleClassName = $this->getModuleClassName();
+        return new \ReflectionClass($moduleClassName);
     }
 
     protected function getModuleName()
@@ -142,7 +188,6 @@ abstract class ModuleCestAbstract
         if ($I instanceof \AcceptanceTester) {
 
             $I->canSeeInCurrentUrl('?a=' . $this->getModule() . '&id=' . $this->getTestObjId());
-            $I->canSeeElement('.alert-success');
 
         } elseif ($I instanceof \FunctionalTester) {
 
@@ -189,48 +234,228 @@ abstract class ModuleCestAbstract
     }
 
     /**
+     * Проверяет все поля типа ajax, редактируются ли они через ajax?
      * @param \AcceptanceTester | \FunctionalTester $I
-     * @param string $fieldKey
-     * @param string $date
-     * @param null $testObjId
+     * @dataProvider ajaxChangeFieldDataProvider
      */
-    protected function testChangeFieldDate($I, string $fieldKey, string $date, $testObjId = null)
+    public function ajaxChangeField($I, \Codeception\Example $example)
     {
-        if ($testObjId === null) {
-            $testObjId = $this->getTestObjId();
+        if (!isset($example['field'])) {
+            return;
         }
-        $I->wantTo("Change field $fieldKey via ajax");
+        /** @var FieldAbstract $field */
+        $field = $example['field'];
+        $fieldKey = $field->key;
+        $testObjId = $this->getTestObjId();
+        $I->wantTo("Change field via ajax");
         $module = $this->getModule();
         $url = "?a=$module&id=$testObjId&func=ChangeField&fieldKey=$fieldKey";
-        $I->sendAjaxPostRequest($url,['newValue' => $date]);
+
+        $oldValue = Db::getOne("SELECT {$field->key} FROM {$this->getDbTable()} WHERE ID = $testObjId");
+        if ($field instanceof FieldDate) {
+            $newValue = date('Y-m-d');
+        } elseif ($field instanceof FieldCheckbox) {
+            $newValue = !$oldValue;
+        } else {
+            $newValue = "NEW$oldValue";
+        }
+
+        $I->expect("Send post request to change field $fieldKey");
+        $I->sendAjaxPostRequest($url, ['newValue' => $newValue]);
         $I->canSeeResponseCodeIs(200);
+
         $response = $I->grabResponse();
+        $I->assertNotContainsSqlError($response);
+        $I->assertNotContainsXdebugError($response);
 
-        $field = FieldAbstract::createDate($fieldKey)->setAjax(true);
+        $actualText = strip_tags($response);
 
-        $I->assertContains($field->getHtml($date, ['ID' => $testObjId]), $response);
+        $recordData = Db::getRow("SELECT * FROM {$this->getDbTable()} WHERE ID = $testObjId");
+        $expectedHtml = $field->getHtml($newValue, $recordData);
+        $expectedText = strip_tags($expectedHtml);
+        $I->assertContains($expectedText, $actualText);
+
+        // Возвращаем в базу предыдущее значение
+        Db::query("UPDATE {$this->getDbTable()} SET {$field->key} = " . Db::escString($oldValue) . " WHERE ID = $testObjId");
+    }
+
+    protected function ajaxChangeFieldDataProvider()
+    {
+        $moduleInstance = $this->getModuleInstance();
+
+        $moduleClassReflection = $this->getModuleClassReflection();
+        $allowEditProp = $moduleClassReflection->getProperty('allowEdit');
+        $allowEditProp->setAccessible(true);
+        $allowEditValue = $allowEditProp->getValue($moduleInstance);
+
+        if (!$allowEditValue) {
+            return [['nofields' => 'allowEdit === false']];
+        }
+
+        $fieldsToBeTested = $moduleInstance->getFieldset()
+            ->filterByMode(FieldAbstract::MODE_EDITSUBMIT)
+            ->filterByParams(['ajax' => true]);
+
+        $out = [];
+        foreach ($fieldsToBeTested as $field) {
+            $out[] = ['fieldKey' => $field->key, 'field' => $field];
+        }
+
+        if (!$out) {
+            return [['nofields' => 'nofields']];
+        }
+
+        return $out;
     }
 
     /**
+     * @group pdf
+     *
      * @param \AcceptanceTester | \FunctionalTester $I
-     * @param string $fieldKey
-     * @param $newValue
-     * @param null $testObjId
+     * @param \Codeception\Example $example
+     *
+     * @dataProvider printFormsDataProvider
      */
-    protected function testChangeFieldCheckbox($I, string $fieldKey, $newValue, $testObjId = null)
+    public function printForms($I, \Codeception\Example $example)
     {
-        if ($testObjId === null) {
-            $testObjId = $this->getTestObjId();
+        if (isset($example['noforms'])) {
+            return;
         }
-        $I->wantTo("Change field $fieldKey via ajax");
+
         $module = $this->getModule();
-        $url = "?a=$module&id=$testObjId&func=ChangeField&fieldKey=$fieldKey";
-        $I->sendAjaxPostRequest($url,['newValue' => $newValue]);
-        $I->canSeeResponseCodeIs(200);
-        $response = $I->grabResponse();
+        $id = $this->getTestObjId();
 
-        $field = FieldAbstract::createCheckbox($fieldKey)->setAjax(true);
+        $printForm = $example['printForm'];
+        $filename = $example['filename'];
+        $out = $example['out'];
+        $format = $example['format'];
 
-        $I->assertContains($field->getHtml($newValue, ['ID' => $testObjId]), $response);
+        if ($out & PrintForm::OUT_SAVE) {
+            // Если эта форма предполагает сохранение в папку, то сначала очистим папку объекта
+            File::clearDir(FilesFolder::getModuleAbsolute($module, $id));
+        }
+
+        $I->wantTo("Print");
+        $I->sendPOST("?a=$module&id=$id&func=Print&form=$printForm");
+
+        if ($out & PrintForm::OUT_STREAM) {
+
+            // Если эта печатная форма подразумевает вывод в браузер пользователю, то проверим содержимое полученного файла
+
+            $expectedContentType = '';
+            switch ($format) {
+                case PrintForm::FORMAT_HTML:
+                    $expectedContentType = 'text/html';
+                    break;
+
+                case PrintForm::FORMAT_PDF:
+                    $expectedContentType = 'application/pdf';
+                    break;
+
+                case PrintForm::FORMAT_EXCEL:
+                    $expectedContentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                    break;
+
+                case PrintForm::FORMAT_DOC:
+                    $expectedContentType = 'text/html';
+                    break;
+
+                case PrintForm::FORMAT_DOCX:
+                    $expectedContentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                    break;
+            }
+
+            $I->expect("See Content-Type $expectedContentType");
+            $I->canSeeHttpHeader('Content-Type', $expectedContentType);
+
+            $responseBody = $I->grabResponse();
+            $I->assertNotContainsSqlError($responseBody);
+            $I->assertNotContainsXdebugError($responseBody);
+
+            if ($format === PrintForm::FORMAT_EXCEL) {
+                $I->expect("Receive valid Excel file");
+                // Попробуем прочитать весь Excle файл, чтобы убедиться, что нет Exception
+                $tmpFile = LIGHT_DIR_ROOT . '/tests/_output/' . $printForm . '.xlsx';
+                file_put_contents($tmpFile, $responseBody);
+                $spreadsheet = IOFactory::load($tmpFile);
+                // Попробуем прочитать первый лист, чтобы убедиться, что нет Exception
+                $spreadsheet->getSheet(0);
+            }
+
+        }
+
+        if ($out & PrintForm::OUT_SAVE) {
+
+            // Если эта форма предполагает сохранение в папку, то проверим наличие файла в папке объекта
+            $I->expect("Out file exists in files folder");
+            $filepathAbs = FilesFolder::getModuleAbsolute($module, $id) . "/$filename";
+            $I->assertFileExists($filepathAbs);
+
+            if ($format === PrintForm::FORMAT_EXCEL) {
+                $I->expect("Valid Excel file in files folder");
+                // Попробуем прочитать весь Excle файл, чтобы убедиться, что нет Exception
+                $spreadsheet = IOFactory::load($filepathAbs);
+                // Попробуем прочитать первый лист, чтобы убедиться, что нет Exception
+                $spreadsheet->getSheet(0);
+            }
+
+        }
+    }
+
+    protected function printFormsDataProvider()
+    {
+        $moduleInstance = $this->getModuleInstance();
+        $moduleClassReflection = $this->getModuleClassReflection();
+        $initPrintFormsMethod = $moduleClassReflection->getMethod('initPrintForms');
+        $initPrintFormsMethod->setAccessible(true);
+        $initPrintFormsMethod->invoke($moduleInstance);
+
+        $printFormsProp = $moduleClassReflection->getProperty('printForms');
+        $printFormsProp->setAccessible(true);
+        $printForms = $printFormsProp->getValue($moduleInstance);
+
+        $objProp = $moduleClassReflection->getProperty('_obj');
+        $objProp->setAccessible(true);
+        /** @var ObjAbstract $obj */
+        $obj = $objProp->getValue($moduleInstance);
+        $obj->setId($this->getTestObjId());
+        $obj->loadData();
+
+        $data = [];
+
+        foreach ($printForms as $printForm => $printFormInstance) {
+
+            /** @var PrintForm $printFormInstance */
+            if (!$printFormInstance->testForObj($obj)) {
+                // Эта форма не подходит к тетовому объекту, пропускаем
+                continue;
+            }
+
+            $printFormClassReflection = new \ReflectionClass($printFormInstance);
+            $getFilenameMethod = $printFormClassReflection->getMethod('getFilename');
+            $getFilenameMethod->setAccessible(true);
+            $filename = $getFilenameMethod->invokeArgs($printFormInstance, [$obj]);
+
+            $outProp = $printFormClassReflection->getProperty('out');
+            $outProp->setAccessible(true);
+            $out = $outProp->getValue($printFormInstance);
+
+            $outProp = $printFormClassReflection->getProperty('format');
+            $outProp->setAccessible(true);
+            $format = $outProp->getValue($printFormInstance);
+
+            $data[] = [
+                'printForm' => $printForm,
+                'filename' => $filename,
+                'out' => $out,
+                'format' => $format
+            ];
+        }
+
+        if (empty($data)) {
+            $data[] = ['noforms' => 'noforms'];
+        }
+
+        return $data;
     }
 }

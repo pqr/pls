@@ -15,17 +15,17 @@ class Request
 
     public static function getMehod()
     {
-        return $_SERVER["REQUEST_METHOD"];
+        return $_SERVER["REQUEST_METHOD"] ?? '';
     }
 
     public static function isGet()
     {
-        return $_SERVER["REQUEST_METHOD"] === 'GET';
+        return self::getMehod() === 'GET';
     }
 
     public static function isPost()
     {
-        return $_SERVER["REQUEST_METHOD"] === 'POST';
+        return self::getMehod() === 'POST';
     }
 
     public static function isAjax()

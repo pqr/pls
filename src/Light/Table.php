@@ -339,7 +339,7 @@ class Table implements \JsonSerializable
         }
 
         $allFields = $this->getAllFields();
-        $this->prefetchViewOptions($allFields);
+        $this->prefetchSelectOptions($allFields);
 
         //Сначала блок <p>...</p> над таблицей с различными ссылками: пажинация, экспорт в Excel и т.п.
         $htmlHeadBlock = $printHeadBlock ? $this->getHtmlTableHeadBlock() : '';
@@ -373,14 +373,14 @@ class Table implements \JsonSerializable
         return $outHtml;
     }
 
-    protected function prefetchViewOptions(array $allFields)
+    protected function prefetchSelectOptions(array $allFields)
     {
         foreach ($allFields as $field) {
-            if ($field instanceof FieldOptionsAbstract) {
+            if ($field instanceof FieldOptionsAbstract && !is_array($field->options)) {
                 $fieldKey = $field->key;
                 $columnValues = array_column($this->_tableData, $fieldKey);
                 if ($columnValues) {
-                    $field->prefetchViewOptions($columnValues);
+                    $field->prefetchOptions($columnValues);
                 }
             }
         }

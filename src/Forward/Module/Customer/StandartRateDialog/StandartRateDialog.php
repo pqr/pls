@@ -4,6 +4,7 @@ namespace Forward\Module\Customer\StandartRateDialog;
 
 use Forward\Classes\Constant;
 use Forward\Field\RateFields;
+use Forward\Module\Customer\Customer;
 use Forward\Module\Customer\CustomerObj;
 use Forward\Module\Customer\Subtables\StandartRatesObj;
 use Light\ApplicationAbstract;
@@ -74,7 +75,7 @@ class StandartRateDialog
     private static function getTplData(StandartRatesObj $srObj, CustomerObj $customerObj)
     {
         $tdata = $srObj->getTplData(F::MODE_EDIT);
-        $tdata['formActionUrl'] = Link::create('Customer')
+        $tdata['formActionUrl'] = Link::create(Customer::class)
             ->view($customerObj->getId())
             ->func('StandartRateDialog')
             ->params([
@@ -155,7 +156,7 @@ class StandartRateDialog
             ApplicationAbstract::terminate();
         }
 
-        $formActionUrl = Link::create('Customer')
+        $formActionUrl = Link::create(Customer::class)
             ->view($customerObj->getId())
             ->func('StandartRateDialog')
             ->params([

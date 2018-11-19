@@ -7,13 +7,13 @@ use Light\ModuleBase\ModuleAbstract;
 
 class Currency extends ModuleAbstract
 {
+
+protected $textSaveBtn = 'Currency';
+protected $tableLayoutDefault = 'OrderID|Name|Symbol|Description';
+
     public function __construct()
     {
         parent::__construct();
-
-        $this->textSaveBtn = 'Currency';
-        $this->tableDefaultOrderBy = 'OrderID ASC';
-        $this->tableLayouts['Default'] = 'OrderID|Name|Symbol|Description';
 
         $this->addFields(
 

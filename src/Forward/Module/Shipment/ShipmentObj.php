@@ -8,6 +8,8 @@ use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
 use Forward\Field\GeneralFields;
 use Forward\Field\ShipmentFields;
 use Forward\Module\CInvoice\CInvoiceObj;
+use Forward\Module\Customer\Customer;
+use Forward\Module\Quotation\Quotation;
 use Forward\Module\VInvoice\VInvoiceObj;
 use Light\Db;
 use Light\Field\CommonFields;
@@ -310,7 +312,7 @@ final class ShipmentObj extends ObjAbstract
                                 $value);
                             if ($customerId) {
                                 //Формируем ссылку, только если такой тариф найден!
-                                $outHtml = Link::create('Customer', $outHtml)
+                                $outHtml = Link::create(Customer::class, $outHtml)
                                     ->view($customerId)
                                     ->title('View Standart Rate')
                                     ->findId('StandartRates', $value)
@@ -319,7 +321,7 @@ final class ShipmentObj extends ObjAbstract
                                 $outHtml = '<span class="bad" title="Standart Rate ' . $value . ' not found">' . $outHtml . '</span>';
                             }
                         } else {
-                            $outHtml = Link::create('Quotation', $outHtml)
+                            $outHtml = Link::create(Quotation::class, $outHtml)
                                 ->view($value)
                                 ->title('View Quotation')
                                 ->getHtml();

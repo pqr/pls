@@ -5,21 +5,19 @@ namespace Forward\Module\CPayment;
 use Forward\Classes\BuAccess;
 use Forward\Classes\CustomerAccess;
 use Forward\Field\GeneralFields;
+use Forward\Module\CPayment\Subtables\CInvoices;
 use Forward\ModuleBase\Payments\PaymentModuleAbstract;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 
 class CPayment extends PaymentModuleAbstract
 {
-    public function __construct()
+    protected $textSaveBtn = 'Customer Payment';
+    protected $tableLayoutDefault = 'CompanyID|Name|CustomerID|PaymentDate|Amount|CurrencyISO|Comments';
+
+    protected function registerSubtables()
     {
-        parent::__construct();
-
-        $this->textSaveBtn = 'Customer Payment';
-        $this->tableLayouts['Default'] =
-            'CompanyID|Name|CustomerID|PaymentDate|Amount|CurrencyISO|Comments';
-
-        $this->registerSubtable('CInvoices');
+        $this->registerSubtable(CInvoices::class);
     }
 
     protected function initFilters()

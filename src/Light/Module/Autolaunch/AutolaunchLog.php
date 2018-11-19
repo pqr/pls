@@ -25,7 +25,7 @@ class AutolaunchLog extends Table
 
         $params = ['class' => $className];
         $this->tableLinkUrlParams = $params;
-        $this->tableReloadUrl = Link::create('Autolaunch')->params($params)->getHref();
+        $this->tableReloadUrl = Link::create(Autolaunch::class)->params($params)->getHref();
 
         // Добавим поле Log в котором будут ссылки на режим View
         $this->setFieldsetLast(
@@ -34,7 +34,7 @@ class AutolaunchLog extends Table
                     'getHtmlFunction' => function ($value, array $data) use ($params) {
                         $logId = $data['ID'];
                         $params += ['id' => $logId] + $this->getModuleSessionUrlParams();
-                        return Link::create('Autolaunch', 'Log')->params($params)->getHtml();
+                        return Link::create(Autolaunch::class, 'Log')->params($params)->getHtml();
                     }
                 ])
             )

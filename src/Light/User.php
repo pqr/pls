@@ -204,6 +204,10 @@ class User
 
         if (!$module) {
             $module = Request::getModule();
+        } else {
+            // Модуль передан явно. Возможно, он задан полным путём к классу,
+            // например Shipment::class, что в итоге даст \Basis\Module\Shipment\Shipment
+            $module = Misc::getModule($module);
         }
 
         $userModuleAccess = $user->moduleAccess[$module] ?? -1;

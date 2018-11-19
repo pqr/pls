@@ -8,6 +8,7 @@ use Forward\Module\Shipment\CostSheet\Subtables\CInvoices;
 use Forward\Module\Shipment\CostSheet\Subtables\Expenses;
 use Forward\Module\Shipment\CostSheet\Subtables\Income;
 use Forward\Module\Shipment\CostSheet\Subtables\VInvoices;
+use Forward\Module\Shipment\Shipment;
 use Forward\Module\Shipment\ShipmentObj;
 use Light\Css;
 use Light\Db;
@@ -119,7 +120,7 @@ class CostSheetObj
             F::createHtml('View', [
                 'name' => '',
                 'getHtmlFunction' => function ($value, $data) {
-                    return Link::create('Shipment', 'View')
+                    return Link::create(Shipment::class, 'View')
                         ->view($this->_shipmentObj->getId())
                         ->func('cs')
                         ->blank()

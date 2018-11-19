@@ -5,13 +5,13 @@ namespace Light\ModuleBase;
 
 
 use Light\Config;
+use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\Msg;
 use Light\ObjAbstract;
 use Light\Response;
 use Light\Template;
 use Light\User;
-use Light\Field\FieldAbstract as F;
 
 /**
  * Один из стандартных Massaction реализован в виде Trait к ModuleAbstract
@@ -30,7 +30,11 @@ trait MassactionMultipleUpdate
 
     protected function massactionMultipleUpdate(array $ids)
     {
-        $html = '<form action="?a=' . $this->getModule() . '&p=MultipleUpdateSubmit#ajax" method="post" class="multipleupdate">'
+        $module = $this->getModule();
+        $html = '<form action="?a=' . $module . '&p=MultipleUpdateSubmit#ajax" 
+                    method="post" 
+                    class="multipleupdate"
+                    data-select2ajaxurl="?a=' . $module . '">'
             . MassactionUtils::getHtmlHiddenCheckedIds($ids)
             . $this->muBodyHtml($ids)
             . '</form>';
@@ -158,7 +162,7 @@ trait MassactionMultipleUpdate
         //Дополнительно, отфильтруем только теми полями, которые были на форме отмечены как редактируемые
         //На форме были скрытые поля со статусами 1 или 0 - все они оформлены виде массива multipleupdate
         $changebaleFieldKeys = [];
-        foreach($_POST['multipleupdate'] as $fieldKey => $value) {
+        foreach ($_POST['multipleupdate'] as $fieldKey => $value) {
             if ($value === 'showed') {
                 $changebaleFieldKeys[] = $fieldKey;
             }

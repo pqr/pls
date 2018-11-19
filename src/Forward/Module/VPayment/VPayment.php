@@ -3,21 +3,19 @@
 namespace Forward\Module\VPayment;
 
 use Forward\Field\GeneralFields;
+use Forward\Module\VPayment\Subtables\VInvoices;
 use Forward\ModuleBase\Payments\PaymentModuleAbstract;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 
 class VPayment extends PaymentModuleAbstract
 {
-    public function __construct()
+    protected $textSaveBtn = 'Vendor Payment';
+    protected $tableLayoutDefault = 'CompanyID|Name|VendorID|PaymentDate|Amount|CurrencyISO|Comments';
+
+    protected function registerSubtables()
     {
-        parent::__construct();
-
-        $this->textSaveBtn = 'Vendor Payment';
-        $this->tableLayouts['Default'] =
-            'CompanyID|Name|VendorID|PaymentDate|Amount|CurrencyISO|Comments';
-
-        $this->registerSubtable('VInvoices');
+        $this->registerSubtable(VInvoices::class);
     }
 
     protected function initFilters()

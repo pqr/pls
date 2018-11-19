@@ -1,5 +1,7 @@
 <?php
 // Отдельный загрузичк для обобщённых классов тестов, которые являются базовыми для acceptance и functinal тестирования
+use Light\Db;
+
 spl_autoload_register(function ($class) {
     if (strpos($class, 'tests\\') === 0) {
 
@@ -13,3 +15,8 @@ define('PROJECT_NAMESPACE', 'Forward');
 // require __DIR__ . '/../src/Light/Autoloader.php';
 
 include __DIR__ . '/../config/config.php';
+
+// Включаем файл чтобы определить все констаны с директориями движка
+include __DIR__ . '/../src/Light/ApplicationAbstract.php';
+
+Db::connect();

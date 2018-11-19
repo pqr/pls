@@ -25,30 +25,27 @@ use Light\User;
  */
 class ShipmentAccounting extends ModuleAbstract
 {
+    protected $folders = true;
+    protected $allowAdd = false;
+    protected $allowEdit = false;
+    protected $allowLog = false;
+    protected $allowDelete = false;
+
     public function __construct()
     {
         parent::__construct();
 
         $this->setDbTable('shipment');
 
-        $this->folders = true;
-
-        $this->allowAdd = false;
-        $this->allowEdit = false;
-        $this->allowLog = false;
-        $this->allowDelete = false;
-
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
-        $this->textSaveBtn = 'Накладная';
-        $this->tableDefaultOrderBy = 'shipment.ID DESC';
-        $this->tableLayouts['Default'] =
+        $this->tableLayoutDefault =
             'Name|MAWBNumber|ShipmentRequestNo|CompanyID|CustomerID|CustomerInvoices|CActs|VendorID|DepartureIATA|ArrivalIATA|ATA';
 
         foreach (Constant::$standardFolders as $i => $_) {
-            $this->tableLayouts['Default'] .= "|File$i";
+            $this->tableLayoutDefault .= "|File$i";
         }
 
-        $this->tableLayouts['Default'] .= '|DocsSentToAccountingDate';
+        $this->tableLayoutDefault .= '|DocsSentToAccountingDate';
 
         $onecCompanyIdsSql = implode(',', array_keys(Constant::$onecCompany));
 

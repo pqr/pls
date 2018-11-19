@@ -24,11 +24,11 @@ abstract class ApplicationAbstract
     /** @var Timer переменная таймер для измерения времени генерации всей страницы */
     private static $timer;
 
-    // Набор флагов, которые включают запуск различных кешиющих функций в конце работы (в ApplicationAbstract::terminate())
-    // Благодаря этим флагам можно запустить обновление кэшей в нужном порядке
-
-    // Флаг, который нужно установить в true, если в конце работы следует запустить FilesFolder::flushCacheNotEmpty()
-    public static $flushFilesFolder = false;
+    // С помощью вызова ApplicationAbstract::onBeforeSend(callable $handler) можно добавить обработчики перед отправкой
+    private $handlersBeforeSend = [];
+    // С помощью вызова ApplicationAbstract::onAfterSend(callable $handler) можно добавить обработчики после отправки
+    // (например, какие-то операции записи в логи или обновление кешей, которые пользователю не обязательно нужно ждать)
+    private $handlersAfterSend = [];
 
     public function __construct()
     {
@@ -434,7 +434,7 @@ abstract class ApplicationAbstract
      */
     public static function terminate($finalOutput = '')
     {
-        self::getApp()->flushCaches();
+        self::$app->beforeSend();
 
         while (ob_get_level()) {
             $additionalOutput = ob_get_clean();
@@ -457,10 +457,12 @@ abstract class ApplicationAbstract
         // Если же мы находимся в режиме функциональных тестов Codeception, то нужно прерать поток выполнения
         // Выбросим исключение в которое завернём весь получившийся результат $finalOutput
         if (defined('CODECEPTION_FUNCTIONAL_TEST')) {
+            self::$app->afterSend();
+            // Передаём управление в codeception LightConnector по средствам выбрасывания специального исключения
             throw new TestResponseException($finalOutput);
         }
 
-        if (!isset($GLOBALS['argv'])) {
+        if (!self::isCli()) {
             // Выводим заголовки, только если это не cli режим
             foreach (Response::getHeaders() as $header) {
                 header($header);
@@ -469,42 +471,65 @@ abstract class ApplicationAbstract
 
         print $finalOutput;
 
-        if (!isset($GLOBALS['argv'])) {
+        flush();
+
+        // https://secure.php.net/manual/en/function.fastcgi-finish-request.php
+        // https://symfony.com/doc/current/components/http_kernel.html#the-kernel-terminate-event
+        // https://github.com/symfony/symfony/blob/0aa4273b39eeb2b4184d4b62ab76bf490eef15ec/src/Symfony/Component/HttpFoundation/Response.php#L378
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+
+        self::$app->afterSend();
+
+        if (!self::isCli()) {
+
             // Работаем с сессией, только если это не cli режим
             if (session_id()) {
                 session_write_close();
             }
+
+            if (User::isAuth() && !isset($_REQUEST['nouserrefreshtime'])) {
+                User::updateLastRefreshDateTime();
+                LoggerCsv::logVisit();
+            }
         }
 
-        flush();
-
-        //Чтобы flush сработал и браузер сразу же отобразил содержимое нужно правильно растроить буферы в веб-сервере
-        //Для IIS нужно сделать как описано здесь: http://php.net/manual/ru/function.flush.php#113360
-        //Для nginx в секции http поставить keepalive_timeout 0; и уменьшить fastcgi_buffers, например:
-        //fastcgi_buffers 8 2k;
-        //fastcgi_buffer_size 2k;
-        //Также в nginx нужно отключить gzip  off; иначе Content-Length посчитанный выше окажется не верным
-        //Чтобы POST запросы на сохранение быстро редиректили надо также в php.ini поставить output_buffering = 0
-
-
-        if (!isset($GLOBALS['argv']) && User::isAuth() && !isset($_REQUEST['nouserrefreshtime'])) {
-            User::updateLastRefreshDateTime();
-            VisitLog::write();
+        //Если установлен специальный cookie, то запишем логи об этом sql запросе
+        //Запишем логи об ошибке в SQL запросе в CSV файл
+        if (isset($_COOKIE['sqllog']) && $_COOKIE['sqllog']) {
+            LoggerCsv::logSqlQueries();
         }
 
         exit();
 
     }
 
-    /**
-     * Обновляет необходимые кэши в правильном порядке
-     * Функцию нужно переопределить в классе потомке, чтобы добавить свои классы кэшей
-     */
-    protected function flushCaches()
+    protected function beforeSend()
     {
-        if (self::$flushFilesFolder) {
-            FilesFolder::flushCacheNotEmpty();
+        $this->runHandlers($this->handlersBeforeSend);
+    }
+
+    protected function afterSend()
+    {
+        $this->runHandlers($this->handlersAfterSend);
+    }
+
+    private function runHandlers(array $handlers)
+    {
+        foreach ($handlers as $handler) {
+            $handler();
         }
+    }
+
+    public static function onBeforeSend(callable $handler)
+    {
+        self::$app->handlersBeforeSend[] = $handler;
+    }
+
+    public static function onAfterSend(callable $handler)
+    {
+        self::$app->handlersAfterSend[] = $handler;
     }
 
     public static function getVersion(): string

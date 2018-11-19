@@ -5,6 +5,7 @@ namespace Forward\Classes\ImportFromOneC\Importers;
 
 use Forward\Classes\Constant;
 use Forward\Module\CInvoice\CInvoiceObj;
+use Forward\Module\Shipment\Shipment;
 use Light\Db;
 use Light\Field\FieldDate;
 use Light\File;
@@ -87,7 +88,7 @@ class ImportCAct extends ImporterAbstract
         $shipmentIds = Db::getAll("SELECT s.ID, s.Name FROM cinvoice_file_amount cfa, shipment s WHERE cfa.CInvoiceID = $cinvoiceId AND cfa.FileNumber = s.Name");
         foreach ($shipmentIds as ['ID' => $shipmentId, 'Name' => $fileNumber]) {
 
-            $shipmentLink = Link::create('Shipment', $fileNumber)
+            $shipmentLink = Link::create(Shipment::class, $fileNumber)
                 ->view($shipmentId)
                 ->getHtml();
 

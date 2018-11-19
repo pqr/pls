@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Module\Port;
 
 use Forward\Application;
@@ -13,14 +14,15 @@ use Light\User;
 
 class Port extends ModuleAbstract
 {
+    protected $textSaveBtn = 'Port';
+    protected $tableDefaultOrderBy = 'Name ASC';
+    protected $tableLayoutDefault = 'ID|Name|NameRu|isPOL|isPOD';
+
     public function __construct()
     {
         parent::__construct();
 
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
-        $this->textSaveBtn = 'Port';
-        $this->tableDefaultOrderBy = 'Name ASC';
-        $this->tableLayouts['Default'] = 'ID|Name|NameRu|isPOL|isPOD';
 
         $this->addFields(
 
@@ -36,7 +38,8 @@ class Port extends ModuleAbstract
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
-        $this->addFilterName(F::TYPE_STRING, ['name' => 'Name', 'sqlWhere' => "Name LIKE '%{value}%' OR NameRu LIKE '%{value}%'"]);
+        $this->addFilterName(F::TYPE_STRING,
+            ['name' => 'Name', 'sqlWhere' => "Name LIKE '%{value}%' OR NameRu LIKE '%{value}%'"]);
     }
 
     protected function getDeleteConfirmationDialogHtml()

@@ -67,33 +67,8 @@ class Db
 
         $queryTime = microtime(true) - $startTime;
 
-        if (Config::$debug) {
+        if (Config::$debug || (isset($_COOKIE['sqllog']) && $_COOKIE['sqllog'])) {
             self::$_queriesLog[] = [$queryTime, $query];
-        }
-
-        //Если установлен специальный cookie, то запишем логи об этом sql запросе
-        //Запишем логи об ошибке в SQL запросе в CSV файл
-        if (isset($_COOKIE['sqllog']) && $_COOKIE['sqllog']) {
-            $header = [
-                'DateTime',
-                'UserID',
-                'User Name',
-                'Module',
-                'Query String',
-                'Query',
-                'Time'
-            ];
-
-            $data = [
-                date('Y-m-d H:i:s'),
-                User::getId(),
-                User::getName(),
-                Request::getModule(),
-                $_SERVER['QUERY_STRING'] ?? '',
-                $query,
-                str_replace('.', ',', $queryTime)
-            ];
-            CsvLog::write('sqllog', $header, $data);
         }
 
         self::$_queriesTime += $queryTime;
@@ -177,11 +152,9 @@ class Db
      */
     private static function riseError($query, $errMsg)
     {
-        //
         require_once __DIR__ . "/External/SqlFormatter.php";
         $queryFormated = \SqlFormatter::format($query, false);
         $msg = 'SQL error: ' . $queryFormated . "\n\n" . $errMsg;
-
 
         if (Config::$sqlErrorThrowException) {
 
@@ -198,27 +171,7 @@ class Db
 
         } else {
 
-            //Запишем логи об ошибке в SQL запросе в CSV файл
-            $header = [
-                'DateTime',
-                'UserID',
-                'User Name',
-                'Module',
-                'Query String',
-                'Query',
-                'Error',
-            ];
-
-            $data = [
-                date('Y-m-d H:i:s'),
-                User::getId(),
-                User::getName(),
-                Request::getModule(),
-                $_SERVER['QUERY_STRING'] ?? '',
-                $queryFormated,
-                $errMsg
-            ];
-            CsvLog::write('sqlerror', $header, $data);
+            LoggerCsv::logSqlError($queryFormated, $errMsg);
 
         }
 
@@ -743,6 +696,11 @@ class Db
         self::query("COMMIT");
     }
 
+    public static function rollback()
+    {
+        self::query("ROLLBACK");
+    }
+
     public static function truncate($table)
     {
         self::query("TRUNCATE TABLE " . Db::quote($table));
@@ -761,7 +719,11 @@ class Db
         }
 
         foreach ($data as &$value) {
-            $value = "'" . self::$mysqli->real_escape_string($value) . "'";
+            if ($value === null) {
+                $value = 'NULL';
+            } else {
+                $value = "'" . self::$mysqli->real_escape_string($value) . "'";
+            }
         }
 
         return implode(',', $data);

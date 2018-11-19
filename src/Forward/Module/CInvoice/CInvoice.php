@@ -15,6 +15,9 @@ use Forward\Field\InvoiceFields;
 use Forward\ForwardConfig;
 use Forward\Module\CInvoice\Massactions\CreateCPayments;
 use Forward\Module\CInvoice\PrintForms\CInvoicePrintForm;
+use Forward\Module\CInvoice\Subtables\CPayments;
+use Forward\Module\CInvoice\Subtables\Lines;
+use Forward\Module\CPayment\CPayment;
 use Forward\ModuleBase\Invoices\InvoiceModuleAbstract;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
@@ -28,7 +31,7 @@ use Light\Img;
 use Light\ModuleBase\MassactionUtils;
 use Light\Msg;
 use Light\ObjAbstract;
-use Light\PrintForm;
+use Light\PrintForm\PrintForm;
 use Light\Response;
 use Light\Session;
 use Light\Template;
@@ -36,21 +39,18 @@ use Light\User;
 
 class CInvoice extends InvoiceModuleAbstract
 {
-    public function __construct()
+    protected $textSaveBtn = 'Customer Invoice';
+    protected $tableLayoutDefault = 'Name|CustomerAccountID|Amount|CurrencyISO|DocType|StatusIco|DocDate|DueDate|Overdue|Comments';
+
+    protected function registerSubtables()
     {
-        parent::__construct();
-
-        $this->textSaveBtn = 'Customer Invoice';
-        $this->tableLayouts['Default'] =
-            'Name|CustomerAccountID|Amount|CurrencyISO|DocType|StatusIco|DocDate|DueDate|Overdue|Comments';
-
-        $this->registerSubtable('Lines');
-        $this->registerSubtableReadonly('CPayments');
+        $this->registerSubtable(Lines::class);
+        $this->registerSubtable(CPayments::class);
     }
 
     protected function initMassactions()
     {
-        if (User::hasWriteAccess('CPayment')) {
+        if (User::hasWriteAccess(CPayment::class)) {
             $this->addMassaction('CreateCPayment', 'Create Customer Payments', 'invcleared');
         }
 

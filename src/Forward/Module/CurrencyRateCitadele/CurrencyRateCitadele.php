@@ -41,7 +41,7 @@ class CurrencyRateCitadele extends ModuleAbstract
             $msg = 'Курс ' . htmlspecialchars($dataFromPost['Name'])
                 . ' на дату ' . FieldDate::beautify($dataFromPost['ValidDate'])
                 . ' уже существует, '
-                . Link::create('CurrencyRateCitadele', 'посмотреть...')
+                . Link::create(CurrencyRateCitadele::class, 'посмотреть...')
                     ->view($existId)
                     ->blank()
                     ->getHtml();

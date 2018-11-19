@@ -356,6 +356,9 @@ class Template
     public static function subtable($subtableName)
     {
         /** @var Subtable $subtableObj */
+        if (strpos($subtableName, PROJECT_NAMESPACE . '\\') === 0) {
+            $subtableName = Misc::getClass($subtableName);
+        }
         $subtableObj = static::$tdata['_subtables'][$subtableName]['obj'];
         $title = $subtableObj->getTitle();
         $html = '<div class="subtableblock">';

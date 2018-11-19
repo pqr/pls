@@ -2,6 +2,7 @@
 namespace Forward\Field;
 
 use Forward\Classes\Finance;
+use Forward\Module\CPayment\CPayment;
 use Light\Field\FieldAbstract as F;
 use Light\Link;
 
@@ -93,7 +94,7 @@ class CustomerFields
                 'getHtmlFunction' => function ($value, $data, $outHtml, $forTable) {
                     if ($value && isset($data['ID'])) {
                         $currencyIso = explode(' ', $value)[0];
-                        $outHtml = Link::create('CPayment', $outHtml)
+                        $outHtml = Link::create(CPayment::class, $outHtml)
                             ->filters(['CustomerID' => $data['ID'], 'CurrencyISO' => $currencyIso])
                             ->title('View Customer Payments')
                             ->getHtml();

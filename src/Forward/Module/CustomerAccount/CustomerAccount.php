@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Module\CustomerAccount;
 
 use Forward\Application;
@@ -6,22 +7,26 @@ use Forward\Classes\BuAccess;
 use Forward\Classes\Constant;
 use Forward\Classes\CustomerAccess;
 use Forward\Field\GeneralFields;
-use Light\Db;
+use Forward\Module\CustomerAccount\Subtables\Customers;
 use Light\Img;
 use Light\ModuleBase\ModuleAbstract;
-use Light\ObjAbstract;
 use Light\User;
 
 class CustomerAccount extends ModuleAbstract
 {
+    protected $textSaveBtn = 'Customer Account';
+    protected $tableLayoutDefault = 'Name|CreditPeriod|ContractNo|InvoiceAddress|Comments|Active';
+
     public function __construct()
     {
         parent::__construct();
 
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
-        $this->textSaveBtn = 'Customer Account';
-        $this->tableLayouts['Default'] = 'Name|CreditPeriod|ContractNo|InvoiceAddress|Comments|Active';
-        $this->registerSubtable('Customers');
+    }
+
+    protected function registerSubtables()
+    {
+        $this->registerSubtable(Customers::class);
     }
 
     protected function initFilters()

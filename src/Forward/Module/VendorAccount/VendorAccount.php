@@ -1,30 +1,34 @@
 <?php
+
 namespace Forward\Module\VendorAccount;
 
 use Forward\Application;
 use Forward\Classes\Constant;
+use Forward\Module\VendorAccount\Subtables\Vendors;
 use Light\Img;
 use Light\ModuleBase\ModuleAbstract;
 use Light\User;
 
 class VendorAccount extends ModuleAbstract
 {
+    protected $textSaveBtn = 'Vendor Account';
+    protected $tableDefaultOrderBy = 'Name ASC';
+    protected $tableLayoutDefault = 'Name|InvoiceAddress|Comments|Active';
+
     public function __construct()
     {
         parent::__construct();
-
-        $this->textSaveBtn = 'Vendor Account';
-        $this->tableDefaultOrderBy = 'Name ASC';
-        $this->tableLayouts['Default'] = 'Name|InvoiceAddress|Comments|Active';
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
+    }
 
-        $this->registerSubtable('Vendors');
+    protected function registerSubtables()
+    {
+        $this->registerSubtable(Vendors::class);
     }
 
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
-
         $this->addFilterName();
     }
 

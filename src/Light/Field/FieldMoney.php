@@ -25,6 +25,8 @@ class FieldMoney extends FieldFloat
         $this->total = true;
         $this->tableWidthExcel = 14;
         $this->inputPattern = '-?[\d\s]+([.,]\d{1,2})?';
+        $this->editAlign = 'right';
+        $this->tableAlign = 'right';
     }
 
     protected function getHtmlInner($value, array $data, $forTable)

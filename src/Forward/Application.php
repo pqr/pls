@@ -42,11 +42,6 @@ class Application extends ApplicationAbstract
     const ROLE_BULED = 'LED';
     const ROLE_ALLOWEXCEL = 'Excel';
 
-    public static $flushShipmentGp  = false;
-
-    // Флаг для запуска ShipmentCriteria::flush()
-    public static $flushShipmentCriteria = false;
-
     protected function init()
     {
         if ((string)Application::getParam('blocked') === '1'
@@ -143,19 +138,5 @@ class Application extends ApplicationAbstract
             ['VInvoice', self::SA_VINVOICE_ALLOW_ALL_COMPANYID, 'Any company - Yes; Only PLS - No.'],
             ['Block', self::SA_UNBLOCK, 'Allow Unblock'],
         ];
-    }
-
-    protected function flushCaches()
-    {
-        parent::flushCaches();
-
-        if (self::$flushShipmentGp) {
-            // Обновляет задолженонсть клиента и сумму открытых оплат
-            ShipmentGp::flush();
-        }
-
-        if (self::$flushShipmentCriteria) {
-            ShipmentCriteria::flush();
-        }
     }
 }

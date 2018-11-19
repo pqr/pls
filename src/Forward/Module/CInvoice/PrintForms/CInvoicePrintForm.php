@@ -1,12 +1,11 @@
 <?php
+
 namespace Forward\Module\CInvoice\PrintForms;
 
 use Forward\Classes\Constant;
 use Forward\Module\CInvoice\Subtables\Lines;
-use Light\Misc;
 use Light\ObjAbstract;
-use Light\PrintForm;
-use Light\Response;
+use Light\PrintForm\PrintForm;
 
 class CInvoicePrintForm extends PrintForm
 {
@@ -19,7 +18,7 @@ class CInvoicePrintForm extends PrintForm
         $this->stamp = strpos($key, 'Stamp') !== false;
     }
 
-    public function testForObj(ObjAbstract $obj)
+    public function testForObj(ObjAbstract $obj): bool
     {
         return ($obj['CompanyID'] == Constant::OC_GTS && !$this->stamp)
             || $obj['CompanyID'] == Constant::OC_PLS
@@ -36,7 +35,7 @@ class CInvoicePrintForm extends PrintForm
         return 'Invoices (' . $count . ')';
     }
 
-    protected function getTemplate(ObjAbstract $obj = null)
+    protected function getTemplate(ObjAbstract $obj = null): string
     {
         //Определим файл шаблона на основе компании и языка
         //Компания определяет папку в которой искать файл
@@ -53,7 +52,7 @@ class CInvoicePrintForm extends PrintForm
         }
     }
 
-    protected function getTplData(ObjAbstract $obj)
+    protected function getTplData(ObjAbstract $obj): array
     {
         //Для начала в переменные для шаблона попадают все поля из шапки счёта
         $tdata = parent::getTplData($obj);
@@ -67,7 +66,7 @@ class CInvoicePrintForm extends PrintForm
 
         //Добавим подтаблицу с линиями
         $linesSubtable = new Lines($obj);
-        foreach($linesSubtable->getFieldset() as $field) {
+        foreach ($linesSubtable->getFieldset() as $field) {
             $field->setTotal(false);
         }
         $linesSubtable->loadData();

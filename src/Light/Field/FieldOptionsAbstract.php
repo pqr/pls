@@ -7,9 +7,13 @@ use Light\Link;
 
 /**
  * @method $this setLinkModule(string $module)
+ * @method $this setLinkModuleDialog(bool $value)
+ * @method $this setLinkModuleForTable(bool $value)
  *
  * @method string|array|callable getOptions() //возвращает значение параметра options, не путать с методом getEvaluatedOptions()
  * @method string getLinkModule()
+ * @method bool getLinkModuleDialog()
+ * @method bool getLinkModuleForTable()
  */
 abstract class FieldOptionsAbstract extends FieldAbstract
 {
@@ -41,6 +45,9 @@ abstract class FieldOptionsAbstract extends FieldAbstract
     // Ссылка linkModule должна открывать диалоговое окно (по умочланию false - открывается новая страница)
     public $linkModuleDialog = false;
 
+    // Ссылка linkModule должна должна работать даже в режиме таблицы
+    public $linkModuleForTable = false;
+
     /**
      * @param string|array $options
      * @return $this
@@ -59,21 +66,28 @@ abstract class FieldOptionsAbstract extends FieldAbstract
      * Метод вызывается в ModuleAbstract в режимах View и List, чтобы предзагрузить только нужные записи из базы
      * @param array $ids
      */
-    public function prefetchViewOptions(array $ids)
+    public function prefetchOptions(array $ids)
     {
-        if (is_array($this->options)) {
+        if (is_array($this->options) || is_callable($this->options)) {
             // Если массив опций задан статически, то нет смысла обращаться к базе и делать предзагрузку каких-то значений
             return;
         }
 
-        if (count($ids) === 1 && reset($ids) == 0) {
-            $this->prefetchedOptions[0] = '';
+        $ids = array_filter($ids);
+        if (!$ids) {
+            // Обязательно заполним пустым массивом, проверка на массив используется в FieldSelect::prefetchViewOptions()
+            $this->prefetchedOptions = [];
             return;
         }
 
+        // Некоторые элементы из массив $ids могут содержать несколько значений разделённых \n (groupconcat поля)
+        // Получим полный список раздельных значений:
+        $ids = explode(',', str_replace("\n", ',', implode(',', $ids)));
+
         if (is_string($this->optionsView) && strpos($this->optionsView, ' ') !== false) {
             // Это некий SQL запрос без WHERE части
-            $this->prefetchedOptions = Db::getAssoc($this->optionsView . " WHERE ID IN (@a)", $ids);
+            $optionsViewQuery = $this->optionsView . ' WHERE ID IN (@a)';
+            $this->prefetchedOptions = Db::getAssoc($optionsViewQuery, $ids);
             return;
         }
 
@@ -180,7 +194,7 @@ abstract class FieldOptionsAbstract extends FieldAbstract
         $text = $this->getOptionText($option, $originalValue);
         $outHtml = htmlspecialchars($text);
 
-        if (!$forTable && $this->linkModule) {
+        if ((!$forTable || $this->linkModuleForTable) && $this->linkModule) {
             $link = Link::create($this->linkModule, $outHtml)
                 ->view((int)$originalValue);
 

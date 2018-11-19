@@ -283,7 +283,7 @@ class FilesFolder
         if (self::$bufferNotEmpty === null) {
             self::$bufferNotEmpty = [];
             self::$bufferEmpty = [];
-            ApplicationAbstract::$flushFilesFolder = true;
+            ApplicationAbstract::onAfterSend([self::class, 'flushCacheNotEmpty']);
         }
 
         $isNotEmpty = FilesFolder::isNotEmpty($relativePath) ?? false;
@@ -358,6 +358,7 @@ class FilesFolder
 
     public static function getModuleRelative(string $module, int $id)
     {
+        $module = Misc::getModule($module);
         $sub = floor($id / 1000);
         return "$module/$sub/$id";
     }

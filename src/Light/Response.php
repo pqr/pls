@@ -128,8 +128,8 @@ class Response
     public static function sendErrorMsg($msg)
     {
         if (Request::isAjax()) {
-            Response::header('HTTP/1.1 400');
             Response::showDialog($msg);
+            Response::abort(400);
         } else {
             Session::flashError($msg);
         }

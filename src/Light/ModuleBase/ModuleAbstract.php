@@ -20,7 +20,7 @@ use Light\Misc;
 use Light\ModuleRegister;
 use Light\Msg;
 use Light\ObjAbstract;
-use Light\PrintForm;
+use Light\PrintForm\PrintForm;
 use Light\Request;
 use Light\Response;
 use Light\Services\ModuleBadgeLoader;
@@ -37,6 +37,7 @@ use Light\Traits\TablePaginatable;
 use Light\Traits\TableSortable;
 use Light\Traits\TableWithFoldersTrait;
 use Light\User;
+use function Light\reportException;
 
 abstract class ModuleAbstract extends Table
 {
@@ -99,7 +100,7 @@ abstract class ModuleAbstract extends Table
      * - в режиме List будет вызван метод подтаблицы initFieldsFromSubtables
      * - в функциях proceedSubmit, proceedDelete, getTplData будут созданы экземпляры этих классов и запущены соотвесвующие функции
      */
-    private $_subtables = [];
+    private $subtables = [];
 
     private $_queryTime = 0;
 
@@ -114,8 +115,18 @@ abstract class ModuleAbstract extends Table
         parent::__construct($module);
 
         $this->flash = Session::getMsgBuff();
-        $this->tableReloadUrl = "?a=$module";
+        $this->tableReloadUrl = Link::create($module)->getHref();
         $this->folderBaseDir = $module;
+
+        $this->registerSubtables();
+    }
+
+    /**
+     * Метод для переопределения в классах потомках
+     * В нём нужно вызывать $this->registerSubtable(className) или $this->registerSubtableReadonly(className)
+     */
+    protected function registerSubtables()
+    {
     }
 
     protected function getModule()
@@ -280,34 +291,26 @@ abstract class ModuleAbstract extends Table
 
                 $copySubtables = $this->_copyModes[$copymode]['subtables'];
                 if ($copySubtables !== null) {
-                    if (is_array($copySubtables)) {
-                        $subtables = $copySubtables;
-                    } else {
-                        //Нужно копировать все подтаблицы! Кроме тех, которые readonly
-                        $subtables = [];
-                        foreach ($this->_subtables as $subtableName => $subtableParams) {
-                            if (!$subtableParams['readonly']) {
-                                $subtables[] = $subtableName;
-                            }
-                        }
+                    if (!is_array($copySubtables)) {
+                        $copySubtables = array_keys($this->subtables);
                     }
 
-                    //Теперь приступим к копированию
-                    foreach ($subtables as $subtableName) {
-                        //Получим объект, который нужно заполнить данными из копируемого источника
-                        $subtableObj = $this->getSubtableObject($this->_obj, $subtableName);
-                        //Источник - это на самом деле подтаблица того же класса, но с другим masterId
-                        $sourceSubtableObj = clone $subtableObj;
-                        //Заменим мастер-объект в подтаблице
-                        $sourceSubtableObj->setMasterObj($sourceObj);
-                        //Теперь загрузим данные в подтаблицу источник благодаря подменённому мастер объекту
-                        $sourceSubtableObj->loadData();
+                    foreach ($copySubtables as $subtableClass) {
+                        if ($this->subtables[$subtableClass]['readonly']) {
+                            continue;
+                        }
+                        // Получим объект, который нужно заполнить данными из копируемого источника
+                        $subtable = $this->getSubtable($subtableClass);
+                        // Источник - это на самом деле подтаблица того же класса, но с другим masterId
+                        /** @var Subtable $sourceSubtable */
+                        $sourceSubtable = new $subtableClass($sourceObj);
+
                         //Копируем данные в подтаблицу текущего объекта
-                        //Метод $sourceSubtableObj->getData() возвращает массив где ключи - это ID в базе
-                        //чтобы добавить данные в $subtableObj нам не нужны ключи в виде ID, нам нужны ключи от 0 до N
+                        //Метод $sourceSubtable->getData() возвращает массив где ключи - это ID в базе
+                        //чтобы добавить данные в $subtable нам не нужны ключи в виде ID, нам нужны ключи от 0 до N
                         //для этого применим array_values
-                        $sourceData = array_values($sourceSubtableObj->getData());
-                        $subtableObj->setAdditionalData($sourceData);
+                        $sourceData = array_values($sourceSubtable->getData());
+                        $subtable->setAdditionalData($sourceData);
                     }
                 }
             }
@@ -398,10 +401,12 @@ abstract class ModuleAbstract extends Table
     {
         $tdataSubtables = [];
         //Добавим в шаблонные переменные все зарегистрированные подтаблицы
-        foreach ($this->_subtables as $subtableName => $subtableParam) {
+        foreach ($this->subtables as $subtableClass => ['readonly' => $readonly]) {
+            // В качестве ключа для шаблонизатора используем короткое имя класса подтаблицы (без неймспейсов)
+            $subtableName = Misc::getClass($subtableClass);
             $tdataSubtables[$subtableName] = [
-                'obj' => $this->getSubtableObject($this->_obj, $subtableName),
-                'readonly' => $subtableParam['readonly']
+                'obj' => $this->getSubtable($subtableClass),
+                'readonly' => $readonly
             ];
         }
 
@@ -531,14 +536,15 @@ abstract class ModuleAbstract extends Table
     private function proceedViewSubtable()
     {
         $subtableName = $_GET['subtable'];
+        $subtableClass = PROJECT_NAMESPACE . '\\Module\\' . $this->getModule() . '\\Subtables\\' . $subtableName;
         //проверим, что такая подтаблица сщуетсвует
-        if (!isset($this->_subtables[$subtableName])) {
+        if (!isset($this->subtables[$subtableClass])) {
             Session::flashError('Unknown subtable ' . $subtableName);
             $this->redirectToView();
         }
 
-        /** @var $subtableObj \Light\SubtableBase\Subtable */
-        $subtableObj = $this->getSubtableObject($this->_obj, $subtableName);
+        /** @var $subtable \Light\SubtableBase\Subtable */
+        $subtable = $this->getSubtable($subtableClass);
 
         // С подтаблицей можно осуществлять несколько действий
         if (isset($_REQUEST['fieldKey'])) {
@@ -549,7 +555,7 @@ abstract class ModuleAbstract extends Table
             }
             // Изменение какого-то поля через ajax
             $fieldKey = $_REQUEST['fieldKey'];
-            $field = $subtableObj->getFieldset()->getField($fieldKey);
+            $field = $subtable->getFieldset()->getField($fieldKey);
             if (!$field) {
                 Response::abort(400, "Field not found");
             }
@@ -563,7 +569,7 @@ abstract class ModuleAbstract extends Table
                 $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
             }
 
-            $affectedRows = $subtableObj->proceedChangeField();
+            $affectedRows = $subtable->proceedChangeField();
 
             if (Request::isPost()) {
                 $this->afterSubmit($this->_obj, [], $affectedRows, $oldData, $this->flash, false);
@@ -572,10 +578,10 @@ abstract class ModuleAbstract extends Table
 
         } elseif (Request::isAjax()) {
             // Перезагрузка через ajax при изменении Table Layout
-            $subtableObj->proceedAjaxReload();
+            $subtable->proceedAjaxReload();
         } elseif (Request::isXls()) {
             //Отправка Excel файла
-            $subtableObj->proceedExcel();
+            $subtable->proceedExcel();
         } else {
             //Не удалось определить действие с подтаблицей, сообщим об этом пользователю
             Session::flashError('Bad subtable request');
@@ -772,11 +778,11 @@ abstract class ModuleAbstract extends Table
     {
         $printForm = $this->beforePrint();
 
-
-        $module = $this->getModule();
-        $id = $this->_obj->getId();
-        $form = $printForm->getKey();
-        $formAction = "?a={$module}&id=$id&func=Print&form=$form";
+        $formAction = Link::create($this->getModule())
+            ->view($this->_obj->getId())
+            ->func('Print')
+            ->params(['form' => $printForm->getKey()])
+            ->getHref();
 
         $target = $printForm->isLinkBlank() ? ' target="blank"' : '';
         $html = '<form action="' . $formAction . '" method="post"' . $target . '>'
@@ -792,7 +798,8 @@ abstract class ModuleAbstract extends Table
         }
         $html .= '</table></form>';
 
-        Response::showDialog($html, 'Print');
+        $buttonOkText = Config::$lang === 'ru' ? 'Распечатать' : 'Print';
+        Response::showDialog($html, $buttonOkText);
     }
 
     /**
@@ -801,12 +808,20 @@ abstract class ModuleAbstract extends Table
      */
     private function viewPostPrint()
     {
-        $printForm = $this->beforePrint();
+        try {
 
-        // Запустим процесс описанный в классе PrintForm (или в его наследнике)
-        // Для этого нам нужно передать в метод proceedPrint путь к папке текущего объекта
-        $filesFolderRelativePath = $this->getFolderRelativePath($this->_obj->getData());
-        $printForm->proceedPrint($this->_obj, $filesFolderRelativePath);
+            $printForm = $this->beforePrint();
+
+            // Запустим процесс описанный в классе PrintForm (или в его наследнике)
+            // Для этого нам нужно передать в метод proceedPrint путь к папке текущего объекта
+            $relativePath = $this->getFolderRelativePath($this->_obj->getData());
+            $targetDir = FilesFolder::getAbsolutePath($relativePath);
+            $printForm->proceedPrint($this->_obj, $targetDir);
+
+        } catch (\Throwable $e) {
+            Session::flashError($e->getMessage());
+            $this->redirectToView();
+        }
 
         ApplicationAbstract::terminate();
     }
@@ -853,7 +868,26 @@ abstract class ModuleAbstract extends Table
                 $fieldKey = $field->key;
                 if (isset($this->_obj[$fieldKey])) {
                     $value = $this->_obj[$fieldKey];
-                    $field->prefetchViewOptions([$value]);
+                    $field->prefetchOptions([$value]);
+                }
+            }
+        }
+    }
+
+    protected function prefetchSelectOptionsForWriteCompareDbLog(array $oldData, array $newData)
+    {
+        foreach ($this->getFieldset() as $field) {
+            if ($field instanceof FieldOptionsAbstract && $field->hasMode(F::MODE_LOG)) {
+                $fieldKey = $field->key;
+                $values = [];
+                if (isset($oldData[$fieldKey])) {
+                    $values[] = $oldData[$fieldKey];
+                }
+                if (isset($newData[$fieldKey])) {
+                    $values[] = $newData[$fieldKey];
+                }
+                if ($values) {
+                    $field->prefetchOptions($values);
                 }
             }
         }
@@ -975,9 +1009,9 @@ abstract class ModuleAbstract extends Table
         // Добавим ссылки на различные режимы копирования
         if ($this->isStateView()) {
 
-            if (method_exists($this, 'filesDialogSubmenuItemHtml')){
+            if (method_exists($this, 'filesDialogSubmenuItemHtml')) {
                 // К этому модулю подключён FilesDialogTrait
-                /** @var FilesDialogTrait $obj  */
+                /** @var FilesDialogTrait $obj */
                 $obj = $this;
                 $out[] = [
                     'html' => $obj->filesDialogSubmenuItemHtml()
@@ -1088,6 +1122,15 @@ abstract class ModuleAbstract extends Table
             return;
         }
 
+        if (isset($_GET['fromDeleteDialogId'])) {
+            // Запрос на получение элементов для select2ajax пришел из диалога удаления, когда текущий элемент
+            // требуется заменить на какой-то новый
+            $field = $this->whileDeleteFieldForReplacement((int)$_GET['fromDeleteDialogId']);
+            /** @var $field FieldSelect */
+            $field->proceedSelect2ajax();
+            return;
+        }
+
         // Иначе ищем поле среди полей объекта или подтаблиц
         $fieldKey = $_GET['select2ajax'];
 
@@ -1099,11 +1142,15 @@ abstract class ModuleAbstract extends Table
         if (!$field) {
             // Если поле не найдено среди полей объекта, возможно это поле в подтаблице?
             preg_match_all('/(\w+)\[(\d+)\]\[(\w+)\]/', $fieldKey, $mathes);
-            if (count($mathes) === 4) {
-                $subtableName = rtrim($mathes[1][0] ?? '', 'Subtable');
-                if ($this->hasSubtable($subtableName)) {
-                    $subtable = $this->getSubtableObject($this->_obj, $subtableName);
-
+            if (count($mathes) === 4 && isset($mathes[1][0]) && $mathes[1][0]) {
+                $subtableName = $mathes[1][0];
+                // Отрезаем хвост "Subtable", который фигурирует в имени поля пришедшем в $_GET
+                if (substr($subtableName, -1 * strlen('Subtable')) === 'Subtable') {
+                    $subtableName = substr($subtableName, 0, -1 * strlen('Subtable'));
+                }
+                $subtableClass = PROJECT_NAMESPACE . '\\Module\\' . $this->getModule() . '\\Subtables\\' . $subtableName;
+                if ($this->hasSubtable($subtableClass)) {
+                    $subtable = $this->getSubtable($subtableClass);
                     $fieldKey = $mathes[3][0] ?? '';
                     $field = $subtable->getFieldset()->getField($fieldKey);
                 }
@@ -1286,6 +1333,7 @@ abstract class ModuleAbstract extends Table
         // Проверим по оставшимся полям функцию editAccessFunction
         $fieldsData = $this->_obj->filterDataByEditAccessFunction($fieldsData);
 
+        $this->prefetchSelectOptionsForWriteCompareDbLog($oldData, $fieldsData);
 
         Db::begin();
 
@@ -1321,13 +1369,13 @@ abstract class ModuleAbstract extends Table
 
         Db::commit();
 
-        Metric::newrelicMetric(Request::getModule() . '/afterSubmit', $afterSubmitTimer->getMs());
+        Metric::newrelicMetric($this->getModule() . '/afterSubmit', $afterSubmitTimer->getMs());
 
         $textSaved = Config::$lang === 'ru' ? 'сохранён' : 'saved';
         $msg = "<strong>{$this->_obj}</strong> $textSaved";
         $this->flash->addSuccess($msg);
 
-        Metric::newrelicMetric(Request::getModule() . '/save', $timer->getMs());
+        Metric::newrelicMetric($this->getModule() . '/save', $timer->getMs());
 
         $this->redirectAfterSubmit();
     }
@@ -1376,8 +1424,8 @@ abstract class ModuleAbstract extends Table
     public function getOldDataBeforeSubmitOrDelete(ObjAbstract $obj)
     {
         $subtablesToLoad = [];
-        foreach ($this->_subtables as $subtableName => $subtableParams) {
-            $subtable = $this->getSubtableObject($obj, $subtableName);
+        foreach ($this->subtables as ['class' => $subtableClass]) {
+            $subtable = $this->getSubtable($subtableClass);
             if ($subtable instanceof Subtable) {
                 $subtablesToLoad[] = $subtable;
             }
@@ -1496,18 +1544,18 @@ abstract class ModuleAbstract extends Table
     protected function validateMandatorySubtables(array $dataFromPost)
     {
         // Далее проверим заполненность полей внутри подтаблиц
-        if (!$this->_subtables) {
+        if (!$this->subtables) {
             return;
         }
 
         // Перебираем все подтаблицы
-        foreach ($this->_subtables as $subtableName => $subtableParams) {
+        foreach ($this->subtables as $subtableClass => ['readonly' => $readonly]) {
 
-            if ($subtableParams['readonly']) {
+            if ($readonly) {
                 continue;
             }
 
-            $subtable = $this->getSubtableObject($this->_obj, $subtableName);
+            $subtable = $this->getSubtable($subtableClass);
             foreach ($subtable->getNotDeletedDataFromReqeust() as ['fieldsData' => $rowData, 'rowNum' => $rowNum]) {
                 $errors = $subtable->getFieldset()->validateMandatory($rowData);
                 if (!$errors) {
@@ -1559,11 +1607,12 @@ abstract class ModuleAbstract extends Table
     protected function proceedSubmitSubtables()
     {
         $affectedRows = 0;
-        if ($this->_subtables) {
+        if ($this->subtables) {
             //Перебираем все подтаблицы и вызываем метод getDataFromRequest у каждой из них
-            foreach ($this->_subtables as $subtableName => $subtableParams) {
-                if (!$subtableParams['readonly']) {
-                    $subtable = $this->getSubtableObject($this->_obj, $subtableName);
+            foreach ($this->subtables as $subtableClass => ['readonly' => $readonly]) {
+                if (!$readonly) {
+                    /** @var Subtable $subtable */
+                    $subtable = $this->getSubtable($subtableClass);
                     $affectedRows += $subtable->proceedSubmit($this->flash);
                 }
             }
@@ -1622,22 +1671,6 @@ abstract class ModuleAbstract extends Table
     }
 
     /**
-     * @param ObjAbstract $obj
-     * @param string $subtableName имя класса подтаблицы без суффикса Subtable и без неймспейса текущего модуля
-     * @return \Light\SubtableBase\Subtable
-     */
-    protected function getSubtableObject(ObjAbstract $obj, $subtableName)
-    {
-        if (!isset($this->_initedSubtables[$obj->getId() . '-' . $subtableName])) {
-            $module = $this->getModule();
-            $class = PROJECT_NAMESPACE . "\\Module\\$module\\Subtables\\$subtableName";
-            $this->_initedSubtables[$obj->getId() . '-' . $subtableName] = new $class($obj);
-        }
-
-        return $this->_initedSubtables[$obj->getId() . '-' . $subtableName];
-    }
-
-    /**
      * Реальное удаление объекта из базы
      * Если реальное удаление невозможно, т.к. пользователь не выбрал какие-то поля на форме подтверждения
      * то следует вернуть http ответ 400 c текстом сообщения, которое будет выведено в alert()
@@ -1662,33 +1695,46 @@ abstract class ModuleAbstract extends Table
             return;
         }
 
-        // Запрос пришел из диалогового окна, нужно проверить, приавильно ли было заполнено диалоговое окно?
-        // Если внутри checkDeleteConfirmResult выяснится, что пользователь что-то не заполнил - этот метод
-        // сам отправит пользователю новый диалог или другое сообщение
-        if (!$this->checkDeleteConfirmResult()) {
-            return;
+        try {
+
+            Db::begin();
+
+            // Ставим эксклюзивную блокировку на текущую запись
+            // https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html
+            Db::query("SELECT 1 FROM {$this->getDbTable()} WHERE ID = @i FOR UPDATE", $this->_obj->getId());
+
+            // Запрос пришел из диалогового окна, нужно проверить, приавильно ли было заполнено диалоговое окно?
+            // Если внутри checkDeleteConfirmResult выяснится, что пользователь что-то не заполнил - этот метод
+            // сам отправит пользователю новый диалог или другое сообщение
+            if (!$this->checkDeleteConfirmResult()) {
+                return;
+            }
+
+            // Непосредственное удаление
+            $timer = new Timer();
+
+            $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
+
+
+            $this->beforeDelete($this->_obj);
+            $this->proceedDeleteObj($this->_obj);
+            $this->proceedDeleteSubtables($this->_obj);
+            $this->afterDelete($this->_obj, $oldData);
+
+            Db::commit();
+
+            $msg = "<strong>$this->_obj</strong> - " . (Config::$lang === 'ru' ? 'удалено' : 'deleted');
+            $this->flash->addSuccess($msg);
+
+            Metric::newrelicMetric($this->getModule() . '/delete', $timer->getMs());
+
+        } catch (\Throwable $e) {
+
+            Db::rollback();
+            $this->flash->addError($e->getMessage());
+            reportException($e);
+
         }
-
-        // Непосредственное удаление
-        $timer = new Timer();
-
-        $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
-
-        Db::begin();
-
-        $this->beforeDelete($this->_obj);
-        $this->proceedDeleteObj($this->_obj);
-        $this->proceedDeleteSubtables($this->_obj);
-        $this->afterDelete($this->_obj, $oldData);
-
-        Db::commit();
-
-        $msg = "<strong>$this->_obj</strong> - " . (Config::$lang === 'ru' ? 'удалено' : 'deleted');
-        if ($timer->get() > 3) {
-            $msg .= ' (' . $timer->getHtml() . ')';
-        }
-
-        $this->flash->addSuccess($msg);
 
         if (isset($_GET['fromList'])) {
 
@@ -1711,11 +1757,18 @@ abstract class ModuleAbstract extends Table
     {
         $module = $this->getModule();
         $id = $this->_obj->getId();
-        $formAction = "?a=$module&delid=$id";
+
+        $link = Link::create($module)
+            ->ajax()
+            ->params(['delid' => $id]);
         if (isset($_GET['fromList'])) {
-            $formAction .= '&fromList=1';
+            $link->params(['fromList' => 1]);
         }
-        $bodyHtml = '<form action="' . $formAction . '#ajax" method="post">'
+
+        $formAction = $link->getHref();
+        $bodyHtml = '<form action="' . $formAction . '#ajax"
+                           data-select2ajaxurl="?a=' . $module . '&fromDeleteDialogId=' . $id . '" 
+                           method="post">'
             . $this->getDeleteConfirmationDialogHtml()
             . '</form>';
 
@@ -1742,9 +1795,9 @@ abstract class ModuleAbstract extends Table
      */
     private function proceedDeleteSubtables(ObjAbstract $obj)
     {
-        foreach ($this->_subtables as $subtableName => $subtableParams) {
-            if (!$subtableParams['readonly']) {
-                $subtable = $this->getSubtableObject($obj, $subtableName);
+        foreach ($this->subtables as $subtableClass => ['readonly' => $readonly]) {
+            if (!$readonly) {
+                $subtable = $this->getSubtable($subtableClass);
                 $subtable->loadData();
                 $subtable->deleteAll();
             }
@@ -1764,7 +1817,7 @@ abstract class ModuleAbstract extends Table
      *
      * @return array
      */
-    protected function whileDeleteGetLinkedClasses()
+    protected function whileDeleteGetLinkedClasses(): array
     {
         return [];
     }
@@ -1778,7 +1831,7 @@ abstract class ModuleAbstract extends Table
      * @param string $className для какого внешнего класса пытаемся сформировать внешний ключ?
      * @return string
      */
-    protected function whileDeleteGetForeignFieldKey(string $className)
+    protected function whileDeleteGetForeignFieldKey(string $className): string
     {
         return $this->getModule() . 'ID';
     }
@@ -1790,10 +1843,10 @@ abstract class ModuleAbstract extends Table
      * Например, если удаляем клеиента, то этот метод будет последовательно вызыван с именами классов
      * ShipmentObj::class, CInvoice::class, CPayment::class и т.п.
      * @param string $className
-     * @param int $oldId
+     * @param int $deletingId
      * @return array
      */
-    protected function whileDeleteGetLinkedIds($className, $oldId)
+    protected function whileDeleteGetLinkedIds(string $className, int $deletingId): array
     {
         /** @var ObjAbstract $obj */
         //Создадим объект требуемого класса, чтобы узнать таблицу в базе к которой он привязан
@@ -1803,7 +1856,7 @@ abstract class ModuleAbstract extends Table
             "SELECT ID
              FROM $dbTable
              WHERE {$this->whileDeleteGetForeignFieldKey($className)} = @i"
-            , $oldId
+            , $deletingId
         );
     }
 
@@ -1813,20 +1866,20 @@ abstract class ModuleAbstract extends Table
      * Возвращает HTML строку с указанием числа связанных объектов каком-то другом модуле.
      * В этом сообщении автоматически будет указана ссылка на внешний модуль (на режим list с фильтрами)
      *
-     * @param int $oldId
      * @param string $className
+     * @param int $oldId
      * @param string $description
      * @param int $countLinkedIds
      * @return string
      */
-    protected function whileDeleteGetErrorMessageHtmlAboutLinkedRecords(
-        $oldId,
+    protected function whileDeleteGetHtmlAboutLinkedRecords(
         $className,
+        $oldId,
         $description,
         $countLinkedIds
     ) {
         $outHtml = $description . ': <strong>' . $countLinkedIds . '</strong> ';
-        $link = $this->whileDeleteGetErrorMessageLinkViewMore($oldId, $className);
+        $link = $this->whileDeleteGetLinkViewMore($className, $oldId);
         if ($link) {
             $outHtml .= ' <small>' . $link . '</small>';
         }
@@ -1842,21 +1895,26 @@ abstract class ModuleAbstract extends Table
      * Этот метод можно переопределить в классах потомках, если для формирования ссылки нужно указать какие-то
      * хитрые фильтры
      *
-     * @param int $oldId
      * @param string $className
+     * @param int $deletingId
      * @return string|bool
      */
-    protected function whileDeleteGetErrorMessageLinkViewMore($oldId, $className)
+    protected function whileDeleteGetLinkViewMore(string $className, int $deletingId): string
     {
-        $externalModule = explode('\\', $className)[2];
+        $externalModule = Misc::getModule($className);
         if (User::hasReadAccess($externalModule)) {
             return Link::create($externalModule, 'посмотреть...')
-                ->params([$this->whileDeleteGetForeignFieldKey($className) => $oldId])
+                ->filters($this->whileDeleteGetLinkViewMoreFilters($className, $deletingId))
                 ->blank()
                 ->getHtml();
         }
 
-        return false;
+        return '';
+    }
+
+    protected function whileDeleteGetLinkViewMoreFilters(string $className, int $deletingId): array
+    {
+        return [$this->whileDeleteGetForeignFieldKey($className) => $deletingId];
     }
 
     /**
@@ -1864,15 +1922,15 @@ abstract class ModuleAbstract extends Table
      *
      * Возвращает HTML код для вывода элемента выбора новой записи вместо удаляемой. Обычно это выпадающий список
      *
-     * @param int $oldId
-     * @return string
+     * @param int $deletingId
+     * @return FieldAbstract
      */
-    protected function whileDeleteGetHtmlInputForReplacement($oldId)
+    protected function whileDeleteFieldForReplacement(int $deletingId): FieldAbstract
     {
-        $options = "SELECT ID, Name FROM {$this->getDbTable()} WHERE ID != " . (int)$oldId . " ORDER BY Name";
+        $options = "SELECT ID, Name FROM {$this->getDbTable()} WHERE ID != $deletingId ORDER BY Name";
         return F::createSelect('NewValueForReplacement', [
             'options' => $options
-        ])->getHtmlInput('');
+        ]);
     }
 
     private $_alertDeleteButton = [];
@@ -1891,14 +1949,14 @@ abstract class ModuleAbstract extends Table
 
     protected function getDeleteConfirmationDialogHtml()
     {
-        $oldId = $this->_obj->getId();
+        $deletingId = $this->_obj->getId();
         //Выведем диалоговое окно на подтверждение удаления отправителя
         $linkedMessagess = [];
         foreach ($this->whileDeleteGetLinkedClasses() as $className => $description) {
-            $linkedIds = $this->whileDeleteGetLinkedIds($className, $oldId);
+            $linkedIds = $this->whileDeleteGetLinkedIds($className, $deletingId);
             $countLinkedIds = count($linkedIds);
             if ($countLinkedIds > 0) {
-                $linkedMessagess[] = $this->whileDeleteGetErrorMessageHtmlAboutLinkedRecords($oldId, $className,
+                $linkedMessagess[] = $this->whileDeleteGetHtmlAboutLinkedRecords($className, $deletingId,
                     $description, $countLinkedIds);
             }
         }
@@ -1915,7 +1973,7 @@ abstract class ModuleAbstract extends Table
                 ? 'Выберите новый элемен на замену удаляемому'
                 : 'Choose another record to replace deleted';
             $outHtml .= "$textChoose:<br>";
-            $outHtml .= $this->whileDeleteGetHtmlInputForReplacement($oldId);
+            $outHtml .= $this->whileDeleteFieldForReplacement($deletingId)->getHtmlInput('');
             return $outHtml;
         }
 
@@ -1938,21 +1996,27 @@ abstract class ModuleAbstract extends Table
      */
     protected function checkDeleteConfirmResult(): bool
     {
+        $linkedClasses = $this->whileDeleteGetLinkedClasses();
+        if (!$linkedClasses) {
+            return true;
+        }
+
         //Сразу определим вспомагательные значения
         $textDeleting = Config::$lang === 'ru' ? 'Удаление' : 'Deleting';
         $dbLogMsg = $textDeleting . ' ' . $this->_obj->getDescriptionHtml();
-        $oldId = $this->_obj->getId();
-        $updateMessagess = [];
+        $deletingId = $this->_obj->getId();
+
+        $messagess = [];
+
+        // Проверим, а был ли передан ID нового элемента на замену?
+        $newId = (int)$this->whileDeleteFieldForReplacement($deletingId)->getDataFromRequest($_POST);
 
         // Для начала проверим, есть ли связанные записи?
-        foreach ($this->whileDeleteGetLinkedClasses() as $className => $description) {
-            $linkedIds = $this->whileDeleteGetLinkedIds($className, $oldId);
+        foreach ($linkedClasses as $className => $description) {
+            $linkedIds = $this->whileDeleteGetLinkedIds($className, $deletingId);
             $countLinkedIds = count($linkedIds);
             if ($countLinkedIds > 0) {
-                //Нашли какие-то связанные записи!
-                //Проверим, а был ли передан ID нового элемента на замену?
-                $postKey = 'NewValueForReplacement';
-                $newId = isset($_POST[$postKey]) ? (int)$_POST[$postKey] : 0;
+                // Нашли какие-то связанные записи!
                 if (!$newId) {
                     //Сразу возвращаем диалоговое окно с ошибкой
                     Response::showDialog('<span class="bad">При удалении нужно выбрать элемент на замену удаляемому</span>');
@@ -1962,7 +2026,7 @@ abstract class ModuleAbstract extends Table
                 //Производим непосредственное обновление связанных записей в базе!
                 $updated = 0;
                 foreach ($linkedIds as $linkedId) {
-                    $affectedRows = $this->whileDeleteUpdateLinkedRecord($linkedId, $className, $newId, $dbLogMsg);
+                    $affectedRows = $this->whileDeleteUpdateLinkedRecord($className, $linkedId, $newId, $dbLogMsg);
                     if ($affectedRows) {
                         $updated++;
                     }
@@ -1970,16 +2034,16 @@ abstract class ModuleAbstract extends Table
                 if ($updated) {
                     //Если что-то было обновлено (а должно было, ибо $linkedIds не пустой массив), то выведем
                     //сообщение с количеством обновлённых
-                    $updateMessagess[] = $description . ': <strong>' . $updated . '</strong>';
+                    $messagess[] = $description . ': <strong>' . $updated . '</strong>';
                 }
             }
         }
 
-        if ($updateMessagess) {
+        if ($messagess) {
             //В процессе удаления были произведены какие-то обновления в других таблицах, выведем сообщение об этом
             $textUpdated = Config::$lang === 'ru' ? 'Обновлено' : 'Updated';
             $msg = "$textUpdated:<br>";
-            $msg .= '<ul><li>' . implode('</li><li>', $updateMessagess) . '</li></ul>';
+            $msg .= '<ul><li>' . implode('</li><li>', $messagess) . '</li></ul>';
             Session::flashSuccess($msg);
         }
 
@@ -1992,19 +2056,24 @@ abstract class ModuleAbstract extends Table
      * Обновляет одну указанную запись в связанной таблице. Метод может быть переопределён, если нужно как-то хитро
      * обновлять
      *
-     * @param int $linkedId
      * @param string $className
+     * @param int $linkedId
      * @param int $newId
      * @param string $dbLogMsg
      * @return int
      * @throws \Exception
      */
-    protected function whileDeleteUpdateLinkedRecord($linkedId, $className, $newId, $dbLogMsg)
-    {
+    protected function whileDeleteUpdateLinkedRecord(
+        string $className,
+        int $linkedId,
+        int $newId,
+        string $dbLogMsg
+    ): int {
         /** @var ObjAbstract $obj */
         $obj = new $className;
         $obj->setId($linkedId);
-        $affectedRows = $obj->updateDb([$this->whileDeleteGetForeignFieldKey($className) => $newId], $dbLogMsg);
+        $updateData = [$this->whileDeleteGetForeignFieldKey($className) => $newId];
+        $affectedRows = $obj->updateDb($updateData, $dbLogMsg);
         return $affectedRows;
     }
 
@@ -2036,8 +2105,8 @@ abstract class ModuleAbstract extends Table
     {
         if (isset($_GET['loadTableLayoutSettings'])) {
             $this->initFieldsFromSubtables();
-            $this->initLayoutable();
             $this->initList();
+            $this->initLayoutable();
             $this->showTableLayoutSettingsDialog();
             return;
         }
@@ -2155,12 +2224,11 @@ abstract class ModuleAbstract extends Table
         $this->initTableFieldsAdditional();
         // Добавим поля, которые объявлены как кеширующие в подтаблицах
         $this->initFieldsFromSubtables();
+        // Метод initList() переопределяется в классх потоках - там добавляются поля необходимые только для режима List
+        $this->initList();
 
         $this->initSortable();
         $this->initLayoutable();
-
-        // Метод initList() переопределяется в классх потоках - там добавляются поля необходимые только для режима List
-        $this->initList();
 
         // При запросе Excel файла или при ajax запросе - загружаем данные таблицы для режима List и выводим в бразуер
         $this->tableLoadData();
@@ -2169,6 +2237,9 @@ abstract class ModuleAbstract extends Table
             $this->sendExcel();
         } else {
             print $this->getHtmlTableForAjax();
+            if (Config::$debug) {
+                print '<div class="note">Peak memory usage: ' . (memory_get_peak_usage(true) / 1024) . ' Kb</div>';
+            }
         }
     }
 
@@ -2396,26 +2467,41 @@ abstract class ModuleAbstract extends Table
     }
 
     /**
-     * @param string $subtableName имя класса подтаблицы без суффикса Subtable и без неймспейса текущего модуля
+     * @param string $subtableClass имя класса подтаблицы без суффикса Subtable и без неймспейса текущего модуля
      * @return void
      */
-    protected function registerSubtable($subtableName)
+    protected function registerSubtable(string $subtableClass)
     {
-        $this->_subtables[$subtableName] = [
-            'readonly' => false
+        $this->subtables[$subtableClass] = [
+            'class' => $subtableClass,
+            'readonly' => false,
         ];
     }
 
-    protected function registerSubtableReadonly($subtableName)
+    protected function registerSubtableReadonly(string $subtableClass)
     {
-        $this->_subtables[$subtableName] = [
-            'readonly' => true
+        $this->subtables[$subtableClass] = [
+            'class' => $subtableClass,
+            'readonly' => true,
         ];
     }
 
-    protected function hasSubtable(string $subtableName): bool
+    protected function hasSubtable(string $subtableClass): bool
     {
-        return isset($this->_subtables[$subtableName]);
+        return isset($this->subtables[$subtableClass]);
+    }
+
+    /**
+     * @param string $subtableClass имя класса подтаблицы
+     * @return \Light\SubtableBase\Subtable
+     */
+    protected function getSubtable(string $subtableClass)
+    {
+        if (!isset($this->subtables[$subtableClass]['instance'])) {
+            $this->subtables[$subtableClass]['instance'] = new $subtableClass($this->_obj);
+        }
+
+        return $this->subtables[$subtableClass]['instance'];
     }
 
     /**
@@ -2465,11 +2551,11 @@ abstract class ModuleAbstract extends Table
 
     protected function initFieldsFromSubtables()
     {
-        foreach ($this->_subtables as $subtableName => $subtableParams) {
-            $subtableObj = $this->getSubtableObject($this->_obj, $subtableName);
-            //Добавим новые поля
-            //Эти поля объявлены внутри подтаблиц с переменных $this->_groupconcatFieldKeys и $this->_cacheFieldsKeys
-            $subtableFields = $subtableObj->getFieldsForMasterModuleList();
+        foreach ($this->subtables as ['class' => $subtableClass]) {
+            $subtable = $this->getSubtable($subtableClass);
+            // Добавим новые поля
+            // Эти поля объявлены внутри подтаблиц с переменных $this->groupconcatFieldKeys и $this->_cacheFieldsKeys
+            $subtableFields = $subtable->getFieldsForMasterModuleList();
             if ($subtableFields) {
                 $this->addFields($subtableFields);
             }
@@ -2722,6 +2808,9 @@ abstract class ModuleAbstract extends Table
 
             $timer = new Timer();
             $this->_tableQueryRes = Db::query($query);
+            $this->_tableData = $this->_tableQueryRes->fetch_all(MYSQLI_ASSOC);
+            $this->_tableQueryRes->free();
+            $this->_tableQueryRes = null;
             /*
             $this->_tableData = new \SplFixedArray($res->num_rows);
             $rowIndex = 0;
@@ -2861,7 +2950,7 @@ abstract class ModuleAbstract extends Table
         $value = $_REQUEST['newValue'];
         $data = [$fieldKey => $value];
         $normilizedValue = $field->getDataFromRequest($data);
-        if ($normilizedValue === null) {
+        if ($normilizedValue === null && !$field->nullable) {
             Response::abort(400, "Invalid value $value");
         }
 
@@ -2879,7 +2968,7 @@ abstract class ModuleAbstract extends Table
 
         print $this->_obj->getFieldHtml($fieldKey);
 
-        Metric::newrelicMetric(Request::getModule() . '/ChangeField', $timer->getMs());
+        Metric::newrelicMetric($this->getModule() . '/ChangeField', $timer->getMs());
 
         // Если при изменении поля в $this->afterChangeField накопились какие-то Flash сообщения,
         // отправим их в виде Toast блоков
@@ -2999,6 +3088,13 @@ abstract class ModuleAbstract extends Table
         //следует открывать в новом окне. Используем для этого css class
         if ($blank) {
             $cssClass = trim($cssClass . ' massaction-target-blank');
+        }
+
+        if (!$class && strpos($action, PROJECT_NAMESPACE . '\\') === 0) {
+            // В качестве имени $action может передаваться fully qualifued class name
+            // это удобно для избежания опечаток.
+            // Сохраним указатель на этот класс в свойстве "class"
+            $class = $action;
         }
 
         $this->massactions[$action] = [

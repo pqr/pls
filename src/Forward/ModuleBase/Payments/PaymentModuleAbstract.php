@@ -19,12 +19,11 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
 {
     use FirstLetterTrait;
 
+    protected $folders = true;
+
     public function __construct()
     {
         parent::__construct();
-
-        $this->folders = true;
-        $this->tableDefaultOrderBy = 'ID DESC';
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
     }

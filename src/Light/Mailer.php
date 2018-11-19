@@ -42,7 +42,7 @@ class Mailer
     /** @var string используется только при отправке почты из очереди в Autolaunch Light/Email */
     private $createdDateTime;
     /** @var int используется только при отправке почты из очереди в Autolaunch Light/Email */
-    private $retryCount;
+    private $retryCount = 0;
 
     /**
      * Mailer constructor.
@@ -190,13 +190,14 @@ class Mailer
             if (!$swiftmailer) {
                 // Если не передан какой-то особый Swift_Mailer, то используем настройки по умолчанию
                 // прописанные в Config::$swiftmailer...
-
-                // В качестве параметра передаёт from адрес, чтобы попробовать использовать логин/пароль от почты
-                // указанного пользователя (если он отличается от стандартного Config::$swiftmailerUser
-                $swiftmailer = $this->getDefaultSwitfmailer($this->from);
+                $swiftmailer = $this->getDefaultSwitfmailer();
             }
 
-            $message = $this->getSwiftMessage();
+            /** @var \Swift_SmtpTransport $transport */
+            $transport = $swiftmailer->getTransport();
+            $correctFrom = (string)$transport->getUsername();
+
+            $message = $this->getSwiftMessage($correctFrom);
             $failedRecipients = [];
             $sent = $swiftmailer->send($message, $failedRecipients);
             if ($failedRecipients) {
@@ -297,18 +298,18 @@ class Mailer
         }
     }
 
-    private function getDefaultSwitfmailer(string $from): \Swift_Mailer
+    private function getDefaultSwitfmailer(): \Swift_Mailer
     {
         $swiftmailerUser = Config::$swiftmailerUser;
         $swiftmailerPassword = Config::$swiftmailerPassword;
 
-        if ($from != Config::$swiftmailerUser) {
+        if ($this->from != Config::$swiftmailerUser) {
             // Если адрес отправителя ($from) не совпадает с пользователем заданным для отправки по умолчанию в конфиге
             // то нужно проверить, есть ли в базе пароль от почты указанного пользователя?
-            $userEmailPassword = (string)Db::getOne("SELECT EmailPassword FROM user WHERE Email = @s", $from);
+            $userEmailPassword = (string)Db::getOne("SELECT EmailPassword FROM user WHERE Email = @s", $this->from);
             if ($userEmailPassword !== '') {
                 // Для данного пользователя определён его собственный пароль для отправки почты, используем его
-                $swiftmailerUser = $from;
+                $swiftmailerUser = $this->from;
                 $swiftmailerPassword = $userEmailPassword;
             }
         }
@@ -322,11 +323,6 @@ class Mailer
         );
     }
 
-    private function getFinalFrom(): string
-    {
-        return $this->from ?: Config::$swiftmailerUser;
-    }
-
     private function getFinalCc()
     {
         $toArr = Mailer::getEmailsAsArray($this->to);
@@ -335,11 +331,11 @@ class Mailer
         return array_diff($ccArr, $toArr);
     }
 
-    private function getSwiftMessage()
+    private function getSwiftMessage(string $correctFrom)
     {
         $toArr = Mailer::getEmailsAsArray($this->to);
         $message = (new \Swift_Message($this->subject, $this->body, $this->contentType))
-            ->setFrom($this->getFinalFrom())
+            ->setFrom($correctFrom)
             ->setTo($toArr);
 
         $ccArr = $this->getFinalCc();
@@ -388,13 +384,13 @@ class Mailer
         return $mailers[$user];
     }
 
-    private function writeLog(string $report)
+    private function writeLog(string $report, string $correctFrom)
     {
         $record = [
             'CreatedBy' => $this->createdBy,
             'CreatedDateTime' => $this->createdDateTime,
             'SentDateTime' => date('Y-m-d H:i:s'),
-            'From' => $this->getFinalFrom(),
+            'From' => $correctFrom,
             'To' => Mailer::getEmailsAsString($this->to),
             'Cc' => Mailer::getEmailsAsString($this->getFinalCc()),
             'Bcc' => Mailer::getEmailsAsString($this->bcc),

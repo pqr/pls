@@ -4,7 +4,6 @@ namespace Light;
 
 use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
-use Light\Field\FieldOptionsAbstract;
 use Light\Field\FieldSelect;
 
 class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
@@ -440,13 +439,13 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     {
         $outData = [];
 
-        //Эта функция должна возвращать данные по всем полям, которые были объявлены в Fieldset как MODE_EDIT (или MODE_MULTIPLEUPDATE) И MODE_SUBMIT
+        // Эта функция должна возвращать данные по всем полям, которые были объявлены в Fieldset как MODE_EDIT (или MODE_MULTIPLEUPDATE) И MODE_SUBMIT
         foreach ($this->_fields as $field) {
             /** @var \Light\Field\FieldAbstract $field */
             $value = $field->getDataFromRequest($request);
             if ($value !== null) {
                 if (is_array($value)) {
-                    //Если возвращает несколько значений, запишем их все
+                    // Если возвращает несколько значений, запишем их все
                     /** @noinspection SlowArrayOperationsInLoopInspection */
                     $outData = array_merge($outData, $value);
                 } else {
@@ -455,6 +454,13 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
                     } else {
                         $outData[$field->key] = $value;
                     }
+                }
+            } else {
+                // Если из FieldAbstract::getDataFromRequest() вернулось значение null, тут можем быть несколько вариантов
+                // 1) это поле вообще не приншо в $request (тогда его не нужно добавлять в $outData)
+                // 2) это поле пришло в $request и пришло какое-то пустое значение и поле имеет флаг nullable (нужно добавлять в $outData)
+                if ($field->nullable && array_key_exists($field->key, $request)) {
+                    $outData[$field->key] = null;
                 }
             }
         }

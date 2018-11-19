@@ -53,6 +53,9 @@ trait TableExcelExportable
             ->setFitToWidth(1)
             ->setFitToHeight(0);
 
+        $fieldsetSowed = $this->getFieldsetShowed();
+        $this->prefetchSelectOptions($fieldsetSowed->getFieldsArr());
+
         $dataCalculated = $this->getTableDataCalculated();
         $dataTotal = $this->getTableTotal($dataCalculated);
         if (!$this->hasTotalRow($dataTotal)) {
@@ -67,7 +70,7 @@ trait TableExcelExportable
             1,
             $dataCalculated,
             $dataTotal,
-            $this->getFieldsetShowed(),
+            $fieldsetSowed,
             function (array $rowData, $rowNum) {
                 return $this->getTableRowDataExcelParams($rowData, $rowNum);
             },
@@ -106,7 +109,7 @@ trait TableExcelExportable
             $payload['filterValues'] = $this->getFiltersValues();
         }
         $act = isset($_GET['json']) ? 'sendJSON ' : 'sendExcel ';
-        $actionType = Request::getModule() .'/' . $this->getTableName() . '::' . $act;
+        $actionType = Request::getModule() . '/' . $this->getTableName() . '::' . $act;
         Metric::record($actionType, $timer->getMs(), $payload);
     }
 

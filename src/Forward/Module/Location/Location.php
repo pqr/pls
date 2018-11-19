@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Module\Location;
 
 use Forward\Application;
@@ -9,16 +10,16 @@ use Light\User;
 
 class Location extends ModuleAbstract
 {
+
+    protected $textSaveBtn = 'Airport';
+    protected $tableDefaultOrderBy = 'Name';
+    protected $tableLayoutDefault = 'Name|NameRu|IATA|CountryCode';
+
     public function __construct()
     {
         parent::__construct();
 
-        $this->setDbTable('location');
-
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
-        $this->textSaveBtn = 'Airport';
-        $this->tableDefaultOrderBy = 'Name';
-        $this->tableLayouts['Default'] = 'Name|NameRu|IATA|CountryCode';
 
         $this->addFields(
 
@@ -30,7 +31,8 @@ class Location extends ModuleAbstract
 
             F::createString('IATA', ['maxLength' => 3, 'editWidth' => 'small', 'upper' => true]),
 
-            F::createString('CountryCode', ['name' => 'Country Code', 'maxLength' => 2, 'editWidth' => 'small', 'upper' => true])
+            F::createString('CountryCode',
+                ['name' => 'Country Code', 'maxLength' => 2, 'editWidth' => 'small', 'upper' => true])
 
         );
     }
@@ -38,6 +40,9 @@ class Location extends ModuleAbstract
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
-        $this->addFilterName(F::TYPE_STRING, ['name' => 'Name / IATA', 'sqlWhere' => "Name LIKE '%{value}%' OR NameRu LIKE '%{value}%' OR IATA = '{value}'"]);
+        $this->addFilterName(F::TYPE_STRING, [
+            'name' => 'Name / IATA',
+            'sqlWhere' => "Name LIKE '%{value}%' OR NameRu LIKE '%{value}%' OR IATA = '{value}'"
+        ]);
     }
 }

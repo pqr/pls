@@ -20,7 +20,10 @@ class Link
     public function __construct(string $module, string $innerHtml = '')
     {
         $this->innerHtml = $innerHtml;
-        $this->module = $module;
+
+        // Иногда в качестве имени модуля может быть передан полный класс с неймспейсами
+        // Например: Basis\Module\Shipment\Shipment
+        $this->module = Misc::getModule($module);
     }
 
     public static function create(string $module, ?string $innerHtml = '')
@@ -102,6 +105,11 @@ class Link
         }
         $this->params[$param] = implode('+', $values);
 
+        return $this;
+    }
+
+    public function addNew() {
+        $this->params['addnew'] = 1;
         return $this;
     }
 
@@ -249,8 +257,7 @@ class Link
         $title = null,
         $tagParams = null,
         $blank = false
-    )
-    {
+    ) {
         if ($filterValues) {
             $filterValuesUrlParam = self::filterValuesUlrParam($filterValues);
             $urlParams = $urlParams ?? [];
@@ -270,8 +277,7 @@ class Link
         $module = null,
         $title = null,
         $tagParams = null
-    )
-    {
+    ) {
         return self::moduleList($innerHtml, $filterValues, $urlParams, $module, $title, $tagParams, true);
     }
 
@@ -288,8 +294,7 @@ class Link
         $blank = false,
         $dialog = false,
         $ajax = false
-    )
-    {
+    ) {
         if ($urlParams) {
             $urlParams = self::mergeUrlParams(['id' => $id], $urlParams);
         } else {
@@ -314,8 +319,7 @@ class Link
         $module = null,
         $title = null,
         $tagParams = null
-    )
-    {
+    ) {
         return self::moduleView($innerHtml, $id, $urlParams, $module, $title, $tagParams, true);
     }
 
@@ -330,8 +334,7 @@ class Link
         $title = null,
         $tagParams = null,
         $blank = false
-    )
-    {
+    ) {
         if ($urlParams) {
             $urlParams = self::mergeUrlParams(['editid' => $id], $urlParams);
         } else {
@@ -351,8 +354,7 @@ class Link
         $tagParams = null,
         $blank = false,
         $ajax = false
-    )
-    {
+    ) {
         $url = self::url($urlParams, $module);
         if ($ajax) {
             $url .= "#ajax";

@@ -8,9 +8,9 @@ class FieldInt extends FieldNumberAbstract
         parent::initDefaultParams();
         $this->tableWidthHtml = 70;
         $this->editWidth = 'mini';
-        $this->editAlign = 'right';
         //$this->inputType = 'number';
         $this->inputPattern = '\d*';
+        $this->tableAlign = 'center';
     }
 
     protected function getEditCssClass($value, array $data)

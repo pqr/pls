@@ -12,11 +12,13 @@ use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
 use Forward\Classes\ShipmentDownloadDocs;
 use Forward\Field\GeneralFields;
 use Forward\Field\ShipmentFields;
+use Forward\Module\Customer\Customer;
 use Forward\Module\Shipment\CostSheet\CostSheetObj;
 use Forward\Module\Shipment\CostSheet\CostSheetRouter;
 use Forward\Module\Shipment\CostSheet\Subtables\Base\IncomeExpensesObjAbstract;
 use Forward\Module\Shipment\CostSheet\Subtables\ExpensesObj;
 use Forward\Module\Shipment\CostSheet\Subtables\IncomeObj;
+use Forward\Module\Shipment\Subtables\Shippers;
 use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Db;
@@ -49,27 +51,26 @@ class Shipment extends ModuleAbstract
         'ResponsibleCS' => 'Customer Service',
     ];
 
+    protected $folders = true;
+    protected $textSaveBtn = 'Shipment';
+    protected $tableLayoutDefault =
+        'Name|FileClosed|Month|MAWBNumber|DepartureIATA|ArrivalIATA|CustomerID|ETD|ETA|ATA';
+
     public function __construct()
     {
         parent::__construct();
 
-        $this->folders = true;
-
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
-
-        $this->textSaveBtn = 'Shipment';
-        $this->tableDefaultOrderBy = 'shipment.ID DESC';
-        $this->tableLayouts['Default'] =
-            'Name|FileClosed|Month|MAWBNumber|DepartureIATA|ArrivalIATA|CustomerID|ETD|ETA|ATA';
-
         $this->allowDelete = User::hasSpecialAccess(Application::SA_SHIPMENT_DELETE);
+    }
 
-        $this->registerSubtable('Shippers');
+    protected function registerSubtables()
+    {
+        $this->registerSubtable(Shippers::class);
     }
 
     protected function initList()
     {
-
         $getSqlSelectInvoices = function ($firstLetter) {
             $firstLetterLower = strtolower($firstLetter);
             $customerOrVendor = $firstLetter === 'C' ? 'Customer' : 'Vendor';
@@ -144,8 +145,6 @@ class Shipment extends ModuleAbstract
 
             $this->getListVatMountField(12),
             $this->getListVatMountField(18)
-
-
         );
     }
 
@@ -156,7 +155,6 @@ class Shipment extends ModuleAbstract
         // К полю Shipper добавим параметр, который будет обрезать длинные названия
         $this->getField('CacheShippersName')->setViewMaxWidth300(true);
     }
-
 
     private function getListVatMountField($vatPercent)
     {
@@ -547,7 +545,7 @@ class Shipment extends ModuleAbstract
             if ($id = Db::getOne($query)) {
                 $this->riseSaveErorr(
                     'MAWB ' . htmlspecialchars($dataFromRequest['MAWBNumber']) . ' already exists, ' .
-                    Link::create('Shipment', 'view...')
+                    Link::create(Shipment::class, 'view...')
                         ->view($id)
                         ->blank()
                         ->getHtml(),
@@ -624,7 +622,7 @@ class Shipment extends ModuleAbstract
             $customerCompanyId = Db::getOne("SELECT CompanyID FROM customer WHERE ID = @i", $customerId);
             if (!$customerCompanyId) {
                 $msg = 'В целях наполнения базы невозможно сохранить перевозку, пока в карточке клиента не заполнено поле Our Company.';
-                $msg .= '<br>' . Link::create('Customer', 'Отредактировать карточку клиента')
+                $msg .= '<br>' . Link::create(Customer::class, 'Отредактировать карточку клиента')
                         ->view($customerId)
                         ->blank()
                         ->getHtml();

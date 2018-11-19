@@ -106,7 +106,7 @@ class Autolaunch
 
         Response::setPageTitle("Autolaunch $title");
 
-        $link = Link::create('Autolaunch', 'Autolaunch');
+        $link = Link::create(Autolaunch::class, 'Autolaunch');
         $imgSrc = 'lightpublic/i/autolaunch.png';
         $img = "<img src=$imgSrc width=24>";
         Response::setPageHeadHtml("$link $img <strong>$title</strong>");
@@ -168,7 +168,7 @@ class Autolaunch
 
         Response::setPageTitle("Autolaunch $title Log $logId");
 
-        $link = Link::create('Autolaunch', 'Autolaunch');
+        $link = Link::create(Autolaunch::class, 'Autolaunch');
         $imgSrc = 'lightpublic/i/autolaunch.png';
         $img = "<img src=$imgSrc width=24>";
 
@@ -181,7 +181,7 @@ class Autolaunch
         if (isset($_GET['msid'])) {
             $backUrlParams['msid'] = $_GET['msid'];
         }
-        $titleWithLink = Link::create('Autolaunch', $title)->params($backUrlParams);
+        $titleWithLink = Link::create(Autolaunch::class, $title)->params($backUrlParams);
         Response::setPageHeadHtml("$link $img <strong>$titleWithLink Log $logId</strong>");
 
         $this->addModuleSessionNextPrevLinks($logId, 'id', ['class' => $className]);

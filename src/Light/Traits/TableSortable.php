@@ -4,8 +4,6 @@ namespace Light\Traits;
 use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
-use Light\Fieldset;
-use Light\Img;
 use Light\SubtableBase\Subtable;
 use Light\Table\TableUserParamsRepository;
 
@@ -16,7 +14,7 @@ trait TableSortable
 
     protected $allowSort = true;
 
-    protected $tableDefaultOrderBy = 'ID DESC'; // SQL фрагмент, который будет добавлен в конец запроса ORDER BY ...
+    protected $tableDefaultOrderBy; // SQL фрагмент, который будет добавлен в конец запроса ORDER BY ...
 
     protected function initSortable()
     {
@@ -202,6 +200,12 @@ trait TableSortable
 
         if ($this->tableDefaultOrderBy) {
             $sqlOrderBy[] = $this->tableDefaultOrderBy;
+        } else {
+            // Если сортировка по умолчанию не задана, то проверим наличие поля OrderID, а затем применим сортировку по ID
+            if ($this->hasField('OrderID')) {
+                $sqlOrderBy[] = 'OrderID';
+            }
+            $sqlOrderBy[] = 'ID DESC';
         }
 
         if ($sqlOrderBy) {

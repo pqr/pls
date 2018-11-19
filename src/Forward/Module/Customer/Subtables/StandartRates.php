@@ -2,6 +2,7 @@
 
 namespace Forward\Module\Customer\Subtables;
 
+use Forward\Module\Customer\Customer;
 use Light\Field\FieldAbstract as F;
 use Light\Img;
 use Light\Link;
@@ -10,15 +11,14 @@ use Light\SubtableBase\Subtable;
 
 class StandartRates extends Subtable
 {
+    protected $allowExportToExcel = false;
+    public $tableEmptyText = '';
+    protected $orderBy = 'ID DESC';
+    protected $tableLayoutDefault = 'ID|Name|ResponsibleSalesID|DepartureIATA|ArrivalIATA|ValidFrom|ValidUntil|CommentsInternal';
+
     public function __construct(ObjAbstract $masterObj)
     {
         parent::__construct($masterObj);
-
-        $this->allowExportToExcel = false;
-        $this->tableEmptyText = '';
-        $this->_orderBy = 'ID DESC';
-
-        $this->tableLayouts['Default'] = 'ID|Name|ResponsibleSalesID|DepartureIATA|ArrivalIATA|ValidFrom|ValidUntil|CommentsInternal';
 
         $this->addCheckboxCol()
             ->setGetHtmlFunction(function ($value, array $data) {
@@ -41,13 +41,13 @@ class StandartRates extends Subtable
             'nameTable' => '',
             'tableAlign' => 'center',
             'getHtmlFunction' => function ($value, $data) {
-                $delUrl = Link::url([
-                    'id' => $data['CustomerID'],
-                    'func' => 'StandartRateDialog',
-                    'action' => 'del',
-                    'srid' => $data['ID']
-                ]);
-                return '<a href="' . $delUrl . '#ajax" title="Delete">' . Img::iconDelete() . '</a>';
+                return Link::create(Customer::class, Img::iconDelete())
+                    ->view($data['CustomerID'])
+                    ->func('StandartRateDialog')
+                    ->params(['action' => 'del', 'srid' => $data['ID']])
+                    ->ajax()
+                    ->title('Delete')
+                    ->getHtml();
             }
         ]);
     }

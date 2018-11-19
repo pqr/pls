@@ -920,10 +920,20 @@ class Misc
         return str_replace(')', '\\\\)', str_replace('(', '\\\\(', $string));
     }
 
-    public static function getClass($obj)
+    public static function getClass($classNameOrObj)
     {
-        $ref = new \ReflectionClass($obj);
+        $ref = new \ReflectionClass($classNameOrObj);
         return $ref->isAnonymous() ? 'Anonymous' . $ref->getParentClass()->getShortName() : $ref->getShortName();
+    }
+
+    public static function getModule($classNameOrObj): string
+    {
+        // Сначала проверим, если на вход передан объект, то нужно получить полный путь к его классу
+        $className = (is_object($classNameOrObj)) ? get_class($classNameOrObj) : $classNameOrObj;
+        $parts = explode('\\', $className);
+        // Имя модуля по соглашению идёт под индексом 2
+        // например: Basis\Module\Shipment\SomeClass - имя модуля Shipment
+        return $parts[2] ?? $className;
     }
 
     /**
@@ -955,7 +965,7 @@ class Misc
         return $result;
     }
 
-    public static function idsFromPost(string $comaSeparated): array
+    public static function idsFromComaSeparatedString(string $comaSeparated): array
     {
         return array_values(array_filter(array_map('intval', explode(',', $comaSeparated))));
     }

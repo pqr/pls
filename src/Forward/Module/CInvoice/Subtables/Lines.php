@@ -5,6 +5,7 @@ namespace Forward\Module\CInvoice\Subtables;
 use Forward\Application;
 use Forward\Classes\CInvoiceCommon;
 use Forward\Classes\Constant;
+use Forward\Module\ItemList\ItemList;
 use Light\Db;
 use Light\Link;
 use Light\ObjAbstract;
@@ -57,7 +58,7 @@ class Lines extends Subtable
                 } elseif (User::hasWriteAccess('ItemList')) {
 
                     $linkText = 'Перевести';
-                    $link = Link::create('ItemList', $linkText);
+                    $link = Link::create(ItemList::class, $linkText);
                     if ($translation) {
 
                         $link->edit($translation['ID']);

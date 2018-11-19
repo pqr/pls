@@ -1,4 +1,5 @@
-<?php use Light\Template as t; ?>
+<?php use Forward\Module\DefaultAddons\DefaultAddons;
+use Light\Template as t; ?>
 
 <table>
     <tr>
@@ -127,7 +128,7 @@
             </div>
             <div id="tabs-addon">
                 <?php if (\Light\User::hasReadAccess('DefaultAddons')) {
-                    print \Light\Link::create('DefaultAddons', '<small style="float: right">View default addons</small>')->blank()->getHtml();
+                    print \Light\Link::create(DefaultAddons::class, '<small style="float: right">View default addons</small>')->blank()->getHtml();
                 } ?>
                 <table class="form">
                     <?= t::c('UseDefaultAddon'); ?>

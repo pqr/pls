@@ -8,6 +8,7 @@ use Light\Mailer;
 use Light\Module\Autolaunch\AutolaunchAbstract;
 use Light\Msg;
 use Light\Timer;
+use function Light\reportException;
 
 class Email extends AutolaunchAbstract
 {
@@ -132,6 +133,7 @@ class Email extends AutolaunchAbstract
             // Если отправить не удалось, просто увеличим счётчик RetryCount
             $report = $thisMsgBuff->getHtml();
             $this->incRetryCount($record['ID'], $report);
+            reportException(new \Exception($report));
         }
 
         $this->_msgBuff->merge($thisMsgBuff);

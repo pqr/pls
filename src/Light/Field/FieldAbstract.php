@@ -55,6 +55,7 @@ use Light\Html;
  * @method $this setSqlWhereFormatFunction(callable $function)
  * @method $this setChangeAll(bool $changeAll)
  * @method $this setAjax(bool $ajax)
+ * @method $this setNullable(bool $nullable)
  * @method $this setFilterNot(bool $filterNot)
  *
  * @method $this setAcReadonly(bool $value)
@@ -93,6 +94,7 @@ use Light\Html;
  * @method bool getChangeAll()
  * @method bool getFilterNot()
  * @method bool getAjax()
+ * @method bool getNullable()
  *
  * @method static FieldHtml createHtml(string $fieldKey, array $params = [])
  * @method static FieldCheckbox createCheckbox(string $fieldKey, array $params = [])
@@ -489,6 +491,8 @@ abstract class FieldAbstract implements \JsonSerializable
      */
     public $ajaxSuccessHandler;
 
+    public $nullable = false;
+
     /**
      * @var bool добавить ли к фильтру галочку "исключая"?
      */
@@ -680,10 +684,10 @@ abstract class FieldAbstract implements \JsonSerializable
             }
 
             //Соберём отдельно обработанные строки обратно
-            $outHtml = implode('<br>', $outLines);
             if ($this->groupconcatTruncate) {
-                $outHtml = Html::getTruncatedList($outHtml, $this->getName(), '<br>',
-                    $this->groupconcatTruncateMaxElements);
+                $outHtml = Html::getTruncatedList($outLines, $this->getName(), $this->groupconcatTruncateMaxElements);
+            } else {
+                $outHtml = implode('<br>', $outLines);
             }
 
             return (string)$outHtml;
@@ -702,7 +706,7 @@ abstract class FieldAbstract implements \JsonSerializable
             //Обрезаем текст, если его слишком много и указана специальная опция в настройках поля
             switch ($this->textTruncate) {
                 case self::TEXTTRUNCATE_LIST:
-                    $outHtml = Html::getTruncatedList($outHtml, $this->getName(), '<br>');
+                    $outHtml = Html::getTruncatedList(explode('<br>', $outHtml), $this->getName());
                     break;
                 case self::TEXTTRUNCATE_FULL:
                     $outHtml = Html::getTruncatedText($outHtml);
@@ -910,8 +914,12 @@ abstract class FieldAbstract implements \JsonSerializable
             $value = $function($value, $request);
         }
 
-        //Сохраним введённое значение в базуе, если это поле поддерживает виджет Autocomplete
+        // Сохраним введённое значение в базуе, если это поле поддерживает виджет Autocomplete
         $this->saveAutocompleteValue($value);
+
+        if ($this->nullable && ($value === '' || $value == 0)) {
+            $value = null;
+        }
 
         return $value;
     }

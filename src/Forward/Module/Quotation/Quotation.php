@@ -9,13 +9,16 @@ use Forward\Classes\Constant;
 use Forward\Classes\CustomerAccess;
 use Forward\Field\GeneralFields;
 use Forward\Field\QuotationFields;
+use Forward\Module\Quotation\Subtables\Cargo;
+use Forward\Module\Quotation\Subtables\Expenses;
+use Forward\Module\Quotation\Subtables\Income;
 use Forward\Module\SearchAirfreightRateDialog\SearchAirfreightRateDialog;
+use Forward\Module\Shipment\Shipment;
 use Light\ApplicationAbstract;
 use Light\Currency;
 use Light\Db;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
-use Light\FilesFolder;
 use Light\Img;
 use Light\Link;
 use Light\ModuleBase\ModuleAbstract;
@@ -31,13 +34,13 @@ class Quotation extends ModuleAbstract
     private const EXCEL_CARGO_STARTROW = 15;
     private const EXCEL_DETAILS_STARTROW = 20;
 
+protected $textSaveBtn = 'Quotation';
+protected $folders = true;
+
     public function __construct()
     {
         parent::__construct();
 
-        $this->setDbTable('quotation');
-        $this->textSaveBtn = 'Quotation';
-        $this->folders = true;
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(
@@ -74,81 +77,73 @@ class Quotation extends ModuleAbstract
                 'modes' => F::MODE_ALL & ~F::MODE_LIST,
                 'getHtmlFunction' => function ($value, array $data, $outHtml, $forTable, $field) {
                     if ($value) {
-                        $outHtml = Link::create('Quotation', $outHtml)->view($value)->getHtml();
+                        $outHtml = Link::create(Quotation::class, $outHtml)->view($value)->getHtml();
                     }
 
                     return $outHtml;
                 }
             ]),
             QuotationFields::cacheGp(),
-            F::create(
-                'DensityKgPerM3',
-                F::TYPE_FLOAT,
-                [
-                    'name' => 'Density',
-                    'uom' => 'kg/m<sup>3</sup>',
-                    'modes' => F::MODE_READONLY,
-                    'sqlSelect' => '',
-                    'sqlSelectRequires' => 'GrossWeight',
-                    'calcFunction' => function ($value, array $data) {
-                        if (!isset($data['ID'])) {
-                            return 0;
-                        }
-
-                        $totalVolume = (float)Db::getOne(
-                            "SELECT sum(Volume) FROM quotationcargo WHERE QuotationID = @i",
-                            $data['ID']
-                        );
-                        if (!$totalVolume) {
-                            return 0;
-                        }
-
-                        return round($data['GrossWeight'] / $totalVolume);
+            F::createFloat('DensityKgPerM3', [
+                'name' => 'Density',
+                'uom' => 'kg/m<sup>3</sup>',
+                'modes' => F::MODE_READONLY,
+                'sqlSelect' => '',
+                'sqlSelectRequires' => 'GrossWeight',
+                'calcFunction' => function ($value, array $data) {
+                    if (!isset($data['ID'])) {
+                        return 0;
                     }
-                ]
-            ),
-            F::create(
-                'DensityM3PerTon',
-                F::TYPE_FLOAT,
-                [
-                    'name' => 'Density',
-                    'uom' => 'm<sup>3</sup>/ton',
-                    'modes' => F::MODE_READONLY,
-                    'sqlSelect' => '',
-                    'sqlSelectRequires' => 'GrossWeight',
-                    'calcFunction' => function ($value, array $data) {
-                        if (!isset($data['ID'])) {
-                            return 0;
-                        }
 
-                        if ($data['GrossWeight'] == 0) {
-                            return 0;
-                        }
-
-                        $totalVolume = (float)Db::getOne(
-                            "SELECT sum(Volume) FROM quotationcargo WHERE QuotationID = @i",
-                            $data['ID']
-                        );
-                        return round($totalVolume / $data['GrossWeight'] * 1000, 2);
+                    $totalVolume = (float)Db::getOne(
+                        "SELECT sum(Volume) FROM quotationcargo WHERE QuotationID = @i",
+                        $data['ID']
+                    );
+                    if (!$totalVolume) {
+                        return 0;
                     }
-                ]
-            ),
-            F::create(
-                'CargoUOM',
-                F::TYPE_SELECT,
-                [
-                    'name' => 'cm or inch?',
-                    'options' => ['cm' => 'cm', 'inch' => 'inch'],
-                    'default' => 'cm',
-                    'empty' => false
-                ]
-            )
+
+                    return round($data['GrossWeight'] / $totalVolume);
+                }
+            ]),
+            F::createFloat('DensityM3PerTon', [
+                'name' => 'Density',
+                'uom' => 'm<sup>3</sup>/ton',
+                'modes' => F::MODE_READONLY,
+                'sqlSelect' => '',
+                'sqlSelectRequires' => 'GrossWeight',
+                'calcFunction' => function ($value, array $data) {
+                    if (!isset($data['ID'])) {
+                        return 0;
+                    }
+
+                    if ($data['GrossWeight'] == 0) {
+                        return 0;
+                    }
+
+                    $totalVolume = (float)Db::getOne(
+                        "SELECT sum(Volume) FROM quotationcargo WHERE QuotationID = @i",
+                        $data['ID']
+                    );
+                    return round($totalVolume / $data['GrossWeight'] * 1000, 2);
+                }
+            ]),
+            F::createSelect('CargoUOM', [
+                'name' => 'cm or inch?',
+                'options' => ['cm' => 'cm', 'inch' => 'inch'],
+                'default' => 'cm',
+                'empty' => false
+            ])
 
         );
 
-        $this->registerSubtable('Cargo');
-        $this->registerSubtable('Income');
-        $this->registerSubtable('Expenses');
+    }
+
+    protected function registerSubtables()
+    {
+        $this->registerSubtable(Cargo::class);
+        $this->registerSubtable(Income::class);
+        $this->registerSubtable(Expenses::class);
     }
 
     protected function initMassactions()
@@ -329,7 +324,7 @@ class Quotation extends ModuleAbstract
             $this->addSubmenuItemUrl(
                 'View Shipment',
                 Img::iconSearch(),
-                Link::create('Shipment')->view($shipmentId)->getHref()
+                Link::create(Shipment::class)->view($shipmentId)->getHref()
             );
 
         } elseif ($this->_obj['Status'] === 'win') {
@@ -337,7 +332,7 @@ class Quotation extends ModuleAbstract
             $this->addSubmenuItemUrl(
                 'Create Shipment',
                 Img::iconPlus(),
-                Link::create('Shipment')->params(['addnew' => 1, 'qid' => $this->_obj->getId()])->getHref()
+                Link::create(Shipment::class)->params(['addnew' => 1, 'qid' => $this->_obj->getId()])->getHref()
             );
 
         }

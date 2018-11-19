@@ -14,7 +14,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     private $dbTable;
 
     /** @var string имя поля в Fieldset, которое будет использоваться в автосгенерированном Obj для логов */
-    private $nameFieldKey;
+    protected $nameFieldKey = 'Name';
 
     /** @var bool Флаг, чтобы не вызывать лишний раз loadData */
     protected $dirtyData = true;
@@ -155,24 +155,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     public function getMasterModuleForDbLog()
     {
         if ($this->masterModuleForDbLog === null) {
-            //masterModule можно определить из неймспейса: <ProjectNamespace>\Module\<ModuleNamespace>\...
-            $namespaces = explode('\\', get_class($this));
-            if (isset($namespaces[2], $namespaces[1]) && $namespaces[1] === 'Module') {
-
-                $this->masterModuleForDbLog = $namespaces[2];
-
-            } else {
-
-                // Иногда из неймспейсов не удаётся определить модуль, к которому относится текущий объект.
-                // Например, если бы работаем в рамках какого-то простого ModuleAbstract в котором нет отдельного класса Obj
-                // и используется \Light\SimpleObj
-                // В этом случае сделаем примитивную инициализацию из Request::getModule()
-                // (это не работает при запуске из консоли Autolaunch скриптов, но обычно в Autolaunch используются
-                // объекты описанные отдельными классами и там модуль вычисляется из нейсмпейсов)
-
-                $this->masterModuleForDbLog = Request::getModule();
-
-            }
+            $this->masterModuleForDbLog = Misc::getModule($this);
         }
 
         return $this->masterModuleForDbLog;
@@ -186,37 +169,30 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
     public function getDbTable()
     {
-        // Лениво инициализируем _dbTable, если имя таблицы не было явно задано в конструкторе
+        // Лениво инициализируем dbTable, если имя таблицы не было явно задано в конструкторе
         // Обычно имя талицы не задаётся, т.к. его легко можно вычислить из имени класса
         if ($this->dbTable === null) {
-            //Уберём имя неймспейса(ов) из класса
-            $namespaces = explode('\\', get_class($this));
-            $class = end($namespaces);
-            if ($class !== 'Obj' && substr($class, -3) === 'Obj') {
-                $class = substr($class, 0, -3);
+            $className = Misc::getClass($this);
+            if ($className !== 'Obj' && substr($className, -3) === 'Obj') {
+                $className = substr($className, 0, -3);
                 //Имя таблицы обычно совпадает с именем класса за вычетом суффикса Obj
-                $this->dbTable = strtolower($class);
+                $this->dbTable = strtolower($className);
             }
         }
         return $this->dbTable;
     }
 
-    public function setDbTable($dbTable)
+    public function setDbTable(string $dbTable)
     {
         $this->dbTable = $dbTable;
     }
 
-    public function getNameFieldKey()
+    public function getNameFieldKey(): string
     {
-        if ($this->nameFieldKey === null) {
-            // Если параметр nameFieldKey не был проинициализирован явным образом, то попробуем использовать поле 'Name'
-            // Если поля Name нет в текущем объекте, тогда будем использовать ID
-            $this->nameFieldKey = $this->hasField('Name') ? 'Name' : 'ID';
-        };
-        return $this->nameFieldKey;
+        return $this->hasField($this->nameFieldKey) ? $this->nameFieldKey : 'ID';
     }
 
-    public function setNameFieldKey($fieldKey)
+    public function setNameFieldKey(string $fieldKey)
     {
         $this->nameFieldKey = $fieldKey;
     }
@@ -392,7 +368,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
                 continue;
             }
 
-            if (!$field->hasMode(F::MODE_LOG, $newData)) {
+            if (!$field->hasMode(F::MODE_LOG)) {
                 //Если у поля отключён modes LOG - пропускаем
                 continue;
             }
@@ -453,6 +429,9 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
                 true);
         } else {
             $description = 'Unknown';
+            if (isset($this->_data['ID'])) {
+                $description .= " ID " . $this->_data['ID'];
+            }
         }
 
         if ($this->_descriptionFunction) {

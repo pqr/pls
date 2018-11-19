@@ -1,21 +1,25 @@
 <?php
+
 namespace Forward\Module\OurCompany;
 
 use Forward\Application;
+use Forward\Module\OurCompany\Subtables\Banks;
 use Light\ModuleBase\ModuleAbstract;
 use Light\User;
 
 class OurCompany extends ModuleAbstract
 {
+    protected $textSaveBtn = 'Company';
+    protected $tableLayoutDefault = 'OrderID|Name';
+
     public function __construct()
     {
         parent::__construct();
-
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
-        $this->textSaveBtn = 'Company';
-        $this->tableDefaultOrderBy = 'OrderID ASC';
-        $this->tableLayouts['Default'] = 'OrderID|Name';
+    }
 
-        $this->registerSubtable('Banks');
+    protected function registerSubtables()
+    {
+        $this->registerSubtable(Banks::class);
     }
 }

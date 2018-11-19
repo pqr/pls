@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Module\CurrencyRate;
 
 use Light\Field\CommonFields as CF;
@@ -7,16 +8,12 @@ use Light\User;
 
 class CurrencyRate extends ModuleAbstract
 {
-    public function __construct()
-    {
-        parent::__construct();
+    protected $allowTableLayouts = false;
+    protected $tableLinkFieldKeys = [];
+    protected $tableFieldsShow = ['ValidDate', 'CurrencyISO', 'RateToRUB', 'Provider'];
 
-        $this->textSaveBtn = 'Currency Rate';
-        $this->tableDefaultOrderBy = 'ValidDate DESC';
-        $this->allowTableLayouts = false;
-        $this->tableLinkFieldKeys = [];
-        $this->tableFieldsShow = ['ValidDate', 'CurrencyISO', 'RateToRUB', 'Provider'];
-    }
+    protected $textSaveBtn = 'Currency Rate';
+    protected $tableDefaultOrderBy = 'ValidDate DESC';
 
     protected function initFilters()
     {

@@ -113,7 +113,8 @@ class Html
             return $text;
         }
         if (mb_strlen(strip_tags($text), 'UTF-8') > $maxlength) {
-            $text = '<a class="inner showhide" href="#">Show</a>'
+            $showLabel = Config::$lang === 'ru' ? 'Показать' : 'Show';
+            $text = '<a class="inner showhide" href="#">' . $showLabel . '</a>'
                 . '<div class="truncated-full display-none">' . $text . '</div>';
         }
         return $text;
@@ -146,24 +147,23 @@ class Html
         return $text;
     }
 
-    public static function getTruncatedList($text, $label, $separator = "\n", $maxElements = 4)
+    public static function getTruncatedList(array $lines, string $label, int $maxElements = 4): string
     {
-        if (strpos($text, 'truncated-full') !== false) {
+        $outHtml = implode('<br>', $lines);
+        if (strpos($outHtml, 'truncated-full') !== false) {
             // Если переданный текст уже содержит html код для скрытия-отображения, то второй раз не оборачиваем (актуально для вывода логов)
-            return $text;
-        }
-        $text = trim($text);
-        $count = count(explode($separator, $text));
-        if ($count > $maxElements) {
-            if ($separator === "\n") {
-                $text = nl2br($text);
-            }
-            $text = '<a class="inner showhide" href="#">'
-                . $label . ':&nbsp;<strong>'
-                . $count . '</strong></a><div class="truncated-full display-none">' . $text . '</div>';
+            return $outHtml;
         }
 
-        return $text;
+        $count = count($lines);
+        if ($count > $maxElements) {
+            $outHtml = '<a class="inner showhide" href="#">'
+                . $label . ':&nbsp;<strong>' . $count . '</strong>'
+                . '</a>'
+                . '<div class="truncated-full display-none">' . $outHtml . '</div>';
+        }
+
+        return $outHtml;
     }
 
     public static function progress()

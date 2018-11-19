@@ -163,6 +163,16 @@ class XlsWriter
         $objWriter->save($filepath);
     }
 
+    public function savePdf(string $filepath): void
+    {
+        $this->spreadsheet->getActiveSheet()->setShowGridLines(true);
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Pdf\Mpdf($this->spreadsheet);
+        // PDF writer needs temporary directory
+        $writer->setTempDir(LIGHT_DIR_TEMP);
+
+        $writer->save($filepath);
+    }
 
     public function getSpreadsheet(): Spreadsheet
     {

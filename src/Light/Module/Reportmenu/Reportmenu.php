@@ -118,7 +118,7 @@ class Reportmenu
             if ($hasWriteAcess) {
                 $manageAccessText = Config::$lang === 'ru' ? 'Доступ' : 'Access';
                 $innerHtml = Img::icon('fa-user-plus') . " $manageAccessText";
-                $manageAccessLink = Link::create('Reportmenu', $innerHtml)
+                $manageAccessLink = Link::create(Reportmenu::class, $innerHtml)
                     ->params($params + ['p' => 'AccessDialog'])
                     ->ajax()
                     ->attrs(['class' => 'reportblock__accesslink'])
@@ -131,10 +131,10 @@ class Reportmenu
 
             $out[$reportClass] = '<div class="reportblock">'
                 . '<div>'
-                . Link::create('Reportmenu', $imageHtml)->params($params)->getHtml()
+                . Link::create(Reportmenu::class, $imageHtml)->params($params)->getHtml()
                 . '</div>'
                 . '<div>'
-                . Link::create('Reportmenu', $title)->params($params)->getHtml()
+                . Link::create(Reportmenu::class, $title)->params($params)->getHtml()
                 . '<br>' . $descriptioon
                 . '</div>'
                 . $manageAccessLink

@@ -9,6 +9,13 @@ use Forward\Field\CreditFields;
 use Forward\Field\GeneralFields;
 use Forward\Module\Customer\StandartRateDialog\StandartRateDialog;
 use Forward\Module\Customer\StandartRateDialog\StandartRatesExcel;
+use Forward\Module\Customer\Subtables\Agents;
+use Forward\Module\Customer\Subtables\Consignee;
+use Forward\Module\Customer\Subtables\Contacts;
+use Forward\Module\Customer\Subtables\CustomerAccounts;
+use Forward\Module\Customer\Subtables\Quotations;
+use Forward\Module\Customer\Subtables\Responsibles;
+use Forward\Module\Customer\Subtables\StandartRates;
 use Forward\Module\SearchAirfreightRateDialog\SearchAirfreightRateDialog;
 use Light\Currency;
 use Light\Field\CommonFields as CF;
@@ -18,22 +25,25 @@ use Light\User;
 
 class Customer extends ModuleAbstract
 {
+    protected $folders = true;
+    protected $textSaveBtn = 'Customer';
+    protected $tableLayoutDefault = 'Name|Commodity|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
+
     public function __construct()
     {
         parent::__construct();
-
-        $this->folders = true;
-        $this->textSaveBtn = 'Customer';
-        $this->tableLayouts['Default'] = 'Name|Commodity|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
+    }
 
-        $this->registerSubtable('CustomerAccounts');
-        $this->registerSubtable('Responsibles');
-        $this->registerSubtable('Contacts');
-        $this->registerSubtable('Agents');
-        $this->registerSubtableReadonly('Quotations');
-        $this->registerSubtableReadonly('StandartRates');
-        $this->registerSubtable('Consignee');
+    protected function registerSubtables()
+    {
+        $this->registerSubtable(CustomerAccounts::class);
+        $this->registerSubtable(Responsibles::class);
+        $this->registerSubtable(Contacts::class);
+        $this->registerSubtable(Agents::class);
+        $this->registerSubtableReadonly(Quotations::class);
+        $this->registerSubtableReadonly(StandartRates::class);
+        $this->registerSubtable(Consignee::class);
     }
 
     protected function initList()

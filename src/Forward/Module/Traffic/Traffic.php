@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Module\Traffic;
 
 use Forward\Application;
@@ -9,24 +10,25 @@ use Light\User;
 
 class Traffic extends ModuleAbstract
 {
+    protected $textSaveBtn = 'Traffic';
+    protected $tableLayoutDefault = 'OrderID|Name|FileNumberFrom|FileNumberUntil|NextFileNumber|Type';
+
     public function __construct()
     {
         parent::__construct();
 
         $this->setDbTable('traffic');
-        $this->textSaveBtn = 'Traffic';
-        $this->tableDefaultOrderBy = 'OrderID';
-        $this->tableLayouts['Default'] = 'OrderID|Name|FileNumberFrom|FileNumberUntil|NextFileNumber|Type';
+
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $typeOptions = ['avia' => 'Avia', 'ocean' => 'Ocean', 'truck' => 'Truck'];
 
         $this->addFields(
-            F::create('Name', F::TYPE_STRING),
-            F::create('FileNumberFrom', F::TYPE_INT, ['name' => 'Start File Number']),
-            F::create('FileNumberUntil', F::TYPE_INT, ['name' => 'End File Number']),
-            F::create('NextFileNumber', F::TYPE_INT, ['name' => 'Next File Number']),
-            F::create('Type', F::TYPE_SELECT, ['options' => $typeOptions]),
+            F::createString('Name'),
+            F::createInt('FileNumberFrom', ['name' => 'Start File Number']),
+            F::createInt('FileNumberUntil', ['name' => 'End File Number']),
+            F::createInt('NextFileNumber', ['name' => 'Next File Number']),
+            F::createSelect('Type', ['options' => $typeOptions]),
             CF::orderId()
         );
     }

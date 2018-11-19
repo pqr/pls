@@ -101,14 +101,6 @@ class ShipmentCest extends ModuleCestAbstract
     /**
      * @param \FunctionalTester|\AcceptanceTester$I
      */
-    public function ajaxChangeEta($I)
-    {
-        $this->testChangeFieldDate($I, 'ETA', date('Y-m-d'));
-    }
-
-    /**
-     * @param \FunctionalTester|\AcceptanceTester$I
-     */
     public function deleteDialog($I)
     {
         // Переопределяем стандартный тест на появление диалогового окна удаления
@@ -116,6 +108,4 @@ class ShipmentCest extends ModuleCestAbstract
         // позволяют её удалить
         $I->canSeeAjaxDialog('?a=' . $this->getModule() . '&delid=' . $this->getTestObjId(), false);
     }
-
-
 }

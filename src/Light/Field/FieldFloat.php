@@ -19,8 +19,8 @@ class FieldFloat extends FieldNumberAbstract
 
         $this->tableWidthHtml = 70;
         $this->editWidth = 'small';
-        $this->editAlign = 'right';
         $this->inputPattern = '-?\d+([.,]\d+)?';
+        $this->tableAlign = 'center';
     }
 
     protected function getEditCssClass($value, array $data)

@@ -13,6 +13,7 @@ use Light\User;
 
 trait TableLayoutable
 {
+    protected $tableLayoutDefault = '';
     protected $tableLayouts = [];
     protected $allowTableLayouts = true;
 
@@ -63,9 +64,9 @@ trait TableLayoutable
         }
 
         // У пользователя нет собственных настроек колонок в таблице, попробуем применить Default раскладку
-        if (isset($this->tableLayouts['Default'])) {
+        if ($this->tableLayoutDefault) {
             // Для данной таблицы задана некая Default раскладка, именно её и используем
-            $this->setTableFieldsShow($this->tableLayouts['Default']);
+            $this->setTableFieldsShow($this->tableLayoutDefault);
             return;
         }
 
@@ -146,6 +147,10 @@ trait TableLayoutable
         array_multisort($fieldNames, $allFields);
 
         $layouts = [];
+        if ($this->tableLayoutDefault) {
+            $name = Config::$lang === 'ru' ? 'По умолчанию' : 'Default';
+            $layouts[] = ['name' => $name, 'fieldKeys' => explode('|', $this->tableLayoutDefault)];
+        }
         foreach ($this->tableLayouts as $name => $layoutFields) {
             $layouts[] = ['name' => $name, 'fieldKeys' => explode('|', $layoutFields)];
         }

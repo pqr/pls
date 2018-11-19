@@ -2,6 +2,7 @@
 
 namespace Forward\Module\Shipment\Subtables;
 
+use Forward\Module\Shipper\Shipper;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Link;
@@ -37,12 +38,12 @@ class Shippers extends Subtable
                     if ($value) {
                         $shipperId = Db::getOne("SELECT ID FROM list_shipper WHERE Name = @s", $value);
                         if ($shipperId) {
-                            $outHtml = Link::create('Shipper', $outHtml)
+                            $outHtml = Link::create(Shipper::class, $outHtml)
                                 ->view($shipperId)
                                 ->blank()
                                 ->getHtml();
                         } else {
-                            $outHtml = Link::create('Shipper', $outHtml)
+                            $outHtml = Link::create(Shipper::class, $outHtml)
                                 ->params(['addnew' => 1, 'Name' => $value])
                                 ->blank()
                                 ->getHtml();
