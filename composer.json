@@ -28,7 +28,8 @@
     "mobiledetect/mobiledetectlib": "@stable",
     "sentry/sentry": "@stable",
     "phpoffice/phpspreadsheet": "^1.0",
-    "symfony/filesystem": "^4.1"
+    "symfony/filesystem": "^4.1",
+    "symfony/process": "^4.1"
   },
   "autoload": {
     "psr-4": {
