@@ -190,8 +190,12 @@ class ShipmentGp
         return array_sum(array_column($invoices, 'AmountOnShipmentinUSD'));
     }
 
-    private static function isOneCurrency(array $csIncomeLines, array $csExpensesLines)
+    private static function isOneCurrency(array $csIncomeLines, array $csExpensesLines): bool
     {
+        if (!$csIncomeLines || !$csExpensesLines) {
+            return false;
+        }
+
         $currencies = array_merge(
             array_column($csExpensesLines, 'CurrencyISO'),
             array_column($csIncomeLines, 'CurrencyISO')

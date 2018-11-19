@@ -1,11 +1,14 @@
 <?php
+
 namespace Light\Autolaunch;
 
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
+use Light\Misc;
 use Light\Module\Autolaunch\AutolaunchAbstract;
 use Light\Module\CurrencyRate\CurrencyRateObj;
+use function Light\reportException;
 
 class CurrencyRateCBRF extends AutolaunchAbstract
 {
@@ -35,6 +38,19 @@ class CurrencyRateCBRF extends AutolaunchAbstract
         $this->_msgBuff->addInfo($msg);
         $this->_msgBuffShort->addInfo($msg);
 
+        $isSuccess = $this->loadRates($dateTimeRequest);
+        if (!$isSuccess
+            && $dateTimeRequest->format('Y-m-d') === date('Y-m-d')
+            && Misc::isWorkingDay(date('Y-m-d'))
+        ) {
+            // Были запрошены курсы на сегодняшний день, и это рабочий день, но курсов почему-то нет!
+            // сообщим в rollbar
+            reportException(new \Exception($this->_msgBuff->getText()));
+        }
+    }
+
+    private function loadRates(\DateTime $dateTimeRequest)
+    {
         $url = 'http://www.cbr.ru/scripts/XML_daily.asp?date_req=' . $dateTimeRequest->format('d/m/Y');
 
         $ch = curl_init();
@@ -45,7 +61,7 @@ class CurrencyRateCBRF extends AutolaunchAbstract
             $msg = 'Нет ответа от сайта ' . $url;
             $this->_msgBuff->addError($msg);
             $this->_msgBuffShort->addError($msg);
-            return;
+            return false;
         }
 
         try {
@@ -55,14 +71,14 @@ class CurrencyRateCBRF extends AutolaunchAbstract
             $msg = $e->getMessage();
             $this->_msgBuff->addError($msg);
             $this->_msgBuffShort->addError($msg);
-            return;
+            return false;
         }
 
         if (!$xmlObject) {
             $msg = 'Не удалось распарсить ответ:<br>' . $r;
             $this->_msgBuff->addError($msg);
             $this->_msgBuffShort->addError($msg);
-            return;
+            return false;
         }
 
         $currencies = Db::getCol("SELECT Name FROM currency");
@@ -157,5 +173,7 @@ class CurrencyRateCBRF extends AutolaunchAbstract
             $this->_msgBuff->addSkipp($msg);
             $this->_msgBuffShort->addSkipp($msg);
         }
+
+        return true;
     }
 }

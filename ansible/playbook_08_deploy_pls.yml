@@ -106,9 +106,7 @@
     become: false
     cron:
       name: "pls CitadeleCurrencyLoader"
-      minute: "0"
-      hour: "9-21"
-      job: "php {{ project_dir_pls }}/public/index.php CitadeleCurrencyLoader"
+      state: absent
     tags: cron
 
   - name: deploy pls 10. Cron UpdateCustomerOutstandingCache at 8

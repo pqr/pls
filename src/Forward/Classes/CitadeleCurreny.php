@@ -17,30 +17,35 @@ class CitadeleCurreny
         $cacheKey = $currencyIso . $date;
 
         if (!array_key_exists($cacheKey, self::$ratesCache)) {
-            $rates = Db::getRow("SELECT ValidDate, BuyingForEUR, SellingForEUR, BuyingForUSD, SellingForUSD
+            $rates = Db::getRow(
+                "SELECT ValidDate, BuyingForEUR, SellingForEUR, BuyingForUSD, SellingForUSD
                         FROM currencyrate_citadele
-                        WHERE ValidDate <= @s
+                        WHERE ValidDate = @s
                             AND Name = @s
-                        ORDER BY ValidDate DESC
-                        LIMIT 1", $date, $currencyIso);
+                        LIMIT 1"
+                , $date
+                , $currencyIso
+            );
 
             if (!$rates) {
 
-                //Если ничего не найдено, используем курсы ЦБРФ
+                // Если ничего не найдено, используем курсы ЦБРФ +/- 1,5%
+                $eurCbRate = Currency::getRate('EUR', $currencyIso, $date);
+                $usdCbRate = Currency::getRate('USD', $currencyIso, $date);
                 self::$ratesCache[$cacheKey] = [
                     'ValidDate' => $date,
-                    'BuyingForEUR' => Currency::getRate('EUR', $currencyIso, $date),
-                    'SellingForEUR' => Currency::getRate('EUR', $currencyIso, $date),
-                    'BuyingForUSD' => Currency::getRate('USD', $currencyIso, $date),
-                    'SellingForUSD' => Currency::getRate('USD', $currencyIso, $date)
+                    'BuyingForEUR' => $currencyIso === 'EUR' ? 1 : $eurCbRate * 1.015,
+                    'SellingForEUR' => $currencyIso === 'EUR' ? 1 : $eurCbRate * 0.985,
+                    'BuyingForUSD' => $currencyIso === 'USD' ? 1 : $usdCbRate * 1.015,
+                    'SellingForUSD' => $currencyIso === 'USD' ? 1 : $usdCbRate * 0.985
                 ];
 
             } else {
 
-                //В базе нашлись реальные ставки, сохраним их в кеш
+                // В базе нашлись реальные ставки, сохраним их в кеш
                 self::$ratesCache[$cacheKey] = $rates;
 
-                //Если реальная дата ValidDate не совпадает с запрошенной датой, то сохраним второе значение
+                // Если реальная дата ValidDate не совпадает с запрошенной датой, то сохраним второе значение
                 if ($rates['ValidDate'] != $date) {
                     self::$ratesCache[$currencyIso . $rates['ValidDate']] = $rates;
                 }
