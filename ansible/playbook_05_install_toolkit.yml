@@ -1,5 +1,5 @@
 # Example: ansible-playbook playbook_deploy_toolkit.yml -i inventory.test
-- hosts: []
+- hosts: all
   become: true
   become_user: root
   become_method: sudo
@@ -23,25 +23,31 @@
     apt: name=libxrender1
     tags: wkhtmltopdf
 
-  - name: Download and unarchive wkhtmltopdf
-    unarchive:
-      src: https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
-      dest: /tmp
-      remote_src: yes
+#  - name: Download and unarchive wkhtmltopdf
+#    unarchive:
+#      src: https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
+#      dest: /tmp
+#      remote_src: yes
+#    tags:
+#    - tools
+#    - wkhtmltopdf
+#
+#  - name: Copy wkhtmltopdf to bin
+#    become: true
+#    copy:
+#      remote_src: yes
+#      src: /tmp/wkhtmltox/bin/wkhtmltopdf
+#      dest: /usr/local/bin/wkhtmltopdf
+#      mode: 0755
+#    tags:
+#    - tools
+#    - wkhtmltopdf
+  - name: Install wkhtmltopdf
+    apt:
+      deb: https://downloads.wkhtmltopdf.org/0.12/0.12.5/wkhtmltox_0.12.5-1.xenial_amd64.deb
     tags:
-    - tools
-    - wkhtmltopdf
-
-  - name: Copy wkhtmltopdf to bin
-    become: true
-    copy:
-      remote_src: yes
-      src: /tmp/wkhtmltox/bin/wkhtmltopdf
-      dest: /usr/local/bin/wkhtmltopdf
-      mode: 0755
-    tags:
-    - tools
-    - wkhtmltopdf
+      - tools
+      - wkhtmltopdf
 
   # Установить нужные в работе утилиты:
   - name: toolkit 6. Install tools
