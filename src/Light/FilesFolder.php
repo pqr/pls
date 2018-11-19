@@ -409,13 +409,13 @@ class FilesFolder
         }
     }
 
-    public static function streamFile(string $relativePath)
+    public static function streamFile(string $relativePath, bool $preview = false)
     {
         $filepathAbs = Config::$filesfolderLocal . '/' . $relativePath;
         if (!Request::isAjax()) {
 
             // Если это не ajax запрос, то можем прямо в поток пользователю отдать искомый файл
-            Response::streamFileFromFilesystem($filepathAbs);
+            Response::streamFileFromFilesystem($filepathAbs, null, $preview);
             return;
 
         }

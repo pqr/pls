@@ -31,6 +31,12 @@ class Link
         return (new self($module, (string)$innerHtml));
     }
 
+    public function innerHtml(string $innerHtml)
+    {
+        $this->innerHtml = $innerHtml;
+        return $this;
+    }
+
     public function title(string $title)
     {
         $this->title = $title;

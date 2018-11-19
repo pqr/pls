@@ -45,7 +45,6 @@ class TemplaterPhp extends TemplaterAbstract
     {
         $fullHtml = $this->getFullHtml();
         $fullHtml = Misc::makeLinksAbsolute($fullHtml);
-        file_put_contents(LIGHT_DIR_TEMP .'/' . time() . '.html', $fullHtml);
         $cmd = Pdf::getCmdPdfFromHtmlStdin($dest, $landscape);
         $proc = new Process($cmd, null, null, $fullHtml);
         // Запускаем синхронно. Если процесс вернёт код отличный от 0, то бростися исключение

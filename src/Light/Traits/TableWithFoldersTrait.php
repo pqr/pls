@@ -8,6 +8,9 @@ use Light\Field\FieldAbstract as F;
 use Light\Field\FieldHtml;
 use Light\Fieldset;
 use Light\FilesFolder;
+use Light\Link;
+use Light\Request;
+use Light\Response;
 
 trait TableWithFoldersTrait
 {
@@ -171,22 +174,66 @@ trait TableWithFoldersTrait
     protected function fieldFolderFilesList()
     {
         return F::createText('FolderFilesList', [
-            'modes' => F::MODE_LIST,
+            'modes' => F::MODE_READONLY,
             'name' => 'Файлы: список',
             'sqlSelect' => '',
             'tableWidthExcel' => 20,
             'calcFunction' => function ($value, array $data) {
-                if (!isset($data[$this->folderNameFieldKey])) {
+                $folderRelative = $this->getFolderRelativePath($data);
+                if (!$folderRelative) {
                     return '';
                 }
 
-                return str_replace(
-                    DIRECTORY_SEPARATOR
-                    , ' / '
-                    , implode("\n", FilesFolder::recursivelyScanDir($this->getFolderRelativePath($data)))
-                );
+                $files = FilesFolder::recursivelyScanDir($folderRelative);
+                return implode("\n", $files);
+            },
+            'getHtmlFunction' => function ($value, array $data, $outHtml) {
+                if (!isset($data['ID'])) {
+                    return $outHtml;
+                }
+                $files = explode("\n", $value);
+                if (isset($data['ID'])) {
+                    foreach ($files as &$file) {
+                        $file = Link::create($this->folderBaseDir, htmlspecialchars($file))
+                            ->view((int)$data['ID'])
+                            ->func('FilePreview')
+                            ->params(['file' => $file])
+                            ->blank()
+                            ->getHtml();
+                    }
+                }
+                return implode('<br>', $files);
             }
         ]);
+    }
+
+    protected function viewGetFilePreview()
+    {
+        if (!$this->folders) {
+            Response::abort(400);
+            return;
+        }
+
+        $file = $_GET['file'] ?? '';
+        if ($file === '') {
+            Response::abort(400);
+            return;
+        }
+
+        $folderRelative = $this->getFolderRelativePath($this->_obj->getData());
+        if (!$folderRelative) {
+            Response::abort(404);
+            return;
+        }
+
+        $files = FilesFolder::recursivelyScanDir($folderRelative);
+        if (!in_array($file, $files)) {
+            Response::abort(404);
+            return;
+        }
+
+        FilesFolder::streamFile("$folderRelative/$file", true);
+
     }
 
     protected function fieldFolderFilesCount()

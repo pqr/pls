@@ -6,6 +6,7 @@ use Light\Config;
 use Light\Field\FieldAbstract as F;
 use Light\Incoterms;
 use Light\Misc;
+use Light\User;
 
 class CommonFields
 {
@@ -401,7 +402,8 @@ class CommonFields
             'modes' => F::MODE_READONLY,
             'nobr' => true,
             'tableWidthExcel' => 18,
-            'options' => 'user'
+            'options' => 'user',
+            'default' => User::getId(),
         ]);
     }
 

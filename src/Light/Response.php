@@ -357,7 +357,7 @@ class Response
         Response::setMasterTemplate(null);
     }
 
-    public static function streamFileFromFilesystem(string $filepathAbs, string $downloadFilename = null)
+    public static function streamFileFromFilesystem(string $filepathAbs, string $downloadFilename = null, bool $preview = false)
     {
         $filepathAbsEnc = File::encode($filepathAbs);
 
@@ -372,7 +372,9 @@ class Response
 
         Response::header('Content-Type: ' . $contentType);
         Response::header('Content-Length: ' . filesize($filepathAbsEnc));
-        Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($downloadFilename)));
+        if (!$preview) {
+            Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($downloadFilename)));
+        }
         Response::header('Cache-Control: max-age=0');
 
         readfile($filepathAbsEnc);
