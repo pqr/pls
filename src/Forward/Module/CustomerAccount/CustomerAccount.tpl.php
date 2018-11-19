@@ -13,6 +13,8 @@
                 <?= t::c('CreditPeriod') ?>
                 <?= t::c('ActOnDateType') ?>
                 <?= t::c('BUIDs') ?>
+                <?= t::c('DocsAddress') ?>
+                <?= t::c('DeliveryMethod') ?>
                 <tr class="vtop">
                     <th style="padding-top: 20px">
                         Customers

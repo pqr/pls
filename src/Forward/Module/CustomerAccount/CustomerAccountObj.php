@@ -48,6 +48,20 @@ class CustomerAccountObj extends ObjAbstract
                     Constant::ACTONDATETYPE_ATA => 'На дату прилёта',
                     Constant::ACTONDATETYPE_CPAYMENT => 'На дату оплаты счёта',
                 ]
+            ]),
+
+            F::createText('DocsAddress', [
+                'name' => 'Адрес доставки документов',
+            ]),
+
+            F::createSelect('DeliveryMethod', [
+                'name' => 'Способ отправки документов',
+                'empty' => true,
+                'options' => [
+                    1 => 'Отправка почтой',
+                    2 => 'Отправка курьером',
+                    3 => 'Клиент забирает самостоятельно',
+                ]
             ])
 
         );
