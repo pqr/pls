@@ -1,2 +1,6 @@
 ALTER TABLE customeraccount ADD DocsAddress TEXT NOT NULL;
 ALTER TABLE customeraccount ADD DeliveryMethod TINYINT DEFAULT 0 NOT NULL;
+
+ALTER TABLE customerconsignee ADD INN VARCHAR(50) NOT NULL;
+ALTER TABLE customerconsignee ADD KPP VARCHAR(50) NOT NULL;
+ALTER TABLE customerconsignee ADD OGRN VARCHAR(50) NOT NULL;

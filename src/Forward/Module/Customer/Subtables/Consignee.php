@@ -33,7 +33,11 @@ class Consignee extends Subtable
 
             GeneralFields::shipmentRequestCountry()->setEditWidth('medium')->setNameTable(null),
 
-            GeneralFields::shipmentRequestPhone()->setEditWidth('medium')->setNameTable(null)
+            GeneralFields::shipmentRequestPhone()->setEditWidth('medium')->setNameTable(null),
+
+            F::createString('INN', ['name' => 'ИНН', 'editWidth' => 'medium']),
+            F::createString('KPP', ['name' => 'КПП', 'editWidth' => 'medium']),
+            F::createString('OGRN', ['name' => 'ОГРН', 'editWidth' => 'medium'])
 
         );
     }
