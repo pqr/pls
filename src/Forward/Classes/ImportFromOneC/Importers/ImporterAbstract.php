@@ -117,8 +117,8 @@ abstract class ImporterAbstract
 
             // Перекладываем файл в папку внутри shipment
             $shipmentFolderRelative = FilesFolder::getModuleRelative(Shipment::class, $shipmentId);
-            $shipmentCActFolder = "$shipmentFolderRelative/$shipmentSubfolder";
-            $this->writeFile($shipmentCActFolder, $filename, $fileData, $shipmentLink);
+            $targetRelative = "$shipmentFolderRelative/$shipmentSubfolder";
+            $this->writeFile($targetRelative, $filename, $fileData, $shipmentLink);
         }
     }
 }

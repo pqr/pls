@@ -186,8 +186,10 @@ class ImportCInvoice extends ImporterAbstract
         $shipments = Db::getAll("SELECT s.ID, s.Name FROM cinvoice_file_amount cfa, shipment s WHERE cfa.CInvoiceID = $cinvId AND cfa.FileNumber = s.Name");
         $this->writeFileToShipments($pdfFilename, $pdfData, Constant::$standardFolders[Constant::FOLDER_CINVOICE],
             $shipments);
+        /*
         $this->writeFileToShipments($excelFilename, $excelData, Constant::$standardFolders[Constant::FOLDER_CINVOICE],
             $shipments);
+        */
     }
 
 

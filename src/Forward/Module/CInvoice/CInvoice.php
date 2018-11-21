@@ -18,6 +18,7 @@ use Forward\Module\CInvoice\PrintForms\CInvoicePrintForm;
 use Forward\Module\CInvoice\Subtables\CPayments;
 use Forward\Module\CInvoice\Subtables\Lines;
 use Forward\Module\CPayment\CPayment;
+use Forward\Module\Shipment\Shipment;
 use Forward\ModuleBase\Invoices\InvoiceModuleAbstract;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
@@ -27,7 +28,9 @@ use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
 use Light\File;
+use Light\FilesFolder;
 use Light\Img;
+use Light\Link;
 use Light\ModuleBase\MassactionUtils;
 use Light\Msg;
 use Light\ObjAbstract;
@@ -500,7 +503,6 @@ class CInvoice extends InvoiceModuleAbstract
             }
         }
 
-
         $dataForOneC = $this->getDataForOneC($cinvObj, $onecDocDate);
 
         $client = new Client();
@@ -582,7 +584,23 @@ class CInvoice extends InvoiceModuleAbstract
             if (file_put_contents($pdfFilepathAbsEnc, $pdfData)) {
                 Session::flashSuccess('Файл <strong>' . htmlspecialchars($pdfFilename) . '</strong> помещён в папку счёта');
             } else {
-                Session::flashSuccess('Не удалось поместить файл <strong>' . htmlspecialchars($pdfFilename) . '</strong> в папку счёта');
+                Session::flashError('Не удалось поместить файл <strong>' . htmlspecialchars($pdfFilename) . '</strong> в папку счёта');
+            }
+
+            $cinvId = $this->_obj->getId();
+            $shipments = Db::getAll("SELECT s.ID, s.Name FROM cinvoice_file_amount cfa, shipment s WHERE cfa.CInvoiceID = $cinvId AND cfa.FileNumber = s.Name");
+            foreach ($shipments as ['ID' => $shipmentId, 'Name' => $fileNumber]) {
+                // Перекладываем файл в папку внутри shipment
+                $shipmentFolderRelative = FilesFolder::getModuleRelative(Shipment::class, $shipmentId);
+                $standartCInvoiceFolder = Constant::$standardFolders[Constant::FOLDER_CINVOICE];
+                $shipmentCInvoioceFolderRelative = "$shipmentFolderRelative/$standartCInvoiceFolder";
+                FilesFolder::mkdir($shipmentCInvoioceFolderRelative);
+                $result = file_put_contents(FilesFolder::getAbsolutePath($shipmentCInvoioceFolderRelative) . "/$pdfFilename", $pdfData);
+                if ($result) {
+                    Session::flashSuccess('Файл <strong>' . htmlspecialchars($pdfFilename) . '</strong> помещён в папку перевозки ' . $fileNumber . '/' . $standartCInvoiceFolder);
+                } else {
+                    Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($pdfFilename) . '</strong> в папку перевозки ' . $fileNumber . '/' . $standartCInvoiceFolder);
+                }
             }
         }
 
@@ -600,7 +618,7 @@ class CInvoice extends InvoiceModuleAbstract
             if (file_put_contents($excelFilepathAbsEnc, $excelData)) {
                 Session::flashSuccess('Файл <strong>' . htmlspecialchars($excelFilename) . '</strong> помещён в папку счёта');
             } else {
-                Session::flashSuccess('Не удалось поместить файл <strong>' . htmlspecialchars($excelFilename) . '</strong> в папку счёта');
+                Session::flashError('Не удалось поместить файл <strong>' . htmlspecialchars($excelFilename) . '</strong> в папку счёта');
             }
 
         }
