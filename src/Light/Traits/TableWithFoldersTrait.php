@@ -9,7 +9,6 @@ use Light\Field\FieldHtml;
 use Light\Fieldset;
 use Light\FilesFolder;
 use Light\Link;
-use Light\Request;
 use Light\Response;
 
 trait TableWithFoldersTrait
@@ -178,6 +177,7 @@ trait TableWithFoldersTrait
             'name' => 'Файлы: список',
             'sqlSelect' => '',
             'tableWidthExcel' => 20,
+            'groupconcat' => true,
             'calcFunction' => function ($value, array $data) {
                 $folderRelative = $this->getFolderRelativePath($data);
                 if (!$folderRelative) {
@@ -191,18 +191,12 @@ trait TableWithFoldersTrait
                 if (!isset($data['ID'])) {
                     return $outHtml;
                 }
-                $files = explode("\n", $value);
-                if (isset($data['ID'])) {
-                    foreach ($files as &$file) {
-                        $file = Link::create($this->folderBaseDir, htmlspecialchars($file))
-                            ->view((int)$data['ID'])
-                            ->func('FilePreview')
-                            ->params(['file' => $file])
-                            ->blank()
-                            ->getHtml();
-                    }
-                }
-                return implode('<br>', $files);
+                return Link::create($this->folderBaseDir, htmlspecialchars($value))
+                    ->view((int)$data['ID'])
+                    ->func('FilePreview')
+                    ->params(['file' => $value])
+                    ->blank()
+                    ->getHtml();
             }
         ]);
     }
