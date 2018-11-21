@@ -148,6 +148,10 @@ class Shipment extends ModuleAbstract
             $this->getListVatMountField(12),
             $this->getListVatMountField(18)
         );
+
+        $this->addFields(
+            $this->fieldFolderFilesList()
+        );
     }
 
     protected function initFieldsFromSubtables()
