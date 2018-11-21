@@ -1429,7 +1429,9 @@ abstract class ModuleAbstract extends Table
     {
         $subtablesToLoad = [];
         foreach ($this->subtables as ['class' => $subtableClass]) {
-            $subtable = $this->getSubtable($subtableClass);
+            // Напрямую создаём объект подтаблицы (не используя метод $this->getSubtable(), чтобы получить подтаблицу
+            // для указанного $obj (особенно важно для Multiple Update)
+            $subtable = new $subtableClass($obj);
             if ($subtable instanceof Subtable) {
                 $subtablesToLoad[] = $subtable;
             }
@@ -1718,7 +1720,6 @@ abstract class ModuleAbstract extends Table
             $timer = new Timer();
 
             $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
-
 
             $this->beforeDelete($this->_obj);
             $this->proceedDeleteObj($this->_obj);

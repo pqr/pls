@@ -4,7 +4,8 @@ namespace Light;
 
 use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
-use Light\Field\FieldSelect;
+use Light\Field\FieldFloat;
+use Light\Field\FieldNumberAbstract;
 
 class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 {
@@ -576,6 +577,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
     public function validateMandatory(array $dataFromRequest, array $currentObjData = [])
     {
+        $defaultMsg = Config::$lang === 'ru' ? 'Не заполнено' : 'Empty';
         $errors = [];
         // Проверим заполненность остальных полей, помеченных как editMandatory
         foreach ($this->_fields as $field) {
@@ -591,23 +593,20 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
                 continue;
             }
 
-            $type = $field->getType();
-
             /** @var $field \Light\Field\FieldAbstract */
             if (!isset($dataFromRequest[$field->key])
                 || $dataFromRequest[$field->key] === ''
-                || ($type === 'Int' && $dataFromRequest[$field->key] === 0)
-                || ($type === 'Float' && $dataFromRequest[$field->key] === 0.0)
-                || ($type === 'Money' && $dataFromRequest[$field->key] === 0.0)
-                || ($field instanceof FieldSelect && $dataFromRequest[$field->key] === '0')
+                || ($field instanceof FieldNumberAbstract && $dataFromRequest[$field->key] === 0)
+                || ($field instanceof FieldFloat && $dataFromRequest[$field->key] === 0.0)
             ) {
 
-                $msg = 'empty ' . $field->getName();
-
                 // Стандартные сообщения для пользователя могут быть заданы внтури параметра editMandatory
-                if (is_string($field->editMandatory)) {
-                    $msg = $field->editMandatory;
-                }
+                $msg = is_string($field->editMandatory) ? $field->editMandatory : "$defaultMsg {$field->getName()}";
+
+                // Первую букву сообщения сделаем заглавной, чтобы придерживаться единого стиля
+                $firstChar = mb_substr($msg, 0, 1);
+                $firstChar = mb_strtoupper($firstChar);
+                $msg = $firstChar . mb_substr($msg, 1);
 
                 $errors[] = [
                     'msg' => $msg,
