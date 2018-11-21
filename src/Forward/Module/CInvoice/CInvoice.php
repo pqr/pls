@@ -506,6 +506,7 @@ class CInvoice extends InvoiceModuleAbstract
         $client = new Client();
         $path = Constant::$onecCompany[$cinvObj['CompanyID']];
         $url = 'http://' . ForwardConfig::$onecIp . ":" . ForwardConfig::$onecPort . "/$path/hs/CreateCustomerInvoice";
+        Session::flashInfo('Отправляем данные на адрес ' . $url);
 
         try {
 
