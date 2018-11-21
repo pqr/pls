@@ -1,6 +1,6 @@
 # Example: ansible-playbook playbook_07_install_vpn.yml
 # https://www.sanglyb.ru/ubuntu-server-1604-pptp-klient-s-avtomaticheskim-podklyucheniem
-- hosts: []
+- hosts: all
   become: true
   become_user: root
   become_method: sudo

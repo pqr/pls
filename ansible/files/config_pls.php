@@ -37,4 +37,5 @@ Config::$telegramBotToken = '{{ telegrambot_token }}';
 
 \Forward\ForwardConfig::$vinvoiceZipPass = '{{ vinvoice_zip_pass }}';
 \Forward\ForwardConfig::$onecIp = '{{ vpnbuh_onec_ip }}';
+\Forward\ForwardConfig::$onecPort = '{{ vpnbuh_onec_port }}';
 \Forward\ForwardConfig::$onecAuthToken = '{{ onec_auth_token }}';
