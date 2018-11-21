@@ -216,7 +216,8 @@ class CInvoice extends InvoiceModuleAbstract
                 $onecDocDate = Db::getOne("SELECT OneCDocDate FROM cinvoice WHERE ID = @i", $this->_obj->getId());
                 if ($onecDocDate && $onecDocDate !== '0000-00-00') {
                     // Счёт уже выгружался в 1С, значит запрещяем менять компанию
-                    $this->riseSaveErorr('Счёт уже был выгружен в 1С, изменить нашу компанию теперь нельзя.<br>Если счёт был выпущен ошибочно, то его нужно удалить в 1С (при этом базе автоматически появится статус "Deleted") и выпустить новый счёт от другой нашей компании.', 'CompanyID');
+                    $this->riseSaveErorr('Счёт уже был выгружен в 1С, изменить нашу компанию теперь нельзя.<br>Если счёт был выпущен ошибочно, то его нужно удалить в 1С (при этом базе автоматически появится статус "Deleted") и выпустить новый счёт от другой нашей компании.',
+                        'CompanyID');
                 }
             }
         }
@@ -504,7 +505,7 @@ class CInvoice extends InvoiceModuleAbstract
 
         $client = new Client();
         $path = Constant::$onecCompany[$cinvObj['CompanyID']];
-        $url = 'http://' . ForwardConfig::$onecIp . "/$path/hs/CreateCustomerInvoice";
+        $url = 'http://' . ForwardConfig::$onecIp . ":" . ForwardConfig::$onecPort . "/$path/hs/CreateCustomerInvoice";
 
         try {
 
