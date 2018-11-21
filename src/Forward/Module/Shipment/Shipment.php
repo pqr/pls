@@ -43,6 +43,8 @@ use Light\Session;
 use Light\Template;
 use Light\User;
 use Light\XlsWriter;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Process\Process;
 
 class Shipment extends ModuleAbstract
 {
@@ -218,7 +220,16 @@ class Shipment extends ModuleAbstract
 
     protected function massactionDownloadDocs($ids)
     {
-        ShipmentDownloadDocs::download($ids, false);
+        $msgBuff = new Msg();
+        $sd = ShipmentDownloadDocs::create($msgBuff);
+        $resultFilepath = $sd->generateZip($ids, false);
+        if (!$resultFilepath) {
+            print $msgBuff->getHtml();
+            Response::disableMainmenu();
+            return;
+        }
+
+        Response::streamFileFromFilesystem($resultFilepath);
     }
 
     protected function initViewSubmenu()
@@ -267,7 +278,8 @@ class Shipment extends ModuleAbstract
 
             $this->addSubmenuItemViewFuncAjaxPost('Заявка', Img::iconDownload(), 'ShipmentRequestExcel');
 
-            $this->addSubmenuItemViewFunc('Комплект документов', Img::icon('file-archive-o'), 'DownloadDocs', [], true);
+            $this->addSubmenuItemViewFunc('Комплект документов', Img::icon('file-archive-o'), 'DownloadDocs');
+            $this->addSubmenuItemViewFunc('Документы на печать', Img::icon('file-archive-o'), 'DownloadDocsForPrint');
 
         }
 
@@ -968,7 +980,7 @@ class Shipment extends ModuleAbstract
     ) {
         if (!$fromMultipleUpdate) {
             // Заготовим стандартные папки
-            $folderRelative = $this->getFolderRelativePath($obj->getData());
+            $folderRelative = $this->getFolderRelativePath();
             foreach (Constant::$standardFolders as $standardFolder) {
                 FilesFolder::mkdir("$folderRelative/$standardFolder");
             }
@@ -1475,7 +1487,32 @@ class Shipment extends ModuleAbstract
 
     protected function viewGetDownloadDocs()
     {
-        ShipmentDownloadDocs::download([$this->_obj->getId()], false);
+        $sd = ShipmentDownloadDocs::create($this->flash);
+        $ids = [$this->_obj->getId()];
+        $resultFilepath = $sd->generateZip($ids, false);
+        if (!$resultFilepath) {
+            $this->redirectToView();
+            return;
+        }
+
+        Response::streamFileFromFilesystem($resultFilepath);
+    }
+
+    /**
+     * На экран Shipment добавить кнопку "Документы на печать" - должны
+     * выгружаться документы из папок: 0.Заявка + 2. Счет + 5. Акт.
+     */
+    protected function viewGetDownloadDocsForPrint()
+    {
+        $sd = ShipmentDownloadDocs::create($this->flash);
+        $ids = [$this->_obj->getId()];
+        $resultFilepath = $sd->generateZip($ids, false, [Constant::FOLDER_REQUEST, Constant::FOLDER_CINVOICE, Constant::FOLDER_CACT]);
+        if (!$resultFilepath) {
+            $this->redirectToView();
+            return;
+        }
+
+        Response::streamFileFromFilesystem($resultFilepath);
     }
 
     private static function getAddressForShipmentRequest(string $dbtable, int $id, string $fieldKeyPrefix)

@@ -166,6 +166,14 @@ class ShipmentFields
         ]);
     }
 
+    public static function docsPrintedDate()
+    {
+        return F::createDate('DocsPrintedDate', [
+            'name' => 'Оригиналы отправлены на печать',
+            'ajax' => true
+        ]);
+    }
+
     public static function docsSentToAccountingDate()
     {
         return F::createDate('DocsSentToAccountingDate', [

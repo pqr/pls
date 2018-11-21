@@ -3,6 +3,9 @@
 namespace Forward\Classes\ImportFromOneC\Importers;
 
 use Forward\Classes\Constant;
+use Forward\Module\Shipment\Shipment;
+use Light\File;
+use Light\FilesFolder;
 use Light\Link;
 use Light\Msg;
 
@@ -74,5 +77,48 @@ abstract class ImporterAbstract
             ->getHtml();
     }
 
+    protected function writeFile(
+        string $folderRelative,
+        string $filename,
+        string $fileData,
+        string $cinvocieOrShipmentLink
+    ) {
 
+        FilesFolder::mkdir($folderRelative);
+        $folderpathAbs = FilesFolder::getAbsolutePath($folderRelative);
+        $filepathAbs = "$folderpathAbs/$filename";
+        $filepathAbsEnc = File::encode($filepathAbs);
+        $result = file_put_contents($filepathAbsEnc, $fileData);
+        if ($result) {
+            $this->msgBuff->addSuccess('Файл <strong>' . htmlspecialchars($filename) . '</strong> сохранён в папку  ' . $cinvocieOrShipmentLink);
+        } else {
+            // Файл сущетсвует, значит мы не смогли его перезаписать из-за блокировки (он открыт кем-то)
+            $uniqueFilepath = File::getUniqueFilename($filepathAbs);
+            $uniqueFilename = pathinfo($uniqueFilepath, PATHINFO_BASENAME);
+            $result = file_put_contents($filepathAbsEnc, $fileData);
+            if ($result) {
+                $this->msgBuff->addSuccess('Файл <strong>' . htmlspecialchars($uniqueFilename) . '</strong> сохранён в папку ' . $cinvocieOrShipmentLink);
+            } else {
+                $this->msgBuff->addError('Не удалось сохранить файл <strong>' . htmlspecialchars($uniqueFilename) . '</strong> в папку ' . $cinvocieOrShipmentLink);
+            }
+        }
+    }
+
+    protected function writeFileToShipments(
+        string $filename,
+        string $fileData,
+        string $shipmentSubfolder,
+        array $shipments
+    ) {
+        foreach ($shipments as ['ID' => $shipmentId, 'Name' => $fileNumber]) {
+            $shipmentLink = Link::create(Shipment::class, $fileNumber)
+                ->view($shipmentId)
+                ->getHtml();
+
+            // Перекладываем файл в папку внутри shipment
+            $shipmentFolderRelative = FilesFolder::getModuleRelative(Shipment::class, $shipmentId);
+            $shipmentCActFolder = "$shipmentFolderRelative/$shipmentSubfolder";
+            $this->writeFile($shipmentCActFolder, $filename, $fileData, $shipmentLink);
+        }
+    }
 }

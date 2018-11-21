@@ -83,10 +83,10 @@ class P7zip
             $cmd .= " -v" . $this->volumeSizeMb . "m";
         }
 
-        $cmd .= " " . $this->outputFilepath;
+        $cmd .= " \"" . $this->outputFilepath . "\"";
 
         if ($this->inputFilepath) {
-            $cmd .= " " . $this->inputFilepath;
+            $cmd .= " \"" . $this->inputFilepath . "\"";
         }
 
         return $cmd;

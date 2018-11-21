@@ -115,8 +115,12 @@ abstract class ModuleAbstract extends Table
         parent::__construct($module);
 
         $this->flash = Session::getMsgBuff();
-        $this->tableReloadUrl = Link::create($module)->getHref();
-        $this->folderBaseDir = $module;
+        if (!$this->tableReloadUrl) {
+            $this->tableReloadUrl = Link::create($module)->getHref();
+        }
+        if (!$this->folderBaseDir) {
+            $this->folderBaseDir = $module;
+        }
 
         $this->registerSubtables();
     }

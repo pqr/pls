@@ -16,9 +16,9 @@ class PingOneC extends AutolaunchAbstract
     protected function run(array $params)
     {
         $client = new Client();
-        foreach(Constant::$onecCompany as $path) {
+        foreach (Constant::$onecCompany as $path) {
             $this->_msgBuff->addEmptyLine();
-            $url = 'http://' . ForwardConfig::$onecIp . ":".ForwardConfig::$onecPort ."/$path/hs/CreateCustomerInvoice";
+            $url = 'http://' . ForwardConfig::$onecIp . ":" . ForwardConfig::$onecPort . "/$path/hs/CreateCustomerInvoice";
             $this->_msgBuff->addInfo("<strong>$url</strong>");
             try {
 

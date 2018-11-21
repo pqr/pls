@@ -7,6 +7,7 @@ use Forward\Classes\Constant;
 use Forward\Classes\ShipmentDownloadDocs;
 use Forward\Field\GeneralFields;
 use Forward\Field\ShipmentFields;
+use Light\ApplicationAbstract;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
@@ -15,7 +16,11 @@ use Light\File;
 use Light\FilesFolder;
 use Light\Img;
 use Light\ModuleBase\ModuleAbstract;
+use Light\Msg;
+use Light\Response;
 use Light\User;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Process\Process;
 
 /**
  * Created by PhpStorm.
@@ -30,6 +35,7 @@ class ShipmentAccounting extends ModuleAbstract
     protected $allowEdit = false;
     protected $allowLog = false;
     protected $allowDelete = false;
+    public $folderBaseDir = 'Shipment';
 
     public function __construct()
     {
@@ -211,44 +217,83 @@ class ShipmentAccounting extends ModuleAbstract
         }
     }
 
-    protected function massactionDownloadDocs($ids)
+    protected function massactionDownloadDocs(array $ids)
     {
-        ShipmentDownloadDocs::download($ids, true);
+        $this->downloadDocs($ids);
     }
 
     protected function massactionDownloadShipmentRequestsXlsx($ids)
     {
-        ShipmentDownloadDocs::download($ids, true, ShipmentDownloadDocs::ONLY_SHIPMENT_REQUESTS_XLSX);
+        $this->downloadDocs($ids, ShipmentDownloadDocs::ONLY_SHIPMENT_REQUESTS_XLSX);
     }
 
     protected function massactionDownloadDocs0($ids)
     {
-        ShipmentDownloadDocs::download($ids, true, 0);
+        $this->downloadDocs($ids, 0);
     }
 
     protected function massactionDownloadDocs1($ids)
     {
-        ShipmentDownloadDocs::download($ids, true, 1);
+        $this->downloadDocs($ids, 1);
     }
 
     protected function massactionDownloadDocs2($ids)
     {
-        ShipmentDownloadDocs::download($ids, true, 2);
+        $this->downloadDocs($ids, 2);
     }
 
     protected function massactionDownloadDocs3($ids)
     {
-        ShipmentDownloadDocs::download($ids, true, 3);
+        $this->downloadDocs($ids, 3);
     }
 
     protected function massactionDownloadDocs4($ids)
     {
-        ShipmentDownloadDocs::download($ids, true, 4);
+        $this->downloadDocs($ids, 4);
     }
 
     protected function massactionDownloadDocs5($ids)
     {
-        ShipmentDownloadDocs::download($ids, true, 5);
+        $this->downloadDocs($ids, 5);
+    }
+
+    protected function massactionDownloadDocs6($ids)
+    {
+        $this->downloadDocs($ids, 6);
+    }
+
+    protected function massactionDownloadDocs7($ids)
+    {
+        $this->downloadDocs($ids, 7);
+    }
+
+    public function __call($name, $arguments)
+    {
+        if (strpos($name, 'massactionDownloadDocs') === 0) {
+            $folderNo = str_replace('massactionDownloadDocs', '', $name);
+            if (isset(Constant::$standardFolders[$folderNo])) {
+                $ids = $arguments[0];
+                $this->downloadDocs($ids, $folderNo);
+                return;
+            }
+        }
+
+        throw new \Exception("Unknown method $name");
+    }
+
+    private function downloadDocs(array $ids, int $onlyFolderNo = null)
+    {
+        $msgBuff = new Msg();
+        $sd = ShipmentDownloadDocs::create($msgBuff);
+        $onlyFoldersNo = $onlyFolderNo !== null ? [$onlyFolderNo] : null;
+        $resultFilepath = $sd->generateZip($ids, true, $onlyFoldersNo);
+        if (!$resultFilepath) {
+            print $msgBuff->getHtml();
+            Response::disableMainmenu();
+            return;
+        }
+
+        Response::streamFileFromFilesystem($resultFilepath);
     }
 
     public function getFiltersSqlWhere()

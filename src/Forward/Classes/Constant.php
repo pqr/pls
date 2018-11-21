@@ -39,14 +39,30 @@ class Constant
         Constant::OC_PGL11_OOO => 'pgl11'
     ];
 
+    const FOLDER_REQUEST = 0;
+    const FOLDER_REQUEST_SIGNED = 1;
+    const FOLDER_CINVOICE = 2;
+    const FOLDER_MAWB = 3;
+    const FOLDER_VINVOICE = 4;
+    const FOLDER_CACT = 5;
+    const FOLDER_CACT_SIGNED = 6;
+    const FOLDER_CACT_NOTRESIDENT = 7;
+
     public static $standardFolders = [
         '0 Заявка',
-        '1 Накладная',
-        '2 Входящий счёт',
-        '3 Акт без подписи',
-        '4 Акт подписанный',
-        '5 Акт от нерезидента',
+        '1 Подписанная заявка',
+        '2 Счёт',
+        '3 Накладная', // 1 Накладная
+        '4 Входящий счёт', // 2 Входящий счёт
+        '5 Акт без подписи', // 3 Акт без подписи
+        '6 Акт подписанный', // 4 Акт подписанный
+        '7 Акт от нерезидента', // 5 Акт от нерезидента
     ];
+
+    public static function getStarndartFolderCAct()
+    {
+        return self::$standardFolders[self::FOLDER_CACT];
+    }
 
     public static function isOneCCompany(?int $companyId)
     {

@@ -194,6 +194,7 @@
                             <?= t::c('ATD') ?>
                             <?= t::c('ETA') ?>
                             <?= t::c('ATA') ?>
+                            <?= t::c('DocsPrintedDate') ?>
                             <?= t::c('DocsSentToAccountingDate') ?>
                         </table>
 

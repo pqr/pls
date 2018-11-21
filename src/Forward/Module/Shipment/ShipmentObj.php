@@ -213,6 +213,7 @@ final class ShipmentObj extends ObjAbstract
             F::createDate('ATD', ['ajax' => true]),
             F::createDate('ETA', ['ajax' => true]),
             F::createDate('ATA', ['ajax' => true]),
+            ShipmentFields::docsPrintedDate(),
             ShipmentFields::docsSentToAccountingDate(),
             F::createString('ContainerName', [
                 'name' => 'Container №',

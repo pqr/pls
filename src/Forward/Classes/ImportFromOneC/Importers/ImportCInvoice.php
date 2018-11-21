@@ -3,14 +3,15 @@
 namespace Forward\Classes\ImportFromOneC\Importers;
 
 
+use Forward\Classes\Constant;
 use Forward\Classes\Finance;
+use Forward\Module\CInvoice\CInvoice;
 use Forward\Module\CInvoice\CInvoiceObj;
 use Forward\Module\CInvoice\Subtables\Lines;
 use Forward\Module\CInvoice\Subtables\LinesObj;
 use Light\Db;
 use Light\File;
 use Light\FilesFolder;
-use Light\Link;
 
 class ImportCInvoice extends ImporterAbstract
 {
@@ -20,13 +21,12 @@ class ImportCInvoice extends ImporterAbstract
             return 0;
         }
 
-        Db::begin();
         // Попробуем найти искомый счёт в базе
+        $cinvId = $data['ID'];
         $cinvObj = new CInvoiceObj();
-        $cinvObj->setId($data['ID']);
+        $cinvObj->setId($cinvId);
         if (!$cinvObj->loadData()) {
             $this->msgBuff->addError('Не удалось найти в базе счёт с ID <strong>' . htmlspecialchars($data['ID']) . '</strong>');
-            Db::commit();
             return 0;
         }
 
@@ -56,30 +56,8 @@ class ImportCInvoice extends ImporterAbstract
 
         $dbLogMsg = 'Корректировка из 1С ' . $this->getImportLink();
 
+        Db::begin();
         $cinvObj->updateDb($updateData, $dbLogMsg);
-
-        $link = $cinvObj->getLinkView();
-
-        // Запишем файл PDF файл и Excel файл в папку
-        $folderpath = 'CInvoice/' . (floor($cinvObj->getId() / 1000)) . '/' . $cinvObj->getId();
-        FilesFolder::mkdir($folderpath);
-        $folderpathAbs = FilesFolder::getAbsolutePath($folderpath);
-
-        $pdfFilename = File::getValidFilename($cinvObj['Name'] . '.pdf');
-        $pdfFilepathAbsEnc = File::encode($folderpathAbs . '/' . $pdfFilename);
-        $pdfDataBase64 = $data['Data'];
-        $pdfData = base64_decode($pdfDataBase64);
-        if (!file_put_contents($pdfFilepathAbsEnc, $pdfData)) {
-            $this->msgBuff->addError($link . ': не удалось сохранить файл <strong>' . htmlspecialchars($pdfFilepathAbsEnc) . '</strong>');
-        }
-
-        $excelFilename = File::getValidFilename($cinvObj['Name']) . '.xlsx';
-        $excelFilepathAbsEnc = File::encode($folderpathAbs . '/' . $excelFilename);
-        $excelDataBase64 = $data['ExcelData'];
-        $excelData = base64_decode($excelDataBase64);
-        if (!file_put_contents($excelFilepathAbsEnc, $excelData)) {
-            $this->msgBuff->addError($link . ': не удалось сохранить файл <strong>' . htmlspecialchars($excelFilepathAbsEnc) . '</strong>');
-        }
 
         // Обновим строки счёта
         $lineObjBase = new LinesObj();
@@ -162,9 +140,9 @@ class ImportCInvoice extends ImporterAbstract
         $cinvObj->updateCacheAfterSubmit($cinvOldData, $this->msgBuff, true, $dbLogMsg);
         Db::commit();
 
-        if ($this->msgBuff->getCount() > 0) {
-            $cinvObj->writeDbLogText($this->msgBuff->getHtml(), '1С', '1С');
-        }
+        $this->saveFiles($cinvObj, $data);
+
+        $cinvObj->writeDbLogText($this->msgBuff->getHtml(), '1С', '1С');
 
         return $cinvObj->getId();
     }
@@ -184,6 +162,32 @@ class ImportCInvoice extends ImporterAbstract
         }
 
         return $result;
+    }
+
+    private function saveFiles(CInvoiceObj $cinvObj, array $data)
+    {
+        $cinvId = $cinvObj->getId();
+        $cinvLink = $cinvObj->getLinkView();
+
+        // Запишем файл PDF файл и Excel файл в папку
+        $cinvFolderRelative = FilesFolder::getModuleRelative(CInvoice::class, $cinvId);
+
+        $pdfDataBase64 = $data['Data'];
+        $pdfData = base64_decode($pdfDataBase64);
+        $pdfFilename = File::getValidFilename($cinvObj['Name'] . '.pdf');
+        $this->writeFile($cinvFolderRelative, $pdfFilename, $pdfData, $cinvLink);
+
+        $excelDataBase64 = $data['ExcelData'];
+        $excelData = base64_decode($excelDataBase64);
+        $excelFilename = File::getValidFilename($cinvObj['Name']) . '.xlsx';
+        $this->writeFile($cinvFolderRelative, $excelFilename, $excelData, $cinvLink);
+
+        // Попробуем определить все перевозки к которым относится данный счёт и скопировать файлы в папку "5 Акт без подписи"
+        $shipments = Db::getAll("SELECT s.ID, s.Name FROM cinvoice_file_amount cfa, shipment s WHERE cfa.CInvoiceID = $cinvId AND cfa.FileNumber = s.Name");
+        $this->writeFileToShipments($pdfFilename, $pdfData, Constant::$standardFolders[Constant::FOLDER_CINVOICE],
+            $shipments);
+        $this->writeFileToShipments($excelFilename, $excelData, Constant::$standardFolders[Constant::FOLDER_CINVOICE],
+            $shipments);
     }
 
 
