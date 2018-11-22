@@ -708,8 +708,9 @@ abstract class ModuleAbstract extends Table
                 throw new \InvalidArgumentException("file contains ..: " . $_GET['file']);
             }
 
+            $file = trim($_GET['file'], '/');
             $relativePath = $this->getFolderRelativePath($this->_obj->getData());
-            FilesFolder::streamFile($relativePath . '/' . $_GET['file']);
+            FilesFolder::streamFile("$relativePath/$file");
             ApplicationAbstract::terminate();
             return;
         }

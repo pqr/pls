@@ -8,6 +8,8 @@ use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\FilesFolder;
+use Light\Link;
+use Light\Misc;
 use Light\ObjAbstract;
 use Light\Pdf;
 use Light\SimpleObj;
@@ -45,6 +47,14 @@ class FilesManagerAbstract
             F::createString('RelativePath', [
                 'name' => Config::$lang === 'ru' ? 'Файл' : 'File',
                 'modes' => F::MODE_READONLY,
+                'getHtmlFunction' => function($value, array $data, $outHtml) {
+                    return $file = Link::create($this->module, $outHtml)
+                        ->view($this->masterId)
+                        ->func('FilePreview')
+                        ->params(['file' => $value])
+                        ->blank()
+                        ->getHtml();
+                }
             ]),
             F::createString('Name', [
                 'name' => Config::$lang === 'ru' ? 'Описание' : 'Description',
@@ -75,12 +85,7 @@ class FilesManagerAbstract
      */
     protected function getModule(): string
     {
-        // ['Basis', 'Module', <ModuleNameNamespace>, ...]
-        $parts = explode('\\', get_class($this));
-        if (!isset($parts[2])) {
-            throw new \Exception('FilesDialogAbstract can\'t detect module');
-        }
-        return $parts[2];
+        return Misc::getModule($this);
     }
 
     protected function getDbTable(): string
