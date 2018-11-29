@@ -47,7 +47,7 @@ class FilesManagerAbstract
             F::createString('RelativePath', [
                 'name' => Config::$lang === 'ru' ? 'Файл' : 'File',
                 'modes' => F::MODE_READONLY,
-                'getHtmlFunction' => function($value, array $data, $outHtml) {
+                'getHtmlFunction' => function ($value, array $data, $outHtml) {
                     return $file = Link::create($this->module, $outHtml)
                         ->view($this->masterId)
                         ->func('FilePreview')
@@ -69,6 +69,7 @@ class FilesManagerAbstract
         $obj->setDbTable($this->getDbTable());
         $obj->setMasterIdForDbLog($this->masterId);
         $obj->setMasterModuleForDbLog($this->module);
+        $obj->setNameFieldKey('RelativePath');
 
         return $obj;
     }
@@ -123,7 +124,13 @@ class FilesManagerAbstract
     {
         $table = $this->getDbTable();
         $masterFieldKey = $this->getMasterFieldKey();
-        return Db::getAssoc("SELECT RelativePath AS k, $table.* FROM $table WHERE $masterFieldKey = $this->masterId ORDER BY RelativePath");
+        return Db::getAssoc(
+            "SELECT RelativePath AS k
+                      , $table.* 
+                   FROM $table 
+                   WHERE $masterFieldKey = $this->masterId 
+                   ORDER BY RelativePath"
+        );
     }
 
     protected function loadFromFolder(): array
@@ -263,7 +270,14 @@ class FilesManagerAbstract
      */
     public function updateFromDialog(string $relativePath, array $dataFromPost): int
     {
-        $id = Db::getOne("SELECT ID FROM {$this->getDbTable()} WHERE RelativePath = @s", $relativePath);
+        $id = Db::getOne(
+            "SELECT ID 
+              FROM {$this->getDbTable()} 
+              WHERE RelativePath = @s 
+                  AND {$this->getMasterFieldKey()} = @i"
+            , $relativePath
+            , $this->masterId
+        );
         if (!$id) {
             return 0;
         }

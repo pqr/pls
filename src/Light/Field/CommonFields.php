@@ -487,4 +487,15 @@ class CommonFields
             F::PARAM_AC_RESULTFORMATTERJSFUNCTION => '(item) => `${item.value} ${item.text}`'
         ]);
     }
+
+    public static function filterExact($fieldKey = 'ExactReference')
+    {
+        $name = Config::$lang === 'ru' ? 'Точное совпадение' : 'Exact';
+        return F::createCheckbox($fieldKey, ['name' => $name, 'sqlWhere' => '']);
+    }
+
+    public static function filterSearchById()
+    {
+        return F::createCheckbox('SearchByID', ['name' => 'ID', 'sqlWhere' => '']);
+    }
 }

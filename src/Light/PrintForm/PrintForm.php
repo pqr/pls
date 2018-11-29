@@ -46,6 +46,7 @@ class PrintForm
     protected $fieldset;
 
     public $allowMultiple = true;
+    public $allowMultipleAsOne = false;
 
     public function __construct(string $key, string $title, $format = self::FORMAT_HTML, int $out = self::OUT_STREAM)
     {
@@ -232,6 +233,20 @@ class PrintForm
         return $data;
     }
 
+    /**
+     * Для переопределения в классах потомках, если нужно добавить какие-то дополнительные данные для вывода на печать
+     * в зависимости от полученного объекта
+     * @param ObjAbstract $obj
+     * @return array
+     */
+    protected function getTplDataForMultipleAsOne(array $objects): array
+    {
+        $data['_printForm'] = $this->key;
+        $data = array_merge($data, $this->getDialogDataFromRequest());
+
+        return $data;
+    }
+
     protected function getTplDataForExcel(ObjAbstract $obj): array
     {
         // Используем простой метод $obj->getData(), чтобы получить данные ещё не преобразованные в формат Excel
@@ -280,6 +295,48 @@ class PrintForm
     public function getDataForAjaxDialogMultiple(array $ids, array $objectsAndPaths): array
     {
         return [];
+    }
+
+    public function proceedPrintMultipeAsOne(array $objects)
+    {
+        $timer = new Timer();
+
+        // Подготовим объект шаблонизатор нужного типа (Php, Excel, Docx)
+        $templateFilepathAbs = Template::findfile($this->getTemplate($objects[0]));
+        $templater = $this->createTemplater($templateFilepathAbs, $objects[0]);
+
+        // Наполняем данными
+        $data = $this->getTplDataForMultipleAsOne($objects);
+        $this->writeData($templater, $data, $objects[0]);
+
+        // Заготовим имя временного файла, куда запишем результат работы $templater
+        $tmpDir = $this->createTmpDir();
+        // В качестве расширения выходного файла используем заданный $this->format
+        $tmpFile = $tmpDir . '/result.' . $this->format;
+
+        // Сохраняем во временный файл
+        $this->save($templater, $tmpFile);
+
+        $count = count($objects);
+
+        // Время отдать результат пользовтателю или переложить его в папку объекта
+        $targetFilename =  $this->getFilenameMultiple($count);
+
+        // Если в настройках печатной формы указано отправлять файл в браузер пользователю,
+        // то отправим только что сохранённый временный файл
+        if ($this->format === self::FORMAT_HTML) {
+            // html контент отправляем не как файл для скачивания, а как отдельную страницу
+            readfile($tmpFile);
+            Response::setMasterTemplate(null);
+        } else {
+            Response::streamFileFromFilesystem($tmpFile, $targetFilename);
+        }
+
+        // Удаляем временную директорию со всем её содержимом
+        File::rmdir($tmpDir);
+
+        Metric::record(Request::getModule() . '::proceedPrintMultipeAsOne ' . $this->key, $timer->getMs(),
+            'Count: ' . $count);
     }
 
     public function proceedPrint(ObjAbstract $obj, string $targetDir)

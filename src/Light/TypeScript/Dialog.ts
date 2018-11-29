@@ -370,7 +370,7 @@ export class Dialog {
         if (this.$div) {
             this.$div
                 .find(".lightdialog__footer")
-                .find("a")
+                .find("a:not(a[href='#cancel'])")
                 .addClass("disabled");
         }
     }

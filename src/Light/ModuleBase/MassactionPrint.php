@@ -47,7 +47,8 @@ trait MassactionPrint
              * @var PrintForm $printForm
              */
             foreach ($printForms as $key => $printForm) {
-                if (!$printForm->allowMultiple || !$printForm->testForObj($obj)) {
+                if (!($printForm->allowMultiple || $printForm->allowMultipleAsOne)
+                    || !$printForm->testForObj($obj)) {
                     // Форма не предназначена для массовой печати
                     // или не подходит данному объету - убираем её из массива
                     unset($printForms[$key]);
@@ -68,30 +69,45 @@ trait MassactionPrint
 
         // Выведем диалог с выбором печатной формы
         $html = '';
-        $postDataAttr = ' data-post="' . htmlspecialchars(json_encode(['CheckedIds' => implode(',', $ids)])) . '"';
+
         foreach ($printForms as $key => $printForm) {
 
-            $module = Request::getModule();
-            $form = $printForm->getKey();
+            if ($printForm->allowMultipleAsOne) {
+                $html .= $this->getMassactionPrintButton($ids, $printForm, true);
+            }
 
-            $hash = $printForm->getFieldset()->count() ? '#ajax-post' : '#post';
-            $url = "?a=$module&p=MassactionPrintSubmit&form={$form}{$hash}";
-            $target = $printForm->isLinkBlank() ? ' target="blank"' : '';
-            $icon = $printForm->getFormat() == PrintForm::FORMAT_EXCEL
-                ? Img::iconExcel()
-                : Img::iconPrint();
-            $title = $printForm->getTitle();
-
-            $html .= '<p>'
-                . '<a href="' . $url . '" ' . $target . $postDataAttr . ' class="btn-flat">'
-                . $icon . '&nbsp;' . $title
-                . '</a>'
-                . '</p>';
+            if ($printForm->allowMultiple) {
+                $html .= $this->getMassactionPrintButton($ids, $printForm, false);
+            }
 
         }
 
         Response::showDialog($html);
 
+    }
+
+    private function getMassactionPrintButton(array $ids, PrintForm $printForm, bool $multipleAsOne)
+    {
+        $module = Request::getModule();
+        $form = $printForm->getKey();
+        $postDataAttr = ' data-post="' . htmlspecialchars(json_encode(['CheckedIds' => implode(',', $ids)])) . '"';
+
+        $hash = $printForm->getFieldset()->count() ? '#ajax-post' : '#post';
+        $paramMultipleAsOne = $multipleAsOne ? '&multipleAsOne=1' : '';
+        $url = "?a=$module&p=MassactionPrintSubmit&form={$form}{$paramMultipleAsOne}{$hash}";
+        $target = $printForm->isLinkBlank() ? ' target="blank"' : '';
+        $icon = $printForm->getFormat() == PrintForm::FORMAT_EXCEL
+            ? Img::iconExcel()
+            : Img::iconPrint();
+        $title = $printForm->getTitle();
+
+        $suffix = $printForm->allowMultipleAsOne && !$multipleAsOne ? ' (по одному на запись)' : '';
+
+        return '<p>'
+            . '<a href="' . $url . '" ' . $target . $postDataAttr . ' class="btn-flat">'
+            . $icon . '&nbsp;' . $title . $suffix
+            . '</a>'
+            . '</p>';
     }
 
     /**
@@ -144,7 +160,7 @@ trait MassactionPrint
 
         if ($printForm->getFieldset()->count() && !isset($_GET['fromDialog'])) {
             // Для данной формы задан какой-то fieldset, значит нужно вывести дополнительный диалог
-            $this->massactionPrintShowFieldsDialog($ids, $objects, $printForm);
+            $this->massactionPrintShowFieldsDialog($ids, $objects, $printForm, isset($_GET['multipleAsOne']));
             return;
         }
 
@@ -152,7 +168,12 @@ trait MassactionPrint
         if (!Request::isPost()) {
             throw new \Exception('HTTP method for print forms should be POST (' . $printForm->getKey() . ')');
         }
-        $printForm->proceedPrintMultiple($objects, $targetDirs);
+
+        if (isset($_GET['multipleAsOne'])) {
+            $printForm->proceedPrintMultipeAsOne($objects);
+        } else {
+            $printForm->proceedPrintMultiple($objects, $targetDirs);
+        }
         ApplicationAbstract::terminate();
     }
 
@@ -167,11 +188,12 @@ trait MassactionPrint
      * @param array $objectsAndPaths
      * @param PrintForm $printForm
      */
-    private function massactionPrintShowFieldsDialog(array $ids, array $objectsAndPaths, PrintForm $printForm)
+    private function massactionPrintShowFieldsDialog(array $ids, array $objectsAndPaths, PrintForm $printForm, bool $multipleAsOne)
     {
         $module = Request::getModule();
         $form = $printForm->getKey();
-        $formAction = "?a={$module}&p=MassactionPrintSubmit&form=$form&fromDialog=1";
+        $paramMultipleAsOne = $multipleAsOne ? '&multipleAsOne=1' : '';
+        $formAction = "?a={$module}&p=MassactionPrintSubmit&form=$form&fromDialog=1{$paramMultipleAsOne}";
 
         $target = $printForm->isLinkBlank() ? ' target="blank"' : '';
         $html = '<form action="' . $formAction . '" method="post"' . $target . '>'
