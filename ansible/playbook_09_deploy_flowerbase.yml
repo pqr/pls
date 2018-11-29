@@ -126,6 +126,7 @@
       name: "flowerbase Light/Email"
       minute: "*"
       hour: "8-23"
+      state: absent
       job: "php {{ project_dir_flowerbase }}/public/index.php Light/Email"
     tags: cron
 

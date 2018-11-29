@@ -1,7 +1,7 @@
 <?php
 use Light\Config;
 
-Config::$mysqlHost = '{{ mysql_host }}';
+Config::$mysqlHost = '{{ mysql_host_flowerbase }}';
 Config::$mysqlUser = '{{ mysql_user }}';
 Config::$mysqlPassword = '{{ mysql_pass }}';
 Config::$mysqlDb = '{{ mysql_db_flowerbase }}';
