@@ -5,10 +5,12 @@ namespace Forward\Module\CPayment;
 use Forward\Field\GeneralFields;
 use Forward\Field\PaymentFields;
 use Forward\Module\Customer\CustomerObj;
+use Forward\Module\Shipment\ShipmentObj;
 use Forward\ModuleBase\Payments\PaymentObjAbstract;
 use Light\Db;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldDate;
 use Light\Msg;
 
 class CPaymentObj extends PaymentObjAbstract
@@ -69,21 +71,9 @@ class CPaymentObj extends PaymentObjAbstract
         // Вызываем стандартный метод в классе предке (в абстрактном PaymentObjAbstract)
         parent::updateCacheAfterSubmit($oldData, $msgBuff, $updateShipmentsGpAndCriteria, $dbLogMsg);
 
-        // Если изменился клиент, сначала обновим задолженность старого клиента
-        if (isset($oldData['CustomerID']) && $oldData['CustomerID'] != $this->_data['CustomerID']) {
-            $customerObj = new CustomerObj();
-            $customerObj->setId($oldData['CustomerID']);
-            $customerObj->loadData();
-            $customerObj->updateCacheOpenPaymentsAmount();
-            $customerObj->updateCacheOpenAndOverdueInvoicesAmount();
-        }
+        $this->updateCustomerStatistic($oldData);
 
-        // Обновим сумму открытых переплат и задолженностей текущего клиента
-        $customerObj = new CustomerObj();
-        $customerObj->setId($this->_data['CustomerID']);
-        $customerObj->loadData();
-        $customerObj->updateCacheOpenPaymentsAmount();
-        $customerObj->updateCacheOpenAndOverdueInvoicesAmount();
+        $this->updateShipmentsDocsPrintedDate($oldData, $msgBuff);
 
     }
 
@@ -104,6 +94,25 @@ class CPaymentObj extends PaymentObjAbstract
         }
     }
 
+    private function updateCustomerStatistic(array $oldData)
+    {
+        // Если изменился клиент, сначала обновим задолженность старого клиента
+        if (isset($oldData['CustomerID']) && $oldData['CustomerID'] != $this->_data['CustomerID']) {
+            $customerObj = new CustomerObj();
+            $customerObj->setId($oldData['CustomerID']);
+            $customerObj->loadData();
+            $customerObj->updateCacheOpenPaymentsAmount();
+            $customerObj->updateCacheOpenAndOverdueInvoicesAmount();
+        }
+
+        // Обновим сумму открытых переплат и задолженностей текущего клиента
+        $customerObj = new CustomerObj();
+        $customerObj->setId($this->_data['CustomerID']);
+        $customerObj->loadData();
+        $customerObj->updateCacheOpenPaymentsAmount();
+        $customerObj->updateCacheOpenAndOverdueInvoicesAmount();
+    }
+
     public function updateCacheAfterDelete(array $oldInvoiceIds, $dbLogMsg)
     {
         parent::updateCacheAfterDelete($oldInvoiceIds, $dbLogMsg);
@@ -114,5 +123,37 @@ class CPaymentObj extends PaymentObjAbstract
         $customerObj->loadData();
         $customerObj->updateCacheOpenPaymentsAmount();
         $customerObj->updateCacheOpenAndOverdueInvoicesAmount();
+    }
+
+    private function updateShipmentsDocsPrintedDate(array $oldData, ?Msg $msgBuff)
+    {
+        $oldPrintedDate = $oldData['PrintedDate'] ?? '0000-00-00';
+        $newPrintedDate = $this->_data['PrintedDate'];
+
+        if ($oldPrintedDate !== $newPrintedDate && $newPrintedDate !== '0000-00-00') {
+            // Нужно обновить поле shipment.DocsPrintedDate
+            $shipmentIds = Db::getCol(
+                "SELECT DISTINCT s.ID
+                FROM shipment s
+                    JOIN cinvoice_file_amount cfa ON cfa.FileNumber = s.Name
+                    JOIN cpayment_cinvoice cpi ON cpi.CInvoiceID = cfa.CInvoiceID
+
+                WHERE cpi.CPaymentID = @i"
+                , $this->getId()
+            );
+            if ($shipmentIds) {
+                $shipmentObjBase = new ShipmentObj();
+                $updateData = ['DocsPrintedDate' => $newPrintedDate];
+                $dbLogMsg = 'Обновление даты печати документов на основе оплаты ' . $this->getLinkViewDialog();
+                foreach ($shipmentIds as $shipmentId) {
+                    $shipmentObj = clone $shipmentObjBase;
+                    $shipmentObj->setId($shipmentId);
+                    $affectedRows = $shipmentObj->updateDb($updateData, $dbLogMsg);
+                    if ($affectedRows && $msgBuff) {
+                        $msgBuff->addInfo('В перевозке ' . $shipmentObj->getLinkView() . ' обновлена дата печати оригиналов, новое значение: ' . FieldDate::beautify($newPrintedDate));
+                    }
+                }
+            }
+        }
     }
 }

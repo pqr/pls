@@ -8,6 +8,7 @@ use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
 use Forward\Field\GeneralFields;
 use Forward\Field\ShipmentFields;
 use Forward\Module\CInvoice\CInvoiceObj;
+use Forward\Module\CPayment\CPaymentObj;
 use Forward\Module\Customer\Customer;
 use Forward\Module\Quotation\Quotation;
 use Forward\Module\VInvoice\VInvoiceObj;
@@ -15,7 +16,9 @@ use Light\Db;
 use Light\Field\CommonFields;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldDate;
 use Light\Link;
+use Light\Msg;
 use Light\ObjAbstract;
 use Light\User;
 
@@ -455,7 +458,7 @@ final class ShipmentObj extends ObjAbstract
 
     public function updateDb(array $fieldsData, $logMsg = '')
     {
-        //Перед тем как сделать обновление перевозки, нужно проверить, меняется ли TrafficID?
+        // Перед тем как сделать обновление перевозки, нужно проверить, меняется ли TrafficID?
         if (isset($fieldsData['TrafficID']) && !isset($fieldsData['Name'])) {
             //Узнаем текущую информацию по перевозке (перед обновлением)
             $shInfo =
@@ -555,6 +558,42 @@ final class ShipmentObj extends ObjAbstract
                 $vinvObj->setId($vinvId);
                 $vinvObj->loadData();
                 $vinvObj->deleteDb('Deleted while shipment ' . $shipmentDescription . ' was deleted');
+            }
+        }
+    }
+
+    public function updateCacheAfterSubmit(array $oldData, ?Msg $msgBuff)
+    {
+        $oldPrintedDate = $oldData['DocsPrintedDate'] ?? '0000-00-00';
+        $newPrintedDate = $this->_data['DocsPrintedDate'];
+
+        if ($oldPrintedDate !== $newPrintedDate && $newPrintedDate !== '0000-00-00') {
+            // Нужно обновить поле cpayment.PrintedDate
+            $cpaymentIds = Db::getCol(
+                "SELECT DISTINCT cp.ID
+                FROM cpayment cp
+                    JOIN cpayment_cinvoice cpi ON cpi.CPaymentID = cp.ID
+                    JOIN cinvoice_file_amount cfa ON cfa.CInvoiceID = cpi.CInvoiceID
+                WHERE cfa.FileNumber = @i"
+                , $this->_data['Name']
+            );
+            if ($cpaymentIds) {
+                $cpaymentObjBase = new CPaymentObj();
+                $updateData = ['PrintedDate' => $newPrintedDate];
+                $dbLogMsg = 'Обновление даты печати документов на основе оплаты ' . $this->getLinkViewDialog();
+                foreach ($cpaymentIds as $cpaymentId) {
+                    $cpaymentObj = clone $cpaymentObjBase;
+                    $cpaymentObj->setId($cpaymentId);
+                    $affectedRows = $cpaymentObj->updateDb($updateData, $dbLogMsg);
+                    if ($affectedRows && $msgBuff) {
+                        $msgBuff->addInfo(
+                            'В Customer Payment '
+                            . $cpaymentObj->getLinkView()
+                            . ' обновлена дата печати документов, новое значение: '
+                            . FieldDate::beautify($newPrintedDate)
+                        );
+                    }
+                }
             }
         }
     }

@@ -991,6 +991,9 @@ class Shipment extends ModuleAbstract
         }
 
         $this->emailOnAtaChange($obj, $oldData, $msgBuff);
+
+        /** @var ShipmentObj $obj */
+        $obj->updateCacheAfterSubmit($oldData, $msgBuff);
     }
 
     /**

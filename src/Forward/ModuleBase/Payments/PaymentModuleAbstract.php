@@ -139,7 +139,6 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
         /** @var $obj PaymentObjAbstract */
         $dbLogMsg = 'Save ' . $this->getCustomerOrVendor() . ' Payment ' . $obj->getDescriptionHtml();
         $obj->updateCacheAfterSubmit($oldData, $msgBuff, true, $dbLogMsg);
-        $msgBuff->putIntoSessionFlash();
     }
 
     protected function afterDelete(ObjAbstract $obj, array $oldData)
