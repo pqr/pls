@@ -15,6 +15,7 @@ use Forward\Home\ShipmentsWithoutCs;
 use Forward\Home\ToBeClosed;
 use Forward\Home\VendorOutstanding;
 use Light\ApplicationAbstract;
+use Light\Db;
 use Light\HomeBase\HomeBlockAbstract;
 use Light\ModuleRegister;
 use Light\Response;
@@ -52,6 +53,8 @@ class Application extends ApplicationAbstract
             Response::redirectUrl('http://yandex.ru');
         }
 
+        Db::query("SET time_zone='Europe/Helsinki'");
+        Db::query("SET group_concat_max_len=65535");
     }
 
     protected function registerModules()
