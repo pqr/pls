@@ -15,6 +15,7 @@ use Forward\Home\ShipmentsWithoutCs;
 use Forward\Home\ToBeClosed;
 use Forward\Home\VendorOutstanding;
 use Light\ApplicationAbstract;
+use Light\Config;
 use Light\Db;
 use Light\HomeBase\HomeBlockAbstract;
 use Light\ModuleRegister;
@@ -53,20 +54,25 @@ class Application extends ApplicationAbstract
             Response::redirectUrl('http://yandex.ru');
         }
 
-        Db::query("SET time_zone='Europe/Helsinki'");
-        Db::query("SET group_concat_max_len=65535");
+        if (!Config::$debug) {
+            Db::query("SET time_zone='Europe/Helsinki'");
+            Db::query("SET group_concat_max_len=65535");
+        }
     }
 
     protected function registerModules()
     {
         ModuleRegister::addModule('Shipment', 'Shipments', '');
         ModuleRegister::addModule('ShipmentAccounting', 'Накладные (бухгалтерия)', '');
+        ModuleRegister::addModule('DocsInventory', 'Описи переданных док-ов', '');
         ModuleRegister::addModule('Help', 'Help', '');
 
         ModuleRegister::addModule('Quotation', 'Quotations', 'Rates');
         ModuleRegister::addModule('DefaultAddons', 'Default Addons', 'Rates');
         ModuleRegister::addModule('AirfreightRate', 'Airfreight Rates', 'Rates');
         ModuleRegister::addModule('AirfreightSurcharge', 'Airfreight Locals', 'Rates');
+
+
 
         ModuleRegister::addModule('SearchAirfreightRateDialog', 'Search Airfreight Rates', 'Rates',
             ModuleRegister::MODULE_HIDDEN); //скрытый модуль, который обрабатывает запрос к диалогу поиска покупных тарифов

@@ -375,7 +375,9 @@ final class ShipmentObj extends ObjAbstract
                 'cssClassNegative' => 'bad'
             ]),
 
-            ShipmentFields::cacts()
+            ShipmentFields::cacts(),
+
+            ShipmentFields::docsInventory()
 
         );
 

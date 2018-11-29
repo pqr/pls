@@ -577,4 +577,25 @@ class GeneralFields
                 . '<span title="Location">' . Template::html($prefix . 'LocationName') . '</span>';
         };
     }
+
+    public static function docsAddress()
+    {
+        return F::createText('DocsAddress', [
+            'name' => 'Адрес доставки документов',
+        ]);
+    }
+
+    public static function deliveryMethod()
+    {
+        return F::createSelect('DeliveryMethod', [
+            'name' => 'Способ отправки документов',
+            'empty' => true,
+            'tableWidthExcel' => 25,
+            'options' => [
+                1 => 'Отправка почтой',
+                2 => 'Отправка курьером',
+                3 => 'Клиент забирает самостоятельно',
+            ]
+        ]);
+    }
 }

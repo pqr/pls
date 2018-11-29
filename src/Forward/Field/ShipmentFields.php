@@ -3,6 +3,7 @@
 namespace Forward\Field;
 
 use Forward\Classes\Constant;
+use Forward\Module\DocsInventory\DocsInventory;
 use Forward\Module\Shipment\ShipmentObj;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
@@ -10,6 +11,7 @@ use Light\Field\FieldDate;
 use Light\Field\FieldMoney;
 use Light\File;
 use Light\FilesFolder;
+use Light\Link;
 
 class ShipmentFields
 {
@@ -93,7 +95,7 @@ class ShipmentFields
             'tableWidthExcel' => 10,
             'calcFunction' => function ($value, array $data) use ($folderNo) {
                 if (isset($data['ID'])) {
-                    $folderRelative = "Shipment/" . (floor($data['ID']/1000)) . '/' . $data['ID'];
+                    $folderRelative = "Shipment/" . (floor($data['ID'] / 1000)) . '/' . $data['ID'];
                     if (FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[$folderNo]))) {
                         return 1;
                     }
@@ -199,13 +201,48 @@ class ShipmentFields
                 [$actName, $actDate, $actAmount, $currencyIso] = explode('|', $value);
                 return htmlspecialchars($actName) . ' <small class="gray"> от ' . FieldDate::beautify($actDate) . '</small> <small> на ' . FieldMoney::beautify($actAmount) . ' ' . $currencyIso . '</small>';
             },
-            'getExcelFunction' => function($value) {
+            'getExcelFunction' => function ($value) {
                 if (strpos($value, '|') === false) {
                     return '';
                 }
                 [$actName, $actDate, $actAmount, $currencyIso] = explode('|', $value);
                 $actDate = FieldDate::beautify($actDate);
                 return "$actName от $actDate на $actAmount $currencyIso";
+            }
+        ]);
+    }
+
+    public static function docsInventory()
+    {
+        return F::createString('DocsInventory', [
+            'name' => 'Опись переданных док-ов',
+            'modes' => F::MODE_READONLY,
+            'tableWidthExcel' => 35,
+            'groupconcat' => true,
+            'sqlSelect' => "SELECT GROUP_CONCAT(CONCAT(di.ID, '|', di.SentDate) ORDER BY di.SentDate SEPARATOR '\\n')
+                                FROM docsinventory di, docsinventoryline dil
+                                WHERE di.ID = dil.DocsInventoryID AND dil.FileNumber = shipment.Name",
+            'getHtmlFunction' => function ($value, array $data, $outHtml, $forTable) {
+                if (strpos($value, '|') === false) {
+                    return '';
+                }
+                [$diId, $diSentDate] = explode('|', $value);
+                $text = FieldDate::beautify($diSentDate);
+                if ($forTable) {
+                    return $text;
+                }
+                return Link::create(DocsInventory::class, $text)
+                    ->view($diId)
+                    ->funcDialog()
+                    ->getHtml();
+            },
+            'getExcelFunction' => function ($value) {
+                if (strpos($value, '|') === false) {
+                    return '';
+                }
+                $diSentDate = explode('|', $value)[1];
+                $diSentDate = FieldDate::beautify($diSentDate);
+                return "$diSentDate";
             }
         ]);
     }

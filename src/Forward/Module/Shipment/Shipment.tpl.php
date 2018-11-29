@@ -176,6 +176,10 @@
 
                             <?= t::c('CActs') ?>
 
+                            <?php if (t::text('DocsInventory')): ?>
+                            <?= t::c('DocsInventory') ?>
+                            <?php endif; ?>
+
                             <?php if (isset($Criteria)): ?>
                                 <tr>
                                     <td colspan="2" style="background-color: white;"><?= $Criteria ?></td>
