@@ -512,7 +512,6 @@ class Shipment extends ModuleAbstract
                     return Template::html('FlightNo') . ' ' . Template::html('FlightDate');
                 },
                 'HasVAT'
-
             ]
         ];
     }
