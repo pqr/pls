@@ -4,11 +4,11 @@
 namespace Forward\Module\DocsInventory;
 
 
-use Forward\Field\GeneralFields;
 use Forward\Module\DocsInventory\Subtables\Lines;
 use Light\Db;
 use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
+use Light\InvStatus;
 use Light\Misc;
 use Light\ModuleBase\ModuleAbstract;
 
@@ -94,6 +94,12 @@ class DocsInventory extends ModuleAbstract
                       , s.CustomerAccountID
                       , ca.DocsAddress
                       , ca.DeliveryMethod
+                      , (SELECT GROUP_CONCAT(CONCAT(ci.ID,'|', ci.Name) ORDER BY ci.Name SEPARATOR '\\n')
+                         FROM cinvoice ci
+                         WHERE ci.Name != '' 
+                            AND ci.Status NOT IN (" . InvStatus::getDeletedStatusesSql() . ")
+                            AND EXISTS(SELECT 1 FROM cinvoice_file_amount cfa WHERE cfa.CInvoiceID = ci.ID AND cfa.FileNumber = s.Name)
+                         ) AS CInvoices
                   FROM shipment s
                       LEFT JOIN customeraccount ca ON ca.ID = s.CustomerAccountID
                   WHERE s.ID IN (@a)
