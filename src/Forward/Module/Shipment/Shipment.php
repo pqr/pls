@@ -470,6 +470,8 @@ class Shipment extends ModuleAbstract
         $this->addFiltersDatesFromUntil('ETA', ['name' => 'ETA']);
         $this->addFiltersDatesFromUntil('ATA', ['name' => 'ATA']);
         $this->addFiltersDatesFromUntil('ReadyForCarriageDate', ['name' => 'Ready Carr.']);
+        $this->addFiltersDatesFromUntil(ShipmentFields::docsPrintedDate());
+
 
         $this->filtersLayout = [
             [
@@ -505,6 +507,7 @@ class Shipment extends ModuleAbstract
                 'ETD',
                 'ETA',
                 'ATA',
+                'DocsPrintedDate',
                 'FlightNo' => function () {
                     return Template::html('FlightNo') . ' ' . Template::html('FlightDate');
                 },
