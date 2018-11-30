@@ -16,6 +16,7 @@ class Lines extends Subtable
     protected $tableLinkModule = 'Shipment';
     protected $tableLinkFieldKeys = ['FileNumber', 'MAWBNumber'];
     protected $tableLinkIdFieldKey = 'ShipmentID';
+    protected $_title = 'Shipments';
 
     public function __construct(ObjAbstract $masterObj)
     {
@@ -46,6 +47,7 @@ class Lines extends Subtable
                 ->setSqlSelect(""),
 
             CommonFields::comments()
+            ->setRows(2)
 
         );
     }

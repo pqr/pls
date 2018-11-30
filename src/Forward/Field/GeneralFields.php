@@ -565,7 +565,6 @@ class GeneralFields
         ]);
     }
 
-
     /**
      * @param string $prefix либо пусто, либо Departure, либо Arrival
      * @return \Closure

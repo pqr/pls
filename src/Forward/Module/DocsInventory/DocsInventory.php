@@ -9,6 +9,7 @@ use Forward\Module\DocsInventory\Subtables\Lines;
 use Light\Db;
 use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
+use Light\Misc;
 use Light\ModuleBase\ModuleAbstract;
 
 class DocsInventory extends ModuleAbstract
@@ -25,7 +26,8 @@ class DocsInventory extends ModuleAbstract
 
             CommonFields::id(),
             F::createDate('SentDate', [
-                'name' => 'Дата отправки в бухгалтерию'
+                'name' => 'Дата отправки в бухгалтерию',
+                'default' => date('Y-m-d'),
             ]),
             CommonFields::comments()->setAjax(false)
         );
@@ -74,5 +76,30 @@ class DocsInventory extends ModuleAbstract
         );
     }
 
+    protected function proceedAddNew()
+    {
+        if (isset($_GET['fromShipmentIds'])) {
+            $ids = Misc::idsFromComaSeparatedString($_GET['fromShipmentIds']);
+            $this->loadFromShipments($ids);
+        }
 
+        parent::proceedAddNew();
+    }
+
+    private function loadFromShipments(array $shipmentIds)
+    {
+        $query = "SELECT s.ID AS ShipmentID
+                      , s.Name AS FileNumber
+                      , s.MAWBNumber
+                      , s.CustomerAccountID
+                      , ca.DocsAddress
+                      , ca.DeliveryMethod
+                  FROM shipment s
+                      LEFT JOIN customeraccount ca ON ca.ID = s.CustomerAccountID
+                  WHERE s.ID IN (@a)
+                  ORDER BY s.ID";
+        $linesData = Db::getAll($query, $shipmentIds);
+        $lines = $this->getSubtable(Lines::class);
+        $lines->setAdditionalData($linesData);
+    }
 }

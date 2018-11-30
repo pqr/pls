@@ -13,6 +13,7 @@ use Forward\Classes\ShipmentDownloadDocs;
 use Forward\Field\GeneralFields;
 use Forward\Field\ShipmentFields;
 use Forward\Module\Customer\Customer;
+use Forward\Module\DocsInventory\DocsInventory;
 use Forward\Module\Shipment\CostSheet\CostSheetObj;
 use Forward\Module\Shipment\CostSheet\CostSheetRouter;
 use Forward\Module\Shipment\CostSheet\Subtables\Base\IncomeExpensesObjAbstract;
@@ -220,6 +221,7 @@ class Shipment extends ModuleAbstract
     {
         $this->addMassactionMultipleUpdate();
         $this->addMassaction('DownloadDocs', 'Собрать комплект документов', '', '', null, true);
+        $this->addMassaction('CreateDocsInventory', 'Создать опись переданных док-ов');
     }
 
     protected function massactionDownloadDocs($ids)
@@ -234,6 +236,11 @@ class Shipment extends ModuleAbstract
         }
 
         Response::streamFileFromFilesystem($resultFilepath);
+    }
+
+    protected function massactionCreateDocsInventory($ids)
+    {
+        Response::redirect(DocsInventory::class, ['addnew' => 1, 'fromShipmentIds' => implode(',',$ids)]);
     }
 
     protected function initViewSubmenu()
