@@ -206,7 +206,7 @@ class Mailer
             if ($sent) {
                 $thisMsgBuff->addSuccess($this->getSuccessMsg());
                 $report = $thisMsgBuff->getHtml();
-                $this->writeLog($report);
+                $this->writeLog($report, $correctFrom);
             } else {
                 $thisMsgBuff->addError($this->getErrorMsg());
             }
