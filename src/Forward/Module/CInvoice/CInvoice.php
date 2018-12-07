@@ -48,7 +48,7 @@ class CInvoice extends InvoiceModuleAbstract
     protected function registerSubtables()
     {
         $this->registerSubtable(Lines::class);
-        $this->registerSubtable(CPayments::class);
+        $this->registerSubtableReadonly(CPayments::class);
     }
 
     protected function initMassactions()
