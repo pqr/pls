@@ -1,8 +1,7 @@
 <?php
+
 namespace Forward;
 
-use Forward\Classes\ShipmentCriteria\ShipmentCriteria;
-use Forward\Classes\ShipmentGp;
 use Forward\Home\CActNotReceived;
 use Forward\Home\CheckATA;
 use Forward\Home\CheckATD;
@@ -15,7 +14,6 @@ use Forward\Home\ShipmentsWithoutCs;
 use Forward\Home\ToBeClosed;
 use Forward\Home\VendorOutstanding;
 use Light\ApplicationAbstract;
-use Light\Config;
 use Light\Db;
 use Light\HomeBase\HomeBlockAbstract;
 use Light\ModuleRegister;
@@ -54,10 +52,8 @@ class Application extends ApplicationAbstract
             Response::redirectUrl('http://yandex.ru');
         }
 
-        if (!Config::$debug) {
-            Db::query("SET time_zone='Europe/Helsinki'");
-            Db::query("SET group_concat_max_len=65535");
-        }
+        Db::query("SET time_zone='+3:00'");
+        Db::query("SET group_concat_max_len=65535");
     }
 
     protected function registerModules()
@@ -71,7 +67,6 @@ class Application extends ApplicationAbstract
         ModuleRegister::addModule('DefaultAddons', 'Default Addons', 'Rates');
         ModuleRegister::addModule('AirfreightRate', 'Airfreight Rates', 'Rates');
         ModuleRegister::addModule('AirfreightSurcharge', 'Airfreight Locals', 'Rates');
-
 
 
         ModuleRegister::addModule('SearchAirfreightRateDialog', 'Search Airfreight Rates', 'Rates',
