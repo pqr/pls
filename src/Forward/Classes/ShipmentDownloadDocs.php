@@ -151,8 +151,14 @@ class ShipmentDownloadDocs
 
             $srcFolderRelative = "$shipmentFolderRelative/$standardFolder";
             $nameSuffix = $standardFolder;
-            // Из папки с актом без подписи берём только PDF
-            $onlyExtension = $folderNo == Constant::FOLDER_CACT ? 'pdf' : null;
+            /**
+             * Добрый день!
+            Можем немного скорректировать? Акт для печати при нажатии кнопки «Документы на печать» выгружать в Excel, а не в PDF?
+            С уважением,
+            Валерия Титова
+             * 2018.12.14
+             */
+            $onlyExtension = $folderNo == Constant::FOLDER_CACT ? 'xlsx' : null;
 
             $copied += $this->copyFiles($srcFolderRelative, $mawbNumber, $nameSuffix, $onlyExtension, null);
 
