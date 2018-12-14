@@ -154,12 +154,16 @@ $(function () {
 
                 const text = $item.text();
                 const title = $item.attr("title");
+                const href = $item.find('a').attr('href');
                 const matched =
                     text.toLowerCase().indexOf(filterValue) !== -1 ||
                     text.toLowerCase().indexOf(filterValueOpposite) !== -1 ||
                     (title &&
                         (title.toLowerCase().indexOf(filterValue) !== -1 ||
-                            title.toLowerCase().indexOf(filterValueOpposite) !== -1));
+                            title.toLowerCase().indexOf(filterValueOpposite) !== -1)) ||
+                    (href &&
+                        (href.toLowerCase().indexOf(filterValue) !== -1
+                        || href.toLowerCase().indexOf(filterValueOpposite) !== -1));
 
                 // Если нет текстовых совпадений в тексте пункта меню или в его title, то скрываем этот пункт меню
                 $item.toggleClass("display-none", !matched);

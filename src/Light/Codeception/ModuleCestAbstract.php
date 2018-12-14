@@ -203,7 +203,9 @@ abstract class ModuleCestAbstract
      */
     public function modeLog($I)
     {
-        $I->amOnPage('?a=' . $this->getModule() . '&logid=' . $this->getTestObjId());
+        $testId = $this->getTestObjId();
+        $I->wantTo("Log (ID: $testId)");
+        $I->amOnPage('?a=' . $this->getModule() . '&logid=' . $testId);
         $this->canSeeModuleNameInPageHead($I);
         $this->canSeeIdInPageHead($I);
         $I->cantSeeXdebugError();
@@ -215,7 +217,9 @@ abstract class ModuleCestAbstract
      */
     public function deleteDialog($I)
     {
-        $I->canSeeAjaxDialog('?a=' . $this->getModule() . '&delid=' . $this->getTestObjId());
+        $testId = $this->getTestObjId();
+        $I->wantTo("Delete dialog (ID: $testId)");
+        $I->canSeeAjaxDialog('?a=' . $this->getModule() . '&delid=' . $testId);
     }
 
     /**
@@ -329,76 +333,91 @@ abstract class ModuleCestAbstract
         $filename = $example['filename'];
         $out = $example['out'];
         $format = $example['format'];
+        $hasFieldset = $example['hasFieldset'];
 
-        if ($out & PrintForm::OUT_SAVE) {
-            // Если эта форма предполагает сохранение в папку, то сначала очистим папку объекта
-            File::clearDir(FilesFolder::getModuleAbsolute($module, $id));
-        }
+        $url = "?a=$module&id=$id&func=Print&form=$printForm";
 
-        $I->wantTo("Print");
-        $I->sendPOST("?a=$module&id=$id&func=Print&form=$printForm");
+        if ($hasFieldset) {
 
-        if ($out & PrintForm::OUT_STREAM) {
+            // Эта печатная форма предполагает диалог для заполнения дополнительных данных.
+            // Пока протестирует только появление самого диалогоа
+            // TODO: надо бы ещё протестировать заполнение этого диалога и реальную печать
+            $I->wantTo("See ajax dialog");
+            $I->canSeeAjaxDialog($url);
 
-            // Если эта печатная форма подразумевает вывод в браузер пользователю, то проверим содержимое полученного файла
 
-            $expectedContentType = '';
-            switch ($format) {
-                case PrintForm::FORMAT_HTML:
-                    $expectedContentType = 'text/html';
-                    break;
+        } else {
 
-                case PrintForm::FORMAT_PDF:
-                    $expectedContentType = 'application/pdf';
-                    break;
-
-                case PrintForm::FORMAT_EXCEL:
-                    $expectedContentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-                    break;
-
-                case PrintForm::FORMAT_DOC:
-                    $expectedContentType = 'text/html';
-                    break;
-
-                case PrintForm::FORMAT_DOCX:
-                    $expectedContentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-                    break;
+            if ($out & PrintForm::OUT_SAVE) {
+                // Если эта форма предполагает сохранение в папку, то сначала очистим папку объекта
+                File::clearDir(FilesFolder::getModuleAbsolute($module, $id));
             }
 
-            $I->expect("See Content-Type $expectedContentType");
-            $I->canSeeHttpHeader('Content-Type', $expectedContentType);
+            $I->wantTo("Print");
+            $I->sendPOST($url);
 
-            $responseBody = $I->grabResponse();
-            $I->assertNotContainsSqlError($responseBody);
-            $I->assertNotContainsXdebugError($responseBody);
+            if ($out & PrintForm::OUT_STREAM) {
 
-            if ($format === PrintForm::FORMAT_EXCEL) {
-                $I->expect("Receive valid Excel file");
-                // Попробуем прочитать весь Excle файл, чтобы убедиться, что нет Exception
-                $tmpFile = LIGHT_DIR_ROOT . '/tests/_output/' . $printForm . '.xlsx';
-                file_put_contents($tmpFile, $responseBody);
-                $spreadsheet = IOFactory::load($tmpFile);
-                // Попробуем прочитать первый лист, чтобы убедиться, что нет Exception
-                $spreadsheet->getSheet(0);
+                // Если эта печатная форма подразумевает вывод в браузер пользователю, то проверим содержимое полученного файла
+
+                $expectedContentType = '';
+                switch ($format) {
+                    case PrintForm::FORMAT_HTML:
+                        $expectedContentType = 'text/html';
+                        break;
+
+                    case PrintForm::FORMAT_PDF:
+                        $expectedContentType = 'application/pdf';
+                        break;
+
+                    case PrintForm::FORMAT_EXCEL:
+                        $expectedContentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                        break;
+
+                    case PrintForm::FORMAT_DOC:
+                        $expectedContentType = 'text/html';
+                        break;
+
+                    case PrintForm::FORMAT_DOCX:
+                        $expectedContentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                        break;
+                }
+
+                $I->expect("See Content-Type $expectedContentType");
+                $I->canSeeHttpHeader('Content-Type', $expectedContentType);
+
+                $responseBody = $I->grabResponse();
+                $I->assertNotContainsSqlError($responseBody);
+                $I->assertNotContainsXdebugError($responseBody);
+
+                if ($format === PrintForm::FORMAT_EXCEL) {
+                    $I->expect("Receive valid Excel file");
+                    // Попробуем прочитать весь Excle файл, чтобы убедиться, что нет Exception
+                    $tmpFile = LIGHT_DIR_ROOT . '/tests/_output/' . $printForm . '.xlsx';
+                    file_put_contents($tmpFile, $responseBody);
+                    $spreadsheet = IOFactory::load($tmpFile);
+                    // Попробуем прочитать первый лист, чтобы убедиться, что нет Exception
+                    $spreadsheet->getSheet(0);
+                }
+
             }
 
-        }
+            if ($out & PrintForm::OUT_SAVE) {
 
-        if ($out & PrintForm::OUT_SAVE) {
+                // Если эта форма предполагает сохранение в папку, то проверим наличие файла в папке объекта
+                $I->expect("Out file exists in files folder");
+                $filepathAbs = FilesFolder::getModuleAbsolute($module, $id) . "/$filename";
+                $I->assertFileExists($filepathAbs);
 
-            // Если эта форма предполагает сохранение в папку, то проверим наличие файла в папке объекта
-            $I->expect("Out file exists in files folder");
-            $filepathAbs = FilesFolder::getModuleAbsolute($module, $id) . "/$filename";
-            $I->assertFileExists($filepathAbs);
+                if ($format === PrintForm::FORMAT_EXCEL) {
+                    $I->expect("Valid Excel file in files folder");
+                    // Попробуем прочитать весь Excle файл, чтобы убедиться, что нет Exception
+                    $spreadsheet = IOFactory::load($filepathAbs);
+                    // Попробуем прочитать первый лист, чтобы убедиться, что нет Exception
+                    $spreadsheet->getSheet(0);
+                }
 
-            if ($format === PrintForm::FORMAT_EXCEL) {
-                $I->expect("Valid Excel file in files folder");
-                // Попробуем прочитать весь Excle файл, чтобы убедиться, что нет Exception
-                $spreadsheet = IOFactory::load($filepathAbs);
-                // Попробуем прочитать первый лист, чтобы убедиться, что нет Exception
-                $spreadsheet->getSheet(0);
             }
-
         }
     }
 
@@ -448,7 +467,8 @@ abstract class ModuleCestAbstract
                 'printForm' => $printForm,
                 'filename' => $filename,
                 'out' => $out,
-                'format' => $format
+                'format' => $format,
+                'hasFieldset' => $printFormInstance->hasFieldset(),
             ];
         }
 

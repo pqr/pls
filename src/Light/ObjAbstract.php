@@ -161,9 +161,10 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this->masterModuleForDbLog;
     }
 
-    public function setMasterModuleForDbLog($masterModule)
+    public function setMasterModuleForDbLog(string $masterModule)
     {
-        $this->masterModuleForDbLog = $masterModule;
+        // Поскольку в переменной $masterModule может прийти fully qualified class name, приведём к короткому имени
+        $this->masterModuleForDbLog = Misc::getModule($masterModule);
         return $this;
     }
 
@@ -478,6 +479,10 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
     public function deleteDb($dbLogMsg = '')
     {
+        if (!$this->_data) {
+            $this->loadData();
+        }
+
         $masterModule = (string)$this->getMasterModuleForDbLog();
         $masterId = (int)($this->_masterIdForDbLog ?: $this->_id);
         $tableName = (string)$this->getDbTable();

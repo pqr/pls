@@ -40,8 +40,13 @@ trait FilesDialogTrait
         /** @var ObjAbstract $masterObj */
         $masterObj = $this->_obj;
 
-        if (!$this->hasWriteAccessRightToObj($masterObj)) {
-            Response::abort(403);
+        if (!$this->allowEdit || !User::hasWriteAccess()) {
+            Response::abort(403, 'No access to edit in this module');
+            return;
+        }
+
+        if (!$this->hasAccessRightToObj($masterObj)) {
+            Response::abort(403, 'No access to this object');
             return;
         }
 
@@ -67,7 +72,7 @@ trait FilesDialogTrait
     protected function massactionFilesDialog(array $ids)
     {
         if (!$this->allowEdit || !User::hasWriteAccess()) {
-            MassactionUtils::sendErrorDialog('No access to edit');
+            MassactionUtils::sendErrorDialog('No access to edit in this module');
             return;
         }
 
@@ -85,7 +90,11 @@ trait FilesDialogTrait
                 continue;
             }
 
-            if (!$this->hasWriteAccessRightToObj($masterObj)) {
+            /*
+             * Убираем проверку на права write к отдельной записи, т.к. иногда нужно опубликовывать файлы
+             * по уже закрктым перевозкам (к которым нет прав на записи у обычного менеджера)
+             * но оставим проверку на доступ по чтению */
+            if (!$this->hasAccessRightToObj($masterObj)) {
                 continue;
             }
 
@@ -108,17 +117,32 @@ trait FilesDialogTrait
         $folderLink = $this->fieldFolder()->getHtml('', $masterObj->getData());
         $table = $this->filesDialogTable($masterObj->getId());
 
-        return '<h3>' . $folderLink . ' ' . $masterObj->getDescriptionHtml() . '</h3>'
+        $objDescription = $masterObj->getDescriptionHtml();
+        if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], '?a=' . $this->getModule()) === false) {
+            // Пользователь открыл диалог с файлами из какого-то другого модуля (не из текущего).
+            // В этом случае добавим к описанию объекта ссылу не него самого
+            $objDescription .= ' '
+                . Link::create($this->getModule(), '<small>' . Img::iconExternalLink() . '</small>')
+                    ->view($masterObj->getId())
+                    ->blank();
+        }
+
+        return '<h3>' . $folderLink . ' ' . $objDescription . '</h3>'
             . $table->getHtmlTable(false);
     }
 
     protected function viewPostFilesDialogSubmit()
     {
+        if (!$this->allowEdit || !User::hasWriteAccess()) {
+            Response::abort(403, 'No access to edit in this module');
+            return;
+        }
+
         /** @var ObjAbstract $masterObj */
         $masterObj = $this->_obj;
 
-        if (!$this->hasWriteAccessRightToObj($masterObj)) {
-            Response::abort(403);
+        if (!$this->hasAccessRightToObj($masterObj)) {
+            Response::abort(403, 'No access to this object');
             return;
         }
 
@@ -126,10 +150,19 @@ trait FilesDialogTrait
 
         $msg = $this->filesDialogSuccessMessage();
         Response::sendToast('success', $msg);
+
+        $module = $this->getModule();
+        // https://developer.mozilla.org/en-US/docs/Web/Guide/Events/Creating_and_triggering_events#Creating_custom_events
+        Response::sendHeaderJsEval('document.dispatchEvent(new CustomEvent(\'FilesDialogSubmit\', { detail: {module:"' . $module . '", id: ' . $masterObj->getId() . '}}))');
     }
 
     public function proceedFilesDialogSubmitFromMassaction()
     {
+        if (!$this->allowEdit || !User::hasWriteAccess()) {
+            MassactionUtils::sendErrorDialog('No access to edit in this module');
+            return;
+        }
+
         $ids = array_keys($_POST['FilesDialogTable'] ?? []);
 
         foreach ($ids as $id) {
@@ -140,7 +173,7 @@ trait FilesDialogTrait
                 continue;
             }
 
-            if (!$this->hasWriteAccessRightToObj($masterObj)) {
+            if (!$this->hasAccessRightToObj($masterObj)) {
                 continue;
             }
 

@@ -5,6 +5,7 @@ namespace Light\Traits;
 use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldAbstract;
 use Light\Fieldset;
 use Light\Response;
 use Light\Table\TableUserParamsRepository;
@@ -46,33 +47,51 @@ trait TableLayoutable
 
             // От браузера пришли какие-то новые настройки для таблицы - используем их!
             $newFieldsShowFromRequest = $_REQUEST[$requestKey];
-            // Применим пришедшие настроки к текущей таблице
-            $this->setTableFieldsShow($newFieldsShowFromRequest);
-            // Также сохраним эти настройки в настройки пользователя
+            // Сохраним эти настройки в настройки пользователя
             $tableUserParams->saveFieldsShow($newFieldsShowFromRequest);
-            return;
+
+            // Помимо настроек отображаемых полей от браузера могли прийти настройки ширины всех колонок
+            // (и отображаемых и нет) - сохраним их в базу
+            $fieldsWidthRequestKey = $this->getTableName() . '_fieldsWidth';
+            if (isset($_REQUEST[$fieldsWidthRequestKey])) {
+                $newFieldsWidth = $_REQUEST[$fieldsWidthRequestKey];
+                $tableUserParams->setFieldsWidth($newFieldsWidth);
+            }
 
         }
 
+        // Загрузим из базы настройки, какие колонки отображать
         $userParamsFieldsShow = $tableUserParams->loadFieldsShow();
         if ($userParamsFieldsShow) {
-
             // У пользователя есть какие-то собственные настройки колонок в таблице, применим их
             $this->setTableFieldsShow($userParamsFieldsShow);
-            return;
-
-        }
-
-        // У пользователя нет собственных настроек колонок в таблице, попробуем применить Default раскладку
-        if ($this->tableLayoutDefault) {
+        } elseif ($this->tableLayoutDefault) {
             // Для данной таблицы задана некая Default раскладка, именно её и используем
             $this->setTableFieldsShow($this->tableLayoutDefault);
-            return;
+        } else {
+            // Для данной таблицы нет даже Default раскладки, отображаем все поля подряд
+            $this->setFieldsShowAll();
         }
 
-        // Для данной таблицы нет даже Default раскладки, отображаем все поля подряд
-        $this->setFieldsShowAll();
+        // Загрузим из базы настройки ширины колонок
+        $userParamsFieldsWidth = $tableUserParams->loadFieldsWidth();
+        if ($userParamsFieldsWidth) {
+            $this->setTableFieldsWidth($userParamsFieldsWidth);
+        }
 
+    }
+
+    private function setTableFieldsWidth(array $userParamsFieldsWidth)
+    {
+        foreach($userParamsFieldsWidth as $fieldKey => $fieldWidth) {
+            $fieldWidth = (int)$fieldWidth;
+            if (!$fieldWidth || !$this->hasField($fieldKey)) {
+                continue;
+            }
+            /** @var FieldAbstract $field */
+            $field = $this->getField($fieldKey);
+            $field->setTableWidthHtml($fieldWidth * 10);
+        }
     }
 
     public function isLayoutEnabled()
@@ -130,6 +149,7 @@ trait TableLayoutable
     {
         $fieldsetList = $this->getFieldset()->filterByMode(F::MODE_LIST);
         $shownFieldKeys = $this->getTableFieldsShow() ?? $fieldsetList->getKeys();
+        $fieldsWidth = $this->tableUserParams->loadFieldsWidth();
 
         $allFields = [];
         $fieldNames = [];
@@ -138,7 +158,8 @@ trait TableLayoutable
             $allFields[] = [
                 'key' => $field->key,
                 'name' => $name,
-                'title' => $field->title
+                'title' => $field->title,
+                'width' => $fieldsWidth[$field->key] ?? ''
             ];
             $fieldNames[] = $name;
         }

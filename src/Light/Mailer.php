@@ -288,13 +288,21 @@ class Mailer
         return array_values(array_unique($emails));
     }
 
-    private function copyAttachements(string $targetDir)
+    private function copyAttachementsToLogDir(int $logId)
     {
+        $logDirRelative = FilesFolder::getModuleRelative('LogEmailAttachements', $logId);
+        FilesFolder::mkdir($logDirRelative);
+        $logDirAbs = FilesFolder::getAbsolutePath($logDirRelative);
+
         $fs = new Filesystem();
-        $fs->mkdir($targetDir);
         foreach ($this->attachements as $attachement) {
-            $target = $targetDir . '/' . pathinfo($attachement, PATHINFO_BASENAME);
-            $fs->copy($attachement, $target);
+            $target = $logDirAbs . '/' . pathinfo($attachement, PATHINFO_BASENAME);
+            try {
+                $fs->copy($attachement, $target);
+                @chmod($target, 0666);
+            } catch (\Throwable $e) {
+                reportException($e);
+            }
         }
     }
 
@@ -411,8 +419,7 @@ class Mailer
         );
 
         // Скопируем все файлы вложений в отдельную папку log
-        $attachementsLogDir = Config::$filesfolderLocal . "/LogEmailAttachements/" . floor($logId / 1000) . "/$logId";
-        $this->copyAttachements($attachementsLogDir);
+        $this->copyAttachementsToLogDir($logId);
     }
 
     private function getSuccessMsgQueue(): string

@@ -168,7 +168,7 @@ class Msg implements \Countable, \JsonSerializable
 
     public static function getMessageHtml($type, $msg)
     {
-        return '<p class="msg-' . $type . '">' . $msg . '</p>';
+        return '<div class="msg-' . $type . '">' . $msg . '</div>';
     }
 
     public static function getMessageHtmlList($type, $msg)

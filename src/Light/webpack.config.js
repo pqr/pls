@@ -34,6 +34,9 @@ module.exports = {
         'lodash': '_'
     },
     watch:true,
+    optimization: {
+        noEmitOnErrors: false
+    },
     /*
     plugins: [
         new DtsBundlePlugin()

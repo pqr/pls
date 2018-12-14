@@ -14,13 +14,23 @@ class CommonFields
     const VAT_BEZNDS = -1;
     const VAT_0 = 0;
     const VAT_18 = 18;
+    const VAT_20 = 20;
 
     const VAT_OPTIONS = [
         self::VAT_EMPTY => '',
         self::VAT_BEZNDS => 'Без НДС',
         self::VAT_0 => '0%',
         self::VAT_18 => '18%',
+        self::VAT_20 => '20%',
     ];
+
+    public static function getFullVatPercent(string $date): int
+    {
+        if ($date < '2019-01-01') {
+            return self::VAT_18;
+        }
+        return self::VAT_20;
+    }
 
     public static function id(array $params = []): FieldInt
     {

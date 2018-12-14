@@ -51,6 +51,7 @@ abstract class HomeBlockAbstract extends Table
     protected $width = 320;
     protected $showCount = true; //показывать ли в заголовке блока число элементов строк в таблице?
     protected $_printHeadBlock = true;
+    protected $printIfEmpty = false;
     protected $userId;
 
     public function __construct(int $useId)
@@ -127,13 +128,13 @@ abstract class HomeBlockAbstract extends Table
     public function getHtmlTableForAjax($printHeadBlock = true, $printIfEmpty = false)
     {
         $this->tableLoadData($this->userId);
-        return parent::getHtmlTableForAjax($this->_printHeadBlock, $printIfEmpty);
+        return parent::getHtmlTableForAjax($this->_printHeadBlock, $this->printIfEmpty);
     }
 
     public function getHtml(string $cssClass)
     {
         $this->tableLoadData($this->userId);
-        if (!$this->getTableDataCount()) {
+        if (!$this->getTableDataCount() && !$this->printIfEmpty) {
             return '';
         }
 
@@ -143,7 +144,7 @@ abstract class HomeBlockAbstract extends Table
             'title' => self::getTitle(),
             'description' => self::getDescription(),
             'informationFor' => self::getInformationFrom(),
-            'table' => $this->getHtmlTable($this->_printHeadBlock),
+            'table' => $this->getHtmlTable($this->_printHeadBlock, $this->printIfEmpty),
             'viewAllLink' => $this->getViewAllLink($this->userId),
         ];
         return Template::parseTpl('homeblock.tpl.php', $tdata + ['cssClass' => $cssClass]);

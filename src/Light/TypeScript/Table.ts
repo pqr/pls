@@ -1,5 +1,6 @@
 import {myParseInt} from "./Light";
 import {Filters} from "./Filters";
+import {FieldsWidth} from "./TableLayoutDialog";
 
 export type FilterChangeHandler = (newValue: string, $node: JQuery) => void;
 export type SelectRowHandler = (selected: boolean, $tr: JQuery) => void;
@@ -13,6 +14,7 @@ export interface ReloadParams {
     order?: string;
     filterValues?: string;
     fieldsShow?: string;
+    fieldsWidth?: FieldsWidth;
 }
 
 export class Table {
@@ -331,7 +333,7 @@ export class Table {
         }
 
         // При передаче параметров на сервер, основным параметрам влияющим на таблицу дадим префикс с именем таблицы
-        const {fieldsShow, page, showall, sort, order, ...other} = reloadParams;
+        const {fieldsShow, page, showall, sort, order, fieldsWidth, ...other} = reloadParams;
         const postData: any = {...other};
         if (typeof fieldsShow !== "undefined") {
             postData[this.name + "_fieldsShow"] = fieldsShow;
@@ -347,6 +349,9 @@ export class Table {
         }
         if (typeof order !== "undefined") {
             postData[this.name + "_order"] = order;
+        }
+        if (typeof fieldsWidth !== "undefined") {
+            postData[this.name + "_fieldsWidth"] = fieldsWidth;
         }
 
         // Запоминаем ссылку на текущий запрос обновления этой таблицы

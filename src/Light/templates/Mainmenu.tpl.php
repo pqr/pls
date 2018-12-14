@@ -1,4 +1,8 @@
 <?php
+
+use Light\Mainmenu;
+use Light\User;
+
 $activeModule = \Light\Request::getModule();
 ?>
 <div id="mainmenu">
@@ -17,7 +21,7 @@ $activeModule = \Light\Request::getModule();
         <?php else: ?>
             <div id="mainmenu__avatar">
                 <!--            <img src="lightpublic/i/santa-hat.png" class="santa-hat">-->
-                <img class="avatar" src="index.php?a=Core&ps=GetUserAvatar&nouserrefreshtime=1">
+                <?= Mainmenu::getUserAvatarImgTag(User::getId()) ?>
                 <input id="mainmenu__avatarinputfile" type="file" name="avatar">
             </div>
         <?php endif; ?>

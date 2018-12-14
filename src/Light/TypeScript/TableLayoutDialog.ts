@@ -1,6 +1,6 @@
 import { Dialog } from "./Dialog";
 import * as table from "./Table";
-import { isLangRu, myParseInt, toastSuccess, loadSortableJs, getOppositeString } from "./Light";
+import { getOppositeString, isLangRu, loadSortableJs, myParseInt, toastSuccess } from "./Light";
 
 declare var Sortable: any;
 
@@ -22,9 +22,12 @@ export interface Field {
     key: string;
     name: string;
     title: string;
+    width: string;
 }
 
-export type DialogSubmitCallback = (shownFieldKeys: Array<string>) => void;
+export type FieldsWidth = { [key: string]: string };
+
+export type DialogSubmitCallback = (shownFieldKeys: string[], fieldsWidth?: FieldsWidth) => void;
 
 interface CurrentState {
     tableName: string;
@@ -32,6 +35,7 @@ interface CurrentState {
     allFields: Field[];
     initialShownFieldKeys: string[];
     dialogSubmitCallback: DialogSubmitCallback | null;
+    showFieldsWidth: boolean;
 }
 
 let currentState: CurrentState = {
@@ -39,7 +43,8 @@ let currentState: CurrentState = {
     layouts: [],
     allFields: [],
     initialShownFieldKeys: [],
-    dialogSubmitCallback: null
+    dialogSubmitCallback: null,
+    showFieldsWidth: false
 };
 
 /**
@@ -55,7 +60,8 @@ function initDialogListeners() {
         }
         ajaxCore({
             layoutName: layoutName,
-            fieldsShow: getShownFieldKeys().join("|")
+            fieldsShow: getShownFieldKeys().join("|"),
+            fieldsWidth: getFieldsWidth()
         }).done(() => {
             const successText = isLangRu ? "Настройки сохранены" : "Layout saved";
             toastSuccess(`${successText}: <strong>${layoutName}</strong>`);
@@ -137,13 +143,13 @@ function updateSortables(showFieldKeys: string[]) {
 
     // Перебираем все поля и добавляем их либо в блок отображаемых, либо в блок скрытых
     // Подготовим накопительный массив полей, которые потом будут отрендрены в блок отображаемых в нужном порядке
-    let toShow: Array<Field> = [];
+    let toShow: Field[] = [];
     currentState.allFields.forEach(field => {
         // Определим позицию в блоке Shown в которую вставить текущее поле
         const showIndex = showFieldKeys.indexOf(field.key);
         if (showIndex === -1) {
             // Этого поля нет в массиве отображаемых, сразу вставляем его в список скрытых полей
-            appendLi($hiddenUl, field.key, field.name, field.title);
+            appendLi($hiddenUl, field.key, field.name, field.title, field.width);
         } else {
             // Определили позицию под которой нужно вставить в блок отображаемых полей. Но сразу вставлять в DOM не будем, накопим
             // в подготовительном массиве
@@ -152,17 +158,26 @@ function updateSortables(showFieldKeys: string[]) {
     });
 
     // Отрендрим накопленный массив отображаемых полей
-    toShow.forEach(field => appendLi($shownUl, field.key, field.name, field.title));
+    toShow.forEach(field => appendLi($shownUl, field.key, field.name, field.title, field.width));
 }
 
-const appendLi = function($ul: JQuery, fieldKey: string, fieldName: string, fieldTitle: string) {
+const appendLi = function($ul: JQuery, fieldKey: string, fieldName: string, fieldTitle: string, fieldWidth?: string) {
     //С помощью css класса подсветим поле фиолетовым или голубым
     const cssClass =
         currentState.initialShownFieldKeys.indexOf(fieldKey) === -1
             ? "tablelayoutdialog__field_hidden"
             : "tablelayoutdialog__field_shown";
+
+    if (!fieldWidth) {
+        fieldWidth = "";
+    }
+
+    const innerHtml = currentState.showFieldsWidth
+        ? `<div><div>${fieldName}</div><div><input type="number" name="${fieldKey}" value="${fieldWidth}" title="Ширина"></div></div>`
+        : fieldName;
+
     $("<li>")
-        .text(fieldName)
+        .html(innerHtml)
         .attr("data-fieldkey", fieldKey)
         .attr("title", fieldTitle)
         .addClass(cssClass)
@@ -179,6 +194,17 @@ function getShownFieldKeys(): string[] {
         shownFieldKeys.push(this.getAttribute("data-fieldkey")!);
     });
     return shownFieldKeys;
+}
+
+function getFieldsWidth(): FieldsWidth {
+    const result: FieldsWidth = {};
+    $shownUl
+        .add($hiddenUl)
+        .find("input[type=number]")
+        .each(function(this: HTMLInputElement) {
+            result[this.name] = this.value;
+        });
+    return result;
 }
 
 function ajaxCore(postdata?: Object) {
@@ -209,20 +235,22 @@ export function showLayoutDialog(
     initialShownFieldKeys: string[],
     layouts: Layout[],
     bodyHtml: string,
-    dialogSubmitCallback: DialogSubmitCallback
+    dialogSubmitCallback: DialogSubmitCallback,
+    showFieldsWidth: boolean = false
 ) {
     const options = {
-        width: "770px",
+        width: "870px",
         buttonOkText: isLangRu ? "Применить" : "Apply new Layout",
         buttonCancelText: isLangRu ? "Отмена" : "Cancel",
         buttonOkHandler: () => {
             dialog.close();
-            currentState.dialogSubmitCallback!(getShownFieldKeys());
+            currentState.dialogSubmitCallback!(getShownFieldKeys(), getFieldsWidth());
         }
     };
 
     dialog = new Dialog(bodyHtml, options);
 
+    currentState.showFieldsWidth = showFieldsWidth;
     currentState.tableName = tableName;
     currentState.allFields = allFields;
     currentState.initialShownFieldKeys = initialShownFieldKeys;
@@ -254,8 +282,9 @@ $("body").on("click", "a.table-layoutsettings", (e: any) => {
     const tableObj = table.get(tableName);
     $.ajax(tableObj.reloadUrl + "&loadTableLayoutSettings=1").done((settingsFromServer: any) => {
         const { allFields, shownFieldKeys, layouts, bodyHtml } = settingsFromServer;
-        showLayoutDialog(tableName, allFields, shownFieldKeys, layouts, bodyHtml, (shownFieldKeys: string[]) => {
-            tableObj.reload({ fieldsShow: shownFieldKeys.join("|") });
-        });
+        const dialogSubmitCallback = (shownFieldKeys: string[], fieldsWidth: FieldsWidth) => {
+            tableObj.reload({ fieldsShow: shownFieldKeys.join("|"), fieldsWidth: fieldsWidth });
+        };
+        showLayoutDialog(tableName, allFields, shownFieldKeys, layouts, bodyHtml, dialogSubmitCallback, true);
     });
 });

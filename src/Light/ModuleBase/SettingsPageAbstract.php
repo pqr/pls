@@ -111,5 +111,9 @@ class SettingsPageAbstract
 
         $msg = Config::$lang === 'ru' ? 'Сохранено' : 'Saved';
         Session::flashSuccess($msg);
+
+        // Полностью обновим страницу с помощью редиректа, чтобы значения формы заново загрузились из базы
+        // таким образом пользователь будет уверен, что всё сохранилось как надо
+        Response::redirect(Request::getModule());
     }
 }

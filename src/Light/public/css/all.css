@@ -2295,6 +2295,14 @@ table.table {
     border-spacing: 1px;
 }
 
+table.table.layoutfixed {
+    table-layout: fixed;
+}
+
+table.table.layoutfixed td {
+    overflow: hidden;
+}
+
 /* фиксация thead работает в Firefox и в Safari */
 table.table.sticky > thead {
     position: sticky;
@@ -2305,6 +2313,7 @@ table.table.sticky > thead {
 /* Для Edge и Chome нужно фиксировать th */
 table.table.sticky > thead > tr > th {
     position: sticky;
+    position: -webkit-sticky; /* Для Safari нужно с префисом */
     top: 0;
 }
 
@@ -2787,8 +2796,8 @@ h3:hover #tablelayoutdialog__linkall, h3:hover #tablelayoutdialog__linknone {
     opacity: 1;
 }
 
-#tablelayoutdialog__showul, #tablelayoutdialog__hideul {
-    width: 250px;
+.tablelayoutdialog__fieldsul {
+    width: 300px;
     height: 400px;
     background: #f7f7f7;
     border: 1px solid gray;
@@ -2798,10 +2807,24 @@ h3:hover #tablelayoutdialog__linkall, h3:hover #tablelayoutdialog__linknone {
     overflow: auto;
 }
 
-#tablelayoutdialog__showul li, #tablelayoutdialog__hideul li {
+.tablelayoutdialog__fieldsul li {
     margin: 1px;
     cursor: move;
     padding: 3px;
+}
+
+.tablelayoutdialog__fieldsul li > div {
+    display: flex;
+    justify-content: space-between;
+}
+
+.tablelayoutdialog__fieldsul li input[type=number] {
+    width: 50px;
+    opacity: .5;
+}
+
+.tablelayoutdialog__fieldsul li input[type=number]:focus {
+    opacity: 1;
 }
 
 .tablelayoutdialog__field_shown {

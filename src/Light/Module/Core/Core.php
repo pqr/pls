@@ -12,6 +12,7 @@ use Light\DbLog;
 use Light\Field\FieldDate;
 use Light\FilesFolder;
 use Light\LoggerCsv;
+use Light\Mainmenu;
 use Light\Metric;
 use Light\Misc;
 use Light\ModuleRegister;
@@ -488,19 +489,7 @@ class Core
     public static function proceedGetUserAvatar()
     {
         $userId = $_GET['UserID'] ?? User::getId();
-        $relativePath = FilesFolder::getModuleRelative('User', $userId);
-        $avatarFileAbs = FilesFolder::getAbsolutePath("$relativePath/Avatar.jpg");
-        if (file_exists($avatarFileAbs)) {
-
-            Response::header('Content-Type: image/jpg');
-            print file_get_contents($avatarFileAbs);
-            ApplicationAbstract::terminate();
-
-        }
-
-        Response::header('Content-Type: image/png');
-        print file_get_contents(LIGHT_DIR_LIGHTPUBLIC . '/i/user.png');
-        ApplicationAbstract::terminate();
+        Mainmenu::streamUserAvatar($userId);
     }
 
     public static function proceedGetUserPhoto()

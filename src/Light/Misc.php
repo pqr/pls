@@ -965,9 +965,9 @@ class Misc
         return $result;
     }
 
-    public static function idsFromComaSeparatedString(string $comaSeparated): array
+    public static function idsFromComaSeparatedString(string $comaSeparated, string $separator = ','): array
     {
-        return array_values(array_filter(array_map('intval', explode(',', $comaSeparated))));
+        return array_values(array_filter(array_map('intval', explode($separator, $comaSeparated))));
     }
 
     public static function filesize_formatted(int $size): string

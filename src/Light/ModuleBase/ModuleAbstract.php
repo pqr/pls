@@ -308,17 +308,23 @@ abstract class ModuleAbstract extends Table
                         // Источник - это на самом деле подтаблица того же класса, но с другим masterId
                         /** @var Subtable $sourceSubtable */
                         $sourceSubtable = new $subtableClass($sourceObj);
-
-                        //Копируем данные в подтаблицу текущего объекта
-                        //Метод $sourceSubtable->getData() возвращает массив где ключи - это ID в базе
-                        //чтобы добавить данные в $subtable нам не нужны ключи в виде ID, нам нужны ключи от 0 до N
-                        //для этого применим array_values
-                        $sourceData = array_values($sourceSubtable->getData());
+                        $sourceData = $this->getDataForCopySubtable($sourceSubtable);
                         $subtable->setAdditionalData($sourceData);
                     }
                 }
             }
         }
+    }
+
+    protected function getDataForCopySubtable(Subtable $sourceSubtable): array
+    {
+        // Копируем данные в подтаблицу текущего объекта
+        // Метод $sourceSubtable->getData() возвращает массив где ключи - это ID в базе
+        // чтобы добавить данные в $subtable нам не нужны ключи в виде ID, нам нужны ключи от 0 до N
+        // для этого применим array_values
+        $sourceData = array_values($sourceSubtable->getData());
+
+        return $sourceData;
     }
 
     /**
@@ -1040,7 +1046,9 @@ abstract class ModuleAbstract extends Table
             if ($this->printForms) {
 
                 // Начало ссылки на печать
-                $printFormUrlStart = '?a=' . $this->getModule() . '&id=' . $this->_obj->getId() . '&func=Print&form=';
+                $linkBase = Link::create($this->getModule())
+                    ->view($this->_obj->getId())
+                    ->func('Print');
 
                 /**
                  * @var string $printFormName
@@ -1048,9 +1056,18 @@ abstract class ModuleAbstract extends Table
                  */
                 foreach ($this->printForms as $printFormName => $printForm) {
                     if ($printForm->testForObj($this->_obj)) {
+                        $link = clone $linkBase;
+                        $link->params(['form' => $printFormName]);
+                        if ($printForm->hasFieldset()) {
+                            // Делаем ссылку на ajax диалог, чтобы заполнить нужены для данной формы поля
+                            $link->ajax();
+                        } else {
+                            // Эта ссылка сразу будет делать post запрос на генерацию печачтной формы
+                            $link->post();
+                        }
                         $out[] = [
                             'text' => $printForm->getIcon() . ' ' . $printForm->getTitle(),
-                            'url' => $printFormUrlStart . $printFormName . ($printForm->getFieldset()->count() ? '#ajax' : '#post'),
+                            'url' => $link->getHref(),
                             // Делаем ссылку с открытием нового окна только в том случае, если эта форма настроена
                             // на вывод HTML в браузер
                             'blank' => $printForm->isLinkBlank()

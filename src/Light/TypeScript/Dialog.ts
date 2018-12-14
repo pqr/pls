@@ -17,7 +17,7 @@ export interface DialogOptions {
     buttonOkText?: string;
     buttonOkHandler?: (dialog: Dialog) => void;
     buttonCancelText?: string;
-    buttons?: Array<Button>;
+    buttons?: Button[];
     width?: string;
     height?: string;
     top?: string;

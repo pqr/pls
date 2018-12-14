@@ -17,6 +17,7 @@ class TableUserParamsRepository
     private $sortFieldKey = '';
     private $sortOrder = '';
     private $fieldsShow = '';
+    private $fieldsWidth = [];
     private $showAll = false;
 
     public function __construct(string $tableNameForSettings, int $userId)
@@ -72,12 +73,27 @@ class TableUserParamsRepository
     }
 
     /**
+     * @return array
+     */
+    public function loadFieldsWidth(): array
+    {
+        $this->lazyLoadTableUserParams();
+        return $this->fieldsWidth;
+    }
+
+    /**
      * @param string $fieldsShow
      */
     public function saveFieldsShow(string $fieldsShow): void
     {
         $this->fieldsShow = $fieldsShow;
         $this->saveToDb('FieldsShow', $fieldsShow);
+    }
+
+    public function setFieldsWidth(array $fieldsWidth): void
+    {
+        $this->fieldsWidth = $fieldsWidth;
+        $this->saveToDb('FieldsWidth', json_encode($fieldsWidth));
     }
 
     /**
@@ -102,7 +118,7 @@ class TableUserParamsRepository
     {
         if (!$this->isLoaded) {
             $params = Db::getRow(
-                "SELECT SortFieldKey, SortOrder, FieldsShow, ShowAll 
+                "SELECT SortFieldKey, SortOrder, FieldsShow, FieldsWidth, ShowAll 
                  FROM user_tableparam
                  WHERE TableName = @s AND CreatedBy = @i"
                 , $this->tableNameForSettings
@@ -113,7 +129,13 @@ class TableUserParamsRepository
                 $this->sortOrder = (string)$params['SortOrder'];
                 $this->fieldsShow = (string)$params['FieldsShow'];
                 $this->showAll = (string)$params['ShowAll'];
+                $this->fieldsWidth = json_decode($params['FieldsWidth'], true);
+                if (!is_array($this->fieldsWidth)) {
+                    $this->fieldsWidth = [];
+                }
             }
+
+            $this->isLoaded = true;
         }
     }
 

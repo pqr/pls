@@ -57,6 +57,11 @@ class Img
         return "<i class=\"fa $cssClass\"></i>";
     }
 
+    public static function iconExternalLink()
+    {
+        return self::icon('fa-external-link');
+    }
+
     public static function iconExcel()
     {
         return self::icon('fa-file-excel-o');

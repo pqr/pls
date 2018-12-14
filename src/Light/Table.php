@@ -73,7 +73,7 @@ class Table implements \JsonSerializable
 
     /**
      * Параметры таблицы, которые хранятся в базе в user_tableparam
-     * @var TableUserParamsRepository
+     * @var TableUserParamsRepository $tableUserParams
      */
     protected $tableUserParams;
 
@@ -215,7 +215,7 @@ class Table implements \JsonSerializable
     protected function addCheckboxCol($class = 'cb')
     {
         $checkboxField = F::createHtml('CheckBox', [
-                'tableWidthHtml' => 20,
+                'tableWidthHtml' => 25,
                 'tableOrderBy' => '',
                 'tableAlign' => 'center',
                 'nameTable' => '<input type="checkbox" class="cb-all">',
@@ -351,7 +351,7 @@ class Table implements \JsonSerializable
         }
 
         //Отркоем тег <table>, внутри будет много data-* атрибутов
-        $outHtml .= $this->getHtmlTableOpenTableTag();
+        $outHtml .= $this->getHtmlTableOpenTableTag($allFields);
 
         //Выводим <thead>...</thead>
         $outHtml .= $this->getHtmlTableThead($allFields);
@@ -452,10 +452,14 @@ class Table implements \JsonSerializable
         return '';
     }
 
-    private function getHtmlTableOpenTableTag()
+    private function getHtmlTableOpenTableTag(array $allFields)
     {
         $dataTableName = ' data-tablename="' . $this->getTableName() . '"';
-        $class = ' class="table' . ($this->sticky ? ' sticky' : '') . '"';
+
+        $class = 'table';
+        if ($this->sticky) {
+            $class .= ' sticky';
+        }
 
         $dataLinkUrlParams = '';
         if ($this->tableLinkUrlParams) {
@@ -463,7 +467,37 @@ class Table implements \JsonSerializable
             $dataLinkUrlParams = ' data-linkurlparams="' . htmlspecialchars($dataLinkUrlParams) . '"';
         }
 
-        return '<table' . $dataTableName . $class . $dataLinkUrlParams . '>';
+        $widthAttr = '';
+
+        /** @var $this \Light\Traits\TableLayoutable */
+        if (property_exists($this, 'allowTableLayouts') && $this->allowTableLayouts) {
+            $fieldsWidth = $this->tableUserParams->loadFieldsWidth();
+            if (is_array($fieldsWidth)) {
+                // Проверим, есть ли хотя бы для одного из отображаемых полей настрока пользователя с не нулевой шириной?
+                $hasWidthSettings = A::some($allFields, function ($field) use ($fieldsWidth) {
+                    return isset($fieldsWidth[$field->key]) && $fieldsWidth[$field->key];
+                });
+                if ($hasWidthSettings) {
+                    // Пользователь задал какие-то настройки хотя бы для одного поля - значит всю таблицу переводим в режим layout:fixed
+                    $class .= ' layoutfixed';
+                    // Посчитаем суммарную ширину всех полей, чтобы явно добавить width="..." в тег table
+                    // без этого не заработает layout:fixed
+                    $totalWidth = 0;
+                    /** @var FieldAbstract $field */
+                    foreach ($allFields as $field) {
+                        // Если у поля не была задана пользовательская настройка ширины и нет настройки ширины из параметров поля
+                        // то примем 150px, чтобы зарезервировать хоть какое-то место под это поле в общей ширине таблицы
+                        $fieldWidth = (int)($field->tableWidthHtml ?: 150);
+                        $totalWidth += $fieldWidth;
+                    }
+                    $widthAttr = ' width="' . $totalWidth . '"';
+                }
+            }
+        }
+
+        $class = ' class="' . $class . '"';
+
+        return '<table' . $dataTableName . $class . $dataLinkUrlParams . $widthAttr . '>';
     }
 
     /**
@@ -723,7 +757,7 @@ class Table implements \JsonSerializable
         $dataTotal = $this->tableTotal ?: [];
 
         // Уберём из $dataCalculated строки, отмеченные флагом IsSeparator или IsTotal, чтобы не задваивались данные
-        foreach($dataCalculated as $i => $rowDataCalculated) {
+        foreach ($dataCalculated as $i => $rowDataCalculated) {
             if (isset($rowDataCalculated['IsSeparator']) || isset($rowDataCalculated['IsTotal'])) {
                 unset($dataCalculated[$i]);
             }

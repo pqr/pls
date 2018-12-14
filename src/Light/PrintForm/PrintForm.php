@@ -339,6 +339,11 @@ class PrintForm
             'Count: ' . $count);
     }
 
+    public function hasFieldset(): bool
+    {
+        return $this->getFieldset()->count() > 0;
+    }
+
     public function proceedPrint(ObjAbstract $obj, string $targetDir)
     {
         $timer = new Timer();

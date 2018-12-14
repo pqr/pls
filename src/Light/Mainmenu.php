@@ -96,4 +96,44 @@ class Mainmenu
         }
         return Template::parseTpl(LIGHT_DIR_LIGHT . '/templates/Mainmenu.tpl.php', $tdata);
     }
+
+    public static function hasUserAvatar(int $userId): bool
+    {
+        return file_exists(self::getUserAvatarFilepathAbs($userId));
+    }
+
+    public static function getUserAvatarFilepathAbs(int $userId): string
+    {
+        $relativePath = FilesFolder::getModuleRelative('User', $userId);
+        $avatarFilepathAbs = FilesFolder::getAbsolutePath("$relativePath/Avatar.jpg");
+        return $avatarFilepathAbs;
+    }
+
+    public static function getUserAvatarImgTag(int $userId)
+    {
+        if (Mainmenu::hasUserAvatar($userId)) {
+            $avatarFilepathAbs = self::getUserAvatarFilepathAbs($userId);
+            $mtime = filemtime($avatarFilepathAbs);
+            return '<img class="avatar" src="index.php?a=Core&ps=GetUserAvatar&UserID=' . $userId . '&nouserrefreshtime=1&mtime=' . $mtime . '">';
+        }
+        return '<img class="avatar" src="lightpublic/i/user.png">';
+    }
+
+    public static function streamUserAvatar(int $userId)
+    {
+        if (Mainmenu::hasUserAvatar($userId)) {
+            $avatarFileAbs = Mainmenu::getUserAvatarFilepathAbs($userId);
+            // Кэшируем изображение навечно, т.к. в url есть признак времени изменения файла (см getUserAvatarImgTag)
+            // https://www.mnot.net/cache_docs/
+            Response::header('Content-Type: image/jpg');
+            Response::header('Cache-Control: public, max-age=31556926');
+            Response::header('Expires: Sun, 17-Jan-2038 19:14:07 GMT');
+            Response::header('Pragma: ');
+            readfile($avatarFileAbs);
+            ApplicationAbstract::terminate();
+            return;
+        }
+
+        Response::redirectUrl('lightpublic/i/user.png');
+    }
 }

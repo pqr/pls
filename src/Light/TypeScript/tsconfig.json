@@ -7,7 +7,7 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "experimentalDecorators": false,
-    "listFiles": true,
+    "listFiles": false,
     "listEmittedFiles": true,
     "pretty": true,
     "allowJs": false,

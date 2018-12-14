@@ -53,11 +53,11 @@ $isLangRu = Config::$lang === 'ru'
         <tr valign="top">
 
             <td>
-                <ul id="tablelayoutdialog__showul"></ul>
+                <ul class="tablelayoutdialog__fieldsul" id="tablelayoutdialog__showul"></ul>
             </td>
 
             <td>
-                <ul id="tablelayoutdialog__hideul"></ul>
+                <ul class="tablelayoutdialog__fieldsul" id="tablelayoutdialog__hideul"></ul>
             </td>
 
 
