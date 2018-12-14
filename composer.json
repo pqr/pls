@@ -29,7 +29,8 @@
     "sentry/sentry": "@stable",
     "phpoffice/phpspreadsheet": "^1.0",
     "symfony/filesystem": "^4.1",
-    "symfony/process": "^4.1"
+    "symfony/process": "^4.1",
+    "mpdf/mpdf": "^7.1"
   },
   "autoload": {
     "psr-4": {

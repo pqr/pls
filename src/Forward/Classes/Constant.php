@@ -64,6 +64,11 @@ class Constant
         return self::$standardFolders[self::FOLDER_CACT];
     }
 
+    public static function getStandartFolderReqeust()
+    {
+        return self::$standardFolders[self::FOLDER_REQUEST];
+    }
+
     public static function isOneCCompany(?int $companyId)
     {
         return isset(self::$onecCompany[$companyId]);

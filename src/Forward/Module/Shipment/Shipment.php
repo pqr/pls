@@ -44,8 +44,8 @@ use Light\Session;
 use Light\Template;
 use Light\User;
 use Light\XlsWriter;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Process\Process;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Worksheet\BaseDrawing;
 
 class Shipment extends ModuleAbstract
 {
@@ -240,7 +240,7 @@ class Shipment extends ModuleAbstract
 
     protected function massactionCreateDocsInventory($ids)
     {
-        Response::redirect(DocsInventory::class, ['addnew' => 1, 'fromShipmentIds' => implode(',',$ids)]);
+        Response::redirect(DocsInventory::class, ['addnew' => 1, 'fromShipmentIds' => implode(',', $ids)]);
     }
 
     protected function initViewSubmenu()
@@ -287,7 +287,7 @@ class Shipment extends ModuleAbstract
 
         if (Constant::isOneCCompany($this->_obj['CompanyID'])) {
 
-            $this->addSubmenuItemViewFuncAjaxPost('Заявка', Img::iconDownload(), 'ShipmentRequestExcel');
+            $this->addSubmenuItemViewFuncPost('Заявка', Img::iconDownload(), 'ShipmentRequestExcel');
 
             $this->addSubmenuItemViewFunc('Комплект документов', Img::icon('file-archive-o'), 'DownloadDocs');
             $this->addSubmenuItemViewFunc('Документы на печать', Img::icon('file-archive-o'), 'DownloadDocsForPrint');
@@ -1379,32 +1379,8 @@ class Shipment extends ModuleAbstract
 
         // Сформируем путь до файла назначения и проверим, что этого файла ещё нет в папке
         $shipmentRequestYearShort = substr($shipmentRequestDate, 2, 2);
-        $filename = 'Заявка №'
-            . $shipmentObj['ShipmentRequestNo']
-            . '-' . $shipmentRequestYearShort
-            . ' ' . $shipmentObj['MAWBNumber']
-            . ' (' . FieldDate::beautify($shipmentRequestDate) . ')'
-            . '.xlsx';
-
-        $filename = File::getValidFilename($filename);
-
-        $filepathAbs = $this->getFolderAbsolutePath() . "/$filename";
-
-        if (!isset($_GET['confirm']) && file_exists(File::encode($filepathAbs))) {
-
-            $url = '?a=Shipment&id=' . $this->_obj->getId() . '&func=ShipmentRequestExcel&confirm=1#ajax';
-            $dialogHtml = '<form action="' . $url . '" method="post">В папке уже существует файл <strong>'
-                . htmlspecialchars($filename)
-                . '</strong>, хотите его перезаписать?'
-                . '</form>';
-
-            Response::showDialog($dialogHtml, 'Перезаписать');
-            return;
-
-        }
 
         $excelData = $shipmentObj->getExcelData();
-
 
         $excelData['ShipmentRequestDate'] = self::getDateInText($shipmentRequestDate);
         $excelData['ShipmentRequestYearShort'] = $shipmentRequestYearShort;
@@ -1485,20 +1461,82 @@ class Shipment extends ModuleAbstract
         $xls = new XlsWriter(__DIR__ . "/$exceltemplate");
         $xls->replaceData($excelData);
 
+        $filenameWithoutExt = 'Заявка №'
+            . $shipmentObj['ShipmentRequestNo']
+            . '-' . $shipmentRequestYearShort
+            . ' ' . $shipmentObj['MAWBNumber']
+            . ' (' . FieldDate::beautify($shipmentRequestDate) . ')';
+
+        $filenameWithoutExt = File::getValidFilename($filenameWithoutExt);
+
+        $folderAbs = $this->getFolderAbsolutePath();
+
+        $filepathAbsWithStamp = "$folderAbs/$filenameWithoutExt.xlsx";
+
         // Затем отправим пользотвателю
         try {
-            $xls->save($filepathAbs);
+
+            // Основной вариант с печатью и подписью сохраняем в формате PDF
+            $xls->save($filepathAbsWithStamp);
             //Session::flashSuccess('Файл <strong>' . htmlspecialchars($filename) . '</strong> сохранён в папку перевозки');
-            // Отправим готовый файл на экран пользователю
-            $filepathRelative = $this->getFolderRelativePath() . "/$filename";
-            FilesFolder::streamFile($filepathRelative);
+
         } catch (\Exception $e) {
-            Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($filename) . '</strong> сохранён в папку перевозки, возможно, он открыт в Excel?');
-            $this->redirectToView();
+
+            Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($filenameWithoutExt.".pdf") . '</strong> в папку перевозки, возможно, он открыт в Excel?');
+
         }
 
-        //обязательно делаем terminate, чтобы движок не пытался всё это засунуть в Master.tpl.php
-        ApplicationAbstract::terminate();
+        // Отдельную копию файла без печати и подписи нужно положить в папку "0 Заявка"
+        $this->removeStampFromShipmentRequestExcel($xls);
+        $requestFolder = Constant::getStandartFolderReqeust();
+        $filepathAbsXlsx = "$folderAbs/$requestFolder/$filenameWithoutExt.xlsx";
+
+        try {
+
+            $xls->save($filepathAbsXlsx);
+
+        } catch (\Exception $e) {
+
+            Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($filenameWithoutExt.".xlsx") . '</strong> в папку "'.htmlspecialchars($requestFolder).'", возможно, он открыт в Excel?');
+        }
+
+        if (file_exists($filepathAbsWithStamp)) {
+            // Отправим готовый файл на экран пользователю (отправляем тот, который PDF с печатью)
+            Response::streamFileFromFilesystem($filepathAbsWithStamp);
+        } else {
+            $this->redirectToView();
+        }
+    }
+
+    private function removeStampFromShipmentRequestExcel(XlsWriter $xls)
+    {
+        // Также файл с заявкой без печати и подписи необходимо сохранить в папку 0. Заявка
+        // Для этого сначала найдём все объекты изображений
+        $worksheet = $xls->getSpreadsheet()->getActiveSheet();
+
+        // Remove drawing from old \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet
+        $drawingCollection = $worksheet->getDrawingCollection();
+        /** @var \ArrayIterator $iterator */
+        $iterator = $drawingCollection->getIterator();
+
+        $unsetOffset = [];
+        while ($iterator->valid()) {
+            /** @var BaseDrawing $drawing */
+            $drawing = $iterator->current();
+            $coordinates = $drawing->getCoordinates();
+            if ($coordinates) {
+                $row = Coordinate::coordinateFromString($coordinates)[1] ?? 0;
+                if ($row >= 41) {
+                    // Всё что ниже 41 строки считаем изображением печати
+                    $unsetOffset[] = $iterator->key();
+                }
+            }
+            $iterator->next();
+        }
+
+        foreach($unsetOffset as $key) {
+            $drawingCollection->offsetUnset($key);
+        }
     }
 
     protected function viewGetDownloadDocs()
@@ -1522,7 +1560,8 @@ class Shipment extends ModuleAbstract
     {
         $sd = ShipmentDownloadDocs::create($this->flash);
         $ids = [$this->_obj->getId()];
-        $resultFilepath = $sd->generateZip($ids, false, [Constant::FOLDER_REQUEST, Constant::FOLDER_CINVOICE, Constant::FOLDER_CACT]);
+        $resultFilepath = $sd->generateZip($ids, false,
+            [Constant::FOLDER_REQUEST, Constant::FOLDER_CINVOICE, Constant::FOLDER_CACT]);
         if (!$resultFilepath) {
             $this->redirectToView();
             return;
