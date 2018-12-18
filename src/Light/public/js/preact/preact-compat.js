@@ -2,9 +2,9 @@
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('prop-types'), require('preact')) :
 	typeof define === 'function' && define.amd ? define(['prop-types', 'preact'], factory) :
 	(global.preactCompat = factory(global.PropTypes,global.preact));
-}(this, (function (PropTypes,preact) {
+}(this, (function (PropTypes,preact) { 'use strict';
 
-PropTypes = 'default' in PropTypes ? PropTypes['default'] : PropTypes;
+PropTypes = PropTypes && PropTypes.hasOwnProperty('default') ? PropTypes['default'] : PropTypes;
 
 var version = '15.1.0'; // trick libraries to think we are react
 
@@ -35,7 +35,11 @@ var CAMEL_PROPS = /^(?:accent|alignment|arabic|baseline|cap|clip|color|fill|floo
 var BYPASS_HOOK = {};
 
 /*global process*/
-var DEV = typeof process==='undefined' || !process.env || process.env.NODE_ENV!=='production';
+var DEV = false;
+try {
+	DEV = process.env.NODE_ENV!=='production';
+}
+catch (e) {}
 
 // a component that renders nothing. Used to replace components for unmountComponentAtNode.
 function EmptyComponent() { return null; }
@@ -77,7 +81,7 @@ preact.options.vnode = function (vnode) {
 		vnode.preactCompatUpgraded = true;
 
 		var tag = vnode.nodeName,
-			attrs = vnode.attributes = extend({}, vnode.attributes);
+			attrs = vnode.attributes = vnode.attributes==null ? {} : extend({}, vnode.attributes);
 
 		if (typeof tag==='function') {
 			if (tag[COMPONENT_WRAPPER_KEY]===true || (tag.prototype && 'isReactComponent' in tag.prototype)) {
@@ -135,7 +139,7 @@ function handleElementVNode(vnode, a) {
 
 
 // proxy render() since React returns a Component reference.
-function render$1(vnode, parent, callback) {
+function render(vnode, parent, callback) {
 	var prev = parent && parent._preactCompatRendered && parent._preactCompatRendered.base;
 
 	// ignore impossible previous renders
@@ -169,10 +173,18 @@ ContextProvider.prototype.render = function (props) {
 
 function renderSubtreeIntoContainer(parentComponent, vnode, container, callback) {
 	var wrap = preact.h(ContextProvider, { context: parentComponent.context }, vnode);
-	var renderContainer = render$1(wrap, container);
+	var renderContainer = render(wrap, container);
 	var component = renderContainer._component || renderContainer.base;
 	if (callback) { callback.call(component, renderContainer); }
 	return component;
+}
+
+function Portal(props) {
+	renderSubtreeIntoContainer(this, props.vnode, props.container);
+}
+
+function createPortal(vnode, container) {
+	return preact.h(Portal, { vnode: vnode, container: container });
 }
 
 
@@ -307,7 +319,7 @@ function normalizeVNode(vnode) {
 }
 
 
-function cloneElement$1(element, props) {
+function cloneElement(element, props) {
 	var children = [], len = arguments.length - 2;
 	while ( len-- > 0 ) children[ len ] = arguments[ len + 2 ];
 
@@ -411,7 +423,7 @@ function shallowDiffers(a, b) {
 
 
 function findDOMNode(component) {
-	return component && component.base || component;
+	return component && (component.base || component.nodeType === 1 && component) || null;
 }
 
 
@@ -420,7 +432,7 @@ function F(){}
 function createClass(obj) {
 	function cl(props, context) {
 		bindAll(this);
-		Component$1.call(this, props, context, BYPASS_HOOK);
+		Component.call(this, props, context, BYPASS_HOOK);
 		newComponentHook.call(this, props, context);
 	}
 
@@ -443,7 +455,7 @@ function createClass(obj) {
 		cl.defaultProps = obj.getDefaultProps.call(cl);
 	}
 
-	F.prototype = Component$1.prototype;
+	F.prototype = Component.prototype;
 	cl.prototype = extend(new F(), obj);
 
 	cl.displayName = obj.displayName || 'Component';
@@ -566,7 +578,7 @@ function afterRender() {
 
 
 
-function Component$1(props, context, opts) {
+function Component(props, context, opts) {
 	preact.Component.call(this, props, context);
 	this.state = this.getInitialState ? this.getInitialState() : {};
 	this.refs = {};
@@ -575,8 +587,8 @@ function Component$1(props, context, opts) {
 		newComponentHook.call(this, props, context);
 	}
 }
-extend(Component$1.prototype = new preact.Component(), {
-	constructor: Component$1,
+extend(Component.prototype = new preact.Component(), {
+	constructor: Component,
 
 	isReactComponent: {},
 
@@ -603,31 +615,37 @@ extend(Component$1.prototype = new preact.Component(), {
 
 
 function PureComponent(props, context) {
-	Component$1.call(this, props, context);
+	Component.call(this, props, context);
 }
-F.prototype = Component$1.prototype;
+F.prototype = Component.prototype;
 PureComponent.prototype = new F();
 PureComponent.prototype.isPureReactComponent = true;
 PureComponent.prototype.shouldComponentUpdate = function(props, state) {
 	return shallowDiffers(this.props, props) || shallowDiffers(this.state, state);
 };
 
+function unstable_batchedUpdates(callback) {
+	callback();
+}
+
 var index = {
 	version: version,
 	DOM: DOM,
 	PropTypes: PropTypes,
 	Children: Children,
-	render: render$1,
+	render: render,
 	createClass: createClass,
+	createPortal: createPortal,
 	createFactory: createFactory,
 	createElement: createElement,
-	cloneElement: cloneElement$1,
+	cloneElement: cloneElement,
 	isValidElement: isValidElement,
 	findDOMNode: findDOMNode,
 	unmountComponentAtNode: unmountComponentAtNode,
-	Component: Component$1,
+	Component: Component,
 	PureComponent: PureComponent,
 	unstable_renderSubtreeIntoContainer: renderSubtreeIntoContainer,
+	unstable_batchedUpdates: unstable_batchedUpdates,
 	__spread: extend
 };
 

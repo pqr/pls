@@ -7,7 +7,7 @@ import App from './components/App';
 import {configure} from 'mobx';
 import {Provider} from "mobx-react";
 
-configure({ enforceActions: true });
+configure({ enforceActions: "observed" });
 
 document.getElementById('page-head')!.remove();
 document.getElementById('flash-messages')!.remove();

@@ -593,7 +593,10 @@ class Filters
 
                 $title = Template::title($fieldFrom->key);
                 $label = Template::label($fieldFrom->key);
-                $html = '<nobr>' . Template::html($fieldFrom->key) . ' - ' . Template::html($fieldUntil->key) . '</nobr>';
+                $html = Template::html($fieldFrom->key) . ' - ' . Template::html($fieldUntil->key);
+                // После двух полей с датами добавляем иконку для выбора опций "Сегодня/Вчера/..."
+                $html .= ' <a href="#" class="Filters-FromUntilIcon">↔</a>';
+                $html = '<nobr>' . $html . '</nobr>';
 
                 return $this->getFilterLiHtml($templateKey, $isInvisible, $title, $label, $html);
             }

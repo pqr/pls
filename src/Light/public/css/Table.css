@@ -582,3 +582,23 @@ h3:hover #tablelayoutdialog__linkall, h3:hover #tablelayoutdialog__linknone {
 .sortable-ghost {
     opacity: .6;
 }
+
+.FromUntilPopup {
+    padding: 5px;
+    text-align: left;
+    font-size: 12px;
+}
+
+.FromUntilPopup-List {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.FromUntilPopup-Item {
+    padding: 2px 0;
+}
+
+.FromUntilPopup-Link {
+    display: block;
+}

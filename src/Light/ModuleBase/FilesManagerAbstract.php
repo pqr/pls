@@ -63,6 +63,10 @@ class FilesManagerAbstract
                 'name' => Config::$lang === 'ru' ? 'Страниц' : 'Pages',
                 'tableAlign' => 'center',
                 'modes' => F::MODE_READONLY,
+            ]),
+            F::createCheckbox('FileDeleted', [
+                'name' => 'Удалён с диска',
+                'modes' => F::MODE_EDITSUBMIT | F::MODE_LOG
             ])
         );
 
@@ -129,6 +133,7 @@ class FilesManagerAbstract
                       , $table.* 
                    FROM $table 
                    WHERE $masterFieldKey = $this->masterId 
+                      AND FileDeleted = 0
                    ORDER BY RelativePath"
         );
     }
@@ -183,18 +188,39 @@ class FilesManagerAbstract
         $masterFolderAbs = $this->getMasterFolderAbs();
         $inserted = 0;
         foreach ($newFilesFromFolder as $fileRelativePath) {
+
             $obj = clone $this->obj;
 
-            $insertData = $this->autodetectNewFileInfo($fileRelativePath);
-
             $masterFieldKey = $this->getMasterFieldKey();
-            $insertData += [
+
+            $fieldsData = [
                 $masterFieldKey => $this->masterId,
                 'RelativePath' => $fileRelativePath,
                 'Pages' => $this->getNumberOfPages($masterFolderAbs . '/' . $fileRelativePath),
+                'FileDeleted' => 0,
             ];
-            $obj->insertDb($insertData, 'Автоматическое добавление нового найденного файла');
-            $inserted++;
+
+            // Сначала проверим, возможно этот файл уже есть в таблице (с флагом FileDeleted)?
+            // Если есть, будем делать обновление
+            $existId = Db::getOne(
+                "SELECT ID 
+                FROM {$this->getDbTable()} 
+                WHERE $masterFieldKey = {$this->masterId}
+                    AND RelativePath = ".Db::escString($fileRelativePath)
+            );
+
+            if ($existId) {
+
+                $obj->setId($existId);
+                $obj->updateDb($fieldsData, 'Автоматичесное обновление на основе файла из папки');
+
+            } else {
+
+                $fieldsData += $this->autodetectNewFileInfo($fileRelativePath);
+                $obj->insertDb($fieldsData, 'Автоматическое добавление нового найденного файла');
+                $inserted++;
+
+            }
 
             $this->afterSubmit($obj);
         }
@@ -244,8 +270,8 @@ class FilesManagerAbstract
             $id = $infoFromDb['ID'];
             $obj = clone $this->obj;
             $obj->setId($id);
-            if ($obj->loadData()) {
-                $obj->deleteDb('Автоматическое удаление файла из таблицы с описаниями, т.к. файл отсутсвует на диске');
+            $affectedRows = $obj->updateDb(['FileDeleted' => 1], 'Автоматическая пометка на удаление файла из таблицы с описаниями, т.к. файл отсутсвует на диске');
+            if ($affectedRows) {
                 $this->afterDelete($obj);
                 $deleted++;
             }

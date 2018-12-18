@@ -12,6 +12,7 @@ import { Field, Form } from "./Form";
 import { Table } from "./Table";
 
 declare var Sortable: any;
+declare var dayjs: any;
 
 export class Filters {
     private name: string;
@@ -25,6 +26,7 @@ export class Filters {
     private allowLayoutChange: boolean;
 
     private $widget: JQuery | undefined;
+    private $fromUntilPopup: JQuery | undefined;
 
     public resetHandlers: (() => void)[] = [];
 
@@ -58,6 +60,7 @@ export class Filters {
         $form.find(".filters-reset").on("click", this.onResetClick);
         $form.find(".filters-history").on("click", this.onHistoryClick);
         $form.find(".filters-save").on("click", this.onSaveClick);
+        $form.find(".Filters-FromUntilIcon").on("click", this.onFromUntilIconClick);
 
         this.allowLayoutChange = $form.attr("data-allowlayoutchange") === "1";
         if (this.allowLayoutChange) {
@@ -188,7 +191,7 @@ export class Filters {
         });
     }
 
-    private showWidget(clickTarget: HTMLElement): JQuery {
+    private showWidget(clickTarget: HTMLElement) {
         const $widget = $(`<div class='widget-block floatingwidget'>
                                     <div class="cssload-container">
                                         <div class="cssload-speeding-wheel"></div>
@@ -220,8 +223,6 @@ export class Filters {
         setTimeout(() => {
             $("body").on("click", this.onBodyClickTryHideWidget);
         }, 0);
-
-        return $widget;
     }
 
     private hideWidget() {
@@ -344,6 +345,107 @@ export class Filters {
             }
         );
     };
+
+    private onFromUntilIconClick = (e: any) => {
+        e.preventDefault();
+        this.showFromUntilPopup(e.target);
+    };
+
+    private showFromUntilPopup(clickTarget: HTMLElement) {
+        const $fromUntilPopup = $(
+            `<div class="floatingwidget FromUntilPopup">
+            <ul class="FromUntilPopup-List">
+                <li class="FromUntilPopup-Item"><a class="FromUntilPopup-Link" href="#today">Сегодня</a></li>
+                <li class="FromUntilPopup-Item"><a class="FromUntilPopup-Link" href="#yesterday">Вчера</a></li>
+                <li class="FromUntilPopup-Item"><a class="FromUntilPopup-Link" href="#week">На этой неделе</a></li>
+                <li class="FromUntilPopup-Item"><a class="FromUntilPopup-Link" href="#month">В этом месяце</a></li>
+                <li class="FromUntilPopup-Item"><a class="FromUntilPopup-Link" href="#prevmonth">В прошлом месяце</a></li>
+                <li class="FromUntilPopup-Item"><a class="FromUntilPopup-Link" href="#year">В этом году</a></li>
+            </ul>
+        </div>`
+        );
+
+        $fromUntilPopup.on("click", "a", this.onFromUntilPopupLinkClick);
+
+        // Вставляем в вёрстку
+        $fromUntilPopup.insertAfter(clickTarget);
+
+        // Перемещаем палитру непосретсвенно рядом с нажатой кнопкой
+        let offset = $(clickTarget).offset()!;
+        if (offset !== undefined) {
+            offset.top += 17;
+            $fromUntilPopup.offset(offset);
+        }
+
+        // Сохраняем в своействе класса, чтобы потом можно было сделать hide (удалив элемет из dom)
+        this.$fromUntilPopup = $fromUntilPopup;
+
+        setTimeout(() => {
+            $("body").on("click", this.onBodyClickTryHideFromUntilPopup);
+        }, 0);
+    }
+
+    private onFromUntilPopupLinkClick = (e: any) => {
+        if (!this.$fromUntilPopup) {
+            return;
+        }
+
+        e.preventDefault();
+        const interval = e.target.hash.replace('#', '');
+        const dj = dayjs();
+        let fromDate, untilDate;
+        switch (interval) {
+            case "today":
+                fromDate = dj;
+                untilDate = fromDate;
+                break;
+            case "yesterday":
+                fromDate = dj.subtract(1, 'day');
+                untilDate = fromDate;
+                break;
+            case "week":
+                fromDate = dj.startOf('week');
+                untilDate = dj.endOf('week');
+                break;
+            case "month":
+                fromDate = dj.startOf('month');
+                untilDate = dj.endOf('month');
+                break;
+            case "prevmonth":
+                fromDate = dj.subtract(1, 'month').startOf('month');
+                untilDate = fromDate.endOf('month');
+                break;
+            case "year":
+                fromDate = dj.startOf('year');
+                untilDate = fromDate.endOf('year');
+                break;
+
+            default:
+                throw Error('From-Until Popup: unknown interval ' + interval);
+
+        }
+
+        const $inputs = this.$fromUntilPopup.siblings('input.input-date');
+        $inputs.eq(0).val(fromDate.format('DD.MM.YYYY'));
+        $inputs.eq(1).val(untilDate.format('DD.MM.YYYY'));
+
+        this.hideFromUtilPopup();
+    };
+
+    private onBodyClickTryHideFromUntilPopup = (e: any) => {
+        if (this.$fromUntilPopup && !this.$fromUntilPopup.get(0).contains(e.target)) {
+            this.hideFromUtilPopup();
+        }
+    };
+
+    private hideFromUtilPopup() {
+        if (this.$fromUntilPopup) {
+            this.$fromUntilPopup.remove();
+            this.$fromUntilPopup = undefined;
+
+            $("body").off("click", this.onBodyClickTryHideFromUntilPopup);
+        }
+    }
 
     /**
      * Собирает текущий layout на основе вёрстки

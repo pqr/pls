@@ -9,88 +9,74 @@ var React__default = 'default' in React ? React['default'] : React;
 // These functions can be stubbed out in specific environments
 var unstable_batchedUpdates$1 = undefined;
 
-var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+'use strict';
 
-
-
-
-
-function createCommonjsModule(fn, module) {
-	return module = { exports: {} }, fn(module, module.exports), module.exports;
-}
-
-var hoistNonReactStatics = createCommonjsModule(function (module, exports) {
 /**
  * Copyright 2015, Yahoo! Inc.
  * Copyrights licensed under the New BSD License. See the accompanying LICENSE file for terms.
  */
-(function (global, factory) {
-    module.exports = factory();
-}(commonjsGlobal, (function () {
-    'use strict';
-    
-    var REACT_STATICS = {
-        childContextTypes: true,
-        contextTypes: true,
-        defaultProps: true,
-        displayName: true,
-        getDefaultProps: true,
-        getDerivedStateFromProps: true,
-        mixins: true,
-        propTypes: true,
-        type: true
-    };
-    
-    var KNOWN_STATICS = {
-        name: true,
-        length: true,
-        prototype: true,
-        caller: true,
-        callee: true,
-        arguments: true,
-        arity: true
-    };
-    
-    var defineProperty = Object.defineProperty;
-    var getOwnPropertyNames = Object.getOwnPropertyNames;
-    var getOwnPropertySymbols = Object.getOwnPropertySymbols;
-    var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-    var getPrototypeOf = Object.getPrototypeOf;
-    var objectPrototype = getPrototypeOf && getPrototypeOf(Object);
-    
-    return function hoistNonReactStatics(targetComponent, sourceComponent, blacklist) {
-        if (typeof sourceComponent !== 'string') { // don't hoist over string (html) components
-            
-            if (objectPrototype) {
-                var inheritedComponent = getPrototypeOf(sourceComponent);
-                if (inheritedComponent && inheritedComponent !== objectPrototype) {
-                    hoistNonReactStatics(targetComponent, inheritedComponent, blacklist);
-                }
+var REACT_STATICS = {
+    childContextTypes: true,
+    contextTypes: true,
+    defaultProps: true,
+    displayName: true,
+    getDefaultProps: true,
+    getDerivedStateFromProps: true,
+    mixins: true,
+    propTypes: true,
+    type: true
+};
+
+var KNOWN_STATICS = {
+    name: true,
+    length: true,
+    prototype: true,
+    caller: true,
+    callee: true,
+    arguments: true,
+    arity: true
+};
+
+var defineProperty = Object.defineProperty;
+var getOwnPropertyNames = Object.getOwnPropertyNames;
+var getOwnPropertySymbols = Object.getOwnPropertySymbols;
+var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+var getPrototypeOf = Object.getPrototypeOf;
+var objectPrototype = getPrototypeOf && getPrototypeOf(Object);
+
+function hoistNonReactStatics(targetComponent, sourceComponent, blacklist) {
+    if (typeof sourceComponent !== 'string') { // don't hoist over string (html) components
+
+        if (objectPrototype) {
+            var inheritedComponent = getPrototypeOf(sourceComponent);
+            if (inheritedComponent && inheritedComponent !== objectPrototype) {
+                hoistNonReactStatics(targetComponent, inheritedComponent, blacklist);
             }
-            
-            var keys = getOwnPropertyNames(sourceComponent);
-            
-            if (getOwnPropertySymbols) {
-                keys = keys.concat(getOwnPropertySymbols(sourceComponent));
-            }
-            
-            for (var i = 0; i < keys.length; ++i) {
-                var key = keys[i];
-                if (!REACT_STATICS[key] && !KNOWN_STATICS[key] && (!blacklist || !blacklist[key])) {
-                    var descriptor = getOwnPropertyDescriptor(sourceComponent, key);
-                    try { // Avoid failures from read-only properties
-                        defineProperty(targetComponent, key, descriptor);
-                    } catch (e) {}
-                }
-            }
-            
-            return targetComponent;
         }
-        
+
+        var keys = getOwnPropertyNames(sourceComponent);
+
+        if (getOwnPropertySymbols) {
+            keys = keys.concat(getOwnPropertySymbols(sourceComponent));
+        }
+
+        for (var i = 0; i < keys.length; ++i) {
+            var key = keys[i];
+            if (!REACT_STATICS[key] && !KNOWN_STATICS[key] && (!blacklist || !blacklist[key])) {
+                var descriptor = getOwnPropertyDescriptor(sourceComponent, key);
+                try { // Avoid failures from read-only properties
+                    defineProperty(targetComponent, key, descriptor);
+                } catch (e) {}
+            }
+        }
+
         return targetComponent;
-    };
-})));
-});
+    }
+
+    return targetComponent;
+}
+
+var hoistNonReactStatics_cjs = hoistNonReactStatics;
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
@@ -550,7 +536,7 @@ var proxiedInjectorProps = {
 
     // Static fields from component should be visible on the generated Injector
 
-    hoistNonReactStatics(Injector, component);
+    hoistNonReactStatics_cjs(Injector, component);
 
     Injector.wrappedComponent = component;
     Object.defineProperties(Injector, proxiedInjectorProps);
@@ -615,11 +601,20 @@ var warnedAboutObserverInjectDeprecation = false;
 var componentByNodeRegistry = typeof WeakMap !== "undefined" ? new WeakMap() : undefined;
 var renderReporter = new EventEmitter();
 
-function createSymbol(name) {
+var createdSymbols = {};
+
+function createRealSymbol(name) {
     if (typeof Symbol === "function") {
         return Symbol(name);
     }
     return "$mobxReactProp$" + name + Math.random();
+}
+
+function createSymbol(name) {
+    if (!createdSymbols[name]) {
+        createdSymbols[name] = createRealSymbol(name);
+    }
+    return createdSymbols[name];
 }
 
 var skipRenderKey = createSymbol("skipRender");
@@ -632,11 +627,11 @@ var isForcingUpdateKey = createSymbol("isForcingUpdate");
  * @param value
  */
 function setHiddenProp(target, prop, value) {
-    if (!Object.hasOwnProperty(target, prop)) {
+    if (!Object.hasOwnProperty.call(target, prop)) {
         Object.defineProperty(target, prop, {
             enumerable: false,
             configurable: true,
-            writeable: true,
+            writable: true,
             value: value
         });
     } else {
@@ -944,7 +939,7 @@ function observer(arg1, arg2) {
             }]);
             return _class;
         }(React.Component), _class.displayName = componentClass.displayName || componentClass.name, _class.contextTypes = componentClass.contextTypes, _class.propTypes = componentClass.propTypes, _class.defaultProps = componentClass.defaultProps, _temp));
-        hoistNonReactStatics(observerComponent, componentClass);
+        hoistNonReactStatics_cjs(observerComponent, componentClass);
         return observerComponent;
     }
 
@@ -1032,10 +1027,13 @@ function componentWillMount() {
 
 function componentWillReceiveProps(nextProps) {
   // Call this.constructor.gDSFP to support sub-classes.
-  var state = this.constructor.getDerivedStateFromProps(nextProps, this.state);
-  if (state !== null && state !== undefined) {
-    this.setState(state);
+  // Use the setState() updater to ensure state isn't stale in certain edge cases.
+  function updater(prevState) {
+    var state = this.constructor.getDerivedStateFromProps(nextProps, prevState);
+    return state !== null && state !== undefined ? state : null;
   }
+  // Binding "this" is important for shallow renderer support.
+  this.setState(updater.bind(this));
 }
 
 function componentWillUpdate(nextProps, nextState) {
@@ -1182,7 +1180,8 @@ var Provider = (_temp = _class = function (_Component) {
 
         var _this = possibleConstructorReturn(this, (Provider.__proto__ || Object.getPrototypeOf(Provider)).call(this, props, context));
 
-        _this.state = props || {};
+        _this.state = {};
+        copyStores(props, _this.state);
         return _this;
     }
 
@@ -1196,14 +1195,10 @@ var Provider = (_temp = _class = function (_Component) {
         value: function getChildContext() {
             var stores = {};
             // inherit stores
-            var baseStores = this.context.mobxStores;
-            if (baseStores) for (var key in baseStores) {
-                stores[key] = baseStores[key];
-            }
+            copyStores(this.context.mobxStores, stores);
             // add own stores
-            for (var _key in this.state) {
-                if (!specialReactKeys[_key] && _key !== "suppressChangedStoreWarning") stores[_key] = this.props[_key];
-            }return {
+            copyStores(this.props, stores);
+            return {
                 mobxStores: stores
             };
         }
@@ -1214,9 +1209,9 @@ var Provider = (_temp = _class = function (_Component) {
             if (!prevState) return nextProps;
 
             // Maybe this warning is too aggressive?
-            if (Object.keys(nextProps).length !== Object.keys(prevState).length) console.warn("MobX Provider: The set of provided stores has changed. Please avoid changing stores as the change might not propagate to all children");
+            if (Object.keys(nextProps).filter(validStoreName).length !== Object.keys(prevState).filter(validStoreName).length) console.warn("MobX Provider: The set of provided stores has changed. Please avoid changing stores as the change might not propagate to all children");
             if (!nextProps.suppressChangedStoreWarning) for (var key in nextProps) {
-                if (!specialReactKeys[key] && prevState[key] !== nextProps[key]) console.warn("MobX Provider: Provided store '" + key + "' has changed. Please avoid replacing stores as the change might not propagate to all children");
+                if (validStoreName(key) && prevState[key] !== nextProps[key]) console.warn("MobX Provider: Provided store '" + key + "' has changed. Please avoid replacing stores as the change might not propagate to all children");
             }return nextProps;
         }
     }]);
@@ -1227,8 +1222,19 @@ var Provider = (_temp = _class = function (_Component) {
     mobxStores: objectOrObservableObject.isRequired
 }, _temp);
 
-// TODO: kill in next major
 
+function copyStores(from, to) {
+    if (!from) return;
+    for (var key in from) {
+        if (validStoreName(key)) to[key] = from[key];
+    }
+}
+
+function validStoreName(key) {
+    return !specialReactKeys[key] && key !== "suppressChangedStoreWarning";
+}
+
+// TODO: kill in next major
 polyfill(Provider);
 
 if (!React.Component) throw new Error("mobx-react requires React to be available");
