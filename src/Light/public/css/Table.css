@@ -336,22 +336,7 @@ div.filters.filters__layoutmode ul.filters__list > li:not(.filters__buttons):not
 }
 
 .widget-block {
-    border: 1px solid #666;
-    border-radius: 5px;
-    text-align: left;
     max-width: 500px;
-}
-
-.widget-block:after {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 0;
-    border: 5px solid transparent;
-    border-bottom-color: #666;
-    left: 30px;
-    bottom: 100%;
-    margin-left: -18px;
 }
 
 .widget-block .cssload-container {

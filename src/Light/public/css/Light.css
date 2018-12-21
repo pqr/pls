@@ -1342,10 +1342,33 @@ tr.color11 td {
     box-shadow: 0 16px 28px 0 rgba(0, 0, 0, 0.22), 0 25px 55px 0 rgba(0, 0, 0, 0.21);
     background-color: #fafafa;
 
-    font-size: 14px;
+    /* font-size: 14px; */
     position: absolute;
     z-index: 1999;
+    /* text-align: center; */
+}
+
+.floatingwidget_withshadow {
+    border: 1px solid #666;
+    border-radius: 5px;
+    text-align: left;
+}
+
+.floatingwidget_withshadow:after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: 5px solid transparent;
+    border-bottom-color: #666;
+    left: 30px;
+    bottom: 100%;
+    margin-left: -18px;
+}
+
+#colorpalette-div {
     text-align: center;
+    font-size: 14px;
 }
 
 #colorpalette-div tr {
@@ -1364,6 +1387,13 @@ tr.color11 td {
     color: #039be5;
     vertical-align: middle;
     cursor: pointer;
+}
+
+#monthwidget__header {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    font-size: 14px;
 }
 
 #monthwidget__yearselect {

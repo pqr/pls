@@ -98,9 +98,9 @@ function show($targetInput: JQuery) {
     // Если виджет ещё ни разу не отображался на экране, создаём динамически
     if (!$widget) {
         const html = `<div class="floatingwidget">
-                <div style="display: flex;align-items: center;">
+                <div id="monthwidget__header">
                     <a href="#" style="flex: 0; margin-left: 5px;" id="monthwidget__prevlink"><</a>
-                    <div style="flex: 1"><select id="monthwidget__yearselect"></select></div>
+                    <div style="flex: 1; text-align: center"><select id="monthwidget__yearselect"></select></div>
                     <a href="#" style="flex: 0; margin-right: 5px;" id="monthwidget__nextlink">></a>
                 </div>
                 <table id="monthwidget__monthstable">

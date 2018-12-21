@@ -192,7 +192,7 @@ export class Filters {
     }
 
     private showWidget(clickTarget: HTMLElement) {
-        const $widget = $(`<div class='widget-block floatingwidget'>
+        const $widget = $(`<div class='widget-block floatingwidget floatingwidget_withshadow'>
                                     <div class="cssload-container">
                                         <div class="cssload-speeding-wheel"></div>
                                     </div>
@@ -352,6 +352,10 @@ export class Filters {
     };
 
     private showFromUntilPopup(clickTarget: HTMLElement) {
+        if (this.$fromUntilPopup) {
+            this.hideFromUtilPopup();
+        }
+
         const $fromUntilPopup = $(
             `<div class="floatingwidget FromUntilPopup">
             <ul class="FromUntilPopup-List">

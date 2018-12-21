@@ -79,6 +79,11 @@ class Link
         return $this;
     }
 
+    public function proceed(string $funcName) {
+        $this->params['p'] = $funcName;
+        return $this;
+    }
+
     /**
      * Формирует query параметр для ссылки в формате Lines_findid=123
      *

@@ -109,14 +109,14 @@ class Mainmenu
         return $avatarFilepathAbs;
     }
 
-    public static function getUserAvatarImgTag(int $userId)
+    public static function getUserAvatarImgSrc(int $userId)
     {
         if (Mainmenu::hasUserAvatar($userId)) {
             $avatarFilepathAbs = self::getUserAvatarFilepathAbs($userId);
             $mtime = filemtime($avatarFilepathAbs);
-            return '<img class="avatar" src="index.php?a=Core&ps=GetUserAvatar&UserID=' . $userId . '&nouserrefreshtime=1&mtime=' . $mtime . '">';
+            return "index.php?a=Core&ps=GetUserAvatar&UserID=$userId&nouserrefreshtime=1&mtime=$mtime";
         }
-        return '<img class="avatar" src="lightpublic/i/user.png">';
+        return "lightpublic/i/user.png";
     }
 
     public static function streamUserAvatar(int $userId)
