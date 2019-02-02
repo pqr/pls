@@ -20,7 +20,7 @@ $activeModule = \Light\Request::getModule();
             </div>
         <?php else: ?>
             <div id="mainmenu__avatar">
-                <img src="lightpublic/i/santa-hat.png" class="santa-hat">
+                <?php  /*<img src="lightpublic/i/santa-hat.png" class="santa-hat"> */ ?>
                 <img class="avatar" src="<?= Mainmenu::getUserAvatarImgSrc(User::getId()) ?>">
                 <input id="mainmenu__avatarinputfile" type="file" name="avatar">
             </div>
