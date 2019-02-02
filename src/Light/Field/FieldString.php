@@ -43,4 +43,9 @@ class FieldString extends FieldInputAbstract
 
         return $sqlWhere;
     }
+
+    public static function isEmpty($value): bool
+    {
+        return trim($value) === '';
+    }
 }

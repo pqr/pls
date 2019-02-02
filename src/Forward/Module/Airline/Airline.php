@@ -11,7 +11,7 @@ class Airline extends ModuleAbstract
 {
     protected $textSaveBtn = 'Airline';
     protected $continmethod = true;
-    protected $tableLayoutDefault = 'AlphaCode|DigitalCode|Name';
+    public $tableLayoutDefault = 'AlphaCode|DigitalCode|Name';
 
     public function __construct()
     {

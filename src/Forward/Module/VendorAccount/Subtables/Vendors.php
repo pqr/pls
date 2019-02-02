@@ -28,10 +28,10 @@ class Vendors extends Many2ManyAbstract
 
         $this->textAddLink = 'Add Vendor';
 
-        $this->tableEmptyText = 'No linked vendors';
+        $this->textTableEmpty = 'No linked vendors';
         $this->folders = true;
         $this->folderBaseDir = 'Vendor';
-        $this->_title = 'Vendors';
+        $this->textSubtableTitle = 'Vendors';
 
         $this->addFields(
 

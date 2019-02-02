@@ -11,7 +11,7 @@ use Light\User;
 class Traffic extends ModuleAbstract
 {
     protected $textSaveBtn = 'Traffic';
-    protected $tableLayoutDefault = 'OrderID|Name|FileNumberFrom|FileNumberUntil|NextFileNumber|Type';
+    public $tableLayoutDefault = 'OrderID|Name|FileNumberFrom|FileNumberUntil|NextFileNumber|Type';
 
     public function __construct()
     {

@@ -22,7 +22,7 @@ class FieldWeek extends FieldInputAbstract
 
             [$year, $week] = explode('-', $value);
 
-            //intval уберёт лидирующий ноль у номера недели
+            // intval уберёт лидирующий ноль у номера недели
             $week = (int)$week;
             $year = (int)$year;
 
@@ -45,7 +45,7 @@ class FieldWeek extends FieldInputAbstract
     protected function getHtmlInner($value, array $data, $forTable)
     {
         $outHtml = '';
-        list($week, $year) = $this->getAsTouple($value);
+        [$week, $year] = $this->getAsTouple($value);
         if ($week || $year) {
             $outHtml = $week . '<span class="week-year">\'' . $year . '</span>';
 
@@ -119,7 +119,7 @@ class FieldWeek extends FieldInputAbstract
                 if ($value === '-') {
                     $value = null;
                 } elseif (strpos($value, '-') !== false) {
-                    list($year, $week) = explode('-', $value);
+                    [$year, $week] = explode('-', $value);
                 }
             }
 
@@ -162,7 +162,7 @@ class FieldWeek extends FieldInputAbstract
             return false;
         }
 
-        list($year, $week) = explode('-', $value);
+        [$year, $week] = explode('-', $value);
         return ($year !== '' && $year !== '0000') || ($week !== '' && $week !== '00');
     }
 
@@ -173,7 +173,7 @@ class FieldWeek extends FieldInputAbstract
      */
     public function getSqlWhereInner($value)
     {
-        list($year, $week) = explode('-', $value);
+        [$year, $week] = explode('-', $value);
         if ($week !== '' && $week !== '00') {
             //Неделя задана точно, используем полное совпадение
             $sqlWhere = "{fieldKey} = '{value}'";
@@ -183,5 +183,10 @@ class FieldWeek extends FieldInputAbstract
         }
 
         return $sqlWhere;
+    }
+
+    public static function isEmpty($value): bool
+    {
+        return $value === '0000-00' || $value === null;
     }
 }

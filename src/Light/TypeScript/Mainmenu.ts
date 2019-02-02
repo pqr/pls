@@ -1,4 +1,43 @@
-import {setUserParam, toastError, getOppositeString} from "./Light";
+import {getOppositeString, loadSortableJs, setUserParam, toastError} from "./Light";
+
+declare var Sortable: any;
+
+// Метод вызывается, когда сервере отправляет диалог с настройками меню на клиент
+// и там же происходит вызов Response::sendHeaderJsEval('Light.mainmenu.initMenuSettingsDialog()');
+// см. Mainmenu.php
+export function initMenuSettingsDialog() {
+    // Делаем setTimeout 0, чтобы диалог успел отрисоваться
+    setTimeout(() => {
+        loadSortableJs().then(() => {
+            Sortable.create(document.querySelector(".MainmanueSettings-Favorites"), {
+                group: "mnu",
+                animation: 100
+            });
+            Sortable.create(document.querySelector(".MainmanueSettings-AllItems"), {
+                group: "mnu",
+                animation: 100
+            });
+        });
+
+    }, 0)
+
+}
+
+export function settingsDialogSubmit(dialog: any) {
+    const favItems = document.querySelectorAll(".MainmanueSettings-Favorites .MainmenuSettings-Item");
+    const modulesComaSeparated = Array.from(favItems)
+        .map((li: HTMLLIElement) => li.getAttribute('data-module'))
+        .join(',');
+    $.post('?a=Core&ps=MainmenuSettings', {favorites: modulesComaSeparated})
+        .done((newFavoritesHtml: string) => {
+            document.querySelector('.Mainmenu-Favorites')!.innerHTML = newFavoritesHtml;
+            dialog.close();
+        })
+        .fail(() => {
+            toastError('Не удалось сохранить настройки меню');
+            dialog.unblockButtons();
+        })
+}
 
 $(function () {
     //Навесим обработчики на пункты меню
@@ -6,7 +45,6 @@ $(function () {
 
     const $sectionheads = $mainmenu.find(".mainmenu__sectionhead");
     const $uls = $mainmenu.find(".mainmenu__section");
-    const $items = $mainmenu.find(".mainmenu__li");
 
     function getUlStatus($ul: JQuery) {
         return $ul.attr("data-status");
@@ -139,6 +177,7 @@ $(function () {
 
     $("#mainmenu__search").on("keyup", function (this: HTMLInputElement) {
         const filterValue = this.value.toLowerCase().trim();
+        const $items = $mainmenu.find(".mainmenu__li");
         if (filterValue === "") {
             // Отображаем всё как и раньше
             $items.removeClass("display-none");
@@ -163,7 +202,7 @@ $(function () {
                             title.toLowerCase().indexOf(filterValueOpposite) !== -1)) ||
                     (href &&
                         (href.toLowerCase().indexOf(filterValue) !== -1
-                        || href.toLowerCase().indexOf(filterValueOpposite) !== -1));
+                            || href.toLowerCase().indexOf(filterValueOpposite) !== -1));
 
                 // Если нет текстовых совпадений в тексте пункта меню или в его title, то скрываем этот пункт меню
                 $item.toggleClass("display-none", !matched);

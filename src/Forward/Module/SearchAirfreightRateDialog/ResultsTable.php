@@ -129,19 +129,19 @@ class ResultsTable extends Table
                   ORDER BY ID DESC 
                   LIMIT 50";
 
-        $this->_tableData = Db::getAll($query);
+        $this->tableData = Db::getAll($query);
 
-        //Загрузим из базы Surcharges - они будут добавлены внутрь массива $this->_tableData в колонку Surcharges
+        //Загрузим из базы Surcharges - они будут добавлены внутрь массива $this->tableData в колонку Surcharges
         $this->loadSurcharges();
 
         //Если на экран выведено поле TotalAmount, то нужно посчитать этот TotalAmount
         if ($chargeableWeightFilterValue) {
             $interval = Constant::getWeightInterval($chargeableWeightFilterValue);
             $amountFieldKey = $interval ? 'Amount' . $interval : 'AmountN';
-            foreach ($this->_tableData as $i => $rowData) {
-                $this->_tableData[$i]['FreightAmount'] = $this->calculateFreightAmount($rowData,
+            foreach ($this->tableData as $i => $rowData) {
+                $this->tableData[$i]['FreightAmount'] = $this->calculateFreightAmount($rowData,
                     $chargeableWeightFilterValue, $amountFieldKey);
-                $this->_tableData[$i]['TotalAmount'] = $this->calculateTotalAmount($rowData,
+                $this->tableData[$i]['TotalAmount'] = $this->calculateTotalAmount($rowData,
                     $chargeableWeightFilterValue, $amountFieldKey);
             }
         }
@@ -202,7 +202,7 @@ class ResultsTable extends Table
         }
 
         //Накладываем условия специфичные для найденной строки
-        foreach ($this->_tableData as $rowNum => $rowData) {
+        foreach ($this->tableData as $rowNum => $rowData) {
             $query = $baseQuery;
 
             //Добавим условия на совпадение Vendor, Airline и Location с текущей строкой
@@ -210,7 +210,7 @@ class ResultsTable extends Table
             $query .= " AND (AirlineAlphaCode = '' OR AirlineAlphaCode = '" . $rowData['AirlineAlphaCode'] . "')";
             $query .= " AND (IATA = '' OR IATA = '" . $rowData['DepartureIATA'] . "' OR IATA = '" . $rowData['ArrivalIATA'] . "')";
 
-            $this->_tableData[$rowNum]['Surcharges'] = Db::getAll($query);
+            $this->tableData[$rowNum]['Surcharges'] = Db::getAll($query);
         }
     }
 

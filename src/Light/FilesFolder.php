@@ -85,12 +85,12 @@ class FilesFolder
 
     /**
      * Возвращает html код изображения в зависимости от того пуста или не пуста указанная в параметре папка
-     * @param bool $isNotEmpty
+     * @param bool $isFull
      * @return string
      */
-    public static function getImgHtml($isNotEmpty)
+    public static function getImgHtml($isFull)
     {
-        $cssClass = $isNotEmpty ? 'icon-folderfull' : 'icon-folderempty';
+        $cssClass = $isFull ? 'icon-folderfull' : 'icon-folderempty';
         return "<i class=\"fa fa-folder $cssClass\"></i>";
     }
 

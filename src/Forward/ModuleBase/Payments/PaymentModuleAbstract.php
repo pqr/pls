@@ -19,7 +19,7 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
 {
     use FirstLetterTrait;
 
-    protected $folders = true;
+    public $folders = true;
 
     public function __construct()
     {

@@ -15,14 +15,14 @@ abstract class ResponsiblesSubtableAbstract extends Subtable
     {
         parent::__construct($masterObj);
 
-        $this->_title = 'Responsibles';
+        $this->textSubtableTitle = 'Responsibles';
         $this->allowExportToExcel = false;
         $this->allowTableLayouts = false;
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
         $this->allowPaste = false;
 
         $this->textAddLink = 'Add Responsible';
-        $this->tableEmptyText = 'No responsibles';
+        $this->textTableEmpty = 'No responsibles';
 
         $this->tableLinkModule = 'User';
         $this->tableLinkIdFieldKey = 'UserID';

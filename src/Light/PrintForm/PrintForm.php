@@ -41,6 +41,7 @@ class PrintForm
     protected $templateFormat;
     protected $out; // что сделать с резульатом? Сохранить в папку объекта или отправить в браузер пользователю или и то и другое?
     protected $pdfLandscape = false;
+    protected $excelTableOpts = 0; // опции для вывода таблиц в шаблон (см XlsWriter::replaceData())
 
     /** @var Fieldset|F[] */
     protected $fieldset;
@@ -236,7 +237,7 @@ class PrintForm
     /**
      * Для переопределения в классах потомках, если нужно добавить какие-то дополнительные данные для вывода на печать
      * в зависимости от полученного объекта
-     * @param ObjAbstract $obj
+     * @param array $objects
      * @return array
      */
     protected function getTplDataForMultipleAsOne(array $objects): array
@@ -292,7 +293,7 @@ class PrintForm
      * @param array $objectsAndPaths массив кортежей [$obj, $relativePath]
      * @return array
      */
-    public function getDataForAjaxDialogMultiple(array $ids, array $objectsAndPaths): array
+    public function getDataForAjaxDialogMultiple(array $ids, array $objects): array
     {
         return [];
     }
@@ -317,7 +318,7 @@ class PrintForm
         // Сохраняем во временный файл
         $this->save($templater, $tmpFile);
 
-        $count = count($objects);
+        $count = \count($objects);
 
         // Время отдать результат пользовтателю или переложить его в папку объекта
         $targetFilename =  $this->getFilenameMultiple($count);
@@ -344,6 +345,11 @@ class PrintForm
         return $this->getFieldset()->count() > 0;
     }
 
+    /**
+     * @param ObjAbstract $obj
+     * @param string $targetDir
+     * @throws \Exception
+     */
     public function proceedPrint(ObjAbstract $obj, string $targetDir)
     {
         $timer = new Timer();
@@ -399,6 +405,11 @@ class PrintForm
         Metric::record(Request::getModule() . '::proceedPrint ' . $this->key, $timer->getMs(), 'ID: ' . $obj->getId());
     }
 
+    /**
+     * @param array $objects
+     * @param array $targetDirs
+     * @throws \Exception
+     */
     public function proceedPrintMultiple(array $objects, array $targetDirs)
     {
         $timer = new Timer();
@@ -438,7 +449,7 @@ class PrintForm
                 $proc = $this->saveAsync($templater, $tmpFile);
                 if ($proc instanceof Process) {
                     $prcesses[] = $proc;
-                    if (count($prcesses) > 10) {
+                    if (\count($prcesses) > 10) {
                         // Ограничим массив $prcesses 10 штуками, чтобы не запускать слишком много параллельных wkhtmltoppdf
                         // измерения показали, что более 10 потоков уже не дают прироста скорости
                         /** @var Process $firstProcessInQueue */
@@ -471,7 +482,7 @@ class PrintForm
 
         // Накопили отрендеренные файлы во временной папке, пришло время их отдаль пользователю в форме одного файла
         if ($this->isOutStream()) {
-            $count = count($tmpFiles);
+            $count = \count($tmpFiles);
             // Если в настройках печатной формы указано отправлять файл в браузер пользователю,
             // то отправим только что сохранённый временный файл
             $concatinater = $this->createConcatinater();
@@ -529,7 +540,7 @@ class PrintForm
         File::rmdir($tmpDir);
 
         Metric::record(Request::getModule() . '::proceedPrintMultiple ' . $this->key, $timer->getMs(),
-            'Count: ' . count($objects));
+            'Count: ' . \count($objects));
     }
 
     private function isOutStream(): bool
@@ -544,6 +555,10 @@ class PrintForm
 
     private $tmpDir;
 
+    /**
+     * @return string
+     * @throws \Exception
+     */
     private function createTmpDir(): string
     {
         $this->tmpDir = LIGHT_DIR_TEMP . '/PrintForm_' . $this->key . '_' . time() . '_' . random_int(1, 1000);
@@ -552,12 +567,17 @@ class PrintForm
         return $this->tmpDir;
     }
 
+    /**
+     * @param string $templateFilepathAbs
+     * @param ObjAbstract $obj
+     * @return TemplaterAbstract
+     */
     private function createTemplater(string $templateFilepathAbs, ObjAbstract $obj): TemplaterAbstract
     {
         switch ($this->templateFormat) {
             case self::TEMPLATE_FORMAT_EXCEL:
                 $titleExcelSheet = $this->getTitleExcelSheet($obj);
-                return new TemplaterExcel($templateFilepathAbs, $titleExcelSheet, $obj->getFieldset());
+                return new TemplaterExcel($templateFilepathAbs, $titleExcelSheet, $obj->getFieldset(), $this->excelTableOpts);
 
             case self::TEMPLATE_FORMAT_DOCX:
                 return new TemplaterDocx($templateFilepathAbs);
@@ -567,6 +587,11 @@ class PrintForm
         return new TemplaterPhp($templateFilepathAbs, $titleHtml);
     }
 
+    /**
+     * @param TemplaterAbstract $templateWriter
+     * @param string $dest
+     * @throws \Exception
+     */
     private function save(TemplaterAbstract $templateWriter, string $dest)
     {
         switch ($this->format) {
@@ -611,7 +636,11 @@ class PrintForm
         $templater->writeData($data);
     }
 
-    private function createConcatinater()
+    /**
+     * @return ConcatinaterInterface
+     * @throws \Exception
+     */
+    private function createConcatinater(): ConcatinaterInterface
     {
         switch ($this->format) {
             case self::FORMAT_DOC:
@@ -636,14 +665,14 @@ class PrintForm
     public function getIcon()
     {
         switch ($this->format) {
-            case PrintForm::FORMAT_EXCEL:
+            case self::FORMAT_EXCEL:
                 return Img::iconExcel();
 
-            case PrintForm::FORMAT_PDF:
+            case self::FORMAT_PDF:
                 return Img::iconPdf();
 
-            case PrintForm::FORMAT_DOC:
-            case PrintForm::FORMAT_DOCX:
+            case self::FORMAT_DOC:
+            case self::FORMAT_DOCX:
                 return Img::iconWord();
 
         }

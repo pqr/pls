@@ -9,8 +9,8 @@ use Light\Module\Autolaunch\AutolaunchAbstract;
 
 class EmailPendingQuotations14days extends AutolaunchAbstract
 {
-    protected static $_title = 'E-Mail Darft or Pending Quotations (3 days)';
-    protected static $_description = 'Отправляет на E-mail уведомление о котировках находящихся 3 дня в статусе Darft или Pending. Адресаты: Customer Service с копией Sales.';
+    protected static $title = 'E-Mail Darft or Pending Quotations (3 days)';
+    protected static $description = 'Отправляет на E-mail уведомление о котировках находящихся 3 дня в статусе Darft или Pending. Адресаты: Customer Service с копией Sales.';
 
     public function run(array $params)
     {

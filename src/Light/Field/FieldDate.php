@@ -224,4 +224,9 @@ class FieldDate extends FieldInputAbstract
 
         return date('Y-m-d', $timestamp);
     }
+
+    public static function isEmpty($value): bool
+    {
+        return !$value || $value === '0000-00-00';
+    }
 }

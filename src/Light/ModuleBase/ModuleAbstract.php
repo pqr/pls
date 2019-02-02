@@ -7,6 +7,8 @@ use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldMoney;
+use Light\Field\FieldMoneyWithCurrency;
 use Light\Field\FieldOptionsAbstract;
 use Light\Field\FieldSelect;
 use Light\Fieldset;
@@ -69,6 +71,8 @@ abstract class ModuleAbstract extends Table
     protected $allowLog = true;
     protected $allowDelete = true;
 
+    public $allowTablePrintHeadBlock = true;
+
     //Использовать ли выпадающий список с выбором действия после сохранения?
     protected $continmethod = false;
 
@@ -90,8 +94,6 @@ abstract class ModuleAbstract extends Table
 
     protected $_submenuItemsTplData = [];
     protected $printForms = [];
-
-    private $_initedSubtables = [];
 
     /**
      * @var array(SubtableName)
@@ -309,7 +311,7 @@ abstract class ModuleAbstract extends Table
                         /** @var Subtable $sourceSubtable */
                         $sourceSubtable = new $subtableClass($sourceObj);
                         $sourceData = $this->getDataForCopySubtable($sourceSubtable);
-                        $subtable->setAdditionalData($sourceData);
+                        $subtable->setSubtableDataAdditional($sourceData);
                     }
                 }
             }
@@ -322,7 +324,7 @@ abstract class ModuleAbstract extends Table
         // Метод $sourceSubtable->getData() возвращает массив где ключи - это ID в базе
         // чтобы добавить данные в $subtable нам не нужны ключи в виде ID, нам нужны ключи от 0 до N
         // для этого применим array_values
-        $sourceData = array_values($sourceSubtable->getData());
+        $sourceData = array_values($sourceSubtable->getSubtableData());
 
         return $sourceData;
     }
@@ -520,7 +522,6 @@ abstract class ModuleAbstract extends Table
      */
     protected function loadObjAndCheck(int $id)
     {
-        $id = (int)$id;
         $this->_obj->setId($id);
 
         $errMsg = null;
@@ -582,6 +583,7 @@ abstract class ModuleAbstract extends Table
             $affectedRows = $subtable->proceedChangeField();
 
             if (Request::isPost()) {
+                $this->_obj->afterSubmit($oldData, $this->flash);
                 $this->afterSubmit($this->_obj, [], $affectedRows, $oldData, $this->flash, false);
             }
 
@@ -1316,9 +1318,20 @@ abstract class ModuleAbstract extends Table
 
         } else {
 
-            //Это режим редактирования - проверим, существует ли этот объект?
-            //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
-            $this->loadObjAndCheck($id);
+            try {
+
+                // Это режим редактирования - проверим, существует ли этот объект?
+                // Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
+                $this->loadObjAndCheck($id);
+
+            } catch (\Throwable $e) {
+
+                reportException($e);
+                $this->riseSaveErorr($e->getMessage());
+                $this->abortSubmit(500);
+                return;
+
+            }
 
             //Проверим права доступа к редактированию именно этого объекта
             if (!$this->hasWriteAccessRightToObj($this->_obj)) {
@@ -1357,41 +1370,53 @@ abstract class ModuleAbstract extends Table
 
         $this->prefetchSelectOptionsForWriteCompareDbLog($oldData, $fieldsData);
 
-        Db::begin();
 
-        if ($this->_obj->getId() === 0) {
-            $this->_obj->insertDb($fieldsData);
-            $this->_justInserted = true;
-            $affectedRows = 1;
-        } else {
-            $affectedRows = $this->_obj->updateDb($fieldsData);
+        try {
+            Db::begin();
+
+            if ($this->_obj->getId() === 0) {
+                $this->_obj->insertDb($fieldsData);
+                $this->_justInserted = true;
+                $affectedRows = 1;
+            } else {
+                $affectedRows = $this->_obj->updateDb($fieldsData);
+            }
+
+            $subtablesAffectedRows = $this->proceedSubmitSubtables();
+            if ($subtablesAffectedRows) {
+                // Если в подтаблицах что-то поменялось, заново загрузим основной объект, т.к. в нём могут быть
+                // вычисляемые или кешируюище поля зависящие от подтаблиц, это может быть важно
+                $this->_obj->loadData();
+            }
+
+            $affectedRows += $subtablesAffectedRows;
+
+            if ($this->folders) {
+                $this->createFolder();
+            }
+
+            $afterSubmitTimer = new Timer();
+            if ($this->_justInserted) {
+                $this->afterInsert($this->_obj, $dataFromPost);
+            } else {
+                $this->afterUpdate($this->_obj, $dataFromPost, $affectedRows, $oldData, $this->flash, false);
+            }
+
+            $this->_obj->afterSubmit($oldData, $this->flash);
+            $this->afterSubmit($this->_obj, $dataFromPost, $affectedRows, $oldData, $this->flash, false);
+
+            Metric::newrelicMetric($this->getModule() . '/afterSubmit', $afterSubmitTimer->getMs());
+
+            Db::commit();
+
+        } catch (\Throwable $e) {
+
+            reportException($e);
+            $this->riseSaveErorr($e->getMessage());
+            $this->abortSubmit(500);
+            return;
+
         }
-
-        $subtablesAffectedRows = $this->proceedSubmitSubtables();
-        if ($subtablesAffectedRows) {
-            // Если в подтаблицах что-то поменялось, заново загрузим основной объект, т.к. в нём могут быть
-            // вычисляемые или кешируюище поля зависящие от подтаблиц, это может быть важно
-            $this->_obj->loadData();
-        }
-
-        $affectedRows += $subtablesAffectedRows;
-
-        if ($this->folders) {
-            $this->createFolder();
-        }
-
-        $afterSubmitTimer = new Timer();
-        if ($this->_justInserted) {
-            $this->afterInsert($this->_obj, $dataFromPost);
-        } else {
-            $this->afterUpdate($this->_obj, $dataFromPost, $affectedRows, $oldData, $this->flash, false);
-        }
-
-        $this->afterSubmit($this->_obj, $dataFromPost, $affectedRows, $oldData, $this->flash, false);
-
-        Db::commit();
-
-        Metric::newrelicMetric($this->getModule() . '/afterSubmit', $afterSubmitTimer->getMs());
 
         $textSaved = Config::$lang === 'ru' ? 'сохранён' : 'saved';
         $msg = "<strong>{$this->_obj}</strong> $textSaved";
@@ -1454,7 +1479,7 @@ abstract class ModuleAbstract extends Table
                 $subtablesToLoad[] = $subtable;
             }
         }
-        return $obj->getDataWithSubtables(...$subtablesToLoad);
+        return $obj->getDataWithSubtables($subtablesToLoad);
     }
 
     private function abortSubmit(int $code)
@@ -1705,7 +1730,7 @@ abstract class ModuleAbstract extends Table
 
         $id = (int)$_GET['delid'];
 
-        //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
+        // Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
         $this->loadObjAndCheck($id);
 
         if (!$this->allowDelete || !User::hasDeleteAccess() || !$this->hasDeleteAccessRightToObj($this->_obj)) {
@@ -1731,6 +1756,7 @@ abstract class ModuleAbstract extends Table
             // Если внутри checkDeleteConfirmResult выяснится, что пользователь что-то не заполнил - этот метод
             // сам отправит пользователю новый диалог или другое сообщение
             if (!$this->checkDeleteConfirmResult()) {
+                Db::commit();
                 return;
             }
 
@@ -1740,8 +1766,9 @@ abstract class ModuleAbstract extends Table
             $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
 
             $this->beforeDelete($this->_obj);
-            $this->proceedDeleteObj($this->_obj);
             $this->proceedDeleteSubtables($this->_obj);
+            $this->proceedDeleteObj($this->_obj);
+            $this->_obj->afterDelete($oldData, $this->flash);
             $this->afterDelete($this->_obj, $oldData);
 
             Db::commit();
@@ -2600,21 +2627,10 @@ abstract class ModuleAbstract extends Table
      */
     protected function addListFieldMoneyWithCurrency(string $moneyFieldKey, string $currencyFieldKey = 'CurrencyISO')
     {
-        $sourceMoneyField = $this->getField($moneyFieldKey);
-        $sourceParams = $sourceMoneyField->initialParams;
-        $sqlSelect = $sourceMoneyField->getSqlSelect();
-        if (!$sqlSelect) {
-            $sqlSelect = Db::quote($moneyFieldKey);
-        }
-        // Создаём новое поле типа MoneyWithCurrency на основе старого поля с ключём $moneyFieldKey
-        $params = [
-            'sqlSelect' => "CONCAT(`$currencyFieldKey`, ' ', $sqlSelect)",
-            'modes' => F::MODE_READONLY
-        ];
-
-        // При добавлении поля с ключём $moneyFieldKey старое поле будет заменено новым
+        /** @var FieldMoney $moneyField */
+        $moneyField = $this->getField($moneyFieldKey);
         $this->addField(
-            F::createMoneyWithCurrency($moneyFieldKey, $params + $sourceParams)
+            FieldMoneyWithCurrency::createFromMoney($moneyField, $currencyFieldKey)
         );
     }
 
@@ -2729,9 +2745,6 @@ abstract class ModuleAbstract extends Table
         $this->getFieldsetLast()->addField(F::createHtml('Actions', $params));
     }
 
-    /** @var  \mysqli_result */
-    protected $_tableQueryRes;
-
     protected function tableLoadData()
     {
         //Cформируем условие сортировки.
@@ -2816,7 +2829,7 @@ abstract class ModuleAbstract extends Table
                 $this->createModuleSession($idsString, $this->getTablePage());
             }
 
-            //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->_tableData
+            //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->tableData
             $query = "SELECT ";
 
             $selectFieldKeys = $this->getFieldsetShowed()->getKeys();
@@ -2830,18 +2843,10 @@ abstract class ModuleAbstract extends Table
             }
 
             $timer = new Timer();
-            $this->_tableQueryRes = Db::query($query);
-            $this->_tableData = $this->_tableQueryRes->fetch_all(MYSQLI_ASSOC);
-            $this->_tableQueryRes->free();
-            $this->_tableQueryRes = null;
-            /*
-            $this->_tableData = new \SplFixedArray($res->num_rows);
-            $rowIndex = 0;
-            while ($row = $res->fetch_assoc()) {
-                $this->_tableData[$rowIndex] = $row;
-                $rowIndex++;
-            }
-            */
+            $res = Db::query($query);
+            $this->tableData = $res->fetch_all(MYSQLI_ASSOC);
+            $res->free();
+            $res = null;
 
             //Загрузим специальный массив с закешированным состоянием непустых папок
             $this->loadCacheNotEmptyFolderIds($idsString);
@@ -2853,35 +2858,12 @@ abstract class ModuleAbstract extends Table
 
     public function getTableDataCount()
     {
-        if (!$this->_tableQueryRes) {
-            return count($this->_tableData);
-        }
-        return $this->_tableQueryRes->num_rows;
-    }
-
-    final protected function getTableRowData($rowNum)
-    {
-        if ($this->_tableQueryRes) {
-            return $this->_tableQueryRes->fetch_assoc();
-        }
-
-        return parent::getTableRowData($rowNum);
+            return count($this->tableData);
     }
 
     public function getTableData()
     {
-        $numRows = $this->getTableDataCount();
-        if ($numRows == 0) {
-            return [];
-        }
-
-        if ($this->_tableQueryRes) {
-            $this->_tableData = $this->_tableQueryRes->fetch_all(MYSQLI_ASSOC);
-            $this->_tableQueryRes->free();
-            $this->_tableQueryRes = null;
-        }
-
-        return $this->_tableData;
+        return $this->tableData;
     }
 
     final protected function isStateListExcel()
@@ -2889,9 +2871,9 @@ abstract class ModuleAbstract extends Table
         return $this->_state === self::STATE_LIST_EXCEL;
     }
 
-    public function getHtmlTableForAjax($printHeadBlock = true, $printIfEmpty = false)
+    public function getHtmlTableForAjax()
     {
-        $outHtml = parent::getHtmlTableForAjax($printHeadBlock, $printIfEmpty);
+        $outHtml = parent::getHtmlTableForAjax();
         if ($this->hasFilters()) {
             $outHtml .= $this->getFiltersHiddenInput();
         }
@@ -2985,6 +2967,7 @@ abstract class ModuleAbstract extends Table
         $affectedRows = $this->_obj->updateDb($updateData, 'Ajax');
 
         // Вызовем дополнительный обработчик, который, возможно, переопределён в классах потомках
+        $this->_obj->afterSubmit($oldData, $this->flash);
         $this->afterSubmit($this->_obj, $updateData, $affectedRows, $oldData, $this->flash, false);
 
         Db::commit();

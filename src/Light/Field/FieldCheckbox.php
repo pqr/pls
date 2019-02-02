@@ -107,5 +107,4 @@ class FieldCheckbox extends FieldAbstract
     {
         return false;
     }
-
 }

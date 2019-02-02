@@ -79,7 +79,7 @@ function initSelectChild($root: JQuery) {
             let showAllChildValues = true;
             parentFieldKeys.forEach(fieldKey => {
                 const parentValue = (getFieldValue($form, fieldKey, "Select") || "").toString();
-                if (parentValue !== "%" && parentValue !== "") {
+                if (parentValue !== "%" && parentValue !== "" && parentValue !== "0") {
                     parentValues[fieldKey] = parentValue;
                     showAllChildValues = false;
                 }

@@ -36,7 +36,7 @@ class PendingQuotations7days extends HomeBlockAbstract
         return "SELECT ID, Name, CustomerID, Status, DATEDIFF(NOW(), CreatedDateTime) AS Days
                   FROM quotation
                   WHERE (Status = 'pending' OR Status = 'draft')
-                      AND (ResponsibleSalesID = " . (int)$userId . " OR ResponsibleCSID = " . (int)$userId . ")
+                      AND (ResponsibleSalesID = $userId OR ResponsibleCSID = $userId)
                       AND DATEDIFF(NOW(), CreatedDateTime) >= 2
                       AND CreatedDateTime >= '2014-01-01'
                   ORDER BY CreatedDateTime";

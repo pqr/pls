@@ -12,7 +12,8 @@ class InvStatus
     const DISPUTE = 12;
     const ACCEPTED = 13;
 
-    // Part Cleated/Cleared
+    // Part Cleared/Cleared
+    const PAYMENT_ON_CHEKCING = 24;
     const CLEARED_DRAFT = 23;
     const PARTCLEARED = 21;
     const CLEARED = 22;
@@ -90,8 +91,13 @@ class InvStatus
             'cssClass' => 'invstatus13',
             'Active' => 1
         ],
+        self::PAYMENT_ON_CHEKCING => [
+            'text' => 'Оплата на проверке',
+            'cssClass' => 'invstatus24',
+            'Active' => 0
+        ],
         self::CLEARED_DRAFT => [
-            'text' => 'Черновик оплаты',
+            'text' => 'Подтверждён к оплате',
             'cssClass' => 'invstatus23',
             'Active' => 0
         ],
@@ -138,7 +144,8 @@ class InvStatus
         self::DISPUTE => self::DISPUTE,
         self::ACCEPTED => self::ACCEPTED,
         self::PARTCLEARED => self::PARTCLEARED,
-        self::CLEARED_DRAFT => self::CLEARED_DRAFT
+        self::CLEARED_DRAFT => self::CLEARED_DRAFT,
+        self::PAYMENT_ON_CHEKCING => self::PAYMENT_ON_CHEKCING
     ];
 
     public static $invDeleted = [
@@ -199,6 +206,10 @@ class InvStatus
 
         if ($status === self::ACCEPTED) {
             return "<i class=\"fa fa-check $iconColorClass\"$title></i>";
+        }
+
+        if ($status === self::PAYMENT_ON_CHEKCING) {
+            return "<i class=\"$iconColorClass\"$title></i>";
         }
 
         if ($status === self::CLEARED) {

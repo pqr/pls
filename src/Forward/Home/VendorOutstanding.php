@@ -149,7 +149,7 @@ class VendorOutstanding extends HomeBlockAbstract
             unset($row);
         }
 
-        $this->_tableData = array_values($data);
+        $this->tableData = array_values($data);
     }
 
     protected function getCountForTitle()

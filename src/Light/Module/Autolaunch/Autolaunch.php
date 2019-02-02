@@ -78,7 +78,7 @@ class Autolaunch
 
 
         //Теперь выведем все найденные скрипты в форме таблицы
-        print $autolaunchMenuTable->getHtmlTable(false);
+        print $autolaunchMenuTable->getHtmlTable();
     }
 
     /**

@@ -550,4 +550,9 @@ class Core
                   LIMIT 10";
         return Db::getAll($query);
     }
+
+    public static function proceedMainmenuSettings()
+    {
+        Mainmenu::proceedMainmenuSettings();
+    }
 }

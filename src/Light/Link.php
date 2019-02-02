@@ -84,6 +84,12 @@ class Link
         return $this;
     }
 
+    public function massaction(string $massaction) {
+        $this->params['p'] = 'massaction';
+        $this->params['action'] = $massaction;
+        return $this;
+    }
+
     /**
      * Формирует query параметр для ссылки в формате Lines_findid=123
      *

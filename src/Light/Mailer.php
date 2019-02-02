@@ -296,12 +296,14 @@ class Mailer
 
         $fs = new Filesystem();
         foreach ($this->attachements as $attachement) {
-            $target = $logDirAbs . '/' . pathinfo($attachement, PATHINFO_BASENAME);
-            try {
-                $fs->copy($attachement, $target);
-                @chmod($target, 0666);
-            } catch (\Throwable $e) {
-                reportException($e);
+            if ($attachement && file_exists($attachement)) {
+                $target = $logDirAbs . '/' . pathinfo($attachement, PATHINFO_BASENAME);
+                try {
+                    $fs->copy($attachement, $target);
+                    @chmod($target, 0666);
+                } catch (\Throwable $e) {
+                    reportException($e);
+                }
             }
         }
     }

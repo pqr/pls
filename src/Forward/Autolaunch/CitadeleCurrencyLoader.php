@@ -11,9 +11,8 @@ use Light\Table;
 
 class CitadeleCurrencyLoader extends AutolaunchAbstract
 {
-    protected static $_title = 'Update Currency from Citadele';
-    protected static $_description = '<a href="http://www.citadele.ee/ru/rates/" target="_blank">http://www.citadele.ee/ru/rates/</a>';
-    protected static $_orderId = 2;
+    protected static $title = 'Update Currency from Citadele';
+    protected static $description = '<a href="http://www.citadele.ee/ru/rates/" target="_blank">http://www.citadele.ee/ru/rates/</a>';
 
     protected function run(array $params)
     {
@@ -115,7 +114,7 @@ class CitadeleCurrencyLoader extends AutolaunchAbstract
         $logTable->createField('Status', F::TYPE_STRING);
         $logTable->setTableData($logTableData);
 
-        $this->_msgBuff->addHtml($logTable->getHtmlTable(false));
+        $this->_msgBuff->addHtml($logTable->getHtmlTable());
 
         $msg = $inserted . ' new currency rate' . Misc::getSSuffix($inserted) . ' added';
         if ($inserted) {

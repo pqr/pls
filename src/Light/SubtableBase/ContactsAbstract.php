@@ -1,64 +1,67 @@
 <?php
+
 namespace Light\SubtableBase;
 
-use Light\Css;
+use Light\Config;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\ObjAbstract;
 
 /**
  * Базовый класс для подтаблицы контактов
- *
- * Class ContactsAbstract
- * @package Light\SubtableBase
  */
 abstract class ContactsAbstract extends Subtable
 {
+    public $allowTablePrintHeadBlock = false;
+
+    public $allowExportToExcel = false;
+    public $allowTableLayouts = false;
+    public $allowPaste = false;
+
     public function __construct(ObjAbstract $masterObj)
     {
         parent::__construct($masterObj);
 
-        $this->_title = 'Contacts';
-        $this->tableEmptyText = 'No contacts';
-        $this->_printHeadBlock = false;
-        $this->allowExportToExcel = false;
-        $this->allowTableLayouts = false;
-        $this->textAddLink = 'Add Contact';
+        $this->textSubtableTitle = Config::$lang === 'ru' ? 'Контакты' : 'Contacts';
+        $this->textTableEmpty = Config::$lang === 'ru' ? 'Нет контактов' : 'No Contacts';
+        $this->textAddLink = Config::$lang === 'ru' ? 'Добавить контакт' : 'Add Contact';
 
         $this->addFields(
 
-            F::createString('Name', [
-                'editCssClass' => 'contact-name',
-                'tableWidthHtml' => 126
+            F::createText('Name', [
+                'name' => Config::$lang === 'ru' ? 'Имя' : 'Name',
+                'editWidth' => 'medium',
+                'tableWidthHtml' => 126,
+                'rows' => 2,
             ]),
 
-            F::createString('Position', [
+            F::createText('Position', [
+                'name' => Config::$lang === 'ru' ? 'Должность' : 'Position',
                 F::PARAM_AC_SOURCE => 'list_concatposition',
-                'editCssClass' => 'contact-position',
-                'tableWidthHtml' => 106
+                'editWidth' => 'medium',
+                'tableWidthHtml' => 106,
+                'rows' => 2,
             ]),
 
-            CF::email(),
+            CF::email()->setEditWidth('medium'),
 
-            CF::phone('WorkPhone', ['name' => 'Work Phone']),
+            CF::phone('WorkPhone', [
+                'name' => Config::$lang === 'ru' ? 'Стационарный телефон' : 'Work Phone',
+                'editWidth' => 'medium',
+            ]),
 
-            CF::phone('MobilePhone', ['name' => 'Mobile Phone']),
+            CF::phone('MobilePhone', [
+                'name' => Config::$lang === 'ru' ? 'Мобильный телефон' : 'Mobile Phone',
+                'editWidth' => 'medium',
+            ]),
 
             CF::comments([
                 'rows' => 2,
                 'editCssClass' => 'contact-comments',
                 'clickable' => true,
-                'tableWidthHtml' => 152
+                'editWidth' => 'medium',
             ])
 
         );
-    }
-
-    protected function initCssJs()
-    {
-        parent::initCssJs();
-        if ($this->isStateEdit()) {
-            Css::addLight('Contacts.css');
-        }
     }
 }

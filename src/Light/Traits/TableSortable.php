@@ -12,9 +12,16 @@ trait TableSortable
     private $tableSortFieldKey = ''; // Имя поля по которому сортировать
     private $tableSortOrder = 'ASC'; // Направление сортировки ASC | DESC
 
-    protected $allowSort = true;
+    /**
+     * @var bool
+     */
+    public $allowSort = true;
 
-    protected $tableDefaultOrderBy; // SQL фрагмент, который будет добавлен в конец запроса ORDER BY ...
+    /**
+     * SQL фрагмент, который будет добавлен в конец запроса ORDER BY ...
+     * @var string
+     */
+    public $tableDefaultOrderBy;
 
     protected function initSortable()
     {
@@ -260,28 +267,28 @@ trait TableSortable
                 //Для этого пройдёмся по основному массиву $this->Data и создадим NULL элементы в других массивах
                 //NULL удобен тем, что isset(NULL) == false и empty(NULL) == false, значит все механизмы вывода на экран и в excel не заметят подмены
                 foreach ($this->getTableData() as $rownum => $row) {
-                    if (!isset($this->_tableDataFormated[$rownum])) {
-                        $this->_tableDataFormated[$rownum] = NULL;
+                    if (!isset($this->tableDataFormated[$rownum])) {
+                        $this->tableDataFormated[$rownum] = NULL;
                     }
-                    if (!isset($this->_tableDataParams[$rownum])) {
-                        $this->_tableDataParams[$rownum] = NULL;
+                    if (!isset($this->tableDataParams[$rownum])) {
+                        $this->tableDataParams[$rownum] = NULL;
                     }
                 }
 
-                ksort($this->_tableDataFormated);
-                ksort($this->_tableDataParams);
+                ksort($this->tableDataFormated);
+                ksort($this->tableDataParams);
 
                 //Отсортируем все массивы
-                array_multisort($tmpvalues, $sortorder, $this->_tableData, $this->_tableDataFormated,
-                    $this->_tableDataParams);
+                array_multisort($tmpvalues, $sortorder, $this->tableData, $this->tableDataFormated,
+                    $this->tableDataParams);
             }
         }
 
         //Генерируем возвращаемый массив из ID
         $returnIds = array();
-        foreach ($this->_tableData as $rownum => $row) {
-            if (isset($this->_tableDataParams[$rownum]['id'])) {
-                $returnIds[] = $this->_tableDataParams[$rownum]['id'];
+        foreach ($this->tableData as $rownum => $row) {
+            if (isset($this->tableDataParams[$rownum]['id'])) {
+                $returnIds[] = $this->tableDataParams[$rownum]['id'];
             } elseif (isset($row['ID'])) {
                 $returnIds[] = $row['ID'];
             }

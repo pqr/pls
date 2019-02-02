@@ -34,8 +34,8 @@ class Quotation extends ModuleAbstract
     private const EXCEL_CARGO_STARTROW = 15;
     private const EXCEL_DETAILS_STARTROW = 20;
 
-protected $textSaveBtn = 'Quotation';
-protected $folders = true;
+    protected $textSaveBtn = 'Quotation';
+    public $folders = true;
 
     public function __construct()
     {
@@ -81,7 +81,7 @@ protected $folders = true;
                     }
 
                     return $outHtml;
-                }
+                },
             ]),
             QuotationFields::cacheGp(),
             F::createFloat('DensityKgPerM3', [
@@ -104,7 +104,7 @@ protected $folders = true;
                     }
 
                     return round($data['GrossWeight'] / $totalVolume);
-                }
+                },
             ]),
             F::createFloat('DensityM3PerTon', [
                 'name' => 'Density',
@@ -126,13 +126,13 @@ protected $folders = true;
                         $data['ID']
                     );
                     return round($totalVolume / $data['GrossWeight'] * 1000, 2);
-                }
+                },
             ]),
             F::createSelect('CargoUOM', [
                 'name' => 'cm or inch?',
                 'options' => ['cm' => 'cm', 'inch' => 'inch'],
                 'default' => 'cm',
-                'empty' => false
+                'empty' => false,
             ])
 
         );
@@ -177,7 +177,7 @@ protected $folders = true;
             F::createString('FilterName', [
                 'name' => 'ID / Text',
                 'title' => 'ID / Description / Comments',
-                'sqlWhere' => "ID = '{value}' OR Name LIKE '%{value}%' OR CommentsInternal LIKE '%{value}%' OR CommentsCustomer LIKE '%{value}%'"
+                'sqlWhere' => "ID = '{value}' OR Name LIKE '%{value}%' OR CommentsInternal LIKE '%{value}%' OR CommentsCustomer LIKE '%{value}%'",
             ]),
             F::createSelect('CustomerID', [
                 'name' => 'Customer',
@@ -198,7 +198,7 @@ protected $folders = true;
                     }
 
                     return $options;
-                }
+                },
             ]),
             F::createSelect('Responsible', [
 
@@ -206,7 +206,7 @@ protected $folders = true;
                     //Подготовим массив $responsible с разбивкой пользователей по ролям для фильтров
                     $responsibleRole = [
                         'ResponsibleSalesID' => 'Sales',
-                        'ResponsibleCSID' => 'Customer Service'
+                        'ResponsibleCSID' => 'Customer Service',
                     ];
                     $options = [];
                     foreach ($responsibleRole as $roleField => $roleDescription) {
@@ -221,7 +221,7 @@ protected $folders = true;
                         foreach ($users as $id => $name) {
                             $options[$roleField . '_' . $id] = [
                                 'text' => $name,
-                                'optgroup' => $roleDescription
+                                'optgroup' => $roleDescription,
                             ];
                         }
                     }
@@ -236,7 +236,7 @@ protected $folders = true;
                     }
 
                     return '';
-                }
+                },
             ]),
             GeneralFields::departureIata(),
             GeneralFields::departureLocationName(),
@@ -282,13 +282,13 @@ protected $folders = true;
                 'Status',
             ],
             [
-                'Valid'
+                'Valid',
             ],
             [
                 'AirlineAlphaCode',
                 'DepartureLocationName' => GeneralFields::filterTemplateLocation('Departure'),
                 'ArrivalLocationName' => GeneralFields::filterTemplateLocation('Arrival'),
-            ]
+            ],
         ];
     }
 

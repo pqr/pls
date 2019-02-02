@@ -113,5 +113,4 @@ class FieldSelect2ChildMultiple extends FieldSelect
         }
         return implode(" " . $this->logicSqlWhere . " ", $sql);
     }
-
 }

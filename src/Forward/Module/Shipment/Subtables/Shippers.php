@@ -17,12 +17,12 @@ class Shippers extends Subtable
 
         $this->setDbTable('shipmentshipper');
 
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
         $this->allowExportToExcel = false;
         $this->allowTableLayouts = false;
-        $this->tableEmptyText = 'No shippers';
+        $this->textTableEmpty = 'No shippers';
 
-        $this->_title = 'Shippers';
+        $this->textSubtableTitle = 'Shippers';
         $this->textAddLink = 'Add Shipper';
 
         $this->addFields(
@@ -86,7 +86,7 @@ class Shippers extends Subtable
             $query = "SELECT DISTINCT(Name) FROM shipmentshipper WHERE Name != '' AND ShipmentID = " .
                 (int)$_GET['copyfrom'];
             $data = Db::getAll($query);
-            $this->setAdditionalData($data);
+            $this->setSubtableDataAdditional($data);
         }
     }
 

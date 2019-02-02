@@ -294,7 +294,7 @@ class Reportmenu
         }
 
         $table->setTableData($tableData);
-        print $table->getHtmlTable(false);
+        print $table->getHtmlTable();
 
     }
 

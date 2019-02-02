@@ -185,10 +185,10 @@ trait MassactionPrint
      * форму которую хочет массво распечатать по отмеченным галочками объектам
      *
      * @param array $ids
-     * @param array $objectsAndPaths
+     * @param array $objects
      * @param PrintForm $printForm
      */
-    private function massactionPrintShowFieldsDialog(array $ids, array $objectsAndPaths, PrintForm $printForm, bool $multipleAsOne)
+    private function massactionPrintShowFieldsDialog(array $ids, array $objects, PrintForm $printForm, bool $multipleAsOne)
     {
         $module = Request::getModule();
         $form = $printForm->getKey();
@@ -200,7 +200,7 @@ trait MassactionPrint
             . MassactionUtils::getHtmlHiddenCheckedIds($ids)
             . Template::csrfHidden();
 
-        $data = $printForm->getDataForAjaxDialogMultiple($ids, $objectsAndPaths);
+        $data = $printForm->getDataForAjaxDialogMultiple($ids, $objects);
         $fieldset = $printForm->getFieldset();
         $tdata = $fieldset->getTplData($data, F::MODE_EDIT);
         Template::setTdata($tdata);

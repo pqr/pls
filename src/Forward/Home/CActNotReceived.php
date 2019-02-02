@@ -39,7 +39,6 @@ class CActNotReceived extends HomeBlockAbstract
 
     protected function tableLoadData(int $userId)
     {
-        $userId = (int)$userId;
         $shipments = Db::getAll(
             "SELECT ID, Name, MAWBNumber, CustomerID 
             FROM shipment 
@@ -57,7 +56,7 @@ class CActNotReceived extends HomeBlockAbstract
             $folder3NotEmpty = FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[3]));
             $folder4NotEmpty = FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[4]));
             if ($folder3NotEmpty && !$folder4NotEmpty) {
-                $this->_tableData[] = $shipment;
+                $this->tableData[] = $shipment;
             }
         }
 

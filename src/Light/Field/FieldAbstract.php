@@ -320,7 +320,7 @@ abstract class FieldAbstract implements \JsonSerializable
     public $editCssClass;
 
     /**
-     * @var string|callable всплывающая подсказка titale, которая будет добавлена внутрь тега input
+     * @var string|callable всплывающая подсказка title, которая будет добавлена внутрь тега input
      */
     public $editTitle;
 
@@ -442,7 +442,7 @@ abstract class FieldAbstract implements \JsonSerializable
     public $sqlSelectMandatory = false;
 
     /**
-     * Шаблон SQL фрагмента WHERE, плейсхолдер {value} "mytalbe.MyField LIKE '{value}%'"
+     * Шаблон SQL фрагмента WHERE, плейсхолдер {value} "table.MyField LIKE '{value}%'"
      * или работает как метод $sqlWhere($value, array $filtersValues, $sql, $field)
      * @var string|callable
      */
@@ -486,7 +486,7 @@ abstract class FieldAbstract implements \JsonSerializable
     /**
      * @var string имя JavaScript функции и небольшой фрагмент javascript кода, который запустить при успешном обновлении
      * поля через ajax. Этот значение будет записано в тег ссылки как атрибут data-ajax-success-handler и запущено в AjaxFields.ts
-     * Пример: 'ajaxSuccessHandeler' => 'Basis.doSomething'
+     * Пример: 'ajaxSuccessHandler' => 'Basis.doSomething'
      * После успешного ajax обновления в браузере будет выполнен код `Basis.doSomething($link)`
      */
     public $ajaxSuccessHandler;
@@ -576,7 +576,7 @@ abstract class FieldAbstract implements \JsonSerializable
     {
         // изменим непосредственное свойство в данном объекте
         $this->{$name} = $value;
-        // cохраним также указанное пользователем значение в массиве initialParams
+        // сохраним также указанное пользователем значение в массиве initialParams
         $this->initialParams[$name] = $value;
         return $this;
     }
@@ -616,7 +616,7 @@ abstract class FieldAbstract implements \JsonSerializable
     final public function checkEditAccessFunction(array $data)
     {
         $editAccessFunction = $this->editAccessFunction;
-        if (is_callable($editAccessFunction)) {
+        if (\is_callable($editAccessFunction)) {
             // Для этого поля определена особая пользовательская фунция editAccessFunction - вызовем её
             return $editAccessFunction($data);
         }
@@ -1006,7 +1006,8 @@ abstract class FieldAbstract implements \JsonSerializable
                 $sqlWhere = str_replace(['{value}', '{fieldKey}'], [Db::esc($value), Db::quote($this->key)], $sqlWhere);
                 $sqlWhere = "($sqlWhere)";
 
-                if ($this->filterNot && isset($filtersValues['Not' . $this->key]) && $filtersValues['Not' . $this->key]) {
+                $notFilterKey = 'Not' . $this->key;
+                if ($this->filterNot && !empty($filtersValues[$notFilterKey])) {
                     $sqlWhere = "NOT $sqlWhere";
                 }
             }
@@ -1312,5 +1313,10 @@ abstract class FieldAbstract implements \JsonSerializable
             'Type' => $this->getType(),
             'Params' => $this->initialParams
         ];
+    }
+
+    public static function isEmpty($value): bool
+    {
+        return !$value;
     }
 }

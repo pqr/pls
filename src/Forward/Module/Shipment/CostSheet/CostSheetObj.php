@@ -88,9 +88,9 @@ class CostSheetObj
 
         //Добавим подтаблицы со счетами
         $cinvoices = new CInvoices($this->_shipmentObj, false);
-        $tdata['CInvoices'] = $cinvoices->getHtmlTable(false);
+        $tdata['CInvoices'] = $cinvoices->getHtmlTable();
         $vinvoices = new VInvoices($this->_shipmentObj, false);
-        $tdata['VInvoices'] = $vinvoices->getHtmlTable(false);
+        $tdata['VInvoices'] = $vinvoices->getHtmlTable();
 
         return $tdata;
     }
@@ -108,6 +108,7 @@ class CostSheetObj
 
         //Подогтовим таблицу с историей изменения Cost-sheet'а
         $table = new Table('CostSheetHistory');
+        $table->allowTablePrintHeadBlock = false;
         $table->getFieldset()->addFieldsCreatedBy();
         $table->addFields(
             F::createMoney('EGPinUSD', [
@@ -133,7 +134,7 @@ class CostSheetObj
         $table->setTableData($historyData);
 
         $outHtml = '<h2>History</h2>';
-        $outHtml .= $table->getHtmlTable(false);
+        $outHtml .= $table->getHtmlTable();
 
         return $outHtml;
     }

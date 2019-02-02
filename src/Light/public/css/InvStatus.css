@@ -68,6 +68,23 @@
     vertical-align: bottom;
 }
 
+/* PAYMENT_ON_CHEKCING */
+.invstatus24 {
+    color: #636330;
+    background-color: #ffffd4;
+}
+
+.invicon24 {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
+    background-color: yellow;
+    border: 1px solid orange;
+    margin-right: 8px;
+    vertical-align: bottom;
+}
+
 /* CLEARED_DRAFT */
 .invstatus23 {
     color: #f9ffef;

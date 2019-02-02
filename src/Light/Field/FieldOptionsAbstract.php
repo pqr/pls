@@ -49,7 +49,7 @@ abstract class FieldOptionsAbstract extends FieldAbstract
     public $linkModuleForTable = false;
 
     /**
-     * @param string|array $options
+     * @param string|array|callable $options
      * @return $this
      */
     public function setOptions($options)

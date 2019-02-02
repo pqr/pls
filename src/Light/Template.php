@@ -194,15 +194,19 @@ class Template
         return nl2br($field->getName());
     }
 
-    public static function label($fieldKey)
+    public static function label($fieldKey, string $name = null)
     {
         $field = static::$tdata['_fieldset'][$fieldKey];
         if (!$field) {
             return '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
         }
 
+        if ($name === null) {
+            $name = static::name($fieldKey);
+        }
+
         /** @var F $field */
-        return '<label for="' . $field->editId . '">' . static::name($fieldKey) . '</label>';
+        return '<label for="' . $field->editId . '">' . $name . '</label>';
     }
 
     public static function text($fieldKey)
@@ -316,6 +320,7 @@ class Template
 
     public static function subtableHtml($subtableName)
     {
+        $subtableName = Misc::getClass($subtableName);
         /** @var Subtable $subtableObj */
         $subtableObj = static::$tdata['_subtables'][$subtableName]['obj'];
         if (!$subtableObj) {
@@ -336,11 +341,13 @@ class Template
 
     public static function issetSubtable($subtableName)
     {
+        $subtableName = Misc::getClass($subtableName);
         return isset(static::$tdata['_subtables'][$subtableName]);
     }
 
     public static function subtableIsEmpty(string $subtableName)
     {
+        $subtableName = Misc::getClass($subtableName);
         /** @var Subtable $subtableObj */
         $subtableObj = static::$tdata['_subtables'][$subtableName]['obj'];
         return $subtableObj->getDataCount() === 0;
@@ -348,6 +355,7 @@ class Template
 
     public static function subtableCount($subtableName)
     {
+        $subtableName = Misc::getClass($subtableName);
         /** @var Subtable $subtableObj */
         $subtableObj = static::$tdata['_subtables'][$subtableName]['obj'];
         return '<span class="' . $subtableName . '-subtable-count-span">' . $subtableObj->getDataCount() . '</span>';
@@ -355,12 +363,10 @@ class Template
 
     public static function subtable($subtableName)
     {
+        $subtableName = Misc::getClass($subtableName);
         /** @var Subtable $subtableObj */
-        if (strpos($subtableName, PROJECT_NAMESPACE . '\\') === 0) {
-            $subtableName = Misc::getClass($subtableName);
-        }
         $subtableObj = static::$tdata['_subtables'][$subtableName]['obj'];
-        $title = $subtableObj->getTitle();
+        $title = $subtableObj->getTextSubtableTitle();
         $html = '<div class="subtableblock">';
         if ($title) {
             $html .= '<h2>' . $title . ' (' . static::subtableCount($subtableName) . ')</h2>';
@@ -371,10 +377,10 @@ class Template
         return $html;
     }
 
-    public static function datesFromUntil($fieldKey)
+    public static function datesFromUntil($fieldKey, string $name = null)
     {
         $title = static::title($fieldKey . 'From');
-        $label = static::label($fieldKey . 'From');
+        $label = static::label($fieldKey . 'From', $name);
         $html = '<nobr>' . static::html($fieldKey . 'From') . ' - ' . static::html($fieldKey . 'Until') . '</nobr>';
 
         return static::control($title, $label, $html);

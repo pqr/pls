@@ -30,7 +30,7 @@ class CheckATA extends HomeBlockAbstract
     {
         return "SELECT shipment.ID, shipment.Name, shipment.MAWBNumber, shipment.ETA
                   FROM shipment
-                  WHERE (shipment.ResponsibleCS = " . $userId . " OR shipment.ResponsibleSales = " . $userId . ")
+                  WHERE (shipment.ResponsibleCS = $userId OR shipment.ResponsibleSales = $userId)
                       AND shipment.ETA != '0000-00-00'
                       AND shipment.ETA <= DATE_ADD(CURDATE(), INTERVAL 1 DAY)
                       AND shipment.ATA = '0000-00-00'

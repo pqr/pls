@@ -303,15 +303,15 @@ abstract class ApplicationAbstract
         if (!defined("CODECEPTION_FUNCTIONAL_TEST") && Config::$sentry && Config::$sentry['dns']) {
             $options = Config::$sentry['options'] + [
                     'app_path' => LIGHT_DIR_ROOT . '/src',
-                    'prefixes' => [LIGHT_DIR_ROOT]
+                    'prefixes' => [LIGHT_DIR_ROOT],
                 ];
             $client = new \Raven_Client(Config::$sentry['dns'], $options);
             $client->install();
             $client->setRelease(ApplicationAbstract::getVersion());
-            $client->user_context(array(
+            $client->user_context([
                 'id' => User::getId(),
-                'username' => User::getLogin()
-            ));
+                'username' => User::getLogin(),
+            ]);
         }
 
         //Вызовем метод, который должен быть определён в классе потомке - в нём настраивается title, добавляются глобкальные css
@@ -480,19 +480,19 @@ abstract class ApplicationAbstract
             fastcgi_finish_request();
         }
 
+        // Записываем все накопившиеся flash сообщения в таблицу user_flash
+        Session::writeFlash();
+
+        if (!isset($_REQUEST['nouserrefreshtime']) && !self::isCli() && User::isAuth()) {
+            User::updateLastRefreshDateTime();
+            LoggerCsv::logVisit();
+        }
+
         self::$app->afterSend();
 
-        if (!self::isCli()) {
-
-            // Работаем с сессией, только если это не cli режим
-            if (session_id()) {
-                session_write_close();
-            }
-
-            if (User::isAuth() && !isset($_REQUEST['nouserrefreshtime'])) {
-                User::updateLastRefreshDateTime();
-                LoggerCsv::logVisit();
-            }
+        // Работаем с сессией, только если это не cli режим
+        if (session_id() && !self::isCli()) {
+            session_write_close();
         }
 
         //Если установлен специальный cookie, то запишем логи об этом sql запросе
@@ -518,7 +518,11 @@ abstract class ApplicationAbstract
     private function runHandlers(array $handlers)
     {
         foreach ($handlers as $handler) {
-            $handler();
+            try {
+                $handler();
+            } catch (\Throwable $e) {
+                reportException($e);
+            }
         }
     }
 

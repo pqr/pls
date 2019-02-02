@@ -15,9 +15,9 @@ class Consignee extends Subtable
         parent::__construct($masterObj);
 
         $this->setDbTable('customerconsignee');
-        $this->_title = 'Consignee';
+        $this->textSubtableTitle = 'Consignee';
         $this->textAddLink = 'Add Consignee';
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
 
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 

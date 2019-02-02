@@ -326,6 +326,10 @@ a.showhide label {
     cursor: default !important;
 }
 
+input[readonly], input[disabled], input.disabled {
+    background-color: #F5F5F5;
+}
+
 a.disabled,
 a.disabled:hover,
 a.disabled:active {
@@ -2109,4 +2113,50 @@ button.btn-floating {
 
 .subtable-sort-link {
     cursor: move;
+}
+
+.Mainmenu-Favorites, .MainmanueSettings-Favorites {
+    background-color: #fffff7;
+}
+
+.MainmanueSettings-Favorites, .MainmanueSettings-AllItems {
+    width: 220px;
+    height: 300px;
+    border: 1px solid gray;
+    list-style: none;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.MainmanueSettings-Favorites {
+    margin-right: 5px;
+}
+
+.MainmanueSettings-AllItems {
+    margin-left: 5px;
+}
+
+.MainmenuSettings-Item {
+    margin: 1px;
+    padding: 5px;
+    cursor: move;
+}
+.MainmenuSettings-Item:hover {
+    background-color: #eee;
+}
+
+.background-white {
+    background-color: #ffffff !important;
+}
+
+.change-all, .change-all-string {
+    font-size: 10px;
+    opacity: .4;
+    font-weight: lighter;
+}
+
+.change-all:hover, .change-all:active, .change-all-string:hover, .change-all-string:active {
+    opacity: 1;
+    border-bottom: 1px dashed;
 }

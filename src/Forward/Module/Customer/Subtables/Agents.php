@@ -15,9 +15,9 @@ class Agents extends Subtable
         parent::__construct($masterObj);
 
         $this->setDbTable('customeragent');
-        $this->_title = 'Origins & Agents';
+        $this->textSubtableTitle = 'Origins & Agents';
         $this->textAddLink = 'Add Origin Agent';
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
 
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 

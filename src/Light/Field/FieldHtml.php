@@ -33,4 +33,9 @@ class FieldHtml extends FieldAbstract
     {
         return null;
     }
+
+    public static function isEmpty($value): bool
+    {
+        return trim($value) === '';
+    }
 }

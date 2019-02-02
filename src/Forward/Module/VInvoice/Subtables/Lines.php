@@ -2,10 +2,7 @@
 namespace Forward\Module\VInvoice\Subtables;
 
 use Forward\Application;
-use Forward\Field\GeneralFields;
-use Forward\Field\InvoiceFields;
 use Light\Db;
-use Light\Field\FieldAbstract as F;
 use Light\ObjAbstract;
 use Light\SubtableBase\Subtable;
 use Light\User;
@@ -18,7 +15,7 @@ class Lines extends Subtable
 
         $this->allowTableLayouts = false;
 
-        $this->tableEmptyText = 'No lines info';
+        $this->textTableEmpty = 'No lines info';
 
         $this->tableLinkModule = 'Shipment';
         $this->tableLinkFieldKeys = ['FileNumber', 'MAWBNumber'];
@@ -29,8 +26,8 @@ class Lines extends Subtable
         $this->folderBaseDir = 'Shipment';
         $this->folderNameFieldKey = 'FileNumber';
 
-        $this->_tablePrintTotalRecordsFound = true;
-        $this->tableTotal = ['Name' => 'Total'];
+        $this->allowTablePrintTotalRecordsFound = true;
+        $this->tableDataTotal = ['Name' => 'Total'];
 
         $this->_cacheFieldsKeys = ['MAWBNumber', 'FileNumber'];
         $this->_cacheOnlyUniqueValues = true;
@@ -102,6 +99,6 @@ class Lines extends Subtable
             );
         }
 
-        $this->setAdditionalData($linesData);
+        $this->setSubtableDataAdditional($linesData);
     }
 }

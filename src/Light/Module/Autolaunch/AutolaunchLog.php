@@ -16,12 +16,22 @@ class AutolaunchLog extends Table
 
     protected $className;
 
+    public $tableLinkModule = 'Autolaunch';
+    public $tableFieldsShow = [
+        'ID',
+        'CreatedDateTime',
+        'CreatedBy',
+        'Filename',
+        'ShortMessage',
+        'WorkTime',
+        'Log',
+    ];
+
     public function __construct(string $className)
     {
         parent::__construct('AutolaunchLog');
 
         $this->className = $className;
-        $this->tableLinkModule = 'Autolaunch';
 
         $params = ['class' => $className];
         $this->tableLinkUrlParams = $params;
@@ -40,7 +50,6 @@ class AutolaunchLog extends Table
             )
         );
 
-        $this->tableFieldsShow = ['ID', 'CreatedDateTime', 'CreatedBy', 'Filename', 'ShortMessage', 'WorkTime', 'Log'];
 
         $this->initPaginatable();
         $this->tableLoadData();

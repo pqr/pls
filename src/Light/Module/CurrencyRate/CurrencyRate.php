@@ -8,12 +8,11 @@ use Light\User;
 
 class CurrencyRate extends ModuleAbstract
 {
-    protected $allowTableLayouts = false;
-    protected $tableLinkFieldKeys = [];
-    protected $tableFieldsShow = ['ValidDate', 'CurrencyISO', 'RateToRUB', 'Provider'];
+    public $tableLinkFieldKeys = [];
+    public $tableFieldsShow = ['ValidDate', 'CurrencyISO', 'RateToRUB', 'Provider'];
 
     protected $textSaveBtn = 'Currency Rate';
-    protected $tableDefaultOrderBy = 'ValidDate DESC';
+    public $tableDefaultOrderBy = 'ValidDate DESC';
 
     protected function initFilters()
     {

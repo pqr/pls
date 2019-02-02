@@ -30,7 +30,6 @@ use Light\Field\FieldDate;
 use Light\File;
 use Light\FilesFolder;
 use Light\Img;
-use Light\Link;
 use Light\ModuleBase\MassactionUtils;
 use Light\Msg;
 use Light\ObjAbstract;
@@ -43,7 +42,7 @@ use Light\User;
 class CInvoice extends InvoiceModuleAbstract
 {
     protected $textSaveBtn = 'Customer Invoice';
-    protected $tableLayoutDefault = 'Name|CustomerAccountID|Amount|CurrencyISO|DocType|StatusIco|DocDate|DueDate|Overdue|Comments';
+    public $tableLayoutDefault = 'Name|CustomerAccountID|Amount|CurrencyISO|DocType|StatusIco|DocDate|DueDate|Overdue|Comments';
 
     protected function registerSubtables()
     {
@@ -79,7 +78,7 @@ class CInvoice extends InvoiceModuleAbstract
                 'name' => 'Invoice No',
                 'sqlWhere' => function ($value) {
                     return Db::getSqlWhereSeparatedByComa($value, 'cinvoice.Name', -1, false, false);
-                }
+                },
             ]),
             F::createText('FileNumbers', [
                 'name' => 'File Numbers',
@@ -91,7 +90,7 @@ class CInvoice extends InvoiceModuleAbstract
                         ")";
 
                     return $query;
-                }
+                },
             ]),
             F::createText('ShippingDocuments', [
                 'name' => 'Shipping Documents',
@@ -106,14 +105,14 @@ class CInvoice extends InvoiceModuleAbstract
                         true,
                         false
                     );
-                }
+                },
             ]),
             CF::currency(),
             InvoiceFields::filterStatus(
                 Finance::$cinvoiceStatuses,
                 [
                     'Manual' => ['text' => 'Manual Selection', 'optgroup' => 'Mixed'],
-                    'Open' => ['text' => 'Open', 'optgroup' => 'Mixed']
+                    'Open' => ['text' => 'Open', 'optgroup' => 'Mixed'],
                 ]
             ),
             InvoiceFields::overdue('C'),
@@ -121,7 +120,7 @@ class CInvoice extends InvoiceModuleAbstract
             F::createSelect('ResponsibleSales', [
                 'name' => 'Sales',
                 'options' => "SELECT ID, Name FROM user WHERE ID IN (SELECT DISTINCT UserID FROM customer_responsible WHERE Role = 'Sales') ORDER BY Name",
-                'sqlWhere' => "EXISTS (SELECT * FROM customer_responsible cr WHERE cr.CustomerID = cinvoice.CustomerID AND cr.UserID = {value} AND cr.Role = 'Sales')"
+                'sqlWhere' => "EXISTS (SELECT * FROM customer_responsible cr WHERE cr.CustomerID = cinvoice.CustomerID AND cr.UserID = {value} AND cr.Role = 'Sales')",
             ])
 
         );
@@ -175,8 +174,8 @@ class CInvoice extends InvoiceModuleAbstract
                         . ' ' . Template::label('Status' . Finance::INVOICESTATUS_DELETED)
                         . '</div>'
                         . '</td></tr></table></div>';
-                }
-            ]
+                },
+            ],
 
         ];
     }
@@ -428,7 +427,7 @@ class CInvoice extends InvoiceModuleAbstract
             'Amount' => (float)$cinvObj['Amount'],
             'CurrencyISO' => $cinvObj['CurrencyISO'],
             'PaymentCurrencyISO' => $cinvObj['PaymentCurrencyISO'],
-            'ShippingDocument' => $cinvObj['ShippingDocument']
+            'ShippingDocument' => $cinvObj['ShippingDocument'],
         ];
 
         if ($cinvObj['RatePercent'] !== '' && $cinvObj['RatePercent'] !== '0%') {
@@ -446,7 +445,7 @@ class CInvoice extends InvoiceModuleAbstract
                 'Name' => $nameRu ?: $lineData['Name'],
                 'Quantity' => (float)$lineData['Quantity'],
                 'Price' => (float)$lineData['Price'],
-                'Amount' => (float)$lineData['Amount']
+                'Amount' => (float)$lineData['Amount'],
             ];
         }
 
@@ -615,7 +614,8 @@ class CInvoice extends InvoiceModuleAbstract
                 $standartCInvoiceFolder = Constant::$standardFolders[Constant::FOLDER_CINVOICE];
                 $shipmentCInvoioceFolderRelative = "$shipmentFolderRelative/$standartCInvoiceFolder";
                 FilesFolder::mkdir($shipmentCInvoioceFolderRelative);
-                $result = file_put_contents(FilesFolder::getAbsolutePath($shipmentCInvoioceFolderRelative) . "/$excelFilename", $excelData);
+                $result = file_put_contents(FilesFolder::getAbsolutePath($shipmentCInvoioceFolderRelative) . "/$excelFilename",
+                    $excelData);
                 if ($result) {
                     Session::flashSuccess('Файл <strong>' . htmlspecialchars($excelFilename) . '</strong> помещён в папку перевозки ' . $fileNumber . '/' . $standartCInvoiceFolder);
                 } else {

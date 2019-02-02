@@ -4,6 +4,7 @@ use Light\Mainmenu;
 use Light\User;
 
 $activeModule = \Light\Request::getModule();
+
 ?>
 <div id="mainmenu">
     <div id="mainmenu__top">
@@ -20,7 +21,7 @@ $activeModule = \Light\Request::getModule();
             </div>
         <?php else: ?>
             <div id="mainmenu__avatar">
-                <?php  /*<img src="lightpublic/i/santa-hat.png" class="santa-hat"> */ ?>
+                <?php /*<img src="lightpublic/i/santa-hat.png" class="santa-hat">*/ ?>
                 <img class="avatar" src="<?= Mainmenu::getUserAvatarImgSrc(User::getId()) ?>">
                 <input id="mainmenu__avatarinputfile" type="file" name="avatar">
             </div>
@@ -37,30 +38,26 @@ $activeModule = \Light\Request::getModule();
         </div>
 
         <input type="text" placeholder="Поиск по меню" id="mainmenu__search">
+
+        <div style="text-align: left; margin: 2px 0 0 10px">
+            <a href="index.php?a=Core&ps=MainmenuSettings#ajax" id="mainmenu__settings" class="note">
+                Настройка меню
+            </a>
+        </div>
     </div>
 
-    <?php foreach ($sections as $sectionText => $sectionParams): ?>
+    <div class="Mainmenu-Favorites">
+        <?= $favoritesHtml ?>
+    </div>
 
-        <?php if ($sectionText): ?>
-            <div class="mainmenu__sectionhead" data-name="<?= htmlspecialchars($sectionText) ?>">
-                <?= $sectionText ?>
+    <?php foreach ($sectionsHtml as $section => $sectionHtml): ?>
+
+        <?php if ($section): ?>
+            <div class="mainmenu__sectionhead" data-name="<?= htmlspecialchars($section) ?>">
+                <?= $section ?>
             </div>
         <?php endif ?>
-
-        <ul class="mainmenu__section"
-            data-status="<?= $sectionParams['status'] ?>"<?= $sectionParams['status'] === 'closed' ? ' style="display: none"' : '' ?>>
-            <?php foreach ($sectionParams['modules'] as $module => ['text' => $text, 'title' => $title, 'url' => $url]): ?>
-
-                <li class="mainmenu__li"<?= $title ? ' title="' . htmlspecialchars($title) . '"' : '' ?>>
-                    <a class="mainmenu__link<?= $module === $activeModule ? ' mainmenu__link_active' : '' ?>"
-                       href="<?= $url ?>">
-                        <?= $text ?>
-                    </a>
-                </li>
-
-            <?php endforeach; ?>
-        </ul>
-
+        <?= $sectionHtml ?>
     <?php endforeach; ?>
 </div>
 

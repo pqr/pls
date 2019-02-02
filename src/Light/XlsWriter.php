@@ -25,12 +25,13 @@ use PhpOffice\PhpSpreadsheet\Writer\IWriter;
  */
 class XlsWriter
 {
-    const TABLES_WITH_HEADER = 0b0001;
-    const FREEZE_PANES = 0b0010;
-    const ADJUST_WIDTH = 0b0100;
-    const AUTOFILTER = 0b1000;
+    const TABLES_WITH_HEADER = 0b00001;
+    const FREEZE_PANES = 0b00010;
+    const ADJUST_WIDTH = 0b00100;
+    const AUTOFILTER = 0b01000;
+    const TABLES_WITH_TOTAL = 0b10000;
 
-    const ALLOPTS = self::TABLES_WITH_HEADER | self::FREEZE_PANES | self::ADJUST_WIDTH | self::AUTOFILTER;
+    const ALLOPTS = self::TABLES_WITH_HEADER | self::FREEZE_PANES | self::ADJUST_WIDTH | self::AUTOFILTER | self::TABLES_WITH_TOTAL;
 
     /**
      * @var Spreadsheet
@@ -187,7 +188,7 @@ class XlsWriter
      * @param int $tableOpts
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
-    public function replaceData(array $data, Fieldset $fieldset = null, $tableOpts = 0): void
+    public function replaceData(array $data, Fieldset $fieldset = null, int $tableOpts = 0): void
     {
         //Этот метод проходит в цикле по всем листам и в процессе необходимо менять ActiveSheet, чтобы правильно
         //работал метод $this->writeCellData(). Пожтому перед началом всех циктов запомним актиыный лист, который
@@ -337,7 +338,13 @@ class XlsWriter
 
             //Теперь приступаем непосредственно к записи
             $dataCalculated = $table->getTableDataCalculated();
-            $dataTotal = $table->getTableTotal($dataCalculated);
+            $dataTotal = $table->getTableDataTotal($dataCalculated);
+            if (!$table->hasTotalRow($dataTotal)) {
+                // Если в текущей таблице метод hasTotalRow был переопределён так, что возвращает false
+                // это значит что для данной таблицы total строка не нужна. Чтобы не выдавать её в Excel,
+                // обнулим массив $dataTotal
+                $dataTotal = [];
+            }
 
             // Подготовим пустые строки под таблицу
             // Вставлять строки будем между текущей строкой (на которой обнаружили плейсхолдер) и следующей
@@ -349,7 +356,7 @@ class XlsWriter
                 $insertedRows++;
             }
             // Если есть строка total, это ещё +1
-            if ($dataTotal) {
+            if ($tableOpts & self::TABLES_WITH_TOTAL && $dataTotal) {
                 $insertedRows++;
             }
             // Если накопилось какое-то число строк для вставки, то сделаем эту вставку новых пустых строк
@@ -532,7 +539,7 @@ class XlsWriter
 
         $lastCol = count($fieldset) + $col - 1;
 
-        if ($dataTotal) {
+        if ($tableOpts & self::TABLES_WITH_TOTAL && $dataTotal) {
             // Есть какая-то total строка, запишем и её
             $this->writeTableRow($col, $currentRow, $dataTotal, $fieldset, $rowStyleFunction, 'total');
             $ws->getStyleByColumnAndRow($col, $currentRow, $lastCol, $currentRow)
@@ -671,14 +678,7 @@ class XlsWriter
             } elseif ($type === F::TYPE_MONEY) {
                 // Проверим, есть ли у этого поля зафиксированная валюта?
                 /** @var FieldMoney $field */
-                $currencyIso = $field->currencyIso;
-                if ($currencyIso) {
-                    // Это поле Money с зафиксированной валютой
-                    $format = '# ### ##0.00 [$' . $currencyIso . ']';
-                } else {
-                    // Это поля Money без определённой валюты
-                    $format = "# ### ##0.00";
-                }
+                $format = $this->getMoneyFormat($value, $field, $field->currencyIso);
                 $ws->getStyle($coordinate)->getNumberFormat()->setFormatCode($format);
             }
 
@@ -686,7 +686,8 @@ class XlsWriter
             if ($excelVal) {
                 if ($noNewLine) {
                     [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($excelVal);
-                    $format = '# ### ##0.00 [$' . $currencyIso . ']';
+                    /** @var FieldMoneyWithCurrency $field */
+                    $format = $this->getMoneyFormat($amount, $field, $currencyIso);
                     $ws->getStyle($coordinate)->getNumberFormat()->setFormatCode(
                         $format
                     );
@@ -717,5 +718,29 @@ class XlsWriter
         if (is_array($cellStyle)) {
             $ws->getStyle($coordinate)->applyFromArray($cellStyle);
         }
+    }
+
+    private function getMoneyFormat($value, FieldMoney $field, ?string $currencyIso)
+    {
+        // Формат по умолчанию
+        $format = '# ### ##0.00';
+
+        if ($field->short) {
+
+            // Задан флаг short, применяем короткий формат, только если в $value реально нет центов
+            $value = (double)$value;
+            $cents = round($value * 100) % 100;
+            if (!$cents) {
+                // Задаём формат без дробной части
+                $format = str_replace('0.00', '0', $format);
+            }
+        }
+
+        if ($currencyIso) {
+            // Добавляем валюту, если нужно
+            $format .= ' [$' . $currencyIso . ']';
+        }
+
+        return $format;
     }
 }

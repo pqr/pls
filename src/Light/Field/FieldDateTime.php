@@ -141,4 +141,10 @@ class FieldDateTime extends FieldInputAbstract
 
         return $sqlWhere;
     }
+
+
+    public static function isEmpty($value): bool
+    {
+        return !$value || $value === '0000-00-00 00:00:00';
+    }
 }

@@ -12,9 +12,9 @@ use Light\User;
 
 class Vendor extends ModuleAbstract
 {
-    protected $folders = true;
+    public $folders = true;
     protected $textSaveBtn = 'Vendor';
-    protected $tableLayoutDefault = 'Name|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
+    public $tableLayoutDefault = 'Name|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
 
     public function __construct()
     {

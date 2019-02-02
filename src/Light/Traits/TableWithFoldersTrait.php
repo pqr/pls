@@ -13,11 +13,11 @@ use Light\Response;
 
 trait TableWithFoldersTrait
 {
-    protected $folders = false;
+    public $folders = false;
 
     // Во-вторых, нужно указать ключ поля, которое искать в массиве $data - там должно храниться id внешнего элемента
-    protected $folderNameFieldKey = 'ID';
-    protected $folderBaseDir;
+    public $folderNameFieldKey = 'ID';
+    public $folderBaseDir;
 
     protected $_cacheNotEmptyFolderIds;
 

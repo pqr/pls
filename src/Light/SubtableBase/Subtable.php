@@ -9,6 +9,8 @@ use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldFloat;
 use Light\Field\FieldMoney;
+use Light\Field\FieldMoneyWithCurrency;
+use Light\Field\FieldText;
 use Light\Img;
 use Light\Misc;
 use Light\Msg;
@@ -34,32 +36,84 @@ abstract class Subtable extends Table
     const STATE_EDIT = 'edit';
     const STATE_SUBMIT = 'submit';
 
-    protected $_state;
-
-    /** @var string имя css-класса, которое будет добавлено к div контейнеру содержащему подтаблицу */
-    protected $_cssClass;
-
-    /** @var ObjAbstract */
-    protected $_masterObj;
+    // Выставим некоторые настроки базового класса Table в значения удобные для подтаблиц
+    // Для подтаблиц специально не делаем закреплённый заголок (position: sticky)
+    public $tableSticky = false;
+    public $allowTablePrintHeadBlock = true;
+    public $allowTablePrintTotalRecordsFound = false;
 
     /**
-     * Название подтаблицы (для подзаголовков и пр.)
+     * Разрешить вручную перетягивать строки в режиме Edit, меняя их порядок в таблице. В базе данных должно быть поле OrderID
+     * @var bool
+     */
+    public $allowOrderManual = false;
+
+    /**
+     * Разрешить добавлять новые строки в режиме редактирования
+     * @var bool
+     */
+    public $allowAdd = true;
+
+    /**
+     * Разрешить копировать строки (появляется специальная иконка копирования)
+     * @var bool
+     */
+    public $allowCopy = false;
+
+    /**
+     * Разрешить вставлять данные через диалоговое окно (копирование-вставка tab separated данных, например, из Excel)
+     * @var bool
+     */
+    public $allowPaste = true;
+
+    /**
+     * Разрешить удаление строк из подтаблицы
+     * @var bool
+     */
+    public $allowDelete = true;
+
+    /**
+     * Текст ссылки для добавления новой строки
      * @var string
      */
-    protected $_title = '';
+    public $textAddLink;
+
+    /**
+     * Имена полей для режима просмотра разделённые вертикальной чертой
+     * @var string
+     */
+    public $subtableLayoutView;
+
+    /**
+     * Имена полей для режима редактирования разделённые вертикальной чертой
+     * @var string
+     */
+    public $subtableLayoutEdit;
+
+    /**
+     * Массив с ключами полей, которые не должны участсовать в функции Paste
+     * @var array
+     */
+    public $subtablePasteSkippFieldKeys = [];
+
+    /**
+     * Название подтаблицы выводимое на экран в h2
+     * @var string
+     */
+    public $textSubtableTitle = '';
 
     /**
      * Ассоциативный массив с данными по всем строкам в формате ID => [данные строки]
-     * Он отличается от массива $this->_tableData тем, что ключи $this->_data - это ID элементов в базе
+     * Он отличается от массива $this->tableData тем, что ключи $this->_data - это ID элементов в базе
      * @var array
      */
-    protected $_data;
+    protected $subtableData;
 
     /**
      * Дополнительные данные, которые ещё не существую в базе, которые пользователь класса хочет добавить динамически
      * @var array
      */
-    protected $_additionalData;
+    protected $subtableDataAdditional;
 
     /**
      * @var array поля из списка $groupconcatFieldKeys будут добавлены в мастер-модуль для режима List, причём
@@ -83,41 +137,10 @@ abstract class Subtable extends Table
      */
     protected $_cacheFieldsPrefix = '';
 
-    //Сортировка по умолчанию
-    protected $_orderBy = 'ID';
+    protected $_state;
 
-    //Включение ручной сортировки (требует поля OrderID в таблице БД)
-    protected $_orderManual = false;
-
-    //Добавление кнопки для копирования строки
-    protected $_copyRow = false;
-
-    // Настройки режима редактирования (Subtable::STATE_EDIT)
-    protected $allowAdd = true;
-    protected $allowPaste = true;
-    protected $allowDelete = true;
-
-    protected $textAddLink;
-
-    //По умолчанию имя папки строится так же как <dbTableName>/<id>
-    //Но для подтаблиц ссылающихся на объекты из других модулей как многие-ко-многим это не верно
-
-    protected $_viewTableLayout;
-    protected $_editTableLayout;
-    protected $_printHeadBlock = true;
-
-    /**
-     * Обычно при двойном клике по строке мы проваливаемся куда-то внутрь объекта. Возможно, в этом объекте есть подтаблица
-     * со связанными объектами их которых мы могли провалиться. Здесь можно указать имя этой подтаблицы и тогда ко ссылкам
-     * (в том числе при двойном клике) будет добавлен параметр <имяподтаблицы>_findid=<$this->_masterObj->getId()>
-     */
-    protected $_tableLinkFindidSubtableName;
-
-    /**
-     * Массив с ключами полей, которые не должны участсовать в функции Paste
-     * @var array
-     */
-    protected $_disablePasteFieldKeys = [];
+    /** @var ObjAbstract */
+    protected $_masterObj;
 
     public function __construct(ObjAbstract $masterObj)
     {
@@ -126,26 +149,21 @@ abstract class Subtable extends Table
         parent::__construct(Misc::getClass($this));
 
         $this->tableReloadUrl = '?a=' . Request::getModule() . '&id=' . $masterObj->getId() . '&subtable=' . $this->getTableName();
-
-        $this->_tablePrintTotalRecordsFound = false;
-        $this->allowSort = false;
         $this->allowTableLayouts = false;
-        $this->sticky = false;
+        $this->allowSort = false;
 
-        $this->textAddLink = Config::$lang === 'ru' ? 'Добавить строку' : 'Add Line';
+        // Для подтаблиц по умолчанию делаем сортировку по возрастанию ID
+        // (в TableSortable trait этот параметр строит как 'ID DESC', но для подтаблиц удобнее 'ID ASC')
+        $this->tableDefaultOrderBy = 'ID';
+
+        if (!$this->textAddLink) {
+            $this->textAddLink = Config::$lang === 'ru' ? 'Добавить строку' : 'Add Line';
+        }
 
         $masterModule = $this->getMasterModule();
         if ($masterModule) {
             $this->_obj->setMasterModuleForDbLog($masterModule);
         }
-    }
-
-
-    /**
-     * @deprecated
-     */
-    protected function init()
-    {
     }
 
     /**
@@ -180,9 +198,8 @@ abstract class Subtable extends Table
 
             if ($field->tableWidthHtml === null) {
 
-                /** @var $field FieldMoney */
-                if (($this->_state == self::STATE_EDIT && $field->getType() === F::TYPE_MONEY_WITH_CURRENCY)
-                    || ($this->_state == self::STATE_EDIT && $field->getType() === F::TYPE_MONEY && $field->currencyIso)
+                if (($this->_state == self::STATE_EDIT && $field instanceof FieldMoneyWithCurrency)
+                    || ($this->_state == self::STATE_EDIT && $field instanceof FieldMoney && $field->currencyIso)
                 ) {
                     //Для поля TYPE_MONEY_WITH_CURRENCY в режиме редактирования задаём особую ширину
                     //Это же касается для поля TYPE_MONEY в котором задана константая валюта
@@ -223,9 +240,9 @@ abstract class Subtable extends Table
      * @param array $data
      * @return void
      */
-    public function setAdditionalData($data)
+    public function setSubtableDataAdditional($data)
     {
-        $this->_additionalData = $data;
+        $this->subtableDataAdditional = $data;
     }
 
     protected function isStateView()
@@ -388,15 +405,14 @@ abstract class Subtable extends Table
         }
 
         $orderBy = [];
-        if ($this->allowSort) {
-            $orderBy[] = $this->getSqlOrderBy();
-        }
-        if ($this->_orderManual) {
+        if ($this->allowOrderManual) {
             $orderBy[] = '`OrderID`';
         }
-        if ($this->_orderBy != '') {
-            $orderBy[] = $this->_orderBy;
+        $sqlOrderBy = $this->getSqlOrderBy();
+        if ($sqlOrderBy !== 'NULL') {
+            $orderBy[] = $sqlOrderBy;
         }
+
         if ($orderBy) {
             $query .= " ORDER BY " . implode(",", $orderBy);
         }
@@ -406,19 +422,19 @@ abstract class Subtable extends Table
 
     public function loadData()
     {
-        $this->_data = [];
+        $this->subtableData = [];
 
         $query = $this->getDataQuery();
         $data = Db::getAll($query);
         foreach ($data as $row) {
             $id = $row['ID'];
-            $this->_data[$id] = $row;
+            $this->subtableData[$id] = $row;
         }
 
         //Скопируем все данные в таблицу
         //Массив $this->_data в качестве ключей имеет ID записей в базе
-        //Массив $this->_tableData специально приводим к виду последовательно пронумерованного
-        $this->_tableData = array_values($data);
+        //Массив $this->tableData специально приводим к виду последовательно пронумерованного
+        $this->tableData = array_values($data);
 
         if ($this->_state == self::STATE_VIEW && $data && $this->folders) {
             //Загрузим специальный массив с закешированным состоянием непустых папок
@@ -429,34 +445,34 @@ abstract class Subtable extends Table
             }
         }
 
-        if (is_array($this->_additionalData)) {
-            $this->_tableData = array_merge($this->_tableData, array_values($this->_additionalData));
+        if (is_array($this->subtableDataAdditional)) {
+            $this->tableData = array_merge($this->tableData, array_values($this->subtableDataAdditional));
         }
     }
 
     public function getDataCount()
     {
-        if ($this->_data === null) {
+        if ($this->subtableData === null) {
             $this->loadData();
         }
-        $count = count($this->_data);
-        if (is_array($this->_additionalData)) {
-            $count += count($this->_additionalData);
+        $count = count($this->subtableData);
+        if (is_array($this->subtableDataAdditional)) {
+            $count += count($this->subtableDataAdditional);
         }
         return $count;
     }
 
-    public function setData(array $data)
+    public function setSubtableData(array $data)
     {
-        $this->_data = $data;
+        $this->subtableData = $data;
     }
 
-    public function getData()
+    public function getSubtableData()
     {
-        if ($this->_data === null) {
+        if ($this->subtableData === null) {
             $this->loadData();
         }
-        return $this->_data;
+        return $this->subtableData;
     }
 
     protected function getHtmlTableCell(array $rowDataCalculated, int $rowNum, F $field, array $fullLinkParams): string
@@ -484,6 +500,10 @@ abstract class Subtable extends Table
 
     public function hasTotalRow(array $dataTotal): bool
     {
+        if (!$this->allowTableTotal) {
+            return false;
+        }
+
         if ($dataTotal) {
             // Если есть подсчитанные на стороне сервера данные $dataTotal, то total строку обязательно нужно выводить
             return true;
@@ -504,6 +524,8 @@ abstract class Subtable extends Table
 
     protected function getHtmlTableTrTotal(array $allFields, array $dataCalculated)
     {
+
+
         $outHtml = parent::getHtmlTableTrTotal($allFields, $dataCalculated);
         return str_replace('tr class="total"', 'tr class="total" id="' . $this->getTableName() . '-subtable-tr-total"',
             $outHtml);
@@ -528,7 +550,7 @@ abstract class Subtable extends Table
             ];
         }
 
-        if ($this->_copyRow) {
+        if ($this->allowCopy) {
             $field = $this->getFieldsetFirst()['Copy'];
             $jsFields['Copy'] = [
                 'calcTotal' => false,
@@ -539,7 +561,7 @@ abstract class Subtable extends Table
             ];
         }
 
-        if ($this->_orderManual) {
+        if ($this->allowOrderManual) {
             $field = $this->getFieldsetFirst()['OrderID'];
             $jsFields['Sort'] = [
                 'calcTotal' => false,
@@ -551,7 +573,7 @@ abstract class Subtable extends Table
         }
 
         //Добавляем ячейки в цикле
-        $editFields = explode('|', $this->_editTableLayout);
+        $editFields = explode('|', $this->subtableLayoutEdit);
         foreach ($editFields as $fieldKey) {
             if ($this->hasField($fieldKey)) {
                 $field = $this->getField($fieldKey);
@@ -563,7 +585,7 @@ abstract class Subtable extends Table
                     $jsField['copy'] = $field->copy;
 
                     //Поля, которые редактируемые могут быть вставлены с помощью функции Paste
-                    $jsField['disablePaste'] = in_array($fieldKey, $this->_disablePasteFieldKeys);
+                    $jsField['disablePaste'] = in_array($fieldKey, $this->subtablePasteSkippFieldKeys);
 
                     //Сам html код для вывода поля
                     $jsField['html'] = $this->getJsFieldInput($field);
@@ -654,7 +676,7 @@ abstract class Subtable extends Table
             $this->getFieldsetFirst()->addField(F::createHtml('Del', $params));
         }
 
-        if ($this->_copyRow && $this->isStateEdit()) {
+        if ($this->allowCopy && $this->isStateEdit()) {
             $params = $commonParams;
             $params['name'] = 'Copy';
             $params['getHtmlFunction'] = function ($value, $data, $outHtml, $forTable) {
@@ -668,7 +690,7 @@ abstract class Subtable extends Table
             $this->getFieldsetFirst()->addField(F::createHtml('Copy', $params));
         }
 
-        if ($this->_orderManual && ($this->isStateEdit() || $this->isStateSubmit())) {
+        if ($this->allowOrderManual && ($this->isStateEdit() || $this->isStateSubmit())) {
             $params = [
                 'name' => 'Sort',
                 'tableWidthHtml' => 20,
@@ -723,37 +745,37 @@ abstract class Subtable extends Table
         //Если ссылка Table Layout Settings не выводится, фиксируем выводимые поля
         if (!$this->allowTableLayouts) {
             //В режиме редактирования необходимо зафиксировать набор полей, вне зависимости от текущих настроек пользователя Table Layout Settins
-            if (!$this->_viewTableLayout) {
+            if (!$this->subtableLayoutView) {
                 //Если в конструкторе этот набор полей не был определён, выведем в таблицу все возможные поля
                 //Для начала получим имена всех полей, которые могут выводиться в таблицу
-                $this->_viewTableLayout = $this->getAllFieldsLayout(F::MODE_VIEW);
+                $this->subtableLayoutView = $this->getAllFieldsLayout(F::MODE_VIEW);
             }
 
-            $this->setTableFieldsShow($this->_viewTableLayout);
+            $this->setTableFieldsShow($this->subtableLayoutView);
         }
     }
 
     public function setViewLayout($fieldsKeysString)
     {
-        $this->_viewTableLayout = $fieldsKeysString;
+        $this->subtableLayoutView = $fieldsKeysString;
     }
 
 
     public function setEditLayout($fieldsKeysString)
     {
-        $this->_editTableLayout = $fieldsKeysString;
+        $this->subtableLayoutEdit = $fieldsKeysString;
     }
 
     protected function initEditLayout()
     {
         //В режиме редактирования необходимо зафиксировать набор полей, вне зависимости от текущих настроек пользователя Table Layout Settins
-        if (!$this->_editTableLayout) {
+        if (!$this->subtableLayoutEdit) {
             //Если в конструкторе этот набор полей не был определён, выведем в таблицу все возможные поля
             //Для начала получим имена всех полей, которые могут выводиться в таблицу
-            $this->_editTableLayout = $this->getAllFieldsLayout(F::MODE_VIEW);
+            $this->subtableLayoutEdit = $this->getAllFieldsLayout(F::MODE_VIEW);
         }
 
-        $this->setTableFieldsShow($this->_editTableLayout);
+        $this->setTableFieldsShow($this->subtableLayoutEdit);
     }
 
     public function getHtmlView()
@@ -772,7 +794,7 @@ abstract class Subtable extends Table
         $this->loadData();
 
         return '<div class="subtable-div" data-subtablename="' . htmlspecialchars($this->getTableName()) . '">'
-            . $this->getHtmlTable($this->_printHeadBlock)
+            . $this->getHtmlTable()
             . '</div>';
     }
 
@@ -814,13 +836,13 @@ abstract class Subtable extends Table
 
         //Сформируем массив из ID строк, его нужно записать в input hidden name="<subtablename>[ids]"
         $ids = [];
-        if (is_array($this->_data)) {
-            $ids = array_keys($this->_data);
+        if (is_array($this->subtableData)) {
+            $ids = array_keys($this->subtableData);
         }
 
         //Если есть дополнительный массив с данными $this->_additionalData, нужно добавить соответсвующее кол-во нулей в $rowsIds
-        if (is_array($this->_additionalData)) {
-            $max = count($this->_additionalData);
+        if (is_array($this->subtableDataAdditional)) {
+            $max = count($this->subtableDataAdditional);
             for ($i = 0; $i < $max; $i++) {
                 $ids[] = '0';
             }
@@ -829,26 +851,32 @@ abstract class Subtable extends Table
         $ids = implode(',', $ids);
 
         //В режиме редактирования разложим default данные в отсутсвующие поля $data
-        foreach ($this->_tableData as &$rowData) {
+        foreach ($this->tableData as &$rowData) {
             foreach ($this->getFieldset() as $field) {
                 if (!array_key_exists($field->key, $rowData)) {
                     $rowData[$field->key] = $field->default;
                 }
             }
         }
-        //Уберём временную переменную - это переменная-ссылка, обязательно нужно убрать!
+
+        // Уберём временную переменную - это переменная-ссылка, обязательно нужно убрать!
         unset($rowData);
+
+        // В режиме редактирования принудительно выставляем флаг, который позволит вывести каркас таблицы
+        // (thead) дажее если данных нет
+        $this->allowTablePrintTheadIfEmpty = true;
+        $this->allowTablePrintHeadBlock = false;
 
         $tdata = [
             'name' => $this->getTableName(),
-            'content' => $this->getHtmlTable(false, true),
+            'content' => $this->getHtmlTable(),
             'ids' => $ids,
             'allowAdd' => $this->allowAdd,
             'allowDelete' => $this->allowDelete,
             'allowPaste' => $this->allowPaste,
             'textAddLink' => $this->textAddLink,
             'fieldsJson' => json_encode($this->getJsFieldsArray()),
-            'orderManual' => $this->_orderManual
+            'orderManual' => $this->allowOrderManual
         ];
 
         return $tdata;
@@ -861,7 +889,7 @@ abstract class Subtable extends Table
     }
 
     /**
-     * Метод proceedSumbit в Subtable делаем final
+     * Метод proceedSubmit в Subtable делаем final
      * Если нужны какие-то дополнительные действия после сохранения, нужно переопределить afterSubmit
      * @param Msg $msgBuff
      * @param array|null $dataFromRequest
@@ -893,14 +921,14 @@ abstract class Subtable extends Table
         */
 
         // При ручной сортировке скопируем поле OrderID из FieldsetFirst для сохранения сортировки в базу
-        if ($this->_orderManual) {
+        if ($this->allowOrderManual) {
             $this->initTableFieldsAdditional();
             $field = $this->getFieldsetFirst()['OrderID'];
             $this->addField($field);
         }
 
         $this->loadData();
-        $oldData = $this->_data;
+        $oldData = $this->subtableData;
 
         if (!$this->_obj->getMasterIdForDbLog()) {
             $this->_obj->setMasterIdForDbLog($this->_masterObj->getId());
@@ -911,11 +939,11 @@ abstract class Subtable extends Table
             foreach ($this->getRowsToBeDeleted($dataFromRequest) as $rowNum) {
                 // Узнаем ID записи лежащей в данной строке
                 $id = $this->getRowIdFromPost($rowNum, $dataFromRequest);
-                if ($id && isset($this->_data[$id])) {
+                if ($id && isset($this->subtableData[$id])) {
                     // Если ID существует среди текущих данных, удалим объект
                     $this->proceedDeleteRow($id);
                     // Удалим непосредсвенно из массива Data
-                    unset($this->_data[$id]);
+                    unset($this->subtableData[$id]);
                 }
             }
         }
@@ -938,7 +966,7 @@ abstract class Subtable extends Table
         }
 
         if ($this->folders) {
-            foreach ($this->_data as $rowData) {
+            foreach ($this->subtableData as $rowData) {
                 $this->createFolder($rowData);
             }
         }
@@ -996,7 +1024,8 @@ abstract class Subtable extends Table
         $affectedRows,
         array $oldData,
         Msg $msgBuff
-    ) {
+    )
+    {
     }
 
     //Кеширующая переменная
@@ -1069,10 +1098,10 @@ abstract class Subtable extends Table
     public function deleteAll()
     {
         $this->loadData();
-        foreach ($this->_data as $id => $row) {
+        foreach ($this->subtableData as $id => $row) {
             $this->proceedDeleteRow($id);
         }
-        $this->_data = [];
+        $this->subtableData = [];
     }
 
     public function getNotDeletedDataFromReqeust(array $dataFromRequest = null)
@@ -1115,7 +1144,7 @@ abstract class Subtable extends Table
      */
     public function updateCache()
     {
-        if ($this->_data === null) {
+        if ($this->subtableData === null) {
             $this->loadData();
         }
 
@@ -1127,9 +1156,9 @@ abstract class Subtable extends Table
             //Имя поля в мастер-таблице имеет префикс 'Cache' . $this->getTableName()
             $cacheFieldKey = $this->getCacheFieldKey('Cache', $fieldKey);
 
-            if (count($this->_data)) {
+            if (count($this->subtableData)) {
                 $values = [];
-                foreach ($this->_data as $row) {
+                foreach ($this->subtableData as $row) {
                     $values[] = $row[$fieldKey] ?? '';
                 }
 
@@ -1164,9 +1193,9 @@ abstract class Subtable extends Table
         return $prefix . $this->getTableName() . $fieldKey;
     }
 
-    public function getTitle()
+    public function getTextSubtableTitle()
     {
-        return $this->_title;
+        return $this->textSubtableTitle;
     }
 
     public function proceedAjaxReload()
@@ -1183,7 +1212,7 @@ abstract class Subtable extends Table
 
         $this->loadData();
 
-        print $this->getHtmlTableForAjax($this->_printHeadBlock);
+        print $this->getHtmlTableForAjax();
         ApplicationAbstract::terminate();
     }
 
@@ -1220,7 +1249,7 @@ abstract class Subtable extends Table
         }
 
         // Это POST запрос на изменение поля
-        if (!$field->hasMode(F::MODE_SUBMIT, $this->_obj->getData())) {
+        if (!$field->hasMode(F::MODE_SUBMIT)) {
             Response::abort(403, "Field $fieldKey not editable");
         }
 
@@ -1247,12 +1276,12 @@ abstract class Subtable extends Table
 
     protected function getExcelFilename()
     {
-        return $this->_title ?: 'Subtable';
+        return $this->textSubtableTitle ?: 'Subtable';
     }
 
     protected function getExcelWorksheetName()
     {
-        return $this->_title ?: 'Subtable';
+        return $this->textSubtableTitle ?: 'Subtable';
     }
 
     /**
@@ -1265,30 +1294,26 @@ abstract class Subtable extends Table
         return $this->getMasterModule() . parent::getTableNameForSettings();
     }
 
-    protected function getTableRowLinkUrlParams(array $rowDataCalculated, int $rowNum): array
-    {
-        if ($this->_tableLinkFindidSubtableName) {
-            return [$this->_tableLinkFindidSubtableName . '_findid' => $this->_masterObj->getId()];
-        }
-
-        return [];
-    }
-
     protected function getHtmlTableTheadThContent(F $field)
     {
         $html = $this->getHtmlTableTheadThContentAlias($field);
 
         if ($this->_state === self::STATE_EDIT && $field->getChangeAll()) {
-            if ($field->getType() == F::TYPE_STRING || $field->getType() == F::TYPE_TEXT) {
-                $html .= '<br><a href="#" class="small inner change-all-string" data-fieldkey="' . $field->key . '">Изменить все</a>';
+            $text = Config::$lang === 'ru' ? 'Изменить все' : 'Change all';
+            $fieldType = $field->getType();
+            if ($fieldType === F::TYPE_STRING || $fieldType === F::TYPE_TEXT) {
+                $html .= '<br><a href="#" class="change-all-string" data-fieldkey="' . $field->key . '">' . $text . '</a>';
             } else {
-                $html .= '<br><a href="#" class="small inner change-all" data-fieldkey="' . $field->key . '">Изменить все</a>';
-                $select = $field->getClone($field->key . 'ChangeAll')->setParam('editCssClass', 'display-none');
+                $html .= '<br><a href="#" class="change-all" data-fieldkey="' . $field->key . '">' . $text . '</a>';
+                $select = $field->getClone($field->key . 'ChangeAll')
+                    ->setPlaceholder($text)
+                    ->setEditCssClass('small display-none');
+
                 $html .= $select->getHtmlInput('');
             }
         }
 
-        if ($field->getType() == F::TYPE_TEXT && $field->markdown && $this->_state == self::STATE_EDIT) {
+        if ($field instanceof FieldText && $field->markdown && $this->_state == self::STATE_EDIT) {
             $html .= '<div class="note-markdown">Данное поле поддерживает язык разметки <a href="http://klavogonki.ru/wiki/Markdown" target="_blank">Markdown</a></div>';
         }
 

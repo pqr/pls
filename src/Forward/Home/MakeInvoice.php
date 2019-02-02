@@ -32,9 +32,9 @@ class MakeInvoice extends HomeBlockAbstract
     {
         return "SELECT shipment.ID, shipment.Name, shipment.MAWBNumber, shipment.ATA
                   FROM shipment
-                  WHERE (shipment.ResponsibleCS = " . (int)$userId . " OR shipment.ResponsibleSales = " . (int)$userId . ")
+                  WHERE (shipment.ResponsibleCS = $userId OR shipment.ResponsibleSales = $userId)
                       AND shipment.ATA != '0000-00-00'
-                      AND NOT EXISTS (SELECT * FROM cinvoiceline WHERE FileNumber = shipment.Name)
+                      AND NOT EXISTS (SELECT 1 FROM cinvoiceline WHERE FileNumber = shipment.Name)
                   ORDER BY shipment.ATA";
     }
 }

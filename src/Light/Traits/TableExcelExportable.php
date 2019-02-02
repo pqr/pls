@@ -15,11 +15,10 @@ use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 
 /**
  * @method getTableDataCount()
- * @property array $_tableData
  */
 trait TableExcelExportable
 {
-    protected $allowExportToExcel = true;
+    public $allowExportToExcel = true;
 
     /**
      * @return Fieldset|F[]
@@ -57,7 +56,7 @@ trait TableExcelExportable
         $this->prefetchSelectOptions($fieldsetSowed->getFieldsArr());
 
         $dataCalculated = $this->getTableDataCalculated();
-        $dataTotal = $this->getTableTotal($dataCalculated);
+        $dataTotal = $this->getTableDataTotal($dataCalculated);
         if (!$this->hasTotalRow($dataTotal)) {
             // Если в текущей таблице метод hasTotalRow был переопределён так, что возвращает false
             // это значит что для данной таблицы total строка не нужна. Чтобы не выдавать её в Excel,

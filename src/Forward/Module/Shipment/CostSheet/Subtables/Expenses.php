@@ -11,7 +11,7 @@ class Expenses extends IncomeExpensesAbstract
         parent::__construct($masterObj);
 
         $this->textAddLink = 'Add Expenses Row';
-        $this->tableTotal = [
+        $this->tableDataTotal = [
             'Name' => 'Total Expenses',
             'Amount' => 'USD ' . $this->_masterObj['CacheCSExpensesinUSD']
         ];

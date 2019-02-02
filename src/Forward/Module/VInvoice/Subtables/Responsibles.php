@@ -14,11 +14,11 @@ class Responsibles extends Subtable
 
         $this->setDbTable('vinvoice_responsible');
 
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
         $this->allowExportToExcel = false;
         $this->allowTableLayouts = false;
         $this->allowPaste = false;
-        $this->tableEmptyText = 'No responsibles';
+        $this->textTableEmpty = 'No responsibles';
         $this->textAddLink = 'Add Responsible';
 
         $this->addFields(
@@ -42,7 +42,7 @@ class Responsibles extends Subtable
             $shipmentId = (int)$_GET['fromCostSheet'];
             $respSales = Db::getOne("SELECT ResponsibleSales FROM shipment WHERE ID = @i", $shipmentId);
             if ($respSales) {
-                $this->setAdditionalData([['UserID' => $respSales]]);
+                $this->setSubtableDataAdditional([['UserID' => $respSales]]);
             }
         }
 

@@ -62,6 +62,7 @@ trait FilesDialogTrait
             ->getHref();
 
         $html = '<form action="' . $formActionUrl . '" method="post">'
+            . $this->filesDialogHeaderHtml($masterObj)
             . $this->filesDialogTableHtml($masterObj)
             . '</form>';
 
@@ -103,6 +104,7 @@ trait FilesDialogTrait
             $manager = $this->filesDialogManager($masterObj->getId());
             $manager->syncDbWithFolder();
 
+            $html .= $this->filesDialogHeaderHtml($masterObj);
             $html .= $this->filesDialogTableHtml($masterObj);
 
         }
@@ -112,23 +114,21 @@ trait FilesDialogTrait
         Response::showDialog($html, $btnSaveText, null, null, null, null, '95%', 10);
     }
 
-    private function filesDialogTableHtml(ObjAbstract $masterObj): string
+    protected function filesDialogHeaderHtml(ObjAbstract $masterObj): string
     {
         $folderLink = $this->fieldFolder()->getHtml('', $masterObj->getData());
-        $table = $this->filesDialogTable($masterObj->getId());
-
         $objDescription = $masterObj->getDescriptionHtml();
-        if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], '?a=' . $this->getModule()) === false) {
-            // Пользователь открыл диалог с файлами из какого-то другого модуля (не из текущего).
-            // В этом случае добавим к описанию объекта ссылу не него самого
-            $objDescription .= ' '
-                . Link::create($this->getModule(), '<small>' . Img::iconExternalLink() . '</small>')
-                    ->view($masterObj->getId())
-                    ->blank();
-        }
+                $externalLink = Link::create($this->getModule(), '<small>' . Img::iconExternalLink() . '</small>')
+                ->view($masterObj->getId())
+                ->blank();
 
-        return '<h3>' . $folderLink . ' ' . $objDescription . '</h3>'
-            . $table->getHtmlTable(false);
+        return "<h3>$folderLink $objDescription $externalLink</h3>";
+    }
+
+    protected function filesDialogTableHtml(ObjAbstract $masterObj): string
+    {
+        $table = $this->filesDialogTable($masterObj->getId());
+        return $table->getHtmlTable();
     }
 
     protected function viewPostFilesDialogSubmit()
@@ -218,7 +218,8 @@ trait FilesDialogTrait
         if (!isset($this->filesManager[$masterId])) {
             // ['Basis', 'Module', 'Shipment', 'Shipment']
             $parts = explode('\\', get_class($this));
-            $parts[3] = 'FilesManager';
+            // Последний элемент превращаем из 'Shipment' в 'ShipmentFiles'
+            $parts[3] .= 'Files';
             $class = implode('\\', $parts);
             $this->filesManager[$masterId] = new $class($masterId);
         }
@@ -250,7 +251,7 @@ trait FilesDialogTrait
 
         $data = array_values($manager->loadFromDb());
         $table->setTableData($data);
-        $table->tableEmptyText = Config::$lang === 'ru' ? 'В папке нет файлов' : 'No files';
+        $table->textTableEmpty = Config::$lang === 'ru' ? 'В папке нет файлов' : 'No files';
 
         return $table;
     }

@@ -11,10 +11,10 @@ use Light\SubtableBase\Subtable;
 
 class StandartRates extends Subtable
 {
-    protected $allowExportToExcel = false;
+    public $allowExportToExcel = false;
     public $tableEmptyText = '';
-    protected $orderBy = 'ID DESC';
-    protected $tableLayoutDefault = 'ID|Name|ResponsibleSalesID|DepartureIATA|ArrivalIATA|ValidFrom|ValidUntil|CommentsInternal';
+    public $tableDefaultOrderBy = 'ID DESC';
+    public $tableLayoutDefault = 'ID|Name|ResponsibleSalesID|DepartureIATA|ArrivalIATA|ValidFrom|ValidUntil|CommentsInternal';
 
     public function __construct(ObjAbstract $masterObj)
     {

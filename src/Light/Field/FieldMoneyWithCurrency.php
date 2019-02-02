@@ -2,11 +2,13 @@
 
 namespace Light\Field;
 
+use Light\Db;
 use Light\Field\CommonFields as CF;
 
 class FieldMoneyWithCurrency extends FieldMoney
 {
     protected $defaultCurrencyIso = '';
+    protected $currencyIsoFieldKey;
 
     protected function initDefaultParams()
     {
@@ -20,6 +22,9 @@ class FieldMoneyWithCurrency extends FieldMoney
      */
     public function getCurrencyIsoDbFieldKey()
     {
+        if ($this->currencyIsoFieldKey) {
+            return $this->currencyIsoFieldKey;
+        }
         return str_replace('Amount', '', $this->key) . 'CurrencyISO';
     }
 
@@ -33,7 +38,8 @@ class FieldMoneyWithCurrency extends FieldMoney
         return $sqlSelect;
     }
 
-    protected function calcGroupconcatSum($value) {
+    protected function calcGroupconcatSum($value)
+    {
         $lines = explode("\n", $value);
 
         $amountPerCurrency = [];
@@ -105,7 +111,7 @@ class FieldMoneyWithCurrency extends FieldMoney
 
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
-        list(, $amount) = self::getAsTouple($value);
+        [, $amount] = self::getAsTouple($value);
 
         $amount = (double)$amount;
         if ($amount == 0 && $this->zeroEmptyExcel) {
@@ -130,7 +136,7 @@ class FieldMoneyWithCurrency extends FieldMoney
 
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
-        list($currencyIso, $amount) = self::getAsTouple($value);
+        [$currencyIso, $amount] = self::getAsTouple($value);
 
         $params = $this->initialParams;
 
@@ -193,5 +199,19 @@ class FieldMoneyWithCurrency extends FieldMoney
         return $dbValue;
     }
 
+    public static function createFromMoney(FieldMoney $fieldMoney, string $currencyFieldKey = 'CurrencyISO')
+    {
+        $sourceParams = $fieldMoney->initialParams;
+        $sqlSelect = $fieldMoney->getSqlSelect();
+        if (!$sqlSelect) {
+            $sqlSelect = Db::quote($fieldMoney->key);
+        }
+        // Создаём новое поле типа MoneyWithCurrency на основе старого поля с ключём $moneyFieldKey
+        $params = [
+            'sqlSelect' => "CONCAT(`$currencyFieldKey`, ' ', $sqlSelect)",
+            'modes' => self::MODE_READONLY,
+        ];
 
+        return self::createMoneyWithCurrency($fieldMoney->key, $params + $sourceParams);
+    }
 }

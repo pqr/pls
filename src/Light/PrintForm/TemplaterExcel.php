@@ -23,8 +23,12 @@ class TemplaterExcel extends TemplaterAbstract
      * @var string
      */
     private $titleExcelSheet;
+    /**
+     * @var int
+     */
+    private $tableOpts;
 
-    public function __construct(string $templateFilepathAbs, string $titleExcelSheet, Fieldset $fieldset)
+    public function __construct(string $templateFilepathAbs, string $titleExcelSheet, Fieldset $fieldset, int $tableOpts)
     {
         parent::__construct($templateFilepathAbs);
 
@@ -33,11 +37,12 @@ class TemplaterExcel extends TemplaterAbstract
 
         $titleExcelSheet = mb_substr($titleExcelSheet, 0, 30);
         $this->titleExcelSheet = str_replace('/', '_', $titleExcelSheet);
+        $this->tableOpts = $tableOpts;
     }
 
     public function writeData(array $data)
     {
-        $this->xlsWriter->replaceData($data, $this->fieldset);
+        $this->xlsWriter->replaceData($data, $this->fieldset, $this->tableOpts);
         $this->xlsWriter->getSpreadsheet()->getActiveSheet()->setTitle($this->titleExcelSheet);
     }
 

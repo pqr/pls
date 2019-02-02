@@ -25,7 +25,7 @@ class CustomerOutstanding extends HomeBlockAbstract
         
         $this->tableLinkModule = 'Customer';
         $this->allowExportToExcel = false;
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
 
         $this->addFields(
 
@@ -82,7 +82,7 @@ class CustomerOutstanding extends HomeBlockAbstract
                       AND DueDate < CURDATE()";
 
         if ($this->userGroupId != Constant::USERGROUP_FIN) {
-            $customerIds = array_column($this->_tableData, 'ID');
+            $customerIds = array_column($this->tableData, 'ID');
             if ($customerIds) {
                 $query .= " AND CustomerID IN (" . implode(',', $customerIds) . ")";
             }

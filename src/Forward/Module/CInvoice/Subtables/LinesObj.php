@@ -3,7 +3,6 @@ namespace Forward\Module\CInvoice\Subtables;
 
 use Forward\Field\GeneralFields;
 use Forward\Field\InvoiceFields;
-use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\ObjAbstract;
 

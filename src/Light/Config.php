@@ -104,4 +104,5 @@ class Config
     // Использовать Athena вместо Wkhtmltopdf
     public static $useAthena = false;
 
+    public static $yandexTranslateApiKey = "";
 }

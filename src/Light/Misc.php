@@ -922,6 +922,11 @@ class Misc
 
     public static function getClass($classNameOrObj)
     {
+        if (is_string($classNameOrObj) && strpos($classNameOrObj, '\\') === false) {
+            // Имя класса задано простой строкой без неймспейсов - тут уже ничего сделать нельзя
+            return $classNameOrObj;
+        }
+
         $ref = new \ReflectionClass($classNameOrObj);
         return $ref->isAnonymous() ? 'Anonymous' . $ref->getParentClass()->getShortName() : $ref->getShortName();
     }
@@ -989,4 +994,38 @@ class Misc
         return true;
     }
 
+    /**
+     * Перевод через Яндекс.Переводчик API
+     * https://tech.yandex.ru/translate/doc/dg/reference/translate-docpage/
+     * @param string $text
+     * @param string $lang
+     * @return null|string
+     */
+    public static function getTranslateFromYandex(string $text, string $lang = 'ru-en'): ?string
+    {
+        $opts = [
+            'http' => [
+                'method' => 'POST',
+                'header' => 'Content-type: application/x-www-form-urlencoded',
+                'content' => http_build_query(['text' => $text])
+            ]
+        ];
+
+        $context = stream_context_create($opts);
+
+        $url = 'https://translate.yandex.net/api/v1.5/tr.json/translate?' . http_build_query([
+                'key' => Config::$yandexTranslateApiKey,
+                'lang' => $lang
+            ]);
+
+        $result = file_get_contents($url, false, $context);
+
+        $result = json_decode($result, true);
+
+        if (isset($result['text'])) {
+            return reset($result['text']);
+        }
+
+        return null;
+    }
 }

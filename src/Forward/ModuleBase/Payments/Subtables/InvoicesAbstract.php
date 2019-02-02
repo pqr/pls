@@ -27,14 +27,14 @@ abstract class InvoicesAbstract extends Subtable
         $customerOrVendor = $this->getCustomerOrVendor();
 
         $this->setDbTable(strtolower($firstLetter . 'payment_' . $firstLetter . 'invoice'));
-        $this->_title = $customerOrVendor . ' Invoices';
+        $this->textSubtableTitle = $customerOrVendor . ' Invoices';
         $this->allowPaste = false;
 
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->allowTableLayouts = false;
-        $this->_tablePrintTotalRecordsFound = false;
-        $this->tableEmptyText = 'No ' . $customerOrVendor . ' Invoices';
+        $this->allowTablePrintTotalRecordsFound = false;
+        $this->textTableEmpty = 'No ' . $customerOrVendor . ' Invoices';
 
         //Параметры для формирования ссылок на модули CInvoice или VInvoice
         $this->tableLinkModule = $firstLetter . 'Invoice';
@@ -48,14 +48,14 @@ abstract class InvoicesAbstract extends Subtable
         $this->folderNameFieldKey = 'RealInvoiceID';
 
         $commonFields = $firstLetter . 'InvoiceName|InvoiceAmount|InvoiceOutstandingAmount|ClearingAmountInInvoiceCurrency|RateToInvoiceCurrency|ClearingAmountInPaymentCurrency';
-        $this->_viewTableLayout = 'StatusIco|' . $commonFields;
-        $this->_editTableLayout = 'StatusIco|' . $firstLetter . 'InvoiceID|' . $commonFields;
+        $this->subtableLayoutView = 'StatusIco|' . $commonFields;
+        $this->subtableLayoutEdit = 'StatusIco|' . $firstLetter . 'InvoiceID|' . $commonFields;
 
-        $this->tableTotal = [$firstLetter . 'InvoiceName' => 'Total'];
+        $this->tableDataTotal = [$firstLetter . 'InvoiceName' => 'Total'];
 
         if (isset($_POST['invoices'])) {
             $invIds = explode(',', $_POST['invoices']);
-            $this->setAdditionalData($this->getInvoices($invIds));
+            $this->setSubtableDataAdditional($this->getInvoices($invIds));
         }
 
         //Добавим в Fieldset те поля, которые не сохраняются в базу данных, но участвуют в таблице

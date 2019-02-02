@@ -49,7 +49,7 @@ class Session implements \SessionHandlerInterface
         }
 
         // Очищаем в базе
-        Db::query("DELETE FROM phpsessionflash WHERE SessionID = " . Db::escString(session_id()));
+        Db::query("DELETE FROM user_flash WHERE UserID = " . User::getId());
 
         return $out;
     }
@@ -63,7 +63,6 @@ class Session implements \SessionHandlerInterface
     {
         $sessionIdSql = Db::esc($sessionId);
         Db::query("DELETE FROM phpsession WHERE SessionID = '$sessionIdSql'");
-        Db::query("DELETE FROM phpsessionflash WHERE SessionID = '$sessionIdSql'");
         return true;
     }
 
@@ -84,13 +83,6 @@ class Session implements \SessionHandlerInterface
     {
         $sessionIdSql = Db::esc($sessionId);
         self::$lastSessionData = (string)Db::getOne("SELECT `Data` FROM phpsession WHERE SessionID = '$sessionIdSql'");
-        $flashMessagesJson = Db::getOne("SELECT Messages FROM phpsessionflash WHERE SessionID = '$sessionIdSql'");
-        if ($flashMessagesJson) {
-            $flashMessagess = json_decode($flashMessagesJson, true);
-            if (is_array($flashMessagess)) {
-                self::getMsgBuff()->addMessagess($flashMessagess);
-            }
-        }
         return self::$lastSessionData;
     }
 
@@ -103,15 +95,33 @@ class Session implements \SessionHandlerInterface
              VALUES ('$sessionIdSql', " . time() . ", '" . Db::esc($sessionData) . "')"
             );
         }
-        if (self::$msgBuff && self::$msgBuff->getCount()) {
+
+        return true;
+    }
+
+    public static function loadFlash()
+    {
+        if (!User::getId()) {
+            return;
+        }
+        $flashMessagesJson = Db::getOne("SELECT Messages FROM user_flash WHERE UserID = " . User::getId());
+        if ($flashMessagesJson) {
+            $flashMessagess = json_decode($flashMessagesJson, true);
+            if (is_array($flashMessagess)) {
+                self::getMsgBuff()->addMessagess($flashMessagess);
+            }
+        }
+    }
+
+    public static function writeFlash()
+    {
+        if (self::$msgBuff && count(self::$msgBuff) && User::getId()) {
             // Есть какие-то новые flash сообщения, запишем их в таблицу phpsessionflash
             $flashMessagesJson = json_encode(self::$msgBuff->getAll(), JSON_UNESCAPED_UNICODE);
             Db::query(
-                "REPLACE INTO phpsessionflash (SessionID, Messages)
-             VALUES ('$sessionIdSql', '" . Db::esc($flashMessagesJson) . "')"
+                "REPLACE INTO user_flash (UserID, Messages)
+                 VALUES (" . User::getId() . ", '" . Db::esc($flashMessagesJson) . "')"
             );
         }
-
-        return true;
     }
 }

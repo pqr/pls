@@ -12,8 +12,8 @@ class Location extends ModuleAbstract
 {
 
     protected $textSaveBtn = 'Airport';
-    protected $tableDefaultOrderBy = 'Name';
-    protected $tableLayoutDefault = 'Name|NameRu|IATA|CountryCode';
+    public $tableDefaultOrderBy = 'Name';
+    public $tableLayoutDefault = 'Name|NameRu|IATA|CountryCode';
 
     public function __construct()
     {

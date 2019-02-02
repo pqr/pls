@@ -16,10 +16,10 @@ use Light\SubtableBase\Subtable;
 
 class Lines extends Subtable
 {
-    protected $tableLinkModule = 'Shipment';
-    protected $tableLinkFieldKeys = ['FileNumber', 'MAWBNumber'];
-    protected $tableLinkIdFieldKey = 'ShipmentID';
-    protected $_title = 'Shipments';
+    public $tableLinkModule = 'Shipment';
+    public $tableLinkFieldKeys = ['FileNumber', 'MAWBNumber'];
+    public $tableLinkIdFieldKey = 'ShipmentID';
+    public $textSubtableTitle = 'Shipments';
 
     public function __construct(ObjAbstract $masterObj)
     {

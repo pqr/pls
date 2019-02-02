@@ -100,7 +100,7 @@ class StandartRatesExcel extends Table
         }
         unset($row);
 
-        $this->_tableData = $data;
+        $this->tableData = $data;
     }
 
     /**

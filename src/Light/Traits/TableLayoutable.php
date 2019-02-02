@@ -14,14 +14,13 @@ use Light\User;
 
 trait TableLayoutable
 {
-    protected $tableLayoutDefault = '';
-    protected $tableLayouts = [];
-    protected $allowTableLayouts = true;
+    public $tableLayoutDefault = '';
+    public $tableLayouts = [];
+    public $allowTableLayouts = true;
 
     private static $isLayoutDailogPrinted = false;
 
     abstract public function setTableFieldsShow($fieldsKeysString);
-
 
     /** @return Fieldset|F[] */
     abstract public function getFieldset();
@@ -148,7 +147,7 @@ trait TableLayoutable
     protected function showTableLayoutSettingsDialog()
     {
         $fieldsetList = $this->getFieldset()->filterByMode(F::MODE_LIST);
-        $shownFieldKeys = $this->getTableFieldsShow() ?? $fieldsetList->getKeys();
+        $shownFieldKeys = $this->tableFieldsShow ?? $fieldsetList->getKeys();
         $fieldsWidth = $this->tableUserParams->loadFieldsWidth();
 
         $allFields = [];

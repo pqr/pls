@@ -14,9 +14,9 @@ class Cargo extends Subtable
         parent::__construct($masterObj);
 
         $this->setDbTable('quotationcargo');
-        $this->_title = 'Cargo';
+        $this->textSubtableTitle = 'Cargo';
         $this->textAddLink = 'Add Cargo';
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(

@@ -19,7 +19,7 @@ abstract class IncomeExpensesAbstract extends Subtable
     {
         parent::__construct($masterObj);
 
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
         $this->allowExportToExcel = false;
         $this->allowTableLayouts = false;
     }
@@ -35,7 +35,7 @@ abstract class IncomeExpensesAbstract extends Subtable
 
         //Пройдём по загруженным данным и сделаем разбивку по номерам счетов в колонке InvNum
         $this->_sumAmoutPerInvNum = [];
-        foreach ($this->_data as $rowData) {
+        foreach ($this->subtableData as $rowData) {
             $invNum = $rowData['InvNum'];
             if ($invNum) {
                 $key = 'InvNum' . $invNum;
@@ -43,7 +43,7 @@ abstract class IncomeExpensesAbstract extends Subtable
                     $this->_sumAmoutPerInvNum[$key] = 0;
                 }
 
-                list(, $amount) = FieldMoneyWithCurrency::getAsTouple($rowData['Amount']);
+                [, $amount] = FieldMoneyWithCurrency::getAsTouple($rowData['Amount']);
                 $this->_sumAmoutPerInvNum[$key] += $amount;
             }
         }
@@ -85,8 +85,8 @@ abstract class IncomeExpensesAbstract extends Subtable
     {
         //Создает готовую для отображения информацию о сумме каждой валюты в подтаблице
         $amountPerCurrency = [];
-        foreach ($this->_data as $rowData) {
-            list($currencyIso, $amount) = FieldMoneyWithCurrency::getAsTouple($rowData['Amount']);
+        foreach ($this->subtableData as $rowData) {
+            [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($rowData['Amount']);
             if (!isset($amountPerCurrency[$currencyIso])) {
                 $amountPerCurrency[$currencyIso] = 0;
             }
@@ -126,7 +126,7 @@ abstract class IncomeExpensesAbstract extends Subtable
         $tagParams = parent::getTableRowTagParams($rowData, $rowNum);
 
         //Добавим сумму данной строки в параметр, чтобы в JavaScript можно было посчитать сумму выделенных строк
-        list($currencyIso, $amount) = FieldMoneyWithCurrency::getAsTouple($rowData['Amount']);
+        [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($rowData['Amount']);
         $tagParams .= ' data-amount="' . $amount . '" data-currency="' . $currencyIso . '"';
 
         //Добавим data параметр с номером счёта

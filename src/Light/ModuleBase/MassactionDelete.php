@@ -58,6 +58,7 @@ trait MassactionDelete
             $this->beforeDelete($obj);
             $this->proceedDeleteObj($obj, 'Multiple Delete');
             $this->proceedDeleteSubtables($obj);
+            $obj->afterDelete($oldData, $msgBuff);
             $this->afterDelete($obj, $oldData);
             $deleted++;
         }

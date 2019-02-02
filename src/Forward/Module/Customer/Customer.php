@@ -25,9 +25,9 @@ use Light\User;
 
 class Customer extends ModuleAbstract
 {
-    protected $folders = true;
+    public $folders = true;
     protected $textSaveBtn = 'Customer';
-    protected $tableLayoutDefault = 'Name|Commodity|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
+    public $tableLayoutDefault = 'Name|Commodity|Address|CreditPeriod|CreditAmount|CreditCurrencyISO|Active';
 
     public function __construct()
     {

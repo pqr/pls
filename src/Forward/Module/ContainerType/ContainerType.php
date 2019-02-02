@@ -11,7 +11,7 @@ use Light\User;
 class ContainerType extends ModuleAbstract
 {
     protected $textSaveBtn = 'Container Type';
-    protected $tableLayoutDefault = 'OrderID|Name|TEU';
+    public $tableLayoutDefault = 'OrderID|Name|TEU';
 
     public function __construct()
     {

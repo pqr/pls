@@ -3,6 +3,7 @@
 namespace Light\Field;
 
 use Light\Config;
+use Light\Db;
 use Light\Misc;
 
 /**
@@ -75,7 +76,8 @@ class FieldMonth extends FieldInputAbstract
 
         $editTagParams .= ' data-allyear="' . ($this->allYear ? '1' : '0') . '"'
             . ' data-yearfrom="' . htmlspecialchars($this->yearFrom) . '"'
-            . ' data-yearuntil="' . htmlspecialchars($this->yearUntil) . '"';
+            . ' data-yearuntil="' . htmlspecialchars($this->yearUntil) . '"'
+            . ' autocomplete="off"';
 
         return $editTagParams;
     }
@@ -120,12 +122,29 @@ class FieldMonth extends FieldInputAbstract
 
     protected function getSqlWhereInner($value)
     {
-        if (strlen($value) === 10) {
-            return "DATE_FORMAT({fieldKey}, '%Y-%m-01') = '{value}'";
-        } else {
-            //Задан целый год
-            return "YEAR({fieldKey}) = '{value}'";
+        return self::getSqlWhereStatic('{fieldKey}', $value);
+    }
+
+    /**
+     * Вспомагательный статический метод - может пригодиться при ручном конструировании различных
+     * запросов с фильтром по месяцу
+     * @param string $fieldKey
+     * @param $value
+     * @return string
+     */
+    public static function getSqlWhereStatic(string $fieldKey, $value): string
+    {
+        if (!$value) {
+            // Фильтр не задан вообще
+            return '1';
         }
+
+        if (strlen($value) === 10) {
+            return "DATE_FORMAT($fieldKey, '%Y-%m-01') = " . Db::escString($value);
+        }
+
+        //Задан целый год
+        return "YEAR($fieldKey) = " . Db::escString($value);
     }
 
     public static function parse($value)
@@ -160,5 +179,10 @@ class FieldMonth extends FieldInputAbstract
         }
 
         return $year . '-' . $month . '-01';
+    }
+
+    public static function isEmpty($value): bool
+    {
+        return !$value || $value === '0000-00-00';
     }
 }

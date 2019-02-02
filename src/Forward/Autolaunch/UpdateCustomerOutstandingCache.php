@@ -7,8 +7,8 @@ use Light\Module\Autolaunch\AutolaunchAbstract;
 
 class UpdateCustomerOutstandingCache extends AutolaunchAbstract
 {
-    protected static $_title = 'Daily Update Customer Outstanding Cache';
-    protected static $_description = 'customer_openinvoices, customer_openinvoicespercompany';
+    protected static $title = 'Daily Update Customer Outstanding Cache';
+    protected static $description = 'customer_openinvoices, customer_openinvoicespercompany';
 
     public function run(array $params)
     {

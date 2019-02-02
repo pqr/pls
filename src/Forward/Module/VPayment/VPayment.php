@@ -11,7 +11,7 @@ use Light\Field\FieldAbstract as F;
 class VPayment extends PaymentModuleAbstract
 {
     protected $textSaveBtn = 'Vendor Payment';
-    protected $tableLayoutDefault = 'CompanyID|Name|VendorID|PaymentDate|Amount|CurrencyISO|Comments';
+    public $tableLayoutDefault = 'CompanyID|Name|VendorID|PaymentDate|Amount|CurrencyISO|Comments';
 
     protected function registerSubtables()
     {

@@ -1,7 +1,10 @@
+import {getFieldNode, getNodeValue} from "./Light";
+
 class Select2 {
     private select: HTMLSelectElement;
     private $select: JQuery;
-    private parentFields: HTMLSelectElement[] | null = null;
+    private $root: JQuery;
+    private parentFields: JQuery[] | null = null;
     private currentXhr: JQueryXHR | null = null;
     private readonly multiple: boolean = false;
 
@@ -13,18 +16,20 @@ class Select2 {
 
         this.$select = $(select);
 
+        this.$root = this.$select.closest("form") || $root;
+
         this.multiple = this.select.hasAttribute("multiple");
 
         // Инициализируем внутреннюю переменную this.parentFields
         // пригодится для правильного формирования опций select2
-        this.initParentFields($root);
+        this.initParentFields();
 
         const options = this.getSelect2Options();
 
         this.$select.select2(options);
     }
 
-    private initParentFields($root: JQuery) {
+    private initParentFields() {
         const parentFieldKeysStr = this.select.getAttribute("data-parantfieldkeys");
         if (!parentFieldKeysStr) {
             return;
@@ -32,14 +37,15 @@ class Select2 {
 
         // Преобразуем строку содержащую ключи родительских полей через запятую в массив конкретных элементов
         // Поиск будем производить внутри ближайшей формы или $root контейнера, внутри которого происходит initSelect2
-        const formOrContainer = this.select.closest("form") || $root.get(0);
-        const parentFields: HTMLSelectElement[] = parentFieldKeysStr
+        const parentFields: JQuery[] = <JQuery[]>parentFieldKeysStr
             .split(",")
             .map((parentFieldKey: string) => {
-                return <HTMLSelectElement>formOrContainer.querySelector(`[name=${parentFieldKey}]`);
+                return getFieldNode(this.$root, parentFieldKey, 'Select');
             })
-            // уберём все не найденные элементы (все null)
-            .filter(Boolean);
+            // уберём все не найденные элементы
+            .filter(($parentField: JQuery) => {
+                return $parentField.length === 1;
+            });
 
         if (parentFields.length === 0) {
             return;
@@ -50,10 +56,10 @@ class Select2 {
             // автоматически подставлять в дочернее (текущее) поле едиснветнно возможный вариант
             // (если этот вариан действительно единственно возможный).
             // А если вариантов несколько, то сбросим на any или empty, если текущий child выбор не присутствует среди возможных
-            parentFields.forEach((parentField: HTMLSelectElement) => {
+            parentFields.forEach(($parentField: JQuery) => {
                 // почему-то есил делать parentField.addEventListener('change', onParentFieldChange);
                 // то не срабатывает. Возможно, из-за того, что parent зачастую сам select2
-                $(parentField).on("change", (e: any) => {
+                $parentField.on("change", (e: any) => {
                     const newParentValue = e.target.value;
                     if (newParentValue !== "" && newParentValue !== "%") {
                         this.onParentFieldChange();
@@ -151,8 +157,12 @@ class Select2 {
             return null;
         }
 
-        return this.parentFields.reduce((acc: any, field: HTMLSelectElement) => {
-            acc[field.name] = field.value;
+        return this.parentFields.reduce((acc: any, $parentField: JQuery) => {
+            // У родительских полей принудительно убираем квардратные скобки из атрибута name, на случае если это
+            // было поле multiple select
+            const parentFieldKey = $parentField.attr('name')!.replace('[]', '');
+            acc[parentFieldKey] = getNodeValue($parentField, 'Select');
+            console.log(acc[parentFieldKey]);
             return acc;
         }, {});
     }

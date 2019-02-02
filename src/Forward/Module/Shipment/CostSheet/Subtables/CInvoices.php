@@ -27,12 +27,12 @@ class CInvoices extends InvoicesAbstract
             CostSheetFields::invoiceComments()
         );
 
-        $this->tableTotal = [
+        $this->tableDataTotal = [
             'Name' => 'Total Income',
             'InvoiceAmountWithCurrency' => 'USD ' . $shipmentObj['CacheIncomeinUSD']
         ];
 
         //Сразу загрузим данные
-        $this->_tableData = CommonDataProvider::getCInvoices($shipmentObj['Name']);
+        $this->tableData = CommonDataProvider::getCInvoices($shipmentObj['Name']);
     }
 } 

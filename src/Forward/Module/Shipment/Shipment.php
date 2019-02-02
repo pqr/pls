@@ -54,9 +54,9 @@ class Shipment extends ModuleAbstract
         'ResponsibleCS' => 'Customer Service',
     ];
 
-    protected $folders = true;
+    public $folders = true;
     protected $textSaveBtn = 'Shipment';
-    protected $tableLayoutDefault =
+    public $tableLayoutDefault =
         'Name|FileClosed|Month|MAWBNumber|DepartureIATA|ArrivalIATA|CustomerID|ETD|ETA|ATA';
 
     public function __construct()
@@ -656,11 +656,10 @@ class Shipment extends ModuleAbstract
         }
 
         // Если пользователь вручную заполнил поле ShipmentRequestNo, то проверим, что это значение не выходит далеко впедёр от максимального
-        if (isset($dataFromRequest['ShipmentRequestNo'])
-            && isset($dataFromRequest['CompanyID'])
+        if (isset($dataFromRequest['ShipmentRequestNo'], $dataFromRequest['CompanyID'])
             && $dataFromRequest['ShipmentRequestNo'] !== '0000-00-00'
             && $dataFromRequest['CustomerAccountID']
-            && (Constant::isOneCCompany($dataFromRequest['CompanyID']))
+            && Constant::isOneCCompany($dataFromRequest['CompanyID'])
         ) {
 
             $shipmentRequestDate = $this->getShipmentRequestDate($dataFromRequest['ETD']);

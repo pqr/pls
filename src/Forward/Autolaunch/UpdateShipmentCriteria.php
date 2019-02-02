@@ -8,8 +8,8 @@ use Light\Module\Autolaunch\AutolaunchAbstract;
 
 class UpdateShipmentCriteria extends AutolaunchAbstract
 {
-    protected static $_title = 'Update Shipment Criteria';
-    protected static $_description = 'Обновляет критерии по перевозкам. Должен запускаться ежедневно в начале дня.';
+    protected static $title = 'Update Shipment Criteria';
+    protected static $description = 'Обновляет критерии по перевозкам. Должен запускаться ежедневно в начале дня.';
 
     public function initFieldset()
     {

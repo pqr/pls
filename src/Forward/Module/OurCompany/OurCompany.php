@@ -10,7 +10,7 @@ use Light\User;
 class OurCompany extends ModuleAbstract
 {
     protected $textSaveBtn = 'Company';
-    protected $tableLayoutDefault = 'OrderID|Name';
+    public $tableLayoutDefault = 'OrderID|Name';
 
     public function __construct()
     {

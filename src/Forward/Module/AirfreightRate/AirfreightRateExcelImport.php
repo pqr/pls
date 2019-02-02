@@ -69,7 +69,7 @@ class AirfreightRateExcelImport
 
         //Пора вставлять или обновлять данные по текущему листу базу.
         //В логи будет записано чилсло добавленных и обновлённых записей
-        list($inserted, $updated, $notChanged) = $this->insertOrUpdateDb($dataForDb);
+        [$inserted, $updated, $notChanged] = $this->insertOrUpdateDb($dataForDb);
 
         $msgBuff->addEmptyLine();
         $msgBuff->addHtml('<hr>');

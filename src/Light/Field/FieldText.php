@@ -85,4 +85,9 @@ class FieldText extends FieldAbstract
     {
         return "{fieldKey} LIKE '%{value}%'";
     }
+
+    public static function isEmpty($value): bool
+    {
+        return trim($value) === '';
+    }
 }

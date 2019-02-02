@@ -22,13 +22,13 @@ abstract class PaymentsAbstract extends Subtable
         $customerOrVendor = $this->getCustomerOrVendor();
 
         $this->setDbTable(strtolower($firstLetter . 'payment_' . $firstLetter . 'invoice'));
-        $this->_title = $customerOrVendor . ' Payments';
+        $this->textSubtableTitle = $customerOrVendor . ' Payments';
 
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->allowTableLayouts = false;
-        $this->_tablePrintTotalRecordsFound = false;
-        $this->tableEmptyText = 'No ' . $customerOrVendor . ' Payments yet';
+        $this->allowTablePrintTotalRecordsFound = false;
+        $this->textTableEmpty = 'No ' . $customerOrVendor . ' Payments yet';
 
         //Параметры для формирования ссылок на модули CPayment или VPayment
         $this->tableLinkModule = $firstLetter . 'Payment'; //имя модуля на который делать ссылку
@@ -49,7 +49,7 @@ abstract class PaymentsAbstract extends Subtable
 
         );
 
-        $this->tableTotal = ['Name' => 'Total'];
+        $this->tableDataTotal = ['Name' => 'Total'];
     }
 
     protected function getExcelFilename()

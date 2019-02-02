@@ -107,11 +107,6 @@ class Msg implements \Countable, \JsonSerializable
         return (bool)$this->messages;
     }
 
-    public function getCount()
-    {
-        return count($this->messages);
-    }
-
     public function getAll()
     {
         return $this->messages;

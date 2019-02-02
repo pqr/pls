@@ -15,8 +15,8 @@ use Light\User;
 class Port extends ModuleAbstract
 {
     protected $textSaveBtn = 'Port';
-    protected $tableDefaultOrderBy = 'Name ASC';
-    protected $tableLayoutDefault = 'ID|Name|NameRu|isPOL|isPOD';
+    public $tableDefaultOrderBy = 'Name ASC';
+    public $tableLayoutDefault = 'ID|Name|NameRu|isPOL|isPOD';
 
     public function __construct()
     {

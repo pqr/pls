@@ -28,7 +28,7 @@ trait PipeSeparatedIdsTrait
     /** @return string */
     abstract public function getKey();
 
-    private function parseValue($value)
+    public static function parseValue($value)
     {
         $valueArr = explode('|', $value);
         //уберём пустые значения
@@ -40,7 +40,7 @@ trait PipeSeparatedIdsTrait
     protected function isOptionSelected($optionValue, $selectedValue)
     {
         if ($this->cacheParsedSelectedValueArr === null) {
-            $parsedArr = $this->parseValue($selectedValue);
+            $parsedArr = self::parseValue($selectedValue);
             $this->cacheParsedSelectedValueArr = array_flip($parsedArr);
         }
 
@@ -50,7 +50,7 @@ trait PipeSeparatedIdsTrait
     protected function getHtmlInner($value, array $data, $forTable)
     {
         $options = $this->getEvaluatedOptions();
-        $valueArr = $this->parseValue($value);
+        $valueArr = self::parseValue($value);
         $outHtmlArr = [];
         foreach ($valueArr as $singleValue) {
 
@@ -69,7 +69,7 @@ trait PipeSeparatedIdsTrait
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         $options = $this->getEvaluatedOptions();
-        $valueArr = $this->parseValue($value);
+        $valueArr = self::parseValue($value);
         $outArr = [];
         foreach ($valueArr as $singleValue) {
 
@@ -82,5 +82,16 @@ trait PipeSeparatedIdsTrait
         }
 
         return implode(', ', $outArr);
+    }
+
+    public static function isEmpty($value): bool
+    {
+        if (!$value) {
+            return false;
+        }
+
+        $elements = self::parseValue($value);
+        // Если массив elements пуст, значит isEmpty = true
+        return !$elements;
     }
 }

@@ -14,10 +14,89 @@ class Table implements \JsonSerializable
 {
     use FieldsetAwareTrait;
 
-    private $tableName;
+    /**
+     * Выводить ли блок над таблицей с кол-вом найденных записей, пажинацией, кнопкой экспорта в Excel и проч?
+     * По умолчанию false, т.к. для таблиц создаваемых напрямую из класса Table это наиболее удобное поведение.
+     * Но для ModuleAbstract и Subtable и ReportAbstract этот флаг переопределён в true
+     * @var bool
+     */
+    public $allowTablePrintHeadBlock = false;
+
+    /**
+     * Печатать ли сообщение "Total records found: xxx" (где xxx - результат вызова $this->getTableTotalRecordsFound())
+     * @var bool
+     */
+    public $allowTablePrintTotalRecordsFound = true;
+
+    /**
+     * Если установить в true, то даже при пустых данных будет выведна структура таблицы и thead.
+     * Если же false (по умолчанию), то при пустых данных будет выведено сообщение textTableEmpty (см. ниже)
+     * @var bool
+     */
+    public $allowTablePrintTheadIfEmpty = false;
+
+    /**
+     * Прикреплять ли шапку таблицы к верху экрана с помощью position: sticky
+     * @var bool
+     */
+    public $tableSticky = true;
+
+
+    /**
+     * @var bool Выводить ли total строку? (при наличии total данных)
+     */
+    public $allowTableTotal = true;
 
     /** @var string */
-    public $tableEmptyText;
+    public $textTableEmpty;
+
+    /**
+     * путь по которому таблица будет делать ajax запрос, чтобы перезагрузить себя с сервера
+     * например при пажинации или при применении фильтров
+     * @var string
+     */
+    public $tableReloadUrl;
+
+    /**
+     * модуль, на который автоматически делать ссылки при двойном клике по строке
+     * (в тег tr будет добавлен атрибут data-linkid)
+     * @var string
+     */
+    public $tableLinkModule;
+
+    /**
+     * Имена полей, которые должны стать ссылками на внешний модуль $this->tableLinkModule
+     * @var array
+     */
+    public $tableLinkFieldKeys = ['ID', 'Name'];
+
+    /**
+     * ключевое поле поле, в котором хранится id для подстановки ссылки при использовании tableLinkModule и tableLinkFieldKeys
+     * @var string
+     */
+    public $tableLinkIdFieldKey = 'ID';
+
+    /**
+     * дополнительные параметры, которые будут добавлены к ссылкам генерируемым по трём предыдущим свойствам
+     * @var array
+     */
+    public $tableLinkUrlParams = [];
+
+    /**
+     * Делать ли ссылки на ключивых полях описанных выше с атрибутом target=_blank?
+     * @var bool
+     */
+    public $tableLinkBlank = false;
+
+    /**
+     * Массив ключей полей, которые следует отображать в нужном порядке.
+     * Если это поле null, будут выведены все поля.
+     * @var array|null
+     */
+    public $tableFieldsShow;
+
+    /** @var string Внутреннее имя таблицы, если оставить пустым будет приравнено к полному имени класса */
+    private $tableName;
 
     /** @var ObjAbstract */
     protected $_obj;
@@ -34,42 +113,17 @@ class Table implements \JsonSerializable
      */
     private $fieldsetLast;
 
-    // Массив ключей полей, которые следует отображать в нужном порядке
-    // Если это поле null, будут выведены все поля
-    protected $tableFieldsShow;
-
-    protected $_tableData = [];
-
-    protected $tableTotal = [];
-
-    /** @var string $tableReloadUrl путь по которому таблица будет делать ajax запрос, чтобы перезагрузить себя с сервера
-     * например при пажинации или при применении фильтров
+    /**
+     * Двумерный массив данных. Задаётся с помощью setTableData()
+     * @var array
      */
-    protected $tableReloadUrl;
-
-    /** @var string $tableLinkModule модуль, на который автоматически делать ссылки при двойном клике по строке
-     * с добавленим data-linkid из строки
-     */
-    protected $tableLinkModule;
-
-    /** Имена полей, которые должны стать ссылками на внешний модуль $this->tableLinkModule */
-    protected $tableLinkFieldKeys = ['ID', 'Name'];
-
-    /** @var string $tableLinkIdFieldKey ключевое поле поле, в котором хранится id для подстановки ссылки при использовании tableLinkModule и tableLinkFieldKeys */
-    protected $tableLinkIdFieldKey = 'ID';
-
-    /** @var array дополнительные параметры, которые будут добавлены к ссылкам генерируемым по трём предыдущим свойствам */
-    protected $tableLinkUrlParams = [];
-
-    protected $tableLinkBlank = false;
-
-    public $sticky = true;
+    protected $tableData = [];
 
     /**
-     * Печатать ли сообщение "Total records found: xxx" (где xxx - результат вызова $this->getTableTotalRecordsFound())
-     * @var bool
+     * Статические данные для total строки. Задаётся с помощью setTableDataTotal()
+     * @var array
      */
-    protected $_tablePrintTotalRecordsFound = true;
+    protected $tableDataTotal = [];
 
     /**
      * Параметры таблицы, которые хранятся в базе в user_tableparam
@@ -110,6 +164,7 @@ class Table implements \JsonSerializable
         // Отдельного файла для класса найдено не было, создадим на основе обычного Obj
         $obj = new SimpleObj();
         $obj->setDbTable(strtolower($this->getTableName()));
+        $obj->setMasterModuleForDbLog(Misc::getModule($this));
         return $obj;
     }
 
@@ -245,12 +300,12 @@ class Table implements \JsonSerializable
 
     public function setTableData(array $data)
     {
-        $this->_tableData = $data;
+        $this->tableData = $data;
     }
 
-    public function setTableTotal(array $dataTotal)
+    public function setTableDataTotal(array $dataTotal)
     {
-        $this->tableTotal = $dataTotal;
+        $this->tableDataTotal = $dataTotal;
     }
 
     public function getTableName()
@@ -276,14 +331,12 @@ class Table implements \JsonSerializable
 
     /**
      * @desc возвращате полный html код таблицы
-     * @param bool $printHeadBlock
-     * @param bool $printIfEmpty
      * @return string
      */
-    public function getHtmlTable($printHeadBlock = true, $printIfEmpty = false)
+    public function getHtmlTable()
     {
         return $this->getHtmlTableDivWrapper()
-            . $this->getHtmlTableForAjax($printHeadBlock, $printIfEmpty)
+            . $this->getHtmlTableForAjax()
             . '</div>';
     }
 
@@ -331,22 +384,25 @@ class Table implements \JsonSerializable
         return $allFields;
     }
 
-    public function getHtmlTableForAjax($printHeadBlock = true, $printIfEmpty = false)
+    public function getHtmlTableForAjax()
     {
         //Если таблица пуста, возвращаем сообщение No data available
-        if (!$printIfEmpty && $this->getTableDataCount() === 0) {
-            return $this->tableEmptyText ?? (Config::$lang === 'ru' ? 'Нет данных' : 'No data available');
+        if (!$this->allowTablePrintTheadIfEmpty && $this->getTableDataCount() === 0) {
+            return $this->textTableEmpty ?? (Config::$lang === 'ru' ? 'Нет данных' : 'No data available');
         }
 
         $allFields = $this->getAllFields();
         $this->prefetchSelectOptions($allFields);
 
         //Сначала блок <p>...</p> над таблицей с различными ссылками: пажинация, экспорт в Excel и т.п.
-        $htmlHeadBlock = $printHeadBlock ? $this->getHtmlTableHeadBlock() : '';
+        $htmlHeadBlock = '';
+        if ($this->allowTablePrintHeadBlock) {
+            $htmlHeadBlock = $this->getHtmlTableHeadBlock();
+        }
         $outHtml = $htmlHeadBlock;
 
 
-        if ($printHeadBlock) {
+        if ($this->allowTablePrintHeadBlock) {
             $outHtml .= '<div style="display: inline-block;">';
         }
 
@@ -361,7 +417,7 @@ class Table implements \JsonSerializable
 
         $outHtml .= '</table>';
 
-        if ($printHeadBlock) {
+        if ($this->allowTablePrintHeadBlock) {
             $outHtml .= '</div>';
         }
 
@@ -378,7 +434,7 @@ class Table implements \JsonSerializable
         foreach ($allFields as $field) {
             if ($field instanceof FieldOptionsAbstract && !is_array($field->options)) {
                 $fieldKey = $field->key;
-                $columnValues = array_column($this->_tableData, $fieldKey);
+                $columnValues = array_column($this->tableData, $fieldKey);
                 if ($columnValues) {
                     $field->prefetchOptions($columnValues);
                 }
@@ -405,7 +461,7 @@ class Table implements \JsonSerializable
         $outHtml .= '<p class="table-headblock nobr">';
 
 
-        if ($this->_tablePrintTotalRecordsFound) {
+        if ($this->allowTablePrintTotalRecordsFound) {
             $outHtml .= $this->getHtmlTableTotalRecordsFound();
         }
 
@@ -419,7 +475,10 @@ class Table implements \JsonSerializable
         if (property_exists($this, 'allowExportToExcel') && $this->allowExportToExcel) {
             /** @var $this \Light\Traits\TableExcelExportable */
             $exportToExcelText = Config::$lang === 'ru' ? 'Экспорт в Excel' : 'Export to Excel';
-            $outHtml .= '<span class="table-excel"><a href="' . $this->tableReloadUrl . '&xls=1">' . Img::iconExcel() . ' ' . $exportToExcelText . '</a></span>';
+            $outHtml .= '<span class="table-excel"><a href="' . $this->tableReloadUrl . '&xls=1">'
+                . Img::iconExcel()
+                . ' ' . $exportToExcelText
+                . '</a></span>';
         }
 
         /** @var $this \Light\Traits\TableSortable */
@@ -457,7 +516,7 @@ class Table implements \JsonSerializable
         $dataTableName = ' data-tablename="' . $this->getTableName() . '"';
 
         $class = 'table';
-        if ($this->sticky) {
+        if ($this->tableSticky) {
             $class .= ' sticky';
         }
 
@@ -537,14 +596,14 @@ class Table implements \JsonSerializable
     }
 
     /**
-     * Метод переопределяется в ModuleAbstract, т.к. там данные не находятся в массиве $this->_tableData,
+     * Метод переопределяется в ModuleAbstract, т.к. там данные не находятся в массиве $this->tableData,
      * а лениво подгружаются из результатов mysqli запроса
      * @param int $rowNum
      * @return array
      */
     protected function getTableRowData($rowNum)
     {
-        return $this->_tableData[$rowNum] ?? [];
+        return $this->tableData[$rowNum] ?? [];
     }
 
     private function getHtmlTableTbody(array $allFields)
@@ -556,8 +615,8 @@ class Table implements \JsonSerializable
         $outHtml = '<tbody>';
         for ($rowNum = 0; $rowNum < $tableDataCount; $rowNum++) {
 
-            // Достаём данные из массива $this->_tableData
-            // (метод getTableRowData() может быть переопределён в потомке, поэтому не можем читать напрямую из $this->_tableData
+            // Достаём данные из массива $this->tableData
+            // (метод getTableRowData() может быть переопределён в потомке, поэтому не можем читать напрямую из $this->tableData
             $rowData = $this->getTableRowData($rowNum);
             $rowDataCalculated = $rowData;
             // Вызовем все методы calcData определённые внутри полей
@@ -751,10 +810,10 @@ class Table implements \JsonSerializable
      * этот массив передаётся явно при рендеринге в html для оптимизации
      * @return array
      */
-    public function getTableTotal(array $dataCalculated, array $fields = null): array
+    public function getTableDataTotal(array $dataCalculated, array $fields = null): array
     {
         // Начальное значение для строки total
-        $dataTotal = $this->tableTotal ?: [];
+        $dataTotal = $this->tableDataTotal ?: [];
 
         // Уберём из $dataCalculated строки, отмеченные флагом IsSeparator или IsTotal, чтобы не задваивались данные
         foreach ($dataCalculated as $i => $rowDataCalculated) {
@@ -778,7 +837,7 @@ class Table implements \JsonSerializable
                 continue;
             }
             $fieldKey = $field->key;
-            if (array_key_exists($fieldKey, $this->tableTotal)) {
+            if (array_key_exists($fieldKey, $this->tableDataTotal)) {
                 // По этому полю Total значение уже задано пользователем вручную
                 continue;
             }
@@ -796,8 +855,11 @@ class Table implements \JsonSerializable
      * @param array $dataTotal
      * @return bool
      */
-    protected function hasTotalRow(array $dataTotal): bool
+    public function hasTotalRow(array $dataTotal): bool
     {
+        if (!$this->allowTableTotal) {
+            return false;
+        }
         // По умолчанию логика такая: если есть данные $dataTotal (которые собраны на основе колонок или заданы вручную)
         // то total строку выводить нужно!
         return (bool)$dataTotal;
@@ -805,7 +867,7 @@ class Table implements \JsonSerializable
 
     protected function getHtmlTableTrTotal(array $allFields, array $dataCalculated)
     {
-        $dataTotal = $this->getTableTotal($dataCalculated, $allFields);
+        $dataTotal = $this->getTableDataTotal($dataCalculated, $allFields);
         if (!$this->hasTotalRow($dataTotal)) {
             return '';
         }
@@ -961,7 +1023,7 @@ class Table implements \JsonSerializable
 
     public function getTableData()
     {
-        return $this->_tableData;
+        return $this->tableData;
     }
 
     public function getTableDataCalculated()
@@ -978,7 +1040,7 @@ class Table implements \JsonSerializable
 
     public function getTableDataCount()
     {
-        return count($this->_tableData);
+        return count($this->tableData);
     }
 
     public static function writeDbUserTableParam(string $tableName, $paramName, $value)
@@ -1048,7 +1110,7 @@ class Table implements \JsonSerializable
 
     public function jsonSerialize()
     {
-        return $this->_tableData;
+        return $this->tableData;
     }
 
     protected function getTableAjaxChangeFieldUrl(): string

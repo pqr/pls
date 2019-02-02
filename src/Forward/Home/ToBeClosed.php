@@ -34,7 +34,7 @@ class ToBeClosed extends HomeBlockAbstract
                   FROM shipmentcriterion
                   JOIN shipment ON shipment.ID = shipmentcriterion.ShipmentID
                   WHERE shipmentcriterion.CriterionID = " . ShipmentCriteria::ToBeClosed . "
-                  AND (shipment.ResponsibleCS = " . (int)$userId . " OR shipment.ResponsibleSales = " . (int)$userId . ")
+                  AND (shipment.ResponsibleCS = $userId OR shipment.ResponsibleSales = $userId)
                   ORDER BY shipment.ETD";
     }
 }

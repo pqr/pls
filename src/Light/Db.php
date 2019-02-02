@@ -205,6 +205,29 @@ class Db
         return $a;
     }
 
+    /**
+     * Возвращает данные в виде массивов с индексами (не ассоциативных с ключами)
+     * @param $query
+     * @param mixed ...$params
+     * @return array
+     * @throws \Exception
+     */
+    public static function getAllValues($query, ...$params): array
+    {
+        $res = self::query($query, ...$params);
+        if (!$res) {
+            return [];
+        }
+
+        $a = $res->fetch_all(MYSQLI_NUM);
+        if (!is_array($a)) {
+            $a = [];
+        }
+        $res->free();
+
+        return $a;
+    }
+
     public static function getAssoc($query, ...$params): array
     {
         $res = self::query($query, ...$params);
@@ -438,8 +461,15 @@ class Db
         $data = self::getAll($selectQuery);
         if ($data) {
             $tableId = DbLog::getTableId($tableName);
-            $moduleId = DbLog::getModuleId($masterModule);
-            //Если были найдены какие-то данные в базе, сериализуем их!
+
+            $moduleId = 0;
+            if ($masterModule) {
+                // Преобразуем к простому текстовому виду на случай, если было передано имя модуля как FQN Class
+                $masterModule = Misc::getModule($masterModule);
+                $moduleId = DbLog::getModuleId($masterModule);
+            }
+
+            // Если были найдены какие-то данные в базе, сериализуем их!
             foreach ($data as $row) {
                 // Сохраняем метаинформацию в таблицу deleted
                 $logId = self::insertRow([

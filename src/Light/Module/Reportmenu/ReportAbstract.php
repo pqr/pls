@@ -27,6 +27,9 @@ abstract class ReportAbstract extends Table
     /** @var \Light\Fieldset */
     protected $_fieldset;
 
+    public $tableLinkBlank = true;
+    public $allowTablePrintHeadBlock = true;
+
     public function __construct()
     {
         parent::__construct();
@@ -34,7 +37,6 @@ abstract class ReportAbstract extends Table
         $this->tableReloadUrl = '?a=Reportmenu&class=' . Misc::getClass($this);;
         $this->allowSort = false;
         $this->allowFiltersLayoutChange = false;
-        $this->tableLinkBlank = true;
     }
 
     /**
@@ -56,7 +58,7 @@ abstract class ReportAbstract extends Table
 
     protected function getDataQuery()
     {
-        // Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->_tableData
+        // Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->tableData
         $query = "SELECT ";
         $query .= $this->getFieldset()->getSqlSelect($this->getFieldset()->getKeys());
         $query .= " FROM " . Db::quote($this->getDbTable());
@@ -78,7 +80,7 @@ abstract class ReportAbstract extends Table
     {
         $query = $this->getDataQuery();
         if ($query) {
-            $this->_tableData = Db::getAll($query);
+            $this->tableData = Db::getAll($query);
         }
     }
 

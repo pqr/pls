@@ -35,7 +35,7 @@ class CInvoicePrintForm extends PrintForm
         return 'Invoices (' . $count . ')';
     }
 
-    protected function getTemplate(ObjAbstract $obj = null): string
+    protected function getTemplate(ObjAbstract $obj): string
     {
         //Определим файл шаблона на основе компании и языка
         //Компания определяет папку в которой искать файл
@@ -66,14 +66,14 @@ class CInvoicePrintForm extends PrintForm
 
         //Добавим подтаблицу с линиями
         $linesSubtable = new Lines($obj);
+        $linesSubtable->allowTablePrintHeadBlock = false;
+        $linesSubtable->allowTableTotal = false;
         foreach ($linesSubtable->getFieldset() as $field) {
             $field->setTotal(false);
         }
         $linesSubtable->loadData();
-        $linesSubtable->setTableTotal([]);
-
-        $linesSubtable->setTableFieldsShow('Name|UOMID|Quantity|Price|Amount');
-        $tdata['LinesSubtable'] = $linesSubtable->getHtmlTable(false);
+        $linesSubtable->tableFieldsShow = ['Name', 'UOMID', 'Quantity', 'Price', 'Amount'];
+        $tdata['LinesSubtable'] = $linesSubtable->getHtmlTable();
 
         return $tdata;
     }

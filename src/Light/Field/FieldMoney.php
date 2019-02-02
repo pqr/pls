@@ -1,7 +1,9 @@
 <?php
+
 namespace Light\Field;
 
 use Light\Currency;
+use Light\Db;
 
 /**
  * @method bool getShort()
@@ -37,7 +39,7 @@ class FieldMoney extends FieldFloat
         }
 
         $currencyIso = $this->currencyIso;
-        return FieldMoney::beautify($value, $this->short, $currencyIso, $this->useSymbol);
+        return self::beautify($value, $this->short, $currencyIso, $this->useSymbol);
     }
 
     protected function getHtmlInputInner($value, array $data, $idPrefix)
@@ -50,7 +52,7 @@ class FieldMoney extends FieldFloat
                 $currencyIso = Currency::getSymbol($currencyIso);
             }
             $outHtml .= ' <span>' . $currencyIso . '</span>';
-            $outHtml = '<span class="nobr">'.$outHtml.'</span>';
+            $outHtml = '<span class="nobr">' . $outHtml . '</span>';
         }
 
         return $outHtml;
@@ -105,5 +107,9 @@ class FieldMoney extends FieldFloat
         return round((float)$dbValue, 2);
     }
 
-
+    public static function isEmpty($value): bool
+    {
+        $value = (double)$value;
+        return !$value;
+    }
 }

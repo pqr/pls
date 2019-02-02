@@ -11,7 +11,7 @@ use Light\User;
 class BU extends ModuleAbstract
 {
     protected $textSaveBtn = 'Business Unit';
-    protected $tableLayoutDefault = 'OrderID|Name';
+    public $tableLayoutDefault = 'OrderID|Name';
 
     public function __construct()
     {

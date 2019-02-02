@@ -5,8 +5,8 @@ namespace Light\Module\Logviewer;
 use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Db;
-use Light\Field\CommonFields as CF;
 use Light\Field\CommonFields;
+use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\Request;
 use Light\Response;
@@ -27,11 +27,24 @@ class Logviewer extends Table
 
     protected $_queryTime = 0;
 
+    public $tableReloadUrl = "?a=Logviewer";
+    public $tableFieldsShow = [
+        'CreatedDateTime',
+        'CreatedBy',
+        'ModuleID',
+        'MasterID',
+        'TableID',
+        'RecordID',
+        'FieldID',
+        'OldValueFormated',
+        'NewValueFormated',
+        'Text',
+        'ObjectDescription',
+    ];
+
     public function __construct()
     {
         parent::__construct('Logviewer');
-
-        $this->tableReloadUrl = "?a=Logviewer";
 
         $formatExcel = function ($value) {
             return html_entity_decode(strip_tags($value));
@@ -100,20 +113,6 @@ class Logviewer extends Table
         );
 
         $this->getFieldset()->addFieldsCreatedBy();
-
-        $this->tableFieldsShow = [
-            'CreatedDateTime',
-            'CreatedBy',
-            'ModuleID',
-            'MasterID',
-            'TableID',
-            'RecordID',
-            'FieldID',
-            'OldValueFormated',
-            'NewValueFormated',
-            'Text',
-            'ObjectDescription'
-        ];
     }
 
     protected function initFilters()
@@ -213,7 +212,7 @@ class Logviewer extends Table
 
             $idsString = implode(',', $ids);
 
-            //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->_tableData
+            //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->tableData
             $query = "SELECT ";
 
             $selectFieldKeys = $this->getFieldsetShowed()->getKeys();
@@ -225,7 +224,7 @@ class Logviewer extends Table
             $query .= " ORDER BY ID DESC";
 
             $timer = new Timer();
-            $this->_tableData = Db::getAll($query);
+            $this->tableData = Db::getAll($query);
             $this->_queryTime += $timer->get();
 
             //Теперь сделаем третий запрос, который выбирает данные из dblog_text
@@ -234,7 +233,7 @@ class Logviewer extends Table
                       WHERE dblogID IN (" . $idsString . ")
                       ORDER BY dblogID DESC";
             $txtData = Db::getAssoc($query);
-            foreach ($this->_tableData as &$rowData) {
+            foreach ($this->tableData as &$rowData) {
                 if (isset($txtData[$rowData['ID']])) {
                     $rowData += $txtData[$rowData['ID']];
                 }

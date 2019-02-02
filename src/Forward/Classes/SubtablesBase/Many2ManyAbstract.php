@@ -24,11 +24,11 @@ class Many2ManyAbstract extends Subtable
     {
         parent::__construct($masterObj);
 
-        $this->_orderBy = 'Name';
+        $this->tableDefaultOrderBy = 'Name';
 
         $this->allowExportToExcel = false;
         $this->allowTableLayouts = false;
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
         $this->allowPaste = false;
     }
 

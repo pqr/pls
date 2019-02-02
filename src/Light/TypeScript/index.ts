@@ -2,7 +2,7 @@ import { addStandardListeners } from "./Light";
 
 import "./AjaxFields";
 import "./Colorpalette";
-import "./Mainmenu";
+import * as mainmenu from "./Mainmenu";
 import * as colopalette from "./Colorpalette";
 import "./MonthWidget";
 import * as currency from "./Currency";
@@ -16,7 +16,7 @@ export * from "./Light";
 export * from "./Dialog";
 export * from "./TableLayoutDialog";
 export { myParseInt as parseInt, myParseFloat as parseFloat } from "./Light";
-export { currency, forms, filter, table, table as tables, module, subtable, subtable as subtables, colopalette };
+export { currency, forms, filter, table, table as tables, module, subtable, subtable as subtables, colopalette, mainmenu };
 
 //На событие dom ready навешиваем эти стандратные обработчики
 $(function() {

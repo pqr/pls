@@ -120,14 +120,14 @@ class FiltersLog extends Table
 
             $idsString = implode(',', $ids);
 
-            //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->_tableData
+            //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->tableData
             $query = "SELECT "
                 . $this->getSqlSelect()
                 . " FROM log_filter
                     WHERE ID IN ($idsString)
                     ORDER BY ID DESC";
 
-            $this->_tableData = Db::getAll($query);
+            $this->tableData = Db::getAll($query);
 
         }
     }

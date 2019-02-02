@@ -8,6 +8,6 @@ class IncomeObj extends IncomeExpensesObjAbstract
     public function __construct()
     {
         $this->setDbTable('csincome');
-        parent::initStandartFields('CInvoice');
+        $this->initStandartFields('CInvoice');
     }
 }

@@ -7,7 +7,6 @@ use Forward\Classes\Constant;
 use Forward\Classes\ShipmentDownloadDocs;
 use Forward\Field\GeneralFields;
 use Forward\Field\ShipmentFields;
-use Light\ApplicationAbstract;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
@@ -19,8 +18,6 @@ use Light\ModuleBase\ModuleAbstract;
 use Light\Msg;
 use Light\Response;
 use Light\User;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Process\Process;
 
 /**
  * Created by PhpStorm.
@@ -30,7 +27,7 @@ use Symfony\Component\Process\Process;
  */
 class ShipmentAccounting extends ModuleAbstract
 {
-    protected $folders = true;
+    public $folders = true;
     protected $allowAdd = false;
     protected $allowEdit = false;
     protected $allowLog = false;
@@ -323,7 +320,7 @@ class ShipmentAccounting extends ModuleAbstract
                 $shipmentOk = true;
                 foreach ($fileFilters as $i => $filterValue) {
                     $notEmpty = FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[$i]));
-                    $correct = ($notEmpty && $filterValue == 1 || !$notEmpty && $filterValue == 0);
+                    $correct = ($notEmpty && $filterValue == 1) || (!$notEmpty && $filterValue == 0);
                     if (!$correct) {
                         // Этот шипмент нам не подходит
                         $shipmentOk = false;

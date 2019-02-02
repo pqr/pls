@@ -58,6 +58,7 @@ class CommonFields
             'tableAlign' => 'center',
             'empty' => false,
             'editWidth' => 'small',
+            'tableWidthExcel' => 10,
             'options' => [
                 1 => ['text' => Config::$lang === 'ru' ? 'Активный' : 'Active', 'cssClass' => 'label-active'],
                 0 => ['text' => Config::$lang === 'ru' ? 'Неактивный' : 'Inactive', 'cssClass' => 'label-inactive']
@@ -318,25 +319,27 @@ class CommonFields
         ]);
     }
 
-    public static function email(): FieldString
+    public static function email(): FieldText
     {
-        return F::createString('Email', [
+        return F::createText('Email', [
             'name' => 'E-mail',
             'editCssClass' => 'email',
             'clickable' => true,
-            'tableWidthHtml' => 126
+            'tableWidthHtml' => 126,
+            'rows' => 2,
         ]);
     }
 
-    public static function phone($fieldKey = 'Phone', array $params = []): FieldString
+    public static function phone($fieldKey = 'Phone', array $params = []): FieldText
     {
         $defaultParams = [
-            'name' => 'Phone',
+            'name' => Config::$lang === 'ru' ? 'Телефон' : 'Phone',
             'editCssClass' => 'phone',
-            'tableWidthHtml' => 126
+            'tableWidthHtml' => 126,
+            'rows' => 2,
         ];
 
-        return F::createString($fieldKey, $params + $defaultParams);
+        return F::createText($fieldKey, $params + $defaultParams);
     }
 
     public static function checkbox(string $name = "ids"): FieldHtml
@@ -431,7 +434,7 @@ class CommonFields
             'name' => Config::$lang === 'ru' ? 'Условия поставки' : 'Incoterms',
             'options' => Incoterms::getOptions(),
             'tableAlign' => 'center',
-            'editWidth' => 'mini',
+            'editWidth' => 'small',
         ]);
     }
 

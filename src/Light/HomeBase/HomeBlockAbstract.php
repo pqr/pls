@@ -50,9 +50,11 @@ abstract class HomeBlockAbstract extends Table
 
     protected $width = 320;
     protected $showCount = true; //показывать ли в заголовке блока число элементов строк в таблице?
-    protected $_printHeadBlock = true;
-    protected $printIfEmpty = false;
     protected $userId;
+
+    public $tableSticky = false;
+    public $allowTablePrintHeadBlock = true;
+    public $allowTablePrintTotalRecordsFound = false;
 
     public function __construct(int $useId)
     {
@@ -60,8 +62,6 @@ abstract class HomeBlockAbstract extends Table
 
         $this->userId = $useId;
         $this->tableReloadUrl = '?' . $_SERVER['QUERY_STRING'] . "&class=" . Misc::getClass($this);
-        $this->sticky = false;
-        $this->_tablePrintTotalRecordsFound = false;
     }
 
     public static function getInformationFrom()
@@ -114,7 +114,7 @@ abstract class HomeBlockAbstract extends Table
         $timer = new Timer();
         $query = $this->getDataQuery($userId);
         if ($query) {
-            $this->_tableData = Db::getAll($query);
+            $this->tableData = Db::getAll($query);
         }
         Metric::record(Request::getModule() . '/' . Misc::getClass($this), $timer->getMs(), ['UserID' => $userId]);
     }
@@ -125,16 +125,16 @@ abstract class HomeBlockAbstract extends Table
         $this->sendExcel();
     }
 
-    public function getHtmlTableForAjax($printHeadBlock = true, $printIfEmpty = false)
+    public function getHtmlTableForAjax()
     {
         $this->tableLoadData($this->userId);
-        return parent::getHtmlTableForAjax($this->_printHeadBlock, $this->printIfEmpty);
+        return parent::getHtmlTableForAjax();
     }
 
     public function getHtml(string $cssClass)
     {
         $this->tableLoadData($this->userId);
-        if (!$this->getTableDataCount() && !$this->printIfEmpty) {
+        if (!$this->getTableDataCount() && !$this->allowTablePrintTheadIfEmpty) {
             return '';
         }
 
@@ -144,7 +144,7 @@ abstract class HomeBlockAbstract extends Table
             'title' => self::getTitle(),
             'description' => self::getDescription(),
             'informationFor' => self::getInformationFrom(),
-            'table' => $this->getHtmlTable($this->_printHeadBlock, $this->printIfEmpty),
+            'table' => $this->getHtmlTable(),
             'viewAllLink' => $this->getViewAllLink($this->userId),
         ];
         return Template::parseTpl('homeblock.tpl.php', $tdata + ['cssClass' => $cssClass]);

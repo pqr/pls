@@ -14,7 +14,7 @@ abstract class IncomeExpensesAbstract extends Subtable
     {
         parent::__construct($masterObj);
 
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->addFields(

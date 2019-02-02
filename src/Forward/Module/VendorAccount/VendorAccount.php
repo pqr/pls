@@ -12,8 +12,8 @@ use Light\User;
 class VendorAccount extends ModuleAbstract
 {
     protected $textSaveBtn = 'Vendor Account';
-    protected $tableDefaultOrderBy = 'Name ASC';
-    protected $tableLayoutDefault = 'Name|InvoiceAddress|Comments|Active';
+    public $tableDefaultOrderBy = 'Name ASC';
+    public $tableLayoutDefault = 'Name|InvoiceAddress|Comments|Active';
 
     public function __construct()
     {

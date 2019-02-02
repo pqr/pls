@@ -62,10 +62,8 @@ abstract class InvoiceModuleAbstract extends ModuleAbstract
         //Обновим все кеширюущие поля связанные с изменением или созданием счёта
         //Дополнительно передадим в метод обновлящий кеш специальный буфер для логов
         /** @var $obj InvoiceObjAbstract */
-        $msgBuff = new Msg();
         $dbLogMsg = 'Save ' . $this->getCustomerOrVendor() . ' Invoice ' . $obj->getDescriptionHtml();
         $obj->updateCacheAfterSubmit($oldData, $msgBuff, true, $dbLogMsg);
-        $msgBuff->putIntoSessionFlash();
     }
 
     protected function afterDelete(ObjAbstract $obj, array $oldData)

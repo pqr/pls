@@ -29,11 +29,11 @@ class Lines extends Subtable
         $this->tableLinkIdFieldKey = 'ShipmentID';
         $this->tableLinkUrlParams = ['func' => 'cs', 'fromInvNum' => $masterObj['Name']];
 
-        $this->_viewTableLayout = 'FileNumber|Name|UOMID|Quantity|Price|Amount';
-        $this->_editTableLayout = $this->_viewTableLayout;
+        $this->subtableLayoutView = 'FileNumber|Name|UOMID|Quantity|Price|Amount';
+        $this->subtableLayoutEdit = $this->subtableLayoutView;
 
-        $this->_tablePrintTotalRecordsFound = true;
-        $this->tableTotal = ['Name' => 'Total'];
+        $this->allowTablePrintTotalRecordsFound = true;
+        $this->tableDataTotal = ['Name' => 'Total'];
 
         $this->_cacheFieldsKeys = ['FileNumber'];
         $this->_cacheOnlyUniqueValues = true;
@@ -119,7 +119,7 @@ class Lines extends Subtable
                 // Для ООО компаний сворачиваем строки в одну строку Транспортно-экспедиторское обслуживание по маршруту: ...
                 $linesData = CInvoiceCommon::getLinesDataFromCostSheetPlsPgl($shipmentId, $csLineIds);
             }
-            $this->setAdditionalData($linesData);
+            $this->setSubtableDataAdditional($linesData);
 
         } elseif (isset($_GET['fromShipmentsMassaction'])) {
 
@@ -140,7 +140,7 @@ class Lines extends Subtable
                 );
             }
 
-            $this->setAdditionalData($linesData);
+            $this->setSubtableDataAdditional($linesData);
 
         }
 

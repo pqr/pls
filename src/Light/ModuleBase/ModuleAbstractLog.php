@@ -2,12 +2,10 @@
 
 namespace Light\ModuleBase;
 
-use Basis\Field\GeneralFields;
 use Light\Config;
 use Light\Db;
-use Light\DbLog;
-use Light\Field\CommonFields as CF;
 use Light\Field\CommonFields;
+use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\ModuleRegister;
 use Light\Request;
@@ -21,6 +19,18 @@ class ModuleAbstractLog extends Table
 
     protected $_moduleId;
     protected $_masterId;
+
+    public $tableFieldsShow = [
+        'CreatedDateTime',
+        'CreatedBy',
+        'TableID',
+        'RecordID',
+        'FieldID',
+        'OldValueFormated',
+        'NewValueFormated',
+        'Text',
+        'ObjectDescription'
+    ];
 
     public function __construct($masterId)
     {
@@ -78,18 +88,6 @@ class ModuleAbstractLog extends Table
         );
 
         $this->getFieldset()->addFieldsCreatedBy();
-
-        $this->tableFieldsShow = [
-            'CreatedDateTime',
-            'CreatedBy',
-            'TableID',
-            'RecordID',
-            'FieldID',
-            'OldValueFormated',
-            'NewValueFormated',
-            'Text',
-            'ObjectDescription'
-        ];
 
         $this->proceedFilters();
         $this->tableLoadData();
@@ -182,7 +180,7 @@ class ModuleAbstractLog extends Table
                  WHERE ModuleID={$this->_moduleId}
                      AND MasterID={$this->_masterId}
                      AND " . $this->getFiltersSqlWhere()
-            ." ORDER BY ID DESC";
+            . " ORDER BY ID DESC";
 
         $tableData = Db::getAll($query);
         if ($tableData) {
@@ -207,9 +205,9 @@ class ModuleAbstractLog extends Table
         $this->setTableData($tableData);
     }
 
-    public function getHtmlTableForAjax($printHeadBlock = true, $printIfEmpty = false)
+    public function getHtmlTableForAjax()
     {
-        $outHtml = parent::getHtmlTableForAjax($printHeadBlock, $printIfEmpty);
+        $outHtml = parent::getHtmlTableForAjax();
         $outHtml .= $this->getFiltersHiddenInput();
         return $outHtml;
     }

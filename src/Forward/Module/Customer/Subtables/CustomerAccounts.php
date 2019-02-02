@@ -28,8 +28,8 @@ class CustomerAccounts extends Many2ManyAbstract
 
         $this->textAddLink = 'Add Customer Account';
 
-        $this->tableEmptyText = 'No linked customer accounts';
-        $this->_title = 'Customer Accounts';
+        $this->textTableEmpty = 'No linked customer accounts';
+        $this->textSubtableTitle = 'Customer Accounts';
 
         $this->addFields(
 

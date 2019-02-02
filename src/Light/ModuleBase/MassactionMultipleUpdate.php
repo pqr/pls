@@ -213,6 +213,7 @@ trait MassactionMultipleUpdate
         $dbLogMsg = Config::$lang === 'ru' ? 'Массовое редактирование' : 'Multiple Update';
         $affectedRows = $obj->updateDb($fieldsData, $dbLogMsg);
         $this->afterUpdate($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, true);
+        $obj->afterSubmit($oldData, $msgBuff);
         $this->afterSubmit($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, true);
         return $affectedRows;
     }

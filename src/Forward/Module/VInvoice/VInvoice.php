@@ -31,8 +31,8 @@ use Light\User;
 class VInvoice extends InvoiceModuleAbstract
 {
     protected $textSaveBtn = 'Vendor Invoice';
-    protected $tableLinkFieldKeys = ['VendorID'];
-    protected $tableLayoutDefault = 'VendorID|Name|Amount|CurrencyISO|StatusIco|CacheResponsibleUserID|ReceivedDate|DocDate|DueDate|CacheLastPaymentDate|Comments';
+    public $tableLinkFieldKeys = ['VendorID'];
+    public $tableLayoutDefault = 'VendorID|Name|Amount|CurrencyISO|StatusIco|CacheResponsibleUserID|ReceivedDate|DocDate|DueDate|CacheLastPaymentDate|Comments';
 
     public function __construct()
     {

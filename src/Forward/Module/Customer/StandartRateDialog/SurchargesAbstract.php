@@ -12,7 +12,7 @@ abstract class SurchargesAbstract extends Subtable
     {
         parent::__construct($masterObj);
 
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
 
         $this->addFields(
 

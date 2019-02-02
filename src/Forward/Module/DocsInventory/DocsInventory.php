@@ -106,6 +106,6 @@ class DocsInventory extends ModuleAbstract
                   ORDER BY s.ID";
         $linesData = Db::getAll($query, $shipmentIds);
         $lines = $this->getSubtable(Lines::class);
-        $lines->setAdditionalData($linesData);
+        $lines->setSubtableDataAdditional($linesData);
     }
 }

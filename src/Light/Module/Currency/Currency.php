@@ -9,7 +9,7 @@ class Currency extends ModuleAbstract
 {
 
 protected $textSaveBtn = 'Currency';
-protected $tableLayoutDefault = 'OrderID|Name|Symbol|Description';
+public $tableLayoutDefault = 'OrderID|Name|Symbol|Description';
 
     public function __construct()
     {

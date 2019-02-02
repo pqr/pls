@@ -91,13 +91,6 @@ abstract class Subtable2
     protected $allowDelete = true;
     protected $textAddLink = 'Add Line';
 
-    /**
-     * Обычно при двойном клике по строке мы проваливаемся куда-то внутрь объекта. Возможно, в этом объекте есть подтаблица
-     * со связанными объектами их которых мы могли провалиться. Здесь можно указать имя этой подтаблицы и тогда ко ссылкам
-     * (в том числе при двойном клике) будет добавлен параметр <имяподтаблицы>_findid=<$this->_masterObj->getId()>
-     */
-    protected $_tableLinkFindidSubtableName;
-
     public function __construct(ObjAbstract $masterObj)
     {
         //Инициализируем внутреннюю переменную _obj хитрым способом -  возможно, на основе файла в этой же папке
@@ -800,7 +793,7 @@ abstract class Subtable2
         }
     }
 
-    public function getTitle()
+    public function getTextSubtableTitle()
     {
         return $this->_title;
     }

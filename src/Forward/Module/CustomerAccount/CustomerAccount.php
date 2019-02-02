@@ -15,7 +15,7 @@ use Light\User;
 class CustomerAccount extends ModuleAbstract
 {
     protected $textSaveBtn = 'Customer Account';
-    protected $tableLayoutDefault = 'Name|CreditPeriod|ContractNo|InvoiceAddress|Comments|Active';
+    public $tableLayoutDefault = 'Name|CreditPeriod|ContractNo|InvoiceAddress|Comments|Active';
 
     public function __construct()
     {

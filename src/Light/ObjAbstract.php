@@ -21,6 +21,14 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
     protected $_id = 0;
     protected $_data = [];
+
+    private $justInserted = false;
+    private $alreadyUpdated = false;
+    // Массив с данными, которые были в объекте перед первым update/insert.
+    // Все последующие update уже не меняют oldData, таким образом после череды update
+    // можно сравнить текущее состояние data и oldData
+    private $oldData = [];
+
     private $masterModuleForDbLog;
     protected $_masterIdForDbLog;
 
@@ -28,8 +36,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     protected $_fieldset;
 
     private $_descriptionFunction;
-
-    protected $_lastChangedData = [];
 
     final public function getFieldset()
     {
@@ -126,15 +132,21 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      * @param $id
      * @return ObjAbstract
      */
-    public function setId($id)
+    public function setId(int $id)
     {
-        $this->_id = (int)$id;
-        if ($this->_id < 0) {
-            $this->_id = 0;
+        if ($id !== $this->_id) {
+            // Если у объекта пеочему-то меняется id, то:
+
+            // 1) Устанавилваем флаг dirtyData в true - это сигнал к тому, что текущее состояние массива data
+            // может не соответсвовать тому что в базе (и действительно, ведь мы поменял ID!)
+            $this->dirtyData = true;
+
+            // 2) Очищаем oldData, т.к. мы по сути работаем уже с новым объектом
+            $this->oldData = null;
         }
-        //Устанавилваем флаг dirtyData в true - это сигнал к тому, что текущее состояние массива data
-        //может не соответсвовать тому что в базе (и действительно, ведь мы поменял ID!)
-        $this->dirtyData = true;
+
+        $this->_id = $id;
+
         return $this;
     }
 
@@ -143,12 +155,9 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this->_masterIdForDbLog;
     }
 
-    public function setMasterIdForDbLog($masterId)
+    public function setMasterIdForDbLog(int $masterId)
     {
-        $this->_masterIdForDbLog = (int)$masterId;
-        if ($this->_masterIdForDbLog < 0) {
-            $this->_masterIdForDbLog = 0;
-        }
+        $this->_masterIdForDbLog = $masterId;
         return $this;
     }
 
@@ -214,6 +223,13 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         if ($this->dirtyData) {
             $this->loadData();
         }
+
+        if (!$this->justInserted && !$this->alreadyUpdated) {
+            // Если этот объект ещё не мутировался ни разу, сохраним начальное состояние во врутреннем массиве
+            $this->oldData = $this->_data;
+        }
+
+        // Отдельно сохраним текущее сосотояние в $oldData, чтобы записать изменения в dblog
         $oldData = $this->_data;
 
         $fieldKeys = array_keys($fieldsData);
@@ -221,7 +237,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         //Подготовим данные для вставки в базу. Например, расчленим MoneyWithCurrency
         $fieldsData = $this->prepareFieldsDataForDb($fieldsData);
 
-        $this->_lastChangedData = [];
         if ($affectedRows = Db::updateRow($fieldsData, $this->getDbTable(), $this->_id)) {
             //Если обновление реально произошло (что-то изменилось), запишем логи
             $this->loadData();
@@ -278,9 +293,108 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $fieldsData;
     }
 
-    public function getLastChangedData()
+    /**
+     * Возвращает true, если объект был только что создан (insertDb()) или в процессе updateDb() изменилось значение
+     * этого поля
+     * @param string $fieldKey
+     * @return bool
+     */
+    public function isChanged(string $fieldKey): bool
     {
-        return $this->_lastChangedData;
+        if (!array_key_exists($fieldKey, $this->_data)) {
+            // Если в текущем массиве данных нет этого поля, значит пользователь передал какой-то ошибочный fieldKey
+            // просто вернём false, будто поле не менялось
+            return false;
+        }
+
+        if (!$this->oldData || !array_key_exists($fieldKey, $this->oldData)) {
+            // Если в старом массиве данных нет этого поля, скорее всего объект был только что создан,
+            // считаем поле изменившимся
+            return true;
+        }
+
+        $oldValue = $this->oldData[$fieldKey];
+        $newValue = $this->_data[$fieldKey];
+
+        return $oldValue !== $newValue;
+    }
+
+    /**
+     * Возвращает true, если поле было изменено в процессе updateDb()
+     * Но при вставке нового объекта через insertDb() этот метод всегда будет возвращать false
+     * @param string $fieldKey
+     * @return bool
+     */
+    public function isUpdated(string $fieldKey): bool
+    {
+        if ($this->justInserted) {
+            false;
+        }
+
+        if (!array_key_exists($fieldKey, $this->_data)) {
+            // Если в текущем массиве данных нет этого поля, значит пользователь передал какой-то ошибочный fieldKey
+            // просто вернём false, будто поле не менялось
+            return false;
+        }
+
+        if (!$this->oldData || !array_key_exists($fieldKey, $this->oldData)) {
+            // Если в старом массиве данных нет этого поля, это странно, но вернём true, будто поле обновилось
+            return true;
+        }
+
+        $oldValue = $this->oldData[$fieldKey];
+        $newValue = $this->_data[$fieldKey];
+
+        return $oldValue !== $newValue;
+    }
+
+    /**
+     * Возвращает true, если поле изменило своё значение с пустого на заполненное
+     * @param string $fieldKey
+     * @return bool
+     */
+    public function isFilled(string $fieldKey): bool
+    {
+        if (!array_key_exists($fieldKey, $this->_data) || !$this->hasField($fieldKey)) {
+            // Если в текущем массиве данных нет этого поля, значит пользователь передал какой-то ошибочный fieldKey
+            // просто вернём false, будто поле не менялось
+            return false;
+        }
+
+        $oldValue = $this->oldData[$fieldKey] ?? null;
+        $newValue = $this->_data[$fieldKey];
+
+        $field = $this->getField($fieldKey);
+
+        return $field::isEmpty($oldValue) && !$field::isEmpty($newValue);
+    }
+
+
+
+    /**
+     * Возвращает true, если поле изменило своё значение с заполненного на пустое
+     * @param string $fieldKey
+     * @return bool
+     */
+    public function isCleared(string $fieldKey): bool
+    {
+        if (!array_key_exists($fieldKey, $this->_data) || !$this->hasField($fieldKey)) {
+            // Если в текущем массиве данных нет этого поля, значит пользователь передал какой-то ошибочный fieldKey
+            // просто вернём false, будто поле не менялось
+            return false;
+        }
+
+        $oldValue = $this->oldData[$fieldKey] ?? null;
+        $newValue = $this->_data[$fieldKey];
+
+        $field = $this->getField($fieldKey);
+
+        return !$field::isEmpty($oldValue) && $field::isEmpty($newValue);
+    }
+
+    public function getOldFieldValue(string $fieldKey)
+    {
+        return $this->oldData[$fieldKey] ?? null;
     }
 
     /**
@@ -315,14 +429,14 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this->_data;
     }
 
-    final public function getDataWithSubtables(...$subtables)
+    final public function getDataWithSubtables(array $subtables)
     {
         $data = $this->getData();
         $data['_subtables'] = [];
         /** @var Subtable $subtable */
         foreach ($subtables as $subtable) {
             $subtableName = Misc::getClass($subtable);
-            $data['_subtables'][$subtableName] = $subtable->getData();
+            $data['_subtables'][$subtableName] = $subtable->getSubtableData();
         }
 
         return $data;
@@ -400,13 +514,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
                 DbLog::write($masterModule, $masterId, $tableName, $recordId, $field->key, $fieldDescription,
                     $textData);
-
-                $this->_lastChangedData[$field->key] = [
-                    'OldValue' => $oldValue,
-                    'OldValueFormated' => $oldValueFormated,
-                    'NewValue' => $newValue,
-                    'NewValueFormated' => $newValueFormated,
-                ];
             }
         }
     }
@@ -451,6 +558,12 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      */
     public function insertDb(array $fieldsData, $dbLogMsg = '')
     {
+
+        // Устанавливаем $oldData в пустой массив, чтобы зафиксировать факт, что раньше этот объект был
+        // полностью пустым и мы сейчас его создаём
+        $this->justInserted = true;
+        $this->oldData = [];
+
         $fieldKeys = array_keys($fieldsData);
 
         if (!isset($fieldsData['CreatedBy'])) {
@@ -460,7 +573,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         //Подготовим данные для вставки в базу. Например, расчленим MoneyWithCurrency
         $fieldsData = $this->prepareFieldsDataForDb($fieldsData);
 
-        //Используем REPLACE, чтобы избежать ошибки Already Exists на сложных таблицах с уникальными полями
+        // Используем REPLACE, чтобы избежать ошибки Already Exists на сложных таблицах с уникальными полями
         $id = Db::insertRow($fieldsData, $this->getDbTable(), true);
 
         $this->setId($id);
@@ -655,5 +768,31 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     public function getLinkViewDialog(): Link
     {
         return $this->getLinkView()->funcDialog();
+    }
+
+    /**
+     * Метод для переопределния в классах потомках.
+     * Запускается автоматически в ModuleAbstract после того как сохранён сам объект и все подтаблицы
+     * Удобен для пересчёта различных кеширующих полей, когда подтаблицы уже сохранены.
+     * При вызове этого метода мы по сути принимаем текущий объект корнем агрегата
+     * @param array $oldData
+     * @param Msg $msgBuff
+     */
+    public function afterSubmit(array $oldData, Msg $msgBuff)
+    {
+
+    }
+
+    /**
+     * Метод для переопределния в классах потомках.
+     * Запускается автоматически в ModuleAbstract после того как удалён сам объект и все подтаблицы
+     * Удобен для удаления различных кеширующих полей, когда подтаблицы уже очищены.
+     * При вызове этого метода мы по сути принимаем текущий объект корнем агрегата
+     * @param array $oldData
+     * @param Msg $msgBuff
+     */
+    public function afterDelete(array $oldData, Msg $msgBuff)
+    {
+
     }
 }

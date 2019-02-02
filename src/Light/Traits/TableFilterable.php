@@ -415,10 +415,10 @@ trait TableFilterable
             . '">';
     }
 
-    public function getHtmlTableForAjax($printHeadBlock = true, $printIfEmpty = false)
+    public function getHtmlTableForAjax()
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        $outHtml = parent::getHtmlTableForAjax($printHeadBlock, $printIfEmpty);
+        $outHtml = parent::getHtmlTableForAjax();
         if ($this->hasFilters()) {
             $outHtml .= $this->getFiltersHiddenInput();
         }

@@ -35,6 +35,6 @@
     "rollbar": "^2.5.1",
     "select2": "latest",
     "serializr": "latest",
-    "sortablejs": "^1.7.0"
+    "sortablejs": "^1.8.1"
   }
 }

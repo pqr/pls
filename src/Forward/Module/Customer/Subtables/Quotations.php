@@ -15,10 +15,10 @@ class Quotations extends Subtable
         parent::__construct($masterObj);
 
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
-        $this->_printHeadBlock = false;
+        $this->allowTablePrintHeadBlock = false;
         $this->tableLinkModule = 'Quotation';
-        $this->tableEmptyText = '';
-        $this->_orderBy = 'ID DESC';
+        $this->textTableEmpty = '';
+        $this->tableDefaultOrderBy = 'ID DESC';
         $this->setDbTable('quotation');
 
         $this->addFields(

@@ -86,7 +86,7 @@ class AutolaunchMenuTable extends Table
     }
 
     /**
-     * Загружает все классы из указанного неймспйса в $this->_tableData
+     * Загружает все классы из указанного неймспйса в $this->tableData
      * @param string $namespace
      */
     private function scanNamespace(string $namespace)
@@ -99,7 +99,7 @@ class AutolaunchMenuTable extends Table
         foreach (glob($pathAbs . '/*.php') as $file) {
             $filename = pathinfo($file, PATHINFO_FILENAME);
             $className = "$namespace\\$filename";
-            $this->_tableData[] = ['ClassName' => $className];
+            $this->tableData[] = ['ClassName' => $className];
         }
     }
 

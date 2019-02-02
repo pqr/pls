@@ -454,8 +454,9 @@ class FieldSelect extends FieldOptionsAbstract
             $currentChildValue = $_GET['updateCurrentChildValue'];
             $availableOptionsCount = count($options);
 
-            if (($currentChildValue === '' || !isset($options[$currentChildValue]))
-                && $availableOptionsCount === 1) {
+            if ($availableOptionsCount === 1
+                && ($currentChildValue === '' || !isset($options[$currentChildValue]))
+            ) {
                 // Текущее значение в выпадающем списке на экране пользователя - пусто
                 // либо текущее значение не присуствует среди допустимых значений
                 // при этом допустимых значений всего ровно одно - используем его!
@@ -569,7 +570,7 @@ class FieldSelect extends FieldOptionsAbstract
         // Проверим пришедший вместе с ajax запросом массив $parentFields - есть ли в нём не пустые значения?
         $parentFieldValuesFromAjax = array_filter($parentFieldValuesFromAjax, function ($parentValue) {
             $parentValue = (string)$parentValue;
-            return $parentValue !== '' && $parentValue !== '%' && $parentValue !== '0';
+            return $parentValue !== '' && $parentValue !== '%' && $parentValue !== '0' && $parentValue !== '||';
         });
 
         if ($this->parentFieldKeysMandatory) {
@@ -666,7 +667,13 @@ class FieldSelect extends FieldOptionsAbstract
                 // Проверяем только те поля, которые реально пришли с ajax запросом
                 if (isset($parentFieldValuesFromAjax[$relationParentFieldKey])) {
                     $valueFromAjax = $parentFieldValuesFromAjax[$relationParentFieldKey];
-                    if ($valueFromAjax != $relationParentFieldValue) {
+                    if (strpos($valueFromAjax, '|') !== false) {
+                        $multipleValuesFromAjax = array_filter(explode('|', $valueFromAjax));
+                        if (!in_array($relationParentFieldValue, $multipleValuesFromAjax)) {
+                            // Текущая комбинация relations загруженная из базы провалила проверку, попробуем в цикле найти следующую
+                            return false;
+                        }
+                    } elseif ($valueFromAjax != $relationParentFieldValue) {
                         // Текущая комбинация relations загруженная из базы провалила проверку, попробуем в цикле найти следующую
                         return false;
                     }
@@ -692,7 +699,7 @@ class FieldSelect extends FieldOptionsAbstract
 
     protected function getSqlWhereInner($value)
     {
-        if ($this->multiple && stripos($value, '|') !== false) {
+        if ($this->multiple && strpos($value, '|') !== false) {
             $values = $this->parsePipeSeparatedValue($value);
             if (!$values) {
                 return 'TRUE';

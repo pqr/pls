@@ -10,8 +10,8 @@ use Light\Module\Autolaunch\AutolaunchAbstract;
 
 class PingOneC extends AutolaunchAbstract
 {
-    protected static $_title = 'Проверить подключение к 1С';
-    protected static $_description = 'Отправляет пустой GET запрос на hs/CreateCustomerInvoice". В качестве ответа должна прийти диагностическая информация с настройками 1С!';
+    protected static $title = 'Проверить подключение к 1С';
+    protected static $description = 'Отправляет пустой GET запрос на hs/CreateCustomerInvoice". В качестве ответа должна прийти диагностическая информация с настройками 1С!';
 
     protected function run(array $params)
     {

@@ -90,6 +90,10 @@ class User
                 return;
             }
         }
+
+        // Загружаем flash сообщения текущего пользователя
+        //(они будут загружены, если текущего пользователя удалось загрузить)
+        Session::loadFlash();
     }
 
     public static function loadAsCurrent(string $login)

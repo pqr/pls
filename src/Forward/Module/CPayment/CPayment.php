@@ -13,7 +13,7 @@ use Light\Field\FieldAbstract as F;
 class CPayment extends PaymentModuleAbstract
 {
     protected $textSaveBtn = 'Customer Payment';
-    protected $tableLayoutDefault = 'CompanyID|Name|CustomerID|PaymentDate|Amount|CurrencyISO|Comments';
+    public $tableLayoutDefault = 'CompanyID|Name|CustomerID|PaymentDate|Amount|CurrencyISO|Comments';
 
     protected function registerSubtables()
     {

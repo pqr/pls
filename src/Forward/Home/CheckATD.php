@@ -38,8 +38,8 @@ class CheckATD extends HomeBlockAbstract
     {
         return "SELECT shipment.ID, shipment.Name, shipment.MAWBNumber, shipment.ETD, shipment.ReadyForCarriageDate
                   FROM shipment
-                  WHERE (shipment.ResponsibleCS = " . $userId . "
-                         OR shipment.ResponsibleSales = " . $userId . "
+                  WHERE (shipment.ResponsibleCS = $userId
+                         OR shipment.ResponsibleSales = $userId
                          )
                       AND (shipment.ETD != '0000-00-00'
                            AND shipment.ETD <= CURDATE()

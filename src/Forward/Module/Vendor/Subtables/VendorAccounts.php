@@ -28,8 +28,8 @@ class VendorAccounts extends Many2ManyAbstract
 
         $this->textAddLink = 'Add Vendor Account';
 
-        $this->tableEmptyText = 'No linked vendor accounts';
-        $this->_title = 'Vendor Accounts';
+        $this->textTableEmpty = 'No linked vendor accounts';
+        $this->textSubtableTitle = 'Vendor Accounts';
 
         $this->addFields(
 
