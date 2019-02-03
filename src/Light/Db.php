@@ -563,6 +563,15 @@ class Db
 
         $filterComaSeparatedArrRaw = self::explodeByComa($filterComaSeparated);
 
+        if (!$isIntField && count($filterComaSeparatedArrRaw) > 1) {
+            // Если это не строго числовое поле и пользователь ввёл более одного значения разделённого через запятую
+            // то возможно он хочет найти не только все эти значения по отдельности, но и документ в номере котого
+            // присутсвует запятая. Например, поиск "123, 456" должен превратиться в поиск по трём вариантам:
+            // "123" или "456" или "123, 456"
+            // Для этого добавляем в массив оригинальное значение из поля ввода фильтров
+            $filterComaSeparatedArrRaw[] = $filterComaSeparated;
+        }
+
         // в фильтре по номеру нужна возможность указать интервал номеров через тире (например: 850001-850020)
         $filterComaSeparatedArr = [];
         foreach ($filterComaSeparatedArrRaw as $elem) {
@@ -570,7 +579,7 @@ class Db
             $filterComaSeparatedArr[] = $elem;
 
             if (strpos($elem, '-') !== false) {
-                list($from, $to) = explode('-', $elem, 2);
+                [$from, $to] = explode('-', $elem, 2);
                 if (is_numeric($from) && is_numeric($to)) {
 
                     $fromInt = (int)$from;

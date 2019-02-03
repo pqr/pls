@@ -27,13 +27,24 @@ abstract class ModuleCestAbstract
 
     /**
      * Можно переопределить в классе потомке
+     * @return string
+     * @throws \Exception
+     */
+    protected function getTestObjIdSqlWhere(): string
+    {
+        return '1';
+    }
+
+    /**
+     * Можно переопределить в классе потомке
      * @return int
+     * @throws \Exception
      */
     protected function getTestObjId()
     {
         if ($this->minIdFromDb === null) {
             $dbtable = $this->getDbTable();
-            $this->minIdFromDb = (int)Db::getOne("SELECT min(ID) FROM $dbtable");
+            $this->minIdFromDb = (int)Db::getOne("SELECT min(ID) FROM $dbtable WHERE " . $this->getTestObjIdSqlWhere());
             if (!$this->minIdFromDb) {
                 // Если таблица ещё пуста, создадим пустую фиктивную запись в целях тестирования
                 Db::query("INSERT INTO $dbtable (ID) VALUES (NULL)");

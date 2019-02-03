@@ -473,6 +473,11 @@ abstract class ApplicationAbstract
 
         flush();
 
+        // Работаем с сессией, только если это не cli режим
+        if (session_id() && !self::isCli()) {
+            session_write_close();
+        }
+
         // https://secure.php.net/manual/en/function.fastcgi-finish-request.php
         // https://symfony.com/doc/current/components/http_kernel.html#the-kernel-terminate-event
         // https://github.com/symfony/symfony/blob/0aa4273b39eeb2b4184d4b62ab76bf490eef15ec/src/Symfony/Component/HttpFoundation/Response.php#L378
@@ -489,11 +494,6 @@ abstract class ApplicationAbstract
         }
 
         self::$app->afterSend();
-
-        // Работаем с сессией, только если это не cli режим
-        if (session_id() && !self::isCli()) {
-            session_write_close();
-        }
 
         //Если установлен специальный cookie, то запишем логи об этом sql запросе
         //Запишем логи об ошибке в SQL запросе в CSV файл

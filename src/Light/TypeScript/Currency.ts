@@ -1,14 +1,20 @@
 import { getBeautyDate, getPageParam, myParseFloat, toastError, toastSuccess } from "./Light";
 
-interface TodayRates {
+export interface Rates {
     [currencyIso: string]: { RateToRUB: number; ValidDate: string };
 }
 
 // Объект с курссами валют по отношению к RUB
 // {EUR: {RateToRUB: 75.1234, ValidDate: '2016-04-12'}, USD: {RateToRUB: 65.7890, ValidDate: '2016-04-12'}}
-const rates: TodayRates = getPageParam("CurrencyRates") || {};
+const rates: Rates = getPageParam("CurrencyRates") || {};
 
-export function getRate(from: string, to: string = "USD"): number {
+export function getRate(from: string, to: string = "USD", manualRates?: Rates): number {
+
+    if (!manualRates) {
+        // Если какие-то особые курсы введённые пользователем не заданы, то используем стандартные курсы
+        manualRates = rates;
+    }
+
     if (from === to) {
         return 1;
     }
@@ -18,14 +24,14 @@ export function getRate(from: string, to: string = "USD"): number {
         //Пользователь хочет перевести рубли в какую-то другую валюту
         //Например, хочет перевести рубли в доллары. В этом случае в toCurrencyIso.RateToRUB будет что-то типа 35.1234
         //А отношение RUB / USD будет соответственно 1 / 35.1234
-        return 1 / (rates[to] ? rates[to].RateToRUB : 1);
+        return 1 / (manualRates[to] ? manualRates[to].RateToRUB : 1);
     }
 
     if (to === "RUB") {
         //Пользователь хочет перевести какую-то валюту в рубли
         //Например, хочет перевести доллары в рубли. В этом случае в fromCurrencyIso.RateToRUB будет что-то типа 35.1234
         //Его и возвращаем
-        return rates[from] ? rates[from]["RateToRUB"] : 1;
+        return manualRates[from] ? manualRates[from]["RateToRUB"] : 1;
     }
 
     // Если перевод никак не связан с рублями
@@ -34,11 +40,11 @@ export function getRate(from: string, to: string = "USD"): number {
     // Сначала делаем getRate('GBP', 'RUB') === 100
     // Затем делаем getRate('RUB', 'EUR') === 1/70
     // Перемножаем 100 * (1/70) ~= 1.5!
-    return getRate(from, "RUB") * getRate("RUB", to);
+    return getRate(from, "RUB", manualRates) * getRate("RUB", to, manualRates);
 }
 
-export function convertValue(value: string | number, from: string, to: string = "USD"): number {
-    return myParseFloat(value) * getRate(from, to);
+export function convertValue(value: string | number, from: string, to: string = "USD", manualRates?: Rates): number {
+    return myParseFloat(value) * getRate(from, to, manualRates);
 }
 
 const cacheRates = new Map();
