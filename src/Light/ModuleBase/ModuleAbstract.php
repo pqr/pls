@@ -2,7 +2,6 @@
 
 namespace Light\ModuleBase;
 
-use Basis\Application;
 use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Db;
@@ -856,7 +855,7 @@ abstract class ModuleAbstract extends Table
         if ($this->folders) {
             // При входе в режиме View на всякий случай запустим процедуру создания папки под данную запись
             // если она по каким-то причинам отсутсвует (в нормальной ситуации папка должна быть создана в proceedSubmit)
-            Application::onAfterSend(function() {
+            ApplicationAbstract::onAfterSend(function() {
                 // Создание папки запустим в асинхронном режиме после отправки отрендеренной страницы пользователю
                 // т.к. сетевой диск может тормозить и даже проверка папки на существование может тормозить
                 $this->createFolder();
