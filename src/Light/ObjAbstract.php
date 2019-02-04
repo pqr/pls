@@ -442,8 +442,11 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $data;
     }
 
-    final public static function getDataStatic($id)
+    final public static function getDataStatic(int $id)
     {
+        if (!$id) {
+            return null;
+        }
         $className = get_called_class();
         /** @var ObjAbstract $obj */
         $obj = new $className;

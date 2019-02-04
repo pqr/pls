@@ -2,6 +2,7 @@
 
 namespace Light\ModuleBase;
 
+use Basis\Application;
 use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Db;
@@ -853,7 +854,13 @@ abstract class ModuleAbstract extends Table
         $this->initViewJsData();
 
         if ($this->folders) {
-            $this->createFolder();
+            // При входе в режиме View на всякий случай запустим процедуру создания папки под данную запись
+            // если она по каким-то причинам отсутсвует (в нормальной ситуации папка должна быть создана в proceedSubmit)
+            Application::onAfterSend(function() {
+                // Создание папки запустим в асинхронном режиме после отправки отрендеренной страницы пользователю
+                // т.к. сетевой диск может тормозить и даже проверка папки на существование может тормозить
+                $this->createFolder();
+            });
         }
 
         $this->addModuleSessionNextPrevLinks($this->_obj->getId());

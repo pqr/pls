@@ -10,7 +10,7 @@ use Light\Response;
 
 /**
  * @method $this setAny(bool $value)
- * @method $this setAnyPlaceholder(string $value)
+ * @method $this setAnyText(string $value)
  * @method $this setEmpty(bool $value)
  * @method $this setEmptyText(string $value)
  * @method $this setText(string $value)
@@ -26,7 +26,7 @@ use Light\Response;
  * @method $this setMultipleViewSeparator(string $value)
  *
  * @method bool getAny()
- * @method string getAnyPlaceholder()
+ * @method string getAnyText()
  * @method bool getEmpty()
  * @method string getEmptyText()
  * @method bool getAddNew()
@@ -43,7 +43,7 @@ use Light\Response;
 class FieldSelect extends FieldOptionsAbstract
 {
     public $any = false;
-    public $anyPlaceholder = '...any...';
+    public $anyText = '...any...';
 
     public $empty = true;
     public $emptyText = '';
@@ -227,7 +227,7 @@ class FieldSelect extends FieldOptionsAbstract
 
         // Сформируем шаблонные переменные для выпадающего списка
         if ($this->any && !$this->multiple) {
-            $outHtml .= '<option value="%">' . $this->anyPlaceholder . '</option>';
+            $outHtml .= '<option value="%">' . $this->anyText . '</option>';
         }
 
         $selectedValue = (string)$value;
@@ -521,7 +521,7 @@ class FieldSelect extends FieldOptionsAbstract
         // https://select2.org/data-sources/formats
         $results = [];
         if ($this->any && !$this->multiple) {
-            $results[] = ['id' => '%', 'text' => $this->anyPlaceholder];
+            $results[] = ['id' => '%', 'text' => $this->anyText];
         }
         if ($this->empty && !$this->multiple) {
             $results[] = ['id' => '', 'text' => $this->emptyText];
@@ -723,7 +723,7 @@ class FieldSelect extends FieldOptionsAbstract
             $this->prefetchedOptions['0'] = $this->emptyText;
             $this->prefetchedOptions[''] = $this->emptyText;
             $this->prefetchedOptions[null] = $this->emptyText;
-            $this->prefetchedOptions['%'] = $this->anyPlaceholder;
+            $this->prefetchedOptions['%'] = $this->anyText;
         }
     }
 
