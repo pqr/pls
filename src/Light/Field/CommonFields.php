@@ -20,7 +20,7 @@ class CommonFields
         self::VAT_EMPTY => '',
         self::VAT_BEZNDS => 'Без НДС',
         self::VAT_0 => '0%',
-        self::VAT_18 => '18%',
+        self::VAT_18 => ['Name' => '18%', 'Active' => 0],
         self::VAT_20 => '20%',
     ];
 
