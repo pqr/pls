@@ -77,7 +77,7 @@ class BackupMysqlLogs extends AutolaunchAbstract
 
     protected function runProcess(string $cmd)
     {
-        $process = new Process($cmd);
+        $process = Process::fromShellCommandline($cmd);
         $process->setTimeout(null);
         $process->mustRun();
         $output = $process->getOutput();

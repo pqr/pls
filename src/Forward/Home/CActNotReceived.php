@@ -7,6 +7,7 @@ use Forward\Application;
 use Forward\Classes\Constant;
 use Forward\Field\GeneralFields;
 use Forward\Field\HomeFields;
+use Forward\Module\Shipment\Shipment;
 use Light\Db;
 use Light\File;
 use Light\FilesFolder;
@@ -52,9 +53,9 @@ class CActNotReceived extends HomeBlockAbstract
         }
 
         foreach ($shipments as $shipment) {
-            $folderRelative = "Shipment/" . floor($shipment['ID'] / 1000) . '/' . $shipment['ID'];
-            $folder3NotEmpty = FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[3]));
-            $folder4NotEmpty = FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[4]));
+            $folderRelative = FilesFolder::getRelativeModule(Shipment::class, $shipment['ID']);
+            $folder3NotEmpty = FilesFolder::hasFiles("$folderRelative/" . Constant::$standardFolders[3]);
+            $folder4NotEmpty = FilesFolder::hasFiles("$folderRelative/" . Constant::$standardFolders[4]);
             if ($folder3NotEmpty && !$folder4NotEmpty) {
                 $this->tableData[] = $shipment;
             }

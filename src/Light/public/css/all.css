@@ -388,7 +388,6 @@ div.alert {
 }
 
 div.alert:last-child {
-    margin-bottom: 20px;
 }
 
 span.cnt {
@@ -429,7 +428,6 @@ ul.msg {
 
 .alert-badge {
     padding: 8px;
-    margin-bottom: 20px;
     border: 1px solid transparent;
     border-radius: 4px;
     display: inline-block;
@@ -683,6 +681,7 @@ textarea.input-error:focus,
 select.input-error:focus,
 .select2-container.select2-container-multi.select2-container-active.input-error .select2-choices {
     border-color: #ff1111;
+    outline-color: #ff1111;
 }
 
 select.select-select2 {
@@ -947,9 +946,14 @@ ul.checkboxset {
     padding: 10px;
     background-color: #f2f2f2;
     border-radius: 0 0 4px 4px;
+    min-height: 32px;
 }
 
-.submenu a,
+.submenu:after {
+    clear: both;
+}
+
+.submenu a:not(.CreatedLink),
 a.massactionprintdialog__button {
     display: inline-block;
     padding: 4px 6px;
@@ -960,6 +964,13 @@ a.massactionprintdialog__button {
     vertical-align: middle;
 }
 
+.submenu a.CreatedLink {
+    font-size: 10px;
+    color: silver;
+    float: right;
+    margin-top: 10px;
+}
+
 /*.submenu i,*/
 .submenu img,
 .docprints input,
@@ -968,7 +979,7 @@ a.massactionprintdialog__button {
     vertical-align: bottom;
 }
 
-.submenu a:hover,
+.submenu a:not(.CreatedLink):hover,
 a.massactionprintdialog__button:hover {
     border: 1px solid #f1c43f;
     background: #fdeeb3;
@@ -1029,6 +1040,17 @@ table.form > tbody > tr > td {
     padding: 5px;
     width: 304px;
     background-color: #eaf2fb;
+}
+
+table.form > tbody > tr > td.form_td_subtable {
+    background-color: transparent;
+    padding-left: 0;
+}
+
+td.col-middle .MoneyView, td.col-right .MoneyView {
+    display: inline-block;
+    width: 110px;
+    text-align: right;
 }
 
 table.form.form-full > tbody > tr > td {
@@ -2154,6 +2176,7 @@ button.btn-floating {
     padding: 5px;
     cursor: move;
 }
+
 .MainmenuSettings-Item:hover {
     background-color: #eee;
 }
@@ -2172,6 +2195,7 @@ button.btn-floating {
     opacity: 1;
     border-bottom: 1px dashed;
 }
+
 
 /* статусы счетов */
 *[class^="invstatus"] {
@@ -2260,7 +2284,7 @@ button.btn-floating {
     vertical-align: bottom;
 }
 
-/* CLEARED_DRAFT */
+/* PAYMENT_CONFIRMED */
 .invstatus23 {
     color: #f9ffef;
     background-color: #fe8601;
@@ -2272,6 +2296,22 @@ button.btn-floating {
     height: 12px;
     border-radius: 6px;
     background-color: #fe8601;
+    margin-right: 8px;
+    vertical-align: bottom;
+}
+
+/* PAYMENT_SENT_TO_BANK */
+.invstatus25 {
+    color: #006633;
+    border: 1px solid #006633;
+}
+
+.invicon25 {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
+    border: 2px solid #006633;
     margin-right: 8px;
     vertical-align: bottom;
 }
@@ -2403,14 +2443,14 @@ table.table.layoutfixed td {
 /* фиксация thead работает в Firefox и в Safari */
 table.table.sticky > thead {
     position: sticky;
-    position: -webkit-sticky; /* Для Safari нужно с префисом */
+    /*position: -webkit-sticky; !* Для Safari нужно с префисом *!*/
     top: 0;
 }
 
 /* Для Edge и Chome нужно фиксировать th */
 table.table.sticky > thead > tr > th {
     position: sticky;
-    position: -webkit-sticky; /* Для Safari нужно с префисом */
+    /*position: -webkit-sticky; !* Для Safari нужно с префисом *!*/
     top: 0;
 }
 
@@ -2492,6 +2532,7 @@ table.table > thead > tr > th {
     background-color: #eaeaea;
     color: #666666;
     font-weight: bold;
+    text-align: left;
 }
 
 table.table > tbody > tr > td {
@@ -2524,11 +2565,11 @@ table.table > tbody > tr > td i {
     z-index: auto !important;
 }
 
-table.table > tbody > tr > td.tac {
+table.table > thead > tr > th.tac, table.table > tbody > tr > td.tac {
     text-align: center;
 }
 
-table.table > tbody > tr > td.tar {
+table.table > thead > tr > th.tar, table.table > tbody > tr > td.tar {
     text-align: right;
 }
 

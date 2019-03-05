@@ -41,7 +41,7 @@ class Deleted extends ModuleAbstract
 
             F::createString('FilterName', [
                 'name' => Config::$lang === 'ru' ? 'Текст' : 'Text',
-                'sqlWhere' => "ID in (SELECT deletedID FROM deleted_text WHERE JSON LIKE '%{value}%')"
+                'sqlWhere' => "ID in (SELECT deletedID FROM deleted_text WHERE JSON LIKE '%{value}%')",
             ]),
 
             CommonFields::filterMasterId(),
@@ -58,14 +58,14 @@ class Deleted extends ModuleAbstract
                 'CreatedBy',
                 'ModuleID',
                 'TableID',
-                'FilterName'
+                'FilterName',
             ],
             [
                 'CreatedDateTime',
                 'MasterID',
                 'RecordID',
-                'TraceID'
-            ]
+                'TraceID',
+            ],
         ];
 
     }
@@ -73,10 +73,11 @@ class Deleted extends ModuleAbstract
     public function initViewSubmenu()
     {
         $textRestore = Config::$lang === 'ru' ? 'Восстановить' : 'Restore';
-        $this->addSubmenuItemViewFuncPost($textRestore, Img::icon('fa-undo icon-green'), 'Restore');
+        $this->addSubmenuLinkViewFunc(Img::icon('fa-undo icon-green') . " $textRestore", 'Restore')
+            ->post();
 
         $textFindRelated = Config::$lang === 'ru' ? 'Найти удалённые одновременно' : 'Find deleted the same time';
-        $this->addSubmenuItemViewFunc($textFindRelated, Img::iconSearch(), 'FindRelations');
+        $this->addSubmenuLinkViewFunc(Img::iconSearch() . " $textFindRelated", 'FindRelations');
     }
 
     public function viewGetFindRelations()

@@ -30,7 +30,7 @@ class Customers extends Many2ManyAbstract
 
         $this->textTableEmpty = 'No linked customers';
         $this->folders = true;
-        $this->folderBaseDir = 'Customer';
+        $this->folderModule = 'Customer';
         $this->textSubtableTitle = 'Customers';
 
         $this->addFields(

@@ -7,89 +7,105 @@ class ModuleRegister
     const MODULE_HIDDEN = 0b01;
     const MODULE_HASBADGE = 0b10;
 
-    private static $coreModules = ['Core' => 'Core', 'Login' => 'Login', 'Logout' => 'Logout', 'Bot' => 'Bot'];
+    private static $coreModules = [
+        'Core' => 'Core',
+        'Login' => 'Login',
+        'Logout' => 'Logout',
+        'Bot' => 'Bot',
+        'UserSettings' => 'UserSettings',
+    ];
 
     public static $modules = [
+        'UserSettings' => [
+            'name' => 'User Settings',
+            'order' => -1,
+            'section' => '',
+        ],
         'Home' => [
             'name' => 'Home',
             'order' => -1,
-            'section' => ''
+            'section' => '',
         ],
         'Reportmenu' => [
             'name' => 'Reports',
             'order' => 80,
-            'section' => ''
+            'section' => '',
         ],
         'Currency' => [
             'name' => 'Currency',
             'order' => 90,
-            'section' => 'Currency'
+            'section' => 'Currency',
         ],
         'CurrencyRate' => [
             'name' => 'Currency Rates',
             'order' => 91,
-            'section' => 'Currency'
+            'section' => 'Currency',
         ],
         'UserModule' => [
             'name' => 'Users',
             'order' => 100,
-            'section' => 'User Management'
+            'section' => 'User Management',
         ],
         'ProductionCalendar' => [
             'name' => 'Производств.календарь',
             'order' => 102,
-            'section' => 'System'
+            'section' => 'System',
         ],
         'Logviewer' => [
             'name' => 'Logs',
             'order' => 103,
-            'section' => 'System'
+            'section' => 'System',
         ],
         'Deleted' => [
             'name' => 'Deleted',
             'order' => 105,
-            'section' => 'System'
+            'section' => 'System',
         ],
         'Autolaunch' => [
             'name' => 'Autolaunch',
             'order' => 106,
-            'section' => 'System'
+            'section' => 'System',
+        ],
+        'EmailAccount' => [
+            'name' => 'E-mail Accounts',
+            'order' => 107,
+            'section' => 'System',
         ],
         'EmailQueueModule' => [
-            'name' => 'Email Queue',
-            'order' => 107,
-            'section' => 'System'
+            'name' => 'E-mail Queue',
+            'order' => 108,
+            'section' => 'System',
         ],
         'EmailLogModule' => [
             'name' => 'Email Log',
-            'order' => 108,
-            'section' => 'System'
+            'order' => 109,
+            'section' => 'System',
         ],
         'SettingsBackup' => [
             'name' => 'Backup',
-            'order' => 109,
-            'section' => 'System'
+            'order' => 110,
+            'section' => 'System',
         ],
         'ColorHint' => [
             'name' => 'Color Hints',
-            'order' => 110,
-            'section' => 'System'
+            'order' => 111,
+            'section' => 'System',
         ],
         'FiltersLog' => [
             'name' => 'Filters Log',
-            'order' => 111,
-            'section' => 'System'
+            'order' => 112,
+            'section' => 'System',
         ],
         'Phpinfo' => [
             'name' => 'PHP Info',
-            'order' => 112,
-            'section' => 'System'
-        ]
+            'order' => 113,
+            'section' => 'System',
+        ],
     ];
 
     private static $titles = [];
 
-    private static $hiddenModules = [];
+    private static $hiddenModules = ['UserSettings' => true];
 
     private static $withBadges = [];
 
@@ -110,7 +126,9 @@ class ModuleRegister
         static $orderedModulesKeys;
         if ($orderedModulesKeys === null) {
             $orderedModulesKeys = array_keys(self::$modules);
-            array_multisort(array_column(self::$modules, 'order'), $orderedModulesKeys);
+            $orders = array_column(self::$modules, 'order');
+            // TODO: проверить, похоже здесь не верно реализована сортировка
+            array_multisort($orders, $orderedModulesKeys);
         }
 
         return $orderedModulesKeys;
@@ -159,7 +177,7 @@ class ModuleRegister
         self::$modules[$module] = [
             'name' => $name,
             'section' => $section,
-            'order' => $autoorder
+            'order' => $autoorder,
         ];
 
         if ($binOptions & self::MODULE_HIDDEN) {

@@ -411,7 +411,8 @@ class CInvoice extends InvoiceModuleAbstract
     protected function initViewSubmenu()
     {
         if (Constant::isOneCCompany($this->_obj['CompanyID'])) {
-            $this->addSubmenuItemViewFuncPost('Отправить в 1С', Img::iconUpload(), 'SendOneC');
+            $this->addSubmenuLinkViewFunc(Img::iconUpload() . ' Отправить в 1С', 'SendOneC')
+                ->post();
         }
     }
 
@@ -568,7 +569,7 @@ class CInvoice extends InvoiceModuleAbstract
         }
 
         $this->createFolder();
-        $folderpathAbs = $this->getFolderAbsolutePath();
+        $folderpathAbs = $this->getFolderAbsolute();
 
         if (empty($resData['Data'])) {
 
@@ -577,10 +578,10 @@ class CInvoice extends InvoiceModuleAbstract
         } else {
 
             $pdfFilename = File::getValidFilename($this->_obj['Name']) . '.pdf';
-            $pdfFilepathAbsEnc = File::encode($folderpathAbs . '/' . $pdfFilename);
+            $pdfFilepathAbs = "$folderpathAbs/$pdfFilename";
             $pdfDataBase64 = $resData['Data'];
             $pdfData = base64_decode($pdfDataBase64);
-            if (file_put_contents($pdfFilepathAbsEnc, $pdfData)) {
+            if (file_put_contents($pdfFilepathAbs, $pdfData)) {
                 Session::flashSuccess('Файл <strong>' . htmlspecialchars($pdfFilename) . '</strong> помещён в папку счёта');
             } else {
                 Session::flashError('Не удалось поместить файл <strong>' . htmlspecialchars($pdfFilename) . '</strong> в папку счёта');
@@ -595,11 +596,11 @@ class CInvoice extends InvoiceModuleAbstract
         } else {
 
             $excelFilename = File::getValidFilename($this->_obj['Name']) . '.xlsx';
-            $excelFilepathAbsEnc = File::encode($folderpathAbs . '/' . $excelFilename);
+            $excelFilepathAbs = "$folderpathAbs/$excelFilename";
             $excelDataBase64 = $resData['ExcelData'];
             $excelData = base64_decode($excelDataBase64);
 
-            if (file_put_contents($excelFilepathAbsEnc, $excelData)) {
+            if (file_put_contents($excelFilepathAbs, $excelData)) {
                 Session::flashSuccess('Файл <strong>' . htmlspecialchars($excelFilename) . '</strong> помещён в папку счёта');
             } else {
                 Session::flashError('Не удалось поместить файл <strong>' . htmlspecialchars($excelFilename) . '</strong> в папку счёта');
@@ -610,11 +611,11 @@ class CInvoice extends InvoiceModuleAbstract
             $shipments = Db::getAll("SELECT s.ID, s.Name FROM cinvoice_file_amount cfa, shipment s WHERE cfa.CInvoiceID = $cinvId AND cfa.FileNumber = s.Name");
             foreach ($shipments as ['ID' => $shipmentId, 'Name' => $fileNumber]) {
                 // Перекладываем файл в папку внутри shipment
-                $shipmentFolderRelative = FilesFolder::getModuleRelative(Shipment::class, $shipmentId);
+                $shipmentFolderRelative = FilesFolder::getRelativeModule(Shipment::class, $shipmentId);
                 $standartCInvoiceFolder = Constant::$standardFolders[Constant::FOLDER_CINVOICE];
                 $shipmentCInvoioceFolderRelative = "$shipmentFolderRelative/$standartCInvoiceFolder";
                 FilesFolder::mkdir($shipmentCInvoioceFolderRelative);
-                $result = file_put_contents(FilesFolder::getAbsolutePath($shipmentCInvoioceFolderRelative) . "/$excelFilename",
+                $result = file_put_contents(FilesFolder::getAbsolute($shipmentCInvoioceFolderRelative) . "/$excelFilename",
                     $excelData);
                 if ($result) {
                     Session::flashSuccess('Файл <strong>' . htmlspecialchars($excelFilename) . '</strong> помещён в папку перевозки ' . $fileNumber . '/' . $standartCInvoiceFolder);

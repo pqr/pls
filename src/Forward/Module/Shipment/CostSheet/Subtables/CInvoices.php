@@ -15,7 +15,7 @@ class CInvoices extends InvoicesAbstract
         parent::__construct('CInvoices', $shipmentObj['Name']);
 
         $this->tableLinkModule = 'CInvoice';
-        $this->folderBaseDir = 'CInvoice';
+        $this->folderModule = 'CInvoice';
 
         $this->addField(CostSheetFields::cStatusIco());
 

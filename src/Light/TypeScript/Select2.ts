@@ -162,7 +162,6 @@ class Select2 {
             // было поле multiple select
             const parentFieldKey = $parentField.attr('name')!.replace('[]', '');
             acc[parentFieldKey] = getNodeValue($parentField, 'Select');
-            console.log(acc[parentFieldKey]);
             return acc;
         }, {});
     }

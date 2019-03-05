@@ -14,7 +14,7 @@ class VInvoices extends InvoicesAbstract
         parent::__construct('VInvoices', $shipmentObj['Name']);
 
         $this->tableLinkModule = 'VInvoice';
-        $this->folderBaseDir = 'VInvoice';
+        $this->folderModule = 'VInvoice';
 
         $this->addField(CostSheetFields::vStatusIco());
 

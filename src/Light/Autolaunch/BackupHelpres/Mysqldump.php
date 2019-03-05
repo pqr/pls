@@ -71,17 +71,14 @@ class Mysqldump
             // Получили список таблиц которые нужно проигнорировать при выгрузке данных (таблицы с логами)
             // Добавим к имени каждой таблицы имя базы данных
             $options = array_map(function ($t) {
-                return "--ignore-table=". Config::$mysqlDb . ".$t \\\n";
+                return "--ignore-table=". Config::$mysqlDb . ".$t";
             }, $this->ignoreTables);
         }
 
         if ($this->noData) {
-            $options[] = "--no-data \\\n";
+            $options[] = "--no-data";
         }
 
-        return implode(' ', $options);
+        return implode(" \\\n", $options);
     }
-
-
-
 }

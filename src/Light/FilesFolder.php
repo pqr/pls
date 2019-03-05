@@ -4,6 +4,293 @@ namespace Light;
 
 class FilesFolder
 {
+    private static $folderStatus = [];
+    private static $newFoldersStatus = [];
+    private static $onAfterSendRegistered = false;
+
+    /**
+     * Обновляет статус директории в базе данных (в таблице folderstatus).
+     * Если передан параметр $forceHasFiles - то именно это значение будет записано в базу.
+     * Если не передан параметр $forceHasFiles, то функция проверит реальное состояние в файловой системе
+     * и после этого обновит значение в базе.
+     *
+     * @param string $module
+     * @param int $id
+     * @param bool|null $forceHasFiles
+     * @return bool возвращает обновлённое значение HasFiles для данной директории
+     */
+    public static function updateFolderStatus(string $module, int $id, bool $forceHasFiles = null): bool
+    {
+        $module = Misc::getModule($module);
+        if ($forceHasFiles === null) {
+
+            // Если параметр $forceHasFiles не передан явно, нужно проверить директорию в файловой системе
+            // и принять решение исходя из фактического содержимого
+
+            // Проверка осуществляется с помощью метода hasFiles, который требует $relative путь
+            $relative = self::getRelativeModule($module, $id);
+            $hasFiles = FilesFolder::hasFiles($relative);
+
+        } else {
+
+            $hasFiles = $forceHasFiles;
+
+        }
+
+        // Проверим текущее значение в кеширующем массиве $folderStatus, который отражает состояние в базе данных
+        $key = "$module-$id";
+
+        if (!isset(self::$folderStatus[$key]) || self::$folderStatus[$key] !== $hasFiles) {
+            // Состояние директории изменилось относительно того, что было в базе данных
+            // (либо в базе данных вообще не было сведений)
+
+            // Нужно записать новое состояние в базу данных (или обновить существующую строку в базе данных)
+            // это обновление будет произведено отложенно в ApplicationAbstract::onAfterSend
+            if (!self::$onAfterSendRegistered) {
+                ApplicationAbstract::onAfterSend([__CLASS__, 'flushFoldersStatus']);
+            }
+            self::$newFoldersStatus[$key] = [$module, $id, $hasFiles];
+
+            // Также обновим локальный кеширующий массив, чтобы не делать лишних запросов к базе данных на чтение
+            // в рамках текущего запроса, если понадобится проверить состояние папки ещё раз
+            self::$folderStatus[$key] = $hasFiles;
+        }
+
+        // Возвращаем финальное состояние директории
+        return $hasFiles;
+
+    }
+
+    /**
+     * Метод вызывается в коцне работы скрипта в ApplicationAbstract::onAfterSend и записывает в базу данных
+     * все новые состояния из массива self::$newFoldersStatus
+     * @throws \Exception
+     */
+    public static function flushFoldersStatus()
+    {
+        if (!self::$newFoldersStatus) {
+            return;
+        }
+        $values = [];
+        foreach (self::$newFoldersStatus as [$module, $id, $hasFiles]) {
+            $moduleId = DbLog::getModuleId($module);
+            $hasFiles = $hasFiles ? 1 : 0;
+            $values[] = "($moduleId, $id, $hasFiles)";
+        }
+
+        $query = "INSERT INTO folderstatus (ModuleID, RecordID, HasFiles) 
+                  VALUES " . implode(', ', $values) . "
+                  ON DUPLICATE KEY UPDATE HasFiles = VALUES(HasFiles)";
+
+        Db::query($query);
+
+        self::$newFoldersStatus = [];
+    }
+
+    /**
+     * Метод проверяет, есть ли в директории указанного объекта файлы?
+     * При этом используется кеширующий массив self::$folderStatus
+     * Но если в нём нет информации, то запускается процедура обновления статуса по фактическому состоянию директории
+     * с помощью метода self::updateFolderStatus()
+     * @param string $module
+     * @param int $id
+     * @return bool
+     */
+    public static function hasFilesModule(string $module, int $id): bool
+    {
+        $module = Misc::getModule($module);
+
+        $key = "$module-$id";
+        // Если состояние папки для текущего модуля уже есть в кеширующем массиве self::$folderStatus
+        // то сразу вернём изветсное значение.
+        // Если же в массиве self::$folderStatus нет значения, то проверим фактическое состояние директоии и заодно
+        // обновим закешированные в базе данных значения.
+        return self::$folderStatus[$key] ?? self::updateFolderStatus($module, $id);
+    }
+
+    /**
+     * Метод проверяет фактическое наличие файлов в диектории. Поскольку метод работает с $relative путём,
+     * а не с обектами и модулями, он не опирается на кеширующие значения из базы из таблицы folderstatus
+     * и не обновляет их.
+     * @param string $relative
+     * @return bool
+     */
+    public static function hasFiles(string $relative): bool
+    {
+        $dir = self::getAbsolute($relative);
+        if (!file_exists($dir) || !is_dir($dir)) {
+            return false;
+        }
+
+        $flags = \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::CURRENT_AS_FILEINFO;
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, $flags),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+        /** @var \SplFileInfo $splFileInfo */
+        foreach ($iterator as $splFileInfo) {
+            if ($splFileInfo->isDir()) {
+                // Директории не учитываем
+                continue;
+            }
+            if (strpos($splFileInfo->getFilename(), '.') === 0) {
+                // Скрытые файлы не считаем за значимые
+                continue;
+            }
+
+            // Нашли какой-то файл! Возвращаем true, т.к. директория определённо не пуста
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Загружаем из базы данных массив закешированных статусов папок
+     * (используется в режиме таблицы в ModuleAbstract и в Subtable)
+     * Загруженная информация сохраняется во внутренний массив self::$folderStatus,
+     * который позже используется в методе FilesFolder::hasFilesModule($module, $id)
+     * @param string $module
+     * @param array $ids
+     */
+    public static function loadFoldersStatus(string $module, array $ids)
+    {
+        if (!$module || !$ids) {
+            return;
+        }
+        $module = Misc::getModule($module);
+        $moduleId = DbLog::getModuleId($module);
+        $foldesStatusFromDb = Db::getAssoc(
+            "SELECT RecordID, HasFiles
+            FROM folderstatus
+            WHERE ModuleID = $moduleId
+                AND RecordID IN (@a)"
+            , $ids
+        );
+        foreach ($ids as $id) {
+
+            $hasFiles = $foldesStatusFromDb[$id] ?? false;
+            if (!$hasFiles) {
+                // Если про данную директорию нет информации в базе, или информация есть и там стоит HasFiles=0
+                // сверимся с жестким диском ещё раз, возможно, файлы уже были добавлены?
+                $hasFiles = self::updateFolderStatus($module, $id);
+            }
+
+            self::$folderStatus["$module-$id"] = $hasFiles;
+        }
+    }
+
+    /**
+     * @desc возвращает ссылку на папку <a href=...>
+     * @param string $relativePath путь к папке относительно filesfolder
+     * @param string $innerHtml текст, который добавлять после иконки папки
+     * @return string
+     */
+    public static function getLinkWithIcon(string $relativePath, string $innerHtml = ''): string
+    {
+        $hasFiles = self::hasFiles($relativePath);
+        $icon = Img::iconFolder($hasFiles);
+        $innerHtml = trim("$icon $innerHtml");
+        return self::getLink($relativePath, $innerHtml);
+    }
+
+    public static function getLinkWithIconModule(string $module, int $id, string $innerHtml = ''): string
+    {
+        if (!$module || !$id) {
+            return '';
+        }
+        $hasFiles = self::hasFilesModule($module, $id);
+        $icon = Img::iconFolder($hasFiles);
+        $innerHtml = trim("$icon $innerHtml");
+        return self::getLinkModule($module, $id, $innerHtml);
+    }
+
+    public static function getLink(string $relative, string $innerHtml): string
+    {
+        $url = self::getUrl($relative);
+        return '<a href="' . $url . '" target="_blank">' . $innerHtml . '</a>';
+    }
+
+    public static function getLinkModule(string $module, int $id, string $innerHtml): string
+    {
+        if (!$module || !$id) {
+            return '';
+        }
+        $url = self::getUrlModule($module, $id);
+        return '<a href="' . $url . '" target="_blank">' . $innerHtml . '</a>';
+    }
+
+    /**
+     * Возвращает url для указанной папки внутри filesfolder
+     * @param string $relative
+     * @return string
+     */
+    public static function getUrl(string $relative): string
+    {
+        // Если задана переменная Config::$filesfolder и текущее окружение пользователя позволяет открывать ссылки
+        // в проводнике - тогда сформируем ссылку для проводника
+        if (Config::$filesfolder) {
+            $url = self::getUrlNetworkFolder($relative);
+            if ($url !== null) {
+                return $url;
+            }
+        }
+
+        // Если же не задана переменная Config::$filesfolder или доступ через сетевые папки невозможен
+        // сформируем ссыклу на ModuleAbstract - elfinder
+
+        // Относительный путь обычно выглядит так: <ModuleName>/<thousand>/<RecordID>
+        $parts = explode('/', $relative);
+        if (!isset($parts[2])) {
+            // Странный относительный путь, по которому невозможно посроить ссылку на ModuleAbstract
+            return '';
+        }
+
+        [$module, , $id] = $parts;
+        return self::getUrlElfinder($module, (int)$id);
+    }
+
+    public static function getUrlModule(string $module, int $id): string
+    {
+        if (!$module || !$id) {
+            return '';
+        }
+        // Если задана переменная Config::$filesfolder и текущее окружение пользователя позволяет открывать ссылки
+        // в проводнике - тогда сформируем ссылку для проводника
+        if (Config::$filesfolder) {
+            $relative = self::getRelativeModule($module, $id);
+            $url = self::getUrlNetworkFolder($relative);
+            if ($url !== null) {
+                return $url;
+            }
+        }
+
+        // Если же не задана переменная Config::$filesfolder или доступ через сетевые папки невозможен
+        // сформируем ссыклу на ModuleAbstract - elfinder
+        return self::getUrlElfinder($module, $id);
+    }
+
+    private static function getUrlNetworkFolder(string $relative): ?string
+    {
+        // Когда url передаётся в браузер под видом ссылки file:// важно чтобы имена папок и файлов
+        // были закодированы с помощью rawurlencode
+        $relative = implode('/', array_map('rawurlencode', explode('/', $relative)));
+
+        // Разрешены нативные папки. Чтобы сформировать правильный url, нужно определить операционную систему клиента
+        if (self::isUserAgentNix()) {
+            // Пользователь работает через OS X или Linux - делаем для него ссылку на smb
+            return 'smb://' . str_replace(['\\\\', '\\'], ['', '/'], Config::$filesfolder) . '/' . $relative;
+        }
+
+        if (self::isWindowsSharedFolderAllowed()) {
+            // Пользователь работает из Windows, для него делаем ссылки типа file:///
+            return 'file:///' . Config::$filesfolder . '/' . $relative;
+        }
+
+        return null;
+    }
+
+
     private static function isUserAgentNix()
     {
         static $isUserAgentNix;
@@ -15,7 +302,7 @@ class FilesFolder
         return $isUserAgentNix;
     }
 
-    public static function isWindowsSharedFolderAllowed()
+    private static function isWindowsSharedFolderAllowed()
     {
         static $isWindowsSharedFolderAllowed;
         if ($isWindowsSharedFolderAllowed === null) {
@@ -39,358 +326,196 @@ class FilesFolder
         return $isWindowsSharedFolderAllowed;
     }
 
-    /**
-     * Возвращает url для указанной папки внутри filesfolder
-     * @param string $relativePath
-     * @return string
-     */
-    public static function getUrl(string $relativePath)
+    private static function getUrlElfinder(string $module, int $id): string
     {
-        // Если задана переменная Config::$filesfolder и текущее окружение пользователя позволяет открывать ссылки
-        // в проводнике - тогда сформируем ссылку для проводника
-        if (Config::$filesfolder) {
-
-            // Когда url передаётся в браузер под видом ссылки file:// важно чтобы имена папок и файлов
-            // были закодированы с помощью rawurlencode
-            $relativePath = implode('/', array_map('rawurlencode', explode('/', $relativePath)));
-
-            // Разрешены нативные папки. Чтобы сформировать правильный url, нужно определить операционную систему клиента
-            if (self::isUserAgentNix()) {
-                // Пользователь работает через OS X или Linux - делаем для него ссылку на smb
-                return 'smb://' . str_replace(['\\\\', '\\'], ['', '/'], Config::$filesfolder) . '/' . $relativePath;
-            }
-
-            if (self::isWindowsSharedFolderAllowed()) {
-                // Пользователь работает из Windows, для него делаем ссылки типа file:///
-                return 'file:///' . Config::$filesfolder . '/' . $relativePath;
-            }
-
-        }
-
-        // Если же не задана переменная Config::$filesfolder или доступ через сетевые папки невозможен
-        // сформируем ссыклу на ModuleAbstract - elfinder
-
-        // Относительный путь обычно выглядит так: <ModuleName>/<thousand>/<RecordID>
-        $parts = explode('/', $relativePath);
-        if (!isset($parts[2])) {
-            // Странный относительный путь, по которому невозможно посроить ссылку на ModuleAbstract
+        if (!$module || !$id) {
             return '';
         }
-
-        $module = $parts[0];
-        $recordId = $parts[2];
-
-        return Link::create($module)->view($recordId)->params(['elfinder' => 'dialog'])->getHref();
+        return Link::create($module)->view($id)->params(['elfinder' => 'dialog'])->getHref();
     }
 
-    /**
-     * Возвращает html код изображения в зависимости от того пуста или не пуста указанная в параметре папка
-     * @param bool $isFull
-     * @return string
-     */
-    public static function getImgHtml($isFull)
+    public static function mkdir(string $relative): bool
     {
-        $cssClass = $isFull ? 'icon-folderfull' : 'icon-folderempty';
-        return "<i class=\"fa fa-folder $cssClass\"></i>";
+        try {
+
+            File::fs()->mkdir(self::getAbsolute($relative));
+            return true;
+
+        } catch (\Exception $e) {
+
+            reportException($e);
+            return false;
+
+        }
     }
 
-    /**
-     * @desc возвращает ссылку на папку <a href=...>
-     * @param string $relativePath путь к папке относительно filesfolder
-     * @param string $innerHtml текст, который добавлять после иконки папки
-     * @return string
-     */
-    public static function getLinkWithIcon(string $relativePath, string $innerHtml = ''): string
+    public static function mkdirModule(string $module, int $id): bool
     {
-        $innerHtml = trim(self::getImgHtml(self::isNotEmpty($relativePath)) . ' ' . $innerHtml);
-        return self::getLink($relativePath, $innerHtml);
-    }
-
-    public static function getLink(string $relativePath, string $innerHtml): string
-    {
-        $url = self::getUrl($relativePath);
-        return '<a href="' . $url . '" target="_blank">' . $innerHtml . '</a>';
-    }
-
-    public static function getModuleLinkWithIcon(string $module, int $id, string $innerHtml = '')
-    {
-        $relativePath = self::getModuleRelative($module, $id);
-        return self::getLinkWithIcon($relativePath, $innerHtml);
-    }
-
-    public static function getModuleLink(string $module, int $id, string $innerHtml)
-    {
-        $relativePath = self::getModuleRelative($module, $id);
-        return self::getLink($relativePath, $innerHtml);
-    }
-
-    public static function isDir(string $relativePath): bool
-    {
-        $pathAbs = Config::$filesfolderLocal . '/' . $relativePath;
-        $pathAbsEnc = File::encode($pathAbs);
-
-        return is_dir($pathAbsEnc);
-    }
-
-    public static function isFile(string $relativePath): bool
-    {
-        $pathAbs = Config::$filesfolderLocal . '/' . $relativePath;
-        $pathAbsEnc = File::encode($pathAbs);
-
-        return is_file($pathAbsEnc);
-    }
-
-    public static function mkdir(string $relativePath): bool
-    {
-        return File::mkdir(Config::$filesfolderLocal . '/' . $relativePath);
-    }
-
-    /**
-     * @param string $srcRelativePath путь к файлу источнику относительно filesfolder
-     * @param string $destRelativePath путь к файлу назначения относительно filesfolder
-     * @return bool
-     */
-    public static function copy(string $srcRelativePath, string $destRelativePath): bool
-    {
-        $srcPathAbsEnc = File::encode(Config::$filesfolderLocal . '/' . $srcRelativePath);
-        $destPathAbsEnc = File::encode(Config::$filesfolderLocal . '/' . $destRelativePath);
-        $result = copy($srcPathAbsEnc, $destPathAbsEnc);
-        @chmod($destPathAbsEnc, 0666);
-        return $result;
-    }
-
-    public static function rename(string $srcRelativePath, string $destRelativePath): bool
-    {
-        $srcPathAbsEnc = File::encode(Config::$filesfolderLocal . '/' . $srcRelativePath);
-        if (!file_exists($srcPathAbsEnc)) {
+        if (!$module || !$id) {
             return false;
         }
-        $destPathAbsEnc = File::encode(Config::$filesfolderLocal . '/' . $destRelativePath);
-        $destParentEnc = dirname($destPathAbsEnc);
-        if (!file_exists($destParentEnc)) {
-            File::mkdir(File::decode($destParentEnc));
-        }
-        $result = rename($srcPathAbsEnc, $destPathAbsEnc);
-        @chmod($destPathAbsEnc, 0666);
-        return $result;
+        return self::mkdir(self::getRelativeModule($module, $id));
     }
 
-    public static function moveToDeleted(string $folderRelativePath)
+    /**
+     * @param string $originRelative путь к файлу источнику относительно filesfolder
+     * @param string $targetRelative путь к файлу назначения относительно filesfolder
+     * @return bool
+     */
+    public static function copy(string $originRelative, string $targetRelative): bool
+    {
+        $origin = self::getAbsolute($originRelative);
+        $target = self::getAbsolute($targetRelative);
+        return File::copy($origin, $target);
+    }
+
+    public static function moveToDeleted(string $relative)
     {
         // Перемещаем папку в специальную директорию deleted
-        $destRelativePath = 'deleted/' . $folderRelativePath;
-        FilesFolder::rename($folderRelativePath, $destRelativePath);
+        FilesFolder::rename($relative, "deleted/$relative");
+    }
+
+    /**
+     * @param string $originRelative путь к файлу источнику относительно filesfolder
+     * @param string $targetRelative путь к файлу назначения относительно filesfolder
+     * @return bool
+     */
+    public static function rename(string $originRelative, string $targetRelative): bool
+    {
+        $origin = self::getAbsolute($originRelative);
+        $target = self::getAbsolute($targetRelative);
+        return File::rename($origin, $target);
+    }
+
+    public static function isFile(string $relative): bool
+    {
+        $relative = self::trimRelative($relative);
+        return $relative !== '' && is_file(self::getAbsolute($relative));
+    }
+
+    public static function isDir(string $relative): bool
+    {
+        $relative = self::trimRelative($relative);
+        return $relative !== '' && is_dir(self::getAbsolute($relative));
+    }
+
+    public static function trimRelative(string $relative): string
+    {
+        return rtrim($relative, " /");
     }
 
     /**
      * Возвращает массив файлов внутри директории относительно filesfolder
      * Особенность этого метода по сравнению со стандартным scandir:
      * 1) в массиве не будет элементов . и ..
-     * 2) имена файлов в массиве будут в кодировке utf8, а не в кодировке файловой системы, как это происходит с обычным scandir
-     * @param string $relativePath
+     * 2) в массиве не будет директорий (только файлы)
+     * 3) не будет скрытых файлов (начинающихся с точки)
+     * 4) не будет файла 'Thumbs.db'
+     * @param string $relative
+     * @param string|null $filterExtension
      * @return array
      */
-    public static function scandir(string $relativePath): array
+    public static function scandir(string $relative, string $filterExtension = null): array
     {
-        $pathEnc = File::encode(Config::$filesfolderLocal . '/' . $relativePath);
-        if (!is_dir($pathEnc)) {
+        $abs = self::getAbsolute($relative);
+        if (!is_dir($abs)) {
             return [];
         }
 
-        $filesEnc = scandir($pathEnc);
-        if (!is_array($filesEnc)) {
+        $files = scandir($abs);
+        if (!is_array($files)) {
             //стандартная функция scandir вернула false
             return [];
         }
 
-        $files = [];
-        foreach ($filesEnc as $fileEnc) {
-            if ($fileEnc[0] === '.') {
+        $out = [];
+        foreach ($files as $file) {
+            $fileAbs = "$abs/$file";
+            if ($file === 'Thumbs.db' || $file[0] === '.' || !is_file($fileAbs)) {
+                continue;
+            }
+            if ($filterExtension && strtolower(pathinfo($fileAbs,
+                    PATHINFO_EXTENSION)) !== strtolower($filterExtension)) {
                 continue;
             }
 
-            $files[] = File::decode($fileEnc);
+            $out[] = $file;
         }
 
-        return $files;
+        return $out;
     }
 
-    /**
-     * @param string $relativePath
-     * @return bool|null возвращает true, если папка не пуста; false, если папка пуста; null, если папка не существует
-     */
-    public static function isNotEmpty(string $relativePath)
+    public static function size(string $relative): int
     {
-        $pathAbs = Config::$filesfolderLocal . '/' . $relativePath;
-        $pathAbsEnc = File::encode($pathAbs);
-        if (!is_dir($pathAbsEnc)) {
-            return null;
-        }
-
-        $isNotEmpty = false;
-
-        //Открываем директорию с помощью opendir (вместо scandir), чтобы найти первый файл отличный от . и ..
-        //Как только нашли, можно закрывать директрию!
-        if ($dh = opendir($pathAbsEnc)) {
-            while (($fileEnc = readdir($dh)) !== false) {
-                if ($fileEnc[0] === '.') {
-                    continue;
-                }
-
-                if (is_file($pathAbsEnc . '/' . $fileEnc)) {
-                    //Нашли файл в текущей папке!
-                    closedir($dh);
-
-                    $isNotEmpty = true;
-                    break;
-
-                } else {
-                    //Проверим эту вложенную директорию рекурсивным вызовом
-                    $subResult = self::isNotEmpty($relativePath . '/' . File::decode($fileEnc));
-                    if ($subResult) {
-                        //Поддиректория оказалась не пуста!
-                        closedir($dh);
-
-                        $isNotEmpty = true;
-                        break;
-                    }
-                }
-            }
-            if (!$isNotEmpty) {
-                closedir($dh);
-            }
-        }
-
-        return $isNotEmpty;
-    }
-
-    // Переменные, которые будут накапливать данные о пустых и не пустых папках, чтобы в конце рендринга страницы
-    // сделать массовое обновление в базе
-    /** @var  array */
-    private static $bufferNotEmpty;
-    /** @var  array */
-    private static $bufferEmpty;
-
-    /**
-     * Обновляет в базе в таблице cache_notemptyfilesfolder текущее состояние папки - пустая она или нет?
-     * @param string $relativePath относительный путь внутри FilesFolder - папка которую проверяем на пустоту
-     * @param string $moduleName - имя модуля для записи в таблицу cache_notemptyfilesfolder
-     * @param int $recordId - номер записи в базе для записи в таблицу cache_notemptyfilesfolder
-     * @return bool возвращает текущее состояние: false - пустая, true - заполнена чем-то
-     */
-    public static function updateCacheNotEmpty(string $relativePath, string $moduleName, int $recordId)
-    {
-        if (self::$bufferNotEmpty === null) {
-            self::$bufferNotEmpty = [];
-            self::$bufferEmpty = [];
-            ApplicationAbstract::onAfterSend([self::class, 'flushCacheNotEmpty']);
-        }
-
-        $isNotEmpty = FilesFolder::isNotEmpty($relativePath) ?? false;
-        if ($isNotEmpty) {
-
-            // Если же метод проверки на пустоту вернул true - значит папка не пуста, сохраним это
-            // знание в кеширующую таблицу, чтобы в следующий раз не обращаться к файловой системе
-            // Делать вставку в базу сразу не будем, накопим в буфер, чтобы потом одним insert запросом вставить в базу
-            // все строки. Формат буфера такой, чтобы было удобно передать в Db::insertRows(...)
-            self::$bufferNotEmpty[] = [
-                'ModuleName' => $moduleName,
-                'RecordID' => $recordId
-            ];
-
-        } else {
-
-            // Папка пустая, удалим её из кеширующей таблицы
-            // Делать запрос на удаление из базы сразу не будем, накопим в буфер. Формат буфера таков, чтобы было
-            // удобно сделать несколько запросов объединённых по модулю (см. метод flushCacheNotEmpty())
-            self::$bufferEmpty[$moduleName][] = $recordId;
-
-        }
-
-        return $isNotEmpty;
-    }
-
-    public static function flushCacheNotEmpty()
-    {
-        if (self::$bufferNotEmpty) {
-            Db::insertRows(self::$bufferNotEmpty, 'cache_notemptyfilesfolder', true);
-            self::$bufferNotEmpty = [];
-        }
-
-        foreach (self::$bufferEmpty as $moduleName => $ids) {
-            Db::query("DELETE FROM cache_notemptyfilesfolder WHERE ModuleName = @s AND RecordID IN (@a)", $moduleName,
-                $ids);
-        }
-        self::$bufferEmpty = [];
-    }
-
-    public static function size(string $relativePath)
-    {
-        $pathAbs = Config::$filesfolderLocal . '/' . $relativePath;
+        $pathAbs = Config::$filesfolderLocal . '/' . $relative;
         return File::size($pathAbs);
     }
 
-    public static function filesCount(string $relativePath)
+    public static function filesCount(string $relative): int
     {
-        $pathAbs = Config::$filesfolderLocal . '/' . $relativePath;
+        $pathAbs = Config::$filesfolderLocal . '/' . $relative;
         return File::filesCount($pathAbs);
     }
 
     /**
      * Возвращает абсолютный путь в файловой системе
-     * @param string $relativePath
+     * @param string $relative
      * @return string
      */
-    public static function getAbsolutePath(string $relativePath)
+    public static function getAbsolute(string $relative): string
     {
-        return Config::$filesfolderLocal . '/' . $relativePath;
+        return Config::$filesfolderLocal . '/' . self::trimRelative($relative);
+    }
+
+    public static function getAbsoluteModule(string $module, int $id): string
+    {
+        if (!$module || !$id) {
+            return '';
+        }
+        $relative = self::getRelativeModule($module, $id);
+        return self::getAbsolute($relative);
     }
 
     /**
      * Удаляет абсолютный путь в файловой системе
-     * @param string $absPath
+     * @param string $abs
      * @return string
      */
-    public static function getRelativePath(string $absPath)
+    public static function getRelative(string $abs): string
     {
-        return str_replace(Config::$filesfolderLocal . '/', '', $absPath);
+        return rtrim(File::fs()->makePathRelative($abs, Config::$filesfolderLocal), '/');
     }
 
-    public static function getModuleRelative(string $module, int $id)
+    public static function getRelativeModule(string $module, int $id): string
     {
+        if (!$module || !$id) {
+            return '';
+        }
         $module = Misc::getModule($module);
         $sub = floor($id / 1000);
         return "$module/$sub/$id";
     }
 
-    public static function getModuleAbsolute(string $module, int $id)
-    {
-        $relativePath = self::getModuleRelative($module, $id);
-        return self::getAbsolutePath($relativePath);
-    }
 
     /**
      * Принимает имя файла вместе путём до него и проверяет - если такой файл уже есть, то меняет имя файла,
      * чтобы оно стало уникально, добавляя в конец индекс в скобках, как это делает проводник.
-     * @param $relrelativePath
+     * @param $relative
      * @return string
      */
-    public static function getUniqueFilename(string $relrelativePath): string
+    public static function getUniqueFilename(string $relative): string
     {
-        $filepathAbs = Config::$filesfolderLocal . '/' . $relrelativePath;
+        $abs = self::getAbsolute($relative);
 
-        //Для начала тестируем имя файла как есть без всяких добавок - если такого файла нет, то его и вернём!
-        if (!file_exists(File::encode($filepathAbs))) {
-            return $relrelativePath;
+        // Для начала тестируем имя файла как есть без всяких добавок - если такого файла нет, то его и вернём!
+        if (!file_exists($abs)) {
+            return $relative;
         }
 
-        //Если такой файл уже существует, запустим алгоритм поиска уникального файла из класса File
-        //Метод File::getUniqueFilename() принимает абсолютный путь
-        $uniqueFilepathAbs = File::getUniqueFilename($filepathAbs);
-
-        //Теперь от абсолютного уникального пути нужно отрезать префикс с путём до filesfolder
-        $prefixLen = mb_strlen(Config::$filesfolderLocal . '/', 'UTF-8');
-        return mb_substr($uniqueFilepathAbs, $prefixLen);
+        // Если такой файл уже существует, запустим алгоритм поиска уникального файла из класса File
+        // Метод File::getUniqueFilename() принимает абсолютный путь
+        $uniqueAbs = File::getUniqueFilename($abs);
+        return File::fs()->makePathRelative($uniqueAbs, Config::$filesfolderLocal);
     }
 
     /**
@@ -398,20 +523,20 @@ class FilesFolder
      * сделать редирект на Location: file:///...сетевой путь до файла
      * Если же у пользователя такой браузер, который не поддерживает прямой доступ к папкам
      * тогда отправляется копия файла по http
-     * @param string $relativePath
+     * @param string $relative
      */
-    public static function streamFileTryWindowsShared(string $relativePath)
+    public static function streamFileTryWindowsShared(string $relative)
     {
         if (Config::$filesfolder && self::isWindowsSharedFolderAllowed()) {
-            Response::redirectUrl(self::getUrl($relativePath));
+            Response::redirectUrl(self::getUrl($relative));
         } else {
-            self::streamFile($relativePath);
+            self::streamFile($relative);
         }
     }
 
-    public static function streamFile(string $relativePath, bool $preview = false)
+    public static function streamFile(string $relative, bool $preview = false)
     {
-        $filepathAbs = Config::$filesfolderLocal . '/' . $relativePath;
+        $filepathAbs = self::getAbsolute($relative);
         if (!Request::isAjax()) {
 
             // Если это не ajax запрос, то можем прямо в поток пользователю отдать искомый файл
@@ -422,109 +547,19 @@ class FilesFolder
 
         // Если же доступ через сетевые папки невозможен, сформируем ссыклу на ModuleAbstract
         // Относительный путь обычно бывает двух видов: <ModuleName>/<thousand>/<RecordID>/filename
-        $parts = explode('/', $relativePath, 4);
+        $parts = explode('/', $relative, 4);
         if (count($parts) < 4) {
-            // Странный относительный путь, по которому невозможно посроить ссылку на ModuleAbstract
-            return '';
+            // Странный относительный путь, по которому невозможно построить ссылку на ModuleAbstract
+            return;
         }
 
         $module = $parts[0];
         $recordId = (int)$parts[2];
         $file = $parts[3];
 
-        $url = "?a=$module&id=$recordId&elfinder=download&file=" . rawurlencode($file);
-
+        $url = Link::create($module)->view($recordId)->params(['elfinder' => 'download', 'file' =>  $file])->getHref();
         // Дадим браузеру команду на редирект на специальный адрес ModuleAbstract
         // который умеет отдавать файлы из FilesFolder
         Response::redirectUrl($url);
-    }
-
-    /**
-     * Возвращает все файлы с путями, обходя директории рекурсивно.
-     * Например, если $mainPath = 'Shipment/183/183400', то в результат получим документы из этой папки и вложенных
-     * в виде следующего массива:
-     * [
-     *      'bl.pdf'
-     *      'some email.eml'
-     *      'docs/some document.doc'
-     *      'docs/another.doc'
-     *      'docs/subfolder/scan.jpg'
-     *      'ндс/отчёт.xls'
-     * ]
-     *
-     * @param string $mainPath - базовая папка от которой нужно сделать рекурсивный обход
-     * @param string $subPath - это параметр будет заполнен только при рекурсивных вызовах - если мы уже углубились
-     * @return array
-     */
-    public static function recursivelyScanDir($mainPath, $subPath = null)
-    {
-        $result = [];
-
-        $path = ($subPath === null) ? $mainPath : $mainPath . '/' . $subPath;
-
-        $currentFiles = self::scandir($path);
-
-        foreach ($currentFiles as $file) {
-
-            $filePath = $path . '/' . $file;
-            if (self::isDir($filePath)) {
-                $newSubPath = ($subPath === null) ? $file : $subPath . '/' . $file;
-                /** @noinspection SlowArrayOperationsInLoopInspection */
-                $result = array_merge($result, self::recursivelyScanDir($mainPath, $newSubPath));
-            } else {
-                //Путь к файлу начиная от $subPath
-                $filepath = ($subPath === null) ? $file : $subPath . '/' . $file;
-                $result[] = $filepath;
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Метод пригождается, когда нужно выполнить какие-то операции над файлами в папках через консольные утилиты
-     * Например, склеить PDF файлы. Этот метод берёт указнные файлы из FilesFolders и копирует их во временную папку
-     * на локальном диске, при этом файлы переименовываются в 1, 2, 3, ... (чтобы исключить русские буквы в именах файлов)
-     *
-     * По окончании метода временная папка не уничтожается. Она будет удалена в специальном autolaunch Maintainance
-     *
-     * @param array $files массив файлов (относительные пути от FilesFolders)
-     * @return array $resultFilesAbsEnc массив полных путей файлов в кодировке файловой системы
-     * @throws \Exception
-     */
-    public static function copyToTmpDirAndRename(array $files)
-    {
-        $tmpDirAbs = LIGHT_DIR_TEMP . '/FilesFolder_copyToTmpDirAndRename/' . User::getId() . '_' . time();
-        if (!@mkdir($tmpDirAbs, 0777, true) && !is_dir($tmpDirAbs)) {
-            throw new \Exception('Cant create temp dir ' . $tmpDirAbs);
-        }
-        @chmod($tmpDirAbs, 0777);
-
-        $resultFilesAbsEnc = [];
-        $count = 1;
-        foreach ($files as $file) {
-            $srcFilepathAbsEnc = File::encode(Config::$filesfolderLocal . '/' . $file);
-            $ext = pathinfo($srcFilepathAbsEnc, PATHINFO_EXTENSION);
-            $destFilepathAbsEnc = $tmpDirAbs . '/' . $count . '.' . $ext;
-            copy($srcFilepathAbsEnc, $destFilepathAbsEnc);
-            @chmod($destFilepathAbsEnc, 0666);
-            $resultFilesAbsEnc[] = $destFilepathAbsEnc;
-            $count++;
-        }
-
-        return $resultFilesAbsEnc;
-    }
-
-    public static function hasFiles(string $relativePath)
-    {
-        if (FilesFolder::isNotEmpty($relativePath)) {
-            $files = FilesFolder::scanDir($relativePath);
-            foreach ($files as $file) {
-                if (FilesFolder::isFile($relativePath . DIRECTORY_SEPARATOR . $file)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }

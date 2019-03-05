@@ -34,7 +34,11 @@ class FieldFloat extends FieldNumberAbstract
         if ($this->zeroEmpty && $value == 0) {
             return '';
         }
-        return (string)$value;
+        $outHtml = (string)$value;
+        if (!$forTable && $outHtml && $this->uom) {
+            $outHtml .= ' ' . $this->uom;
+        }
+        return $outHtml;
     }
 
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)

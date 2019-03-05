@@ -43,10 +43,9 @@ class XlsWriter
             'bold' => true,
         ],
         'alignment' => [
-            'horizontal' => Alignment::HORIZONTAL_CENTER,
             'vertical' => Alignment::VERTICAL_CENTER,
-            'wrap' => true
-        ]
+            'wrap' => true,
+        ],
     ];
 
     const STYLE_SEPARATOR = [
@@ -56,14 +55,14 @@ class XlsWriter
         ],
         'font' => [
             'bold' => true,
-            'size' => 14
-        ]
+            'size' => 14,
+        ],
     ];
 
     const STYLE_TOTAL = [
         'font' => [
             'bold' => true,
-        ]
+        ],
     ];
 
     /**
@@ -158,8 +157,7 @@ class XlsWriter
      */
     public function save(string $filepath): void
     {
-        $filepathEnc = File::encode($filepath);
-        $filename = pathinfo($filepathEnc, PATHINFO_BASENAME);
+        $filename = pathinfo($filepath, PATHINFO_BASENAME);
         $objWriter = $this->getWriter($filename);
         $objWriter->save($filepath);
     }
@@ -425,13 +423,18 @@ class XlsWriter
                 $ws->getCommentByColumnAndRow($currentCol, $row)->getText()->createTextRun($title);
             }
 
+            // По горизонтали сделаем выравнивание как указано в настройках полей
+            $tableAlign = $field->tableAlign ?: 'left';
+            $ws->getStyleByColumnAndRow($currentCol, $row)->getAlignment()->setHorizontal($tableAlign);
+
             $currentCol++;
         }
 
-        // Обернём заголовки в жирный и отцентрируем
+        // Обернём заголовки в жирный и отцентрируем по вертикали
         $ws->getStyleByColumnAndRow($col, $row, count($fieldset) + $col - 1, $row)
             ->applyFromArray(self::STYLE_HEADER)
             ->getAlignment()->setWrapText(1);
+
 
         if ($tableOpts & self::FREEZE_PANES) {
             //Зафиксируем область заголовков для скролинга
@@ -466,7 +469,7 @@ class XlsWriter
             //Вычисляем Range в терминах Excel для текущей колонки, чтобы наложить стили ячеек (например A2:A315)
             $colRange = $colLetter . $row . ':' . $colLetter . $lastRow;
 
-            //Устанавливаем выравнивание left|center|right
+            // Устанавливаем выравнивание left|center|right
             if (strpos($field->key, 'CurrencyISO') !== false) {
                 //Валюту всегда выравниваем по левому краю с добавлением indent
                 $ws->getStyle($colRange)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
@@ -549,7 +552,7 @@ class XlsWriter
 
         // Настройки колонок по стилям
         $lastRow = $currentRow - 1;
-        $startDataRow = $row + ($tableOpts & self::TABLES_WITH_HEADER ? 1 : 0);
+        $startDataRow = $row + (($tableOpts & self::TABLES_WITH_HEADER) ? 1 : 0);
         $this->applyTableColumnStyles($col, $startDataRow, $lastRow, $fieldset, $tableOpts);
 
         // Глобальные настройки для всего массива данных: выравнивание по вертикали "center"
@@ -557,7 +560,7 @@ class XlsWriter
             ->getAlignment()
             ->setVertical(Alignment::VERTICAL_CENTER);
 
-        if ($tableOpts & self::AUTOFILTER) {
+        if ($tableOpts & self::TABLES_WITH_HEADER & self::AUTOFILTER) {
             $ws->setAutoFilterByColumnAndRow($col, $row, $lastCol, $lastRow);
         }
         $ws->setSelectedCellByColumnAndRow($col, $row);
@@ -592,18 +595,19 @@ class XlsWriter
         $hasTextField = false;
 
         foreach ($fieldset as $field) {
-            $value = $rowDataCalculated[$field->key] ?? '';
-            $this->writeCellDataByColumnAndRow($currentCol, $row, $value, $rowDataCalculated, $field);
-            $currentCol++;
-
-            $fieldType = $field->getType();
-            if (
-                $fieldType === F::TYPE_TEXT ||
-                $fieldType === F::TYPE_HTML ||
-                ($field->groupconcat && strpos($value, "\n") !== false)
-            ) {
-                $hasTextField = true;
+            if (array_key_exists($field->key, $rowDataCalculated)) {
+                $value = $rowDataCalculated[$field->key];
+                $this->writeCellDataByColumnAndRow($currentCol, $row, $value, $rowDataCalculated, $field);
+                $fieldType = $field->getType();
+                if (
+                    $fieldType === F::TYPE_TEXT ||
+                    $fieldType === F::TYPE_HTML ||
+                    ($field->groupconcat && strpos($value, "\n") !== false)
+                ) {
+                    $hasTextField = true;
+                }
             }
+            $currentCol++;
         }
 
         // Можем проставить цвет\стиль для всей строки

@@ -3,6 +3,7 @@
 namespace Light;
 
 use Light\Field\FieldDate;
+use Light\Module\UserSettings\UserSettings;
 use Light\ModuleBase\Badge;
 use Light\Services\ModuleBadgeLoader;
 
@@ -204,6 +205,13 @@ class Mainmenu
             'favoritesHtml' => $favoritesHtml,
             'sectionsHtml' => $sectionsHtml,
         ];
+
+        $userName = htmlspecialchars(User::getName());
+        if (User::hasWriteAccess(UserSettings::class)) {
+            $userName = Link::create(UserSettings::class, $userName)->getHtml();
+        }
+        $tdata['UserName'] = $userName;
+        
         if (Config::$showRatesInMenu) {
             $tdata['rates'] = self::getCurrencyRates();
         }
@@ -217,8 +225,8 @@ class Mainmenu
 
     public static function getUserAvatarFilepathAbs(int $userId): string
     {
-        $relativePath = FilesFolder::getModuleRelative('User', $userId);
-        $avatarFilepathAbs = FilesFolder::getAbsolutePath("$relativePath/Avatar.jpg");
+        $relative = FilesFolder::getRelativeModule('User', $userId);
+        $avatarFilepathAbs = FilesFolder::getAbsolute("$relative/Avatar.jpg");
         return $avatarFilepathAbs;
     }
 

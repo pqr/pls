@@ -9,6 +9,7 @@ use Light\File;
 use Light\Metric;
 use Light\Misc;
 use Light\Msg;
+use function Light\reportException;
 use Light\Timer;
 use Light\Traits\FieldsetAwareTrait;
 use Light\Traits\SubmoduleTrait;
@@ -51,7 +52,7 @@ abstract class AutolaunchAbstract
         //Этот ID потом будет использоваться при формировании отчёта импорта/автозапуска для ссылок на этот лог
         $initialLogData = [
             'ClassName' => get_class($this),
-            'CreatedBy' => User::getId()
+            'CreatedBy' => User::getId(),
         ];
 
         $this->_logId = Db::insertRow($initialLogData, 'log_autolaunch');
@@ -77,7 +78,7 @@ abstract class AutolaunchAbstract
     {
         $fieldsData = [
             'ShortMessage' => $this->_msgBuffShort->getHtml(),
-            'WorkTime' => $workTime
+            'WorkTime' => $workTime,
         ];
 
         Db::updateRow($fieldsData, 'log_autolaunch', $this->_logId);
@@ -97,14 +98,15 @@ abstract class AutolaunchAbstract
             . "\n\n\n\n";
 
         $folder = str_replace('\\', '/', get_class($this));
-
         $folderpathAbs = LIGHT_DIR_LOGS . "/autolaunch/$folder";
-        File::mkdir($folderpathAbs);
 
         $date = date('Y-m-d');
         $filepathAbs = "$folderpathAbs/{$this->_logId} $date.txt";
-
-        file_put_contents($filepathAbs, $report);
+        try {
+            File::fs()->dumpFile($filepathAbs, $report);
+        } catch (\Exception $e) {
+            reportException($e);
+        }
     }
 
     /**

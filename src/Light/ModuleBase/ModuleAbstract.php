@@ -7,6 +7,8 @@ use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldDate;
+use Light\Field\FieldDateTime;
 use Light\Field\FieldMoney;
 use Light\Field\FieldMoneyWithCurrency;
 use Light\Field\FieldOptionsAbstract;
@@ -22,10 +24,8 @@ use Light\Misc;
 use Light\ModuleRegister;
 use Light\Msg;
 use Light\ObjAbstract;
-use Light\PrintForm\PrintForm;
 use Light\Request;
 use Light\Response;
-use Light\Services\ModuleBadgeLoader;
 use Light\Session;
 use Light\SubtableBase\Subtable;
 use Light\Table;
@@ -44,9 +44,8 @@ use function Light\reportException;
 abstract class ModuleAbstract extends Table
 {
     use TablePaginatable, TableFilterable, TableSortable, TableLayoutable, TableExcelExportable,
-        TableWithFoldersTrait, ModuleSessionTrait,
-        MassactionMultipleUpdate, MassactionCollectPdfs, MassactionDelete, MassactionUpload, MassactionPrint, MassactionDownloadAsZip,
-        ViewEditDialogs;
+        TableWithFoldersTrait, ModuleSessionTrait, MassactionsTrait,
+        ViewEditDialogsTrait, PrintFormsTrait, CopyModesTrait, BadgesTrait, DeleteTrait;
 
     const STATE_LIST = 'list';
     const STATE_LIST_EXCEL = 'excel';
@@ -84,16 +83,8 @@ abstract class ModuleAbstract extends Table
     protected $_saveErrors = []; //Массив имя поля => сообщение об ошибке
     protected $_justInserted = false;
     protected $_state;
-    /**
-     * Наборы полей, которые нужно сохранять при копировании
-     * Можно определить несколько режимов копирования, задвая различные наборы полей
-     * ['default' => ['fieldKeys' => ['fieldKey1', 'fieldKey2'], 'subtables' => ['subtableName1', 'subtableName2']], ...]
-     * @var array
-     */
-    protected $_copyModes = [];
 
-    protected $_submenuItemsTplData = [];
-    protected $printForms = [];
+    protected $submenuLinks = [];
 
     /**
      * @var array(SubtableName)
@@ -105,8 +96,6 @@ abstract class ModuleAbstract extends Table
     private $subtables = [];
 
     private $_queryTime = 0;
-
-    protected $massactions = [];
 
     /** @var Msg */
     protected $flash;
@@ -120,8 +109,8 @@ abstract class ModuleAbstract extends Table
         if (!$this->tableReloadUrl) {
             $this->tableReloadUrl = Link::create($module)->getHref();
         }
-        if (!$this->folderBaseDir) {
-            $this->folderBaseDir = $module;
+        if (!$this->folderModule) {
+            $this->folderModule = $module;
         }
 
         $this->registerSubtables();
@@ -137,7 +126,7 @@ abstract class ModuleAbstract extends Table
 
     protected function getModule()
     {
-        return Misc::getClass($this) ?: Request::getModule();
+        return Misc::getModule($this) ?: Request::getModule();
     }
 
     /**
@@ -202,7 +191,7 @@ abstract class ModuleAbstract extends Table
         //Если в GET переданы параметры copymode и copyfrom - инициализируем текущий объект
         if (isset($_GET['copymode'], $_GET['copyfrom'])) {
             $this->initCopyModes();
-            $this->initDataForCopy($_GET['copymode'], $_GET['copyfrom']);
+            $this->initDataForCopy($_GET['copymode'], (int)$_GET['copyfrom']);
         }
 
         $module = $this->getModule();
@@ -220,7 +209,7 @@ abstract class ModuleAbstract extends Table
             'cancelUrl' => Link::create($module)->params($moduleSessionUrlParams)->getHref(),
             'content' => $this->getViewEditContentHtml(),
             'formactions' => $this->getFormactionsHtml(),
-            'fields' => $this->getFieldsForFormJs()
+            'fields' => $this->getFieldsForFormJs(),
         ];
 
         Template::includeTpl('module/addnew.tpl.php', $tdata);
@@ -263,71 +252,6 @@ abstract class ModuleAbstract extends Table
         }
     }
 
-    /**
-     * @desc инициализирует $this->_obj переменные данными из файла id=$copyfrom
-     * @param string $copymode
-     * @param int $copyfrom
-     * @return void
-     * @throws \Exception
-     */
-    protected function initDataForCopy($copymode, $copyfrom)
-    {
-        //Проверим, есть ли набор полей определённых для текущего $copymode
-        if (isset($this->_copyModes[$copymode])) {
-            //Возьмём данные из объекта источника
-            $sourceObj = clone $this->_obj;
-            if ($sourceObj->setId($copyfrom)->loadData()) {
-                //Перенесём нужные поля в $this->_obj
-                $copyFieldKeys = $this->_copyModes[$copymode]['fieldKeys'];
-                if ($copyFieldKeys !== null) {
-                    if (is_array($copyFieldKeys)) {
-                        $fieldKeys = $copyFieldKeys;
-                    } else {
-                        //если $copyFieldKeys это строка, значит там строка 'all' - копируем все поля!
-                        $fieldKeys = $this->_obj->getFieldset()->getKeys();
-                    }
-                    foreach ($fieldKeys as $fieldKey) {
-                        if (isset($sourceObj[$fieldKey])) {
-                            //Поле существует в источнике
-                            //Инициализируем данные значением из источника
-                            $this->_obj[$fieldKey] = $sourceObj[$fieldKey];
-                        }
-                    }
-                }
-
-                $copySubtables = $this->_copyModes[$copymode]['subtables'];
-                if ($copySubtables !== null) {
-                    if (!is_array($copySubtables)) {
-                        $copySubtables = array_keys($this->subtables);
-                    }
-
-                    foreach ($copySubtables as $subtableClass) {
-                        if ($this->subtables[$subtableClass]['readonly']) {
-                            continue;
-                        }
-                        // Получим объект, который нужно заполнить данными из копируемого источника
-                        $subtable = $this->getSubtable($subtableClass);
-                        // Источник - это на самом деле подтаблица того же класса, но с другим masterId
-                        /** @var Subtable $sourceSubtable */
-                        $sourceSubtable = new $subtableClass($sourceObj);
-                        $sourceData = $this->getDataForCopySubtable($sourceSubtable);
-                        $subtable->setSubtableDataAdditional($sourceData);
-                    }
-                }
-            }
-        }
-    }
-
-    protected function getDataForCopySubtable(Subtable $sourceSubtable): array
-    {
-        // Копируем данные в подтаблицу текущего объекта
-        // Метод $sourceSubtable->getData() возвращает массив где ключи - это ID в базе
-        // чтобы добавить данные в $subtable нам не нужны ключи в виде ID, нам нужны ключи от 0 до N
-        // для этого применим array_values
-        $sourceData = array_values($sourceSubtable->getSubtableData());
-
-        return $sourceData;
-    }
 
     /**
      * Возвращает массив параметров, которые нужно передать в JS окружение через атрибут data-params
@@ -376,7 +300,7 @@ abstract class ModuleAbstract extends Table
         if ($this->_state === self::STATE_VIEW && $this->hasField('Color')) {
             $this->getField('Color')->setParam(
                 'source',
-                '?a=' . $this->getModule() . '&id=' . $this->_obj->getId() . '&func=changeField'
+                Link::create($this->getModule())->view($this->_obj->getId())->func('changeField')->getHref()
             );
         }
 
@@ -418,7 +342,7 @@ abstract class ModuleAbstract extends Table
             $subtableName = Misc::getClass($subtableClass);
             $tdataSubtables[$subtableName] = [
                 'obj' => $this->getSubtable($subtableClass),
-                'readonly' => $readonly
+                'readonly' => $readonly,
             ];
         }
 
@@ -466,7 +390,7 @@ abstract class ModuleAbstract extends Table
             $continmetods = [
                 'list' => 'Back to list',
                 'view' => 'View this',
-                'edit' => 'Edit this'
+                'edit' => 'Edit this',
             ];
 
             if ($this->allowAdd) {
@@ -478,7 +402,7 @@ abstract class ModuleAbstract extends Table
             $contentHtml .= F::createSelect('_continmethod', [
                 'editWidth' => 'auto',
                 'empty' => false,
-                'options' => $continmetods
+                'options' => $continmetods,
             ])->getHtmlInput($continmethod);
 
         }
@@ -518,7 +442,6 @@ abstract class ModuleAbstract extends Table
      * Загружает данные в объект $this->_obj, проверяет права доступа к нему у текущего пользователя
      * Если объект не найден или нет доступа, то перенаправляет на режим List
      * @param int $id
-     * @throws \Exception
      */
     protected function loadObjAndCheck(int $id)
     {
@@ -527,14 +450,23 @@ abstract class ModuleAbstract extends Table
         $errMsg = null;
 
         // Проверим существование объекта в базе, попробовав его загрузить
-        if (!$this->_obj->loadData()) {
+        try {
 
-            $errMsg = Config::$lang === 'ru' ? "Запись с ID=$id не найдена" : "Record with ID=$id not found";
+            if (!$this->_obj->loadData()) {
 
-        } elseif (!$this->hasAccessRightToObj($this->_obj)) {
+                $errMsg = Config::$lang === 'ru' ? "Запись с ID=$id не найдена" : "Record with ID=$id not found";
 
-            $errMsg = Config::$lang === 'ru' ? "Нет доступа к записи ID=$id" : "No access to record ID=$id";
+            } elseif (!$this->hasAccessRightToObj($this->_obj)) {
 
+                $errMsg = Config::$lang === 'ru' ? "Нет доступа к записи ID=$id" : "No access to record ID=$id";
+
+            }
+
+        } catch (\Exception $e) {
+
+            // Случилось что-то экстроординарное при загрузке объекта
+            reportException($e);
+            $errMsg = $e->getMessage();
         }
 
         if ($errMsg) {
@@ -634,7 +566,7 @@ abstract class ModuleAbstract extends Table
             Template::includeTpl(LIGHT_DIR_LIGHT . '/templates/module/elfinderdialog.tpl.php', [
                 'module' => $module,
                 'id' => $id,
-                'title' => "$textFolder: $moduleName " . strip_tags($this->_obj->getDescriptionHtml())
+                'title' => "$textFolder: $moduleName " . strip_tags($this->_obj->getDescriptionHtml()),
             ]);
             ApplicationAbstract::terminate();
             return;
@@ -643,7 +575,7 @@ abstract class ModuleAbstract extends Table
         if ($_GET['elfinder'] === 'api') {
             // Пришел API запрос от окна с elfiner (это может быть API запрос на отображение списка файлов
             // или upload нового файла
-            $relativePath = $this->getFolderRelativePath($this->_obj->getData());
+            $relative = $this->getFolderRelative($this->_obj->getData());
             $opts = [
                 'locale' => "ru_RU.utf8",
                 'roots' => [
@@ -652,10 +584,12 @@ abstract class ModuleAbstract extends Table
                         'encoding' => 'UTF-8',
                         'locale' => "ru_RU.utf8",
                         'mimeDetect' => 'internal',
-                        // если не установить internal, то будет использована функция finfo_file, которая при обнаружении xls файла сбрасывает локаль в default заничеие ('C') и дальше все файлы с русскими буквами не смогут быть обработаны с помощью basename
+                        // если не установить internal, то будет использована функция finfo_file,
+                        // которая при обнаружении xls файла сбрасывает локаль в default заничеие ('C')
+                        // и дальше все файлы с русскими буквами не смогут быть обработаны с помощью basename
                         // driver for accessing file system (REQUIRED)
-                        'path' => FilesFolder::getAbsolutePath($relativePath),
-                        'URL' => "?a=$module&id=$id&elfinder=download&file=",
+                        'path' => FilesFolder::getAbsolute($relative),
+                        'URL' => Link::create($module)->view($id)->params(['elfinder' => 'download'])->getHref() . '&file=',
                         'quarantine' => LIGHT_DIR_TEMP . '/elfinder_quarantine',
                         'tmbPath' => LIGHT_DIR_TEMP . '/elfinder_thumbnails',
                         // URL to files (REQUIRED)
@@ -675,8 +609,8 @@ abstract class ModuleAbstract extends Table
                             // Возвращаем null - elfinder должен решить сам, что делать
                             return null;
 
-                        }
-                    ]
+                        },
+                    ],
                 ],
                 'bind' => [
                     'mkdir mkfile rename duplicate upload rm paste' => function ($cmd, $result, $args, $elfinder) {
@@ -717,19 +651,11 @@ abstract class ModuleAbstract extends Table
             }
 
             $file = trim($_GET['file'], '/');
-            $relativePath = $this->getFolderRelativePath($this->_obj->getData());
-            FilesFolder::streamFile("$relativePath/$file");
+            $relative = $this->getFolderRelative($this->_obj->getData());
+            FilesFolder::streamFile("$relative/$file");
             ApplicationAbstract::terminate();
             return;
         }
-    }
-
-    private function abortAndRedirectToView($code, $errMsg)
-    {
-        //При обычном запросе сделаем редирект на режим просмотра с flash сообщенеим
-        Session::flashError($errMsg);
-        $this->redirectToView();
-
     }
 
     protected function redirectToView()
@@ -749,94 +675,11 @@ abstract class ModuleAbstract extends Table
         if (!method_exists($this, $method)) {
             Session::flashError('Unknown method ' . $method);
             $this->redirectToView();
-            $this->abortAndRedirectToView(405, 'Unknown method ' . $method);
+            return;
         }
 
-        //Метод найден, вызовем его!
+        // Метод найден, вызовем его!
         $this->{$method}();
-
-    }
-
-    private function beforePrint()
-    {
-        // Инициализируем внутренний массив $this->_printForms
-        // чтобы при распечатке были известны параметры формы (шаблон, сохранять ли в pdf и проч.)
-        // Проверим, есть ли такая форма, которую запросил пользователь
-        $this->initPrintForms();
-
-        // Имя печтной формы, которую нужно распечатать передаётся в $_GET параметре
-        $form = $_GET['form'];
-        if (!isset($this->printForms[$form])) {
-            throw new \InvalidArgumentException("Неизвестная печатная форма $form");
-        }
-
-        /** @var PrintForm $printForm */
-        $printForm = $this->printForms[$form];
-
-        // Проверим, подходит ли эта форма для данного объекта?
-        if (!$printForm->testForObj($this->_obj)) {
-            Session::flashError('Печатная форма ' . $printForm->getTitle() . ' не подходит для данного объекта');
-            $this->redirectToView();
-        }
-
-        return $printForm;
-
-    }
-
-    /**
-     * Метод запускается если у печатной формы определён какой-то fieldset и, соответственно, при клике на ссылку в меню
-     * отправляется ajax GET запрос, чтобы вывести форму
-     */
-    private function viewGetPrint()
-    {
-        $printForm = $this->beforePrint();
-
-        $formAction = Link::create($this->getModule())
-            ->view($this->_obj->getId())
-            ->func('Print')
-            ->params(['form' => $printForm->getKey()])
-            ->getHref();
-
-        $target = $printForm->isLinkBlank() ? ' target="blank"' : '';
-        $html = '<form action="' . $formAction . '" method="post"' . $target . '>'
-            . Template::csrfHidden();
-
-        $data = $printForm->getDataForAjaxDialog($this->_obj);
-        $fieldset = $printForm->getFieldset();
-        $tdata = $fieldset->getTplData($data, F::MODE_EDIT);
-        Template::setTdata($tdata);
-        $html .= '<table class="form">';
-        foreach ($fieldset as $field) {
-            $html .= Template::c($field->key);
-        }
-        $html .= '</table></form>';
-
-        $buttonOkText = Config::$lang === 'ru' ? 'Распечатать' : 'Print';
-        Response::showDialog($html, $buttonOkText);
-    }
-
-    /**
-     * Метод вызывается при Post запросе, который может прийти от ссылки из submenu, а может прийти из диалога
-     * с дополнительными параметрами для печати (см. как рендерится этот диалог в ModuleAbstract::viewGetPrint())
-     */
-    private function viewPostPrint()
-    {
-        try {
-
-            $printForm = $this->beforePrint();
-
-            // Запустим процесс описанный в классе PrintForm (или в его наследнике)
-            // Для этого нам нужно передать в метод proceedPrint путь к папке текущего объекта
-            $relativePath = $this->getFolderRelativePath($this->_obj->getData());
-            $targetDir = FilesFolder::getAbsolutePath($relativePath);
-            $printForm->proceedPrint($this->_obj, $targetDir);
-
-        } catch (\Throwable $e) {
-            Session::flashError($e->getMessage());
-            $this->redirectToView();
-        }
-
-        ApplicationAbstract::terminate();
     }
 
     protected function proceedViewPage()
@@ -855,7 +698,7 @@ abstract class ModuleAbstract extends Table
         if ($this->folders) {
             // При входе в режиме View на всякий случай запустим процедуру создания папки под данную запись
             // если она по каким-то причинам отсутсвует (в нормальной ситуации папка должна быть создана в proceedSubmit)
-            ApplicationAbstract::onAfterSend(function() {
+            ApplicationAbstract::onAfterSend(function () {
                 // Создание папки запустим в асинхронном режиме после отправки отрендеренной страницы пользователю
                 // т.к. сетевой диск может тормозить и даже проверка папки на существование может тормозить
                 $this->createFolder();
@@ -867,14 +710,16 @@ abstract class ModuleAbstract extends Table
         $this->initViewIntro();
         $this->initViewFlash();
         $this->initPrintForms();
+        $this->initCopyModes();
 
         $this->prefetchSelectOptionsView();
 
         $tdata = [
             'id' => $this->_obj->getId(),
+            'module' => $this->getModule(),
             'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
-            'submenuItems' => $this->getSubmenuItemsTplData(),
-            'content' => $this->getViewEditContentHtml()
+            'submenuHtml' => $this->getSubmenuHtml(),
+            'content' => $this->getViewEditContentHtml(),
         ];
 
         Template::includeTpl('module/view.tpl.php', $tdata);
@@ -939,14 +784,14 @@ abstract class ModuleAbstract extends Table
             [
                 'state' => 'view',
                 'id' => $this->_obj->getId(),
-                'moduleSessionParams' => http_build_query($this->getModuleSessionUrlParams())
+                'moduleSessionParams' => http_build_query($this->getModuleSessionUrlParams()),
             ]
         );
     }
 
     /**
-     * Метод для переопределения в классах потоках. Здесь нужно последовательно вызывать метод
-     * $this->addSubmenuItemViewFunc() или $this->addSubmenuItemViewFuncAjax() или $this->addSubmenuItemUrl()
+     * Метод для переопределения в классах потоках.
+     * Здесь нужно последовательно вызывать метод $this->addSubmenuLink()
      */
     protected function initViewSubmenu()
     {
@@ -978,7 +823,7 @@ abstract class ModuleAbstract extends Table
         $out[] = [
             'text' => 'List',
             'url' => Link::create($module)->params($this->getFindidUrlParams() + $msUrlParams)->getHref(),
-            'active' => false
+            'active' => false,
         ];
 
         $viewEditLogParams = $msUrlParams + $subtablesFindidUrlParams;
@@ -986,14 +831,14 @@ abstract class ModuleAbstract extends Table
         $out[] = [
             'text' => 'View',
             'url' => Link::create($module)->view($id)->params($viewEditLogParams)->getHref(),
-            'active' => $this->_state === self::STATE_VIEW
+            'active' => $this->_state === self::STATE_VIEW,
         ];
 
         if ($this->allowEdit && User::hasWriteAccess() && $this->hasWriteAccessRightToObj($this->_obj)) {
             $out[] = [
                 'text' => 'Edit',
                 'url' => Link::create($module)->edit($id)->params($viewEditLogParams)->getHref(),
-                'active' => $this->_state === self::STATE_EDIT
+                'active' => $this->_state === self::STATE_EDIT,
             ];
         }
 
@@ -1001,7 +846,7 @@ abstract class ModuleAbstract extends Table
             $out[] = [
                 'text' => 'Log ',
                 'url' => Link::create($module)->params(['logid' => $id] + $viewEditLogParams)->getHref(),
-                'active' => $this->_state === self::STATE_LOG
+                'active' => $this->_state === self::STATE_LOG,
             ];
         }
 
@@ -1009,85 +854,84 @@ abstract class ModuleAbstract extends Table
             $out[] = [
                 'text' => 'Delete',
                 'url' => Link::create($module)->params(['delid' => $id] + $viewEditLogParams)->ajax()->getHref(),
-                'linkCssClass' => 'del-link'
+                'linkCssClass' => 'del-link',
             ];
         }
 
         return $out;
     }
 
-    protected function getSubmenuItemsTplData()
+    /**
+     * Возвращает массив ссылок, которые нужно вывести в submenu.
+     * Этот массив формируется из стандартных ссылок:
+     * - ссылка на папку
+     * - кнопки копирования
+     * - кнопки печати
+     * - кнопки E-mail диалогов
+     * а также дополнительные ссылки добавленные пользователем в метод initViewSubmenu()
+     * @return string
+     */
+    protected function getSubmenuHtml(): string
     {
-        $out = [];
+        $links = [];
         if ($this->folders) {
-            $out[] = [
-                'html' => $this->fieldFolder()->getHtml('', $this->_obj->getData())
-            ];
+            $links[] = $this->fieldFolder()->getHtml('', $this->_obj->getData());
         }
 
         // Добавим ссылки на различные режимы копирования
         if ($this->isStateView()) {
 
-            if (method_exists($this, 'filesDialogSubmenuItemHtml')) {
+            if (method_exists($this, 'filesDialogSubmenuLink')) {
                 // К этому модулю подключён FilesDialogTrait
-                /** @var FilesDialogTrait $obj */
-                $obj = $this;
-                $out[] = [
-                    'html' => $obj->filesDialogSubmenuItemHtml()
-                ];
+                /** @var FilesDialogTrait $moduleWithFilesDialog */
+                $moduleWithFilesDialog = $this;
+                $links[] = (string)$moduleWithFilesDialog->filesDialogSubmenuLink();
             }
 
-            //Добавим ссылки на копирование
-            $this->initCopyModes();
-            if ($this->_copyModes) {
-                $urlCopy = '?a=' . $this->getModule() . '&addnew=1&copyfrom=' . $this->_obj->getId() . '&copymode=';
-                foreach ($this->_copyModes as $name => $_) {
-
-                    $out[] = [
-                        'text' => Img::iconCopy() . ' ' . $name,
-                        'url' => $urlCopy . rawurlencode($name)
-                    ];
-                }
-            }
+            // Добавим ссылки на копирование, если в данном модуле определены режимы копирования
+            $links = array_merge($links, $this->copyModesSubmenuLinks());
 
             // Добавим ссылки на печать
-            if ($this->printForms) {
+            $links = array_merge($links, $this->printFormsSubmenuLinks());
 
-                // Начало ссылки на печать
-                $linkBase = Link::create($this->getModule())
-                    ->view($this->_obj->getId())
-                    ->func('Print');
-
-                /**
-                 * @var string $printFormName
-                 * @var PrintForm $printForm
-                 */
-                foreach ($this->printForms as $printFormName => $printForm) {
-                    if ($printForm->testForObj($this->_obj)) {
-                        $link = clone $linkBase;
-                        $link->params(['form' => $printFormName]);
-                        if ($printForm->hasFieldset()) {
-                            // Делаем ссылку на ajax диалог, чтобы заполнить нужены для данной формы поля
-                            $link->ajax();
-                        } else {
-                            // Эта ссылка сразу будет делать post запрос на генерацию печачтной формы
-                            $link->post();
-                        }
-                        $out[] = [
-                            'text' => $printForm->getIcon() . ' ' . $printForm->getTitle(),
-                            'url' => $link->getHref(),
-                            // Делаем ссылку с открытием нового окна только в том случае, если эта форма настроена
-                            // на вывод HTML в браузер
-                            'blank' => $printForm->isLinkBlank()
-                        ];
-                    }
-                }
+            if (method_exists($this, 'emailDialogSubmenuItems')) {
+                // К этому модулю подключён EmailDialogTrait
+                /** @var EmailDialogTrait $moduleWithEmailDialog */
+                $moduleWithEmailDialog = $this;
+                $links = array_merge($links, $moduleWithEmailDialog->emailDialogSubmenuLinks());
             }
         }
 
-        $out = array_merge($out, $this->_submenuItemsTplData);
+        // В конце добавим все ссылки определённые пользователем вручную
+        $links = array_merge($links, $this->submenuLinks);
 
-        return $out;
+        $rightHtml = $this->getSubmenuCreatedLinkHtml();
+
+        return '<div class="submenu">' . implode('', $links) . $rightHtml . '</div>';
+    }
+
+    private function getSubmenuCreatedLinkHtml(): string
+    {
+        $created = Db::getRow(
+            "SELECT u.Name, t.CreatedBy, t.CreatedDateTime
+                 FROM user u JOIN {$this->getDbTable()} t ON u.ID = t.CreatedBy
+                 WHERE t.ID = " . $this->_obj->getId()
+        );
+        if (!$created) {
+            return '';
+        }
+        $mailSubject = strip_tags($this->_obj->getDescriptionHtml());
+        $mailBody = $this->_obj->getLinkView()->absolute()->getHref() . "\n\n";
+        $beautyDateTime = FieldDateTime::beautify($created['CreatedDateTime']);
+        $beautyDate = FieldDate::beautify($created['CreatedDateTime']);
+        $title = Config::$lang === 'ru' ? 'Создано' : 'Created by';
+        $title .= ': ' . $created['Name'] . ' @ ' . $beautyDateTime;
+        $linkText = htmlspecialchars($created['Name']) . ' @ ' . $beautyDate;
+        return Link::userDialog($created['CreatedBy'], $linkText, $mailSubject,
+            $mailBody)
+            ->cssClass('CreatedLink')
+            ->title($title)
+            ->getHtml();
     }
 
     final protected function isStateView()
@@ -1097,7 +941,7 @@ abstract class ModuleAbstract extends Table
 
     protected function proceedEdit()
     {
-        $id = $_GET['editid'];
+        $id = (int)$_GET['editid'];
         // Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
         $this->loadObjAndCheck($id);
 
@@ -1122,12 +966,13 @@ abstract class ModuleAbstract extends Table
         $this->initEdit();
 
         $tdata = [
+            'module' => $this->getModule(),
             'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
-            'submenuItems' => $this->getSubmenuItemsTplData(),
+            'submenuHtml' => $this->getSubmenuHtml(),
             'formActionUrl' => $this->getEditFromActionUrl(),
             'content' => $this->getViewEditContentHtml(),
             'formactions' => $this->getFormactionsHtml(),
-            'fields' => $this->getFieldsForFormJs()
+            'fields' => $this->getFieldsForFormJs(),
         ];
 
         Template::includeTpl('module/edit.tpl.php', $tdata);
@@ -1135,7 +980,9 @@ abstract class ModuleAbstract extends Table
 
     protected function getEditFromActionUrl()
     {
-        $formActionUrlParams = ['submitid' => $this->_obj->getId()] + $this->getModuleSessionUrlParams() + $this->getSubtablesFindidUrlParams();
+        $formActionUrlParams = ['submitid' => $this->_obj->getId()]
+            + $this->getModuleSessionUrlParams()
+            + $this->getSubtablesFindidUrlParams();
         return Link::create($this->getModule())->params($formActionUrlParams)->getHref();
     }
 
@@ -1200,7 +1047,6 @@ abstract class ModuleAbstract extends Table
 
         /** @var FieldSelect $field */
         $field->proceedSelect2ajax();
-        return;
     }
 
     /**
@@ -1212,7 +1058,7 @@ abstract class ModuleAbstract extends Table
             [
                 'state' => 'edit',
                 'id' => $this->_obj->getId(),
-                'moduleSessionParams' => $this->getModuleSessionUrlParams()
+                'moduleSessionParams' => $this->getModuleSessionUrlParams(),
             ]
         );
     }
@@ -1282,7 +1128,7 @@ abstract class ModuleAbstract extends Table
             $tdata = [
                 'table' => $logTable->getHtmlTable(),
                 'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
-                'filters' => $logTable->getFiltersHtml()
+                'filters' => $logTable->getFiltersHtml(),
             ];
 
             Template::includeTpl('module/log.tpl.php', $tdata);
@@ -1726,432 +1572,6 @@ abstract class ModuleAbstract extends Table
     }
 
     /**
-     * Реальное удаление объекта из базы
-     * Если реальное удаление невозможно, т.к. пользователь не выбрал какие-то поля на форме подтверждения
-     * то следует вернуть http ответ 400 c текстом сообщения, которое будет выведено в alert()
-     */
-    protected function proceedDelete()
-    {
-        $this->_state = self::STATE_DELETE;
-
-        $id = (int)$_GET['delid'];
-
-        // Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
-        $this->loadObjAndCheck($id);
-
-        if (!$this->allowDelete || !User::hasDeleteAccess() || !$this->hasDeleteAccessRightToObj($this->_obj)) {
-            Response::abort(403, 'Delete not allowed');
-            return;
-        }
-
-        if (!Request::isPost()) {
-            // Если пришел не POST запрос, значит это запрос на рендеринг диалогового окна с подтверждением удаления
-            $this->sendDeleteConfirmDialog();
-            return;
-        }
-
-        try {
-
-            Db::begin();
-
-            // Ставим эксклюзивную блокировку на текущую запись
-            // https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html
-            Db::query("SELECT 1 FROM {$this->getDbTable()} WHERE ID = @i FOR UPDATE", $this->_obj->getId());
-
-            // Запрос пришел из диалогового окна, нужно проверить, приавильно ли было заполнено диалоговое окно?
-            // Если внутри checkDeleteConfirmResult выяснится, что пользователь что-то не заполнил - этот метод
-            // сам отправит пользователю новый диалог или другое сообщение
-            if (!$this->checkDeleteConfirmResult()) {
-                Db::commit();
-                return;
-            }
-
-            // Непосредственное удаление
-            $timer = new Timer();
-
-            $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
-
-            $this->beforeDelete($this->_obj);
-            $this->proceedDeleteSubtables($this->_obj);
-            $this->proceedDeleteObj($this->_obj);
-            $this->_obj->afterDelete($oldData, $this->flash);
-            $this->afterDelete($this->_obj, $oldData);
-
-            Db::commit();
-
-            $msg = "<strong>$this->_obj</strong> - " . (Config::$lang === 'ru' ? 'удалено' : 'deleted');
-            $this->flash->addSuccess($msg);
-
-            Metric::newrelicMetric($this->getModule() . '/delete', $timer->getMs());
-
-        } catch (\Throwable $e) {
-
-            Db::rollback();
-            $this->flash->addError($e->getMessage());
-            reportException($e);
-
-        }
-
-        if (isset($_GET['fromList'])) {
-
-            // Возвращаем специальный header, который обновит таблицу в режиме List с помощью js на стороне клиента
-            Response::sendHeaderJsReloadTable(Request::getModule());
-            ApplicationAbstract::terminate();
-
-        }
-
-        // Если же удалени было не из режима List, то делаем редирект на режим List
-        $this->redirectToList();
-
-    }
-
-    /**
-     * Метод отправляет диалог на подтверждение удаления.
-     * Этот метод можно переопределить в классе потомке, если нужен какой-то особый диалог
-     */
-    protected function sendDeleteConfirmDialog()
-    {
-        $module = $this->getModule();
-        $id = $this->_obj->getId();
-
-        $link = Link::create($module)
-            ->ajax()
-            ->params(['delid' => $id]);
-        if (isset($_GET['fromList'])) {
-            $link->params(['fromList' => 1]);
-        }
-
-        $formAction = $link->getHref();
-        $bodyHtml = '<form action="' . $formAction . '#ajax"
-                           data-select2ajaxurl="?a=' . $module . '&fromDeleteDialogId=' . $id . '" 
-                           method="post">'
-            . $this->getDeleteConfirmationDialogHtml()
-            . '</form>';
-
-        $deleteText = Config::$lang === 'ru' ? 'Удалить' : 'Delete';
-        $cancelText = Config::$lang === 'ru' ? 'Отмена' : 'Cancel';
-        Response::showDialog($bodyHtml, $deleteText, null, $cancelText);
-    }
-
-    /**
-     * Этот метод удобно переопределять в классах потоках, если нужны дополнительные дейтсвия по удалению чего-либо
-     * @param ObjAbstract $obj
-     * @param string $dbLogMsg
-     */
-    protected function proceedDeleteObj(ObjAbstract $obj, $dbLogMsg = '')
-    {
-        if ($this->folders) {
-            $this->deleteFolder($obj->getData());
-        }
-        $obj->deleteDb($dbLogMsg);
-    }
-
-    /**
-     * @param ObjAbstract $obj
-     */
-    private function proceedDeleteSubtables(ObjAbstract $obj)
-    {
-        foreach ($this->subtables as $subtableClass => ['readonly' => $readonly]) {
-            if (!$readonly) {
-                $subtable = $this->getSubtable($subtableClass);
-                $subtable->loadData();
-                $subtable->deleteAll();
-            }
-        }
-    }
-
-    /**
-     * Вспомагательный метод для процесса удаления и проверки, нет ли связанных объектов
-     *
-     * Метод для переопределения в классах потомках - должен вернуть ассоциативный массив из
-     * 'имя класса объекта' => 'текст для вывода в диалог'
-     *
-     * Например, так:
-     * return [
-     *     ShipmentObj::class => 'Shipments'
-     * ]
-     *
-     * @return array
-     */
-    protected function whileDeleteGetLinkedClasses(): array
-    {
-        return [];
-    }
-
-    /**
-     * Вспомагательный метод для процесса удаления и проверки, нет ли связанных объектов
-     *
-     * Возвращает имя поля (внешний ключ) в других таблицах, которые ссылаются на удаляемую запись.
-     * Например, если мы удаляем клиента (Customer), то этот метод вернёт 'CustomerID'
-     *
-     * @param string $className для какого внешнего класса пытаемся сформировать внешний ключ?
-     * @return string
-     */
-    protected function whileDeleteGetForeignFieldKey(string $className): string
-    {
-        return $this->getModule() . 'ID';
-    }
-
-    /**
-     * Вспомагательный метод для процесса удаления и проверки, нет ли связанных объектов
-     *
-     * Метод возвращает массив ID записей указанного класса связанных с удаляемоей записью.
-     * Например, если удаляем клеиента, то этот метод будет последовательно вызыван с именами классов
-     * ShipmentObj::class, CInvoice::class, CPayment::class и т.п.
-     * @param string $className
-     * @param int $deletingId
-     * @return array
-     */
-    protected function whileDeleteGetLinkedIds(string $className, int $deletingId): array
-    {
-        /** @var ObjAbstract $obj */
-        //Создадим объект требуемого класса, чтобы узнать таблицу в базе к которой он привязан
-        $obj = new $className;
-        $dbTable = $obj->getDbTable();
-        return Db::getCol(
-            "SELECT ID
-             FROM $dbTable
-             WHERE {$this->whileDeleteGetForeignFieldKey($className)} = @i"
-            , $deletingId
-        );
-    }
-
-    /**
-     * Вспомагательный метод для процесса удаления и проверки, нет ли связанных объектов
-     *
-     * Возвращает HTML строку с указанием числа связанных объектов каком-то другом модуле.
-     * В этом сообщении автоматически будет указана ссылка на внешний модуль (на режим list с фильтрами)
-     *
-     * @param string $className
-     * @param int $oldId
-     * @param string $description
-     * @param int $countLinkedIds
-     * @return string
-     */
-    protected function whileDeleteGetHtmlAboutLinkedRecords(
-        $className,
-        $oldId,
-        $description,
-        $countLinkedIds
-    ) {
-        $outHtml = $description . ': <strong>' . $countLinkedIds . '</strong> ';
-        $link = $this->whileDeleteGetLinkViewMore($className, $oldId);
-        if ($link) {
-            $outHtml .= ' <small>' . $link . '</small>';
-        }
-
-
-        return $outHtml;
-    }
-
-    /**
-     * Вспомагательный метод для процесса удаления и проверки, нет ли связанных объектов
-     *
-     * Возвращает HTML строку со ссылкой на просмотр связанных записей в соотвествующем модуле
-     * Этот метод можно переопределить в классах потомках, если для формирования ссылки нужно указать какие-то
-     * хитрые фильтры
-     *
-     * @param string $className
-     * @param int $deletingId
-     * @return string|bool
-     */
-    protected function whileDeleteGetLinkViewMore(string $className, int $deletingId): string
-    {
-        $externalModule = Misc::getModule($className);
-        if (User::hasReadAccess($externalModule)) {
-            return Link::create($externalModule, 'посмотреть...')
-                ->filters($this->whileDeleteGetLinkViewMoreFilters($className, $deletingId))
-                ->blank()
-                ->getHtml();
-        }
-
-        return '';
-    }
-
-    protected function whileDeleteGetLinkViewMoreFilters(string $className, int $deletingId): array
-    {
-        return [$this->whileDeleteGetForeignFieldKey($className) => $deletingId];
-    }
-
-    /**
-     * Вспомагательный метод для процесса удаления и проверки, нет ли связанных объектов
-     *
-     * Возвращает HTML код для вывода элемента выбора новой записи вместо удаляемой. Обычно это выпадающий список
-     *
-     * @param int $deletingId
-     * @return FieldAbstract
-     */
-    protected function whileDeleteFieldForReplacement(int $deletingId): FieldAbstract
-    {
-        $options = "SELECT ID, Name FROM {$this->getDbTable()} WHERE ID != $deletingId ORDER BY Name";
-        return F::createSelect('NewValueForReplacement', [
-            'options' => $options
-        ]);
-    }
-
-    private $_alertDeleteButton = [];
-
-    protected function setAlertDeleteButton(
-        ?string $text,
-        string $icon = 'fa-exclamation-triangle',
-        string $color = '#b35900'
-    ) {
-        if ($text) {
-            $this->_alertDeleteButton = [$text, $icon, $color];
-        } else {
-            $this->_alertDeleteButton = [];
-        }
-    }
-
-    protected function getDeleteConfirmationDialogHtml()
-    {
-        $deletingId = $this->_obj->getId();
-        //Выведем диалоговое окно на подтверждение удаления отправителя
-        $linkedMessagess = [];
-        foreach ($this->whileDeleteGetLinkedClasses() as $className => $description) {
-            $linkedIds = $this->whileDeleteGetLinkedIds($className, $deletingId);
-            $countLinkedIds = count($linkedIds);
-            if ($countLinkedIds > 0) {
-                $linkedMessagess[] = $this->whileDeleteGetHtmlAboutLinkedRecords($className, $deletingId,
-                    $description, $countLinkedIds);
-            }
-        }
-
-        if ($linkedMessagess) {
-            $textLinked = Config::$lang === 'ru'
-                ? 'Удаляемая запись связана с другими записями в базе'
-                : 'You are triing to delete a record which is linked to anothed records in database';
-            $outHtml = "$textLinked:<br>";
-            $outHtml .= '<ul><li>' . implode('</li><li>', $linkedMessagess) . '</li></ul>';
-
-            //Далее нужно вывести выпадающий список для выбора элемента на замену
-            $textChoose = Config::$lang === 'ru'
-                ? 'Выберите новый элемен на замену удаляемому'
-                : 'Choose another record to replace deleted';
-            $outHtml .= "$textChoose:<br>";
-            $outHtml .= $this->whileDeleteFieldForReplacement($deletingId)->getHtmlInput('');
-            return $outHtml;
-        }
-
-        $alertDeleteButton = '';
-        if ($this->_alertDeleteButton) {
-            [$text, $icon, $color] = $this->_alertDeleteButton;
-            $alertDeleteButton = '<div class="alert-delete-button" style="color: ' . $color . ';"><i class="fa ' . $icon . '"></i> ' . $text . '</div>';
-        }
-
-        $textDelete = Config::$lang === 'ru' ? 'Удалить' : 'Delete';
-
-        return $alertDeleteButton . '<div>' . $textDelete . ' <strong>' . $this->_obj->getDescriptionHtml() . '</strong>?</div>';
-    }
-
-    /**
-     * Вспомагательный метод для процесса удаления и проверки, нет ли связанных объектов
-     *
-     * Метод для переопределения в классах потоках - здесь можно проверить какие-то поля пришедшие с формы подтверждения
-     * и вернуть новый диалог, если что-то не устраивает
-     */
-    protected function checkDeleteConfirmResult(): bool
-    {
-        $linkedClasses = $this->whileDeleteGetLinkedClasses();
-        if (!$linkedClasses) {
-            return true;
-        }
-
-        //Сразу определим вспомагательные значения
-        $textDeleting = Config::$lang === 'ru' ? 'Удаление' : 'Deleting';
-        $dbLogMsg = $textDeleting . ' ' . $this->_obj->getDescriptionHtml();
-        $deletingId = $this->_obj->getId();
-
-        $messagess = [];
-
-        // Проверим, а был ли передан ID нового элемента на замену?
-        $newId = (int)$this->whileDeleteFieldForReplacement($deletingId)->getDataFromRequest($_POST);
-
-        // Для начала проверим, есть ли связанные записи?
-        foreach ($linkedClasses as $className => $description) {
-            $linkedIds = $this->whileDeleteGetLinkedIds($className, $deletingId);
-            $countLinkedIds = count($linkedIds);
-            if ($countLinkedIds > 0) {
-                // Нашли какие-то связанные записи!
-                if (!$newId) {
-                    //Сразу возвращаем диалоговое окно с ошибкой
-                    Response::showDialog('<span class="bad">При удалении нужно выбрать элемент на замену удаляемому</span>');
-                    return false;
-                }
-
-                //Производим непосредственное обновление связанных записей в базе!
-                $updated = 0;
-                foreach ($linkedIds as $linkedId) {
-                    $affectedRows = $this->whileDeleteUpdateLinkedRecord($className, $linkedId, $newId, $dbLogMsg);
-                    if ($affectedRows) {
-                        $updated++;
-                    }
-                }
-                if ($updated) {
-                    //Если что-то было обновлено (а должно было, ибо $linkedIds не пустой массив), то выведем
-                    //сообщение с количеством обновлённых
-                    $messagess[] = $description . ': <strong>' . $updated . '</strong>';
-                }
-            }
-        }
-
-        if ($messagess) {
-            //В процессе удаления были произведены какие-то обновления в других таблицах, выведем сообщение об этом
-            $textUpdated = Config::$lang === 'ru' ? 'Обновлено' : 'Updated';
-            $msg = "$textUpdated:<br>";
-            $msg .= '<ul><li>' . implode('</li><li>', $messagess) . '</li></ul>';
-            Session::flashSuccess($msg);
-        }
-
-        return true;
-    }
-
-    /**
-     * Вспомагательный метод для процесса удаления и проверки, нет ли связанных объектов
-     *
-     * Обновляет одну указанную запись в связанной таблице. Метод может быть переопределён, если нужно как-то хитро
-     * обновлять
-     *
-     * @param string $className
-     * @param int $linkedId
-     * @param int $newId
-     * @param string $dbLogMsg
-     * @return int
-     * @throws \Exception
-     */
-    protected function whileDeleteUpdateLinkedRecord(
-        string $className,
-        int $linkedId,
-        int $newId,
-        string $dbLogMsg
-    ): int {
-        /** @var ObjAbstract $obj */
-        $obj = new $className;
-        $obj->setId($linkedId);
-        $updateData = [$this->whileDeleteGetForeignFieldKey($className) => $newId];
-        $affectedRows = $obj->updateDb($updateData, $dbLogMsg);
-        return $affectedRows;
-    }
-
-    protected function beforeDelete(ObjAbstract $obj)
-    {
-    }
-
-    /**
-     * Метод для переопределения в классах потомках
-     * Вызывается после удаления текущего объекта и всех подтаблиц
-     * Данные текущего объекта при этом продолжают быть доступными в $this->_obj,
-     * В дополнение к этому метод получает в качестве единственного параметра массив $oldData - это результат работы
-     * метода $this->getOldDateBeforeSubmitOrDelete(), который можно переопределить в классах потмоках, чтобы насытить его
-     * дополнительными данными (например, данными подтаблиц)
-     * @param ObjAbstract $obj
-     * @param array $oldData
-     */
-    protected function afterDelete(ObjAbstract $obj, array $oldData)
-    {
-    }
-
-    /**
      * @throws \Exception
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
@@ -2237,7 +1657,7 @@ abstract class ModuleAbstract extends Table
             'table' => $this->getHtmlTableDivWrapper() . '</div>',
             'buttons' => $this->getListButtons(),
             'badgeMessagess' => $this->getListBadgeMessagess(),
-            'filters' => $this->getFiltersHtml()
+            'filters' => $this->getFiltersHtml(),
         ];
 
         Template::includeTpl('module/list.tpl.php', $tdata);
@@ -2256,19 +1676,15 @@ abstract class ModuleAbstract extends Table
         // Регистрируем массовые действия - метод initMassactions должен быть переопределён в классе потомке
         $this->initMassactions();
 
-        if (method_exists($this, 'massactionFilesDialog')) {
-            /** @var FilesDialogTrait $this */
-            $this->addMassaction('FilesDialog', $this->filesDialogButtonText());
+        if (method_exists($this, 'filesDialogAddMassaction')) {
+            /** @var FilesDialogTrait $moduleWithFilesDialog */
+            $moduleWithFilesDialog = $this;
+            $moduleWithFilesDialog->filesDialogAddMassaction();
         }
 
         // Добавляем опции печати (они также отображаются в массовых действиях)
         $this->initPrintForms();
-        if ($this->printForms) {
-            // Если в классе потомке были добавлены какие-то опции печати, то добавим massaction действие
-            // Это массовое действие соответственно вызовет метод massactionPrint, в котором будет выведен диалог
-            // для выбора формы печати подходящей всем выбранным объектам
-            $this->addMassaction('Print', 'Печать (выбрать форму...)', '', 'Печать');
-        }
+        $this->printFormsAddMassaction();
 
         // Если у пользователя нет прав на редактирование в этом модуле - нужно закрыть для редактирования все поля
         // Это особо актуально для полей с ajax редактированием, чтобы они не рендрились в таблицу как редактируемые
@@ -2315,37 +1731,6 @@ abstract class ModuleAbstract extends Table
     {
     }
 
-    protected function getListBadgeMessagess()
-    {
-        $out = [];
-
-        $module = $this->getModule();
-        $badges = ModuleBadgeLoader::getBadgesForModule($module);
-        /** @var Badge $badge */
-        foreach ($badges as $badge) {
-
-            $text = $badge->title . ': <strong>' . $badge->counter . '</strong>';
-            $cssClass = 'alert-badge alert-' . $badge->type;
-            if ($badge->listFilters) {
-
-                // Если есть параметр listFilters, то оборачиваем в ссылку
-                $text = Link::create($module, $text)
-                    ->filters($badge->listFilters)
-                    ->cssClass($cssClass)
-                    ->getHtml();
-
-            } else {
-
-                // Если же listFilters нет, то обренём в простой div для подсветки
-                $text = "<div class=\"$cssClass\">$text</div>";
-
-            }
-            $out[] = $text;
-        }
-
-        return $out;
-    }
-
     /**
      * Метод для переопределения в классах потомках для вывода Flash уведомлений над списком.
      * Удобно, когда нужно вывести какие-то сообщения о счетах ожидающих выгрузки или проверки.
@@ -2369,29 +1754,11 @@ abstract class ModuleAbstract extends Table
         if ($this->allowAdd && User::hasWriteAccess()) {
             $out[] = [
                 'text' => 'Add New',
-                'url' => '?a=' . $this->getModule() . '&addnew=1',
+                'url' => Link::create($this->getModule())->addNew()->getHref(),
             ];
         }
 
         return $out;
-    }
-
-    /**
-     * Метод для переопределения в классах потомках
-     * Здесь нужно последовательно вызывать $this->addCopyMode(), добавляя разные режимы копирования
-     */
-    protected function initCopyModes()
-    {
-    }
-
-    /**
-     * @param string $name
-     * @param string|array $fieldsKeys
-     * @param string|array $subtables
-     */
-    final protected function addCopyMode($name = 'Copy', $fieldsKeys = 'all', $subtables = 'all')
-    {
-        $this->_copyModes[$name] = ['fieldKeys' => $fieldsKeys, 'subtables' => $subtables];
     }
 
     protected function isStateList()
@@ -2429,74 +1796,25 @@ abstract class ModuleAbstract extends Table
         return ModuleRegister::getModuleName($this->getModule());
     }
 
-    /**
-     * Метод для использования в классах потомках
-     * Добавляет кнопку в подменю с тем расчётом, что при клике на это кнопку будет вызываться указанная viewFunc
-     * в текущем модуле
-     * @param string $text
-     * @param string $imgHtml
-     * @param string $viewFunc
-     * @param array $urlParams
-     * @param bool $blank
-     * @param string $urlHash
-     * @return void
-     */
-    final protected function addSubmenuItemViewFunc(
-        $text,
-        $imgHtml,
-        $viewFunc,
-        array $urlParams = [],
-        $blank = false,
-        $urlHash = ''
-    ) {
-        $url = Link::create($this->getModule())
-            ->view($this->_obj->getId())
-            ->func($viewFunc)
-            ->params($urlParams + $this->getModuleSessionUrlParams())
-            ->hash($urlHash)
-            ->getHref();
-
-        $this->addSubmenuItemUrl($text, $imgHtml, $url, $blank);
-    }
-
-    final protected function addSubmenuItemViewFuncPost(
-        $text,
-        $imgHtml,
-        $viewFunc,
-        array $urlParams = []
-    ) {
-        $this->addSubmenuItemViewFunc($text, $imgHtml, $viewFunc, $urlParams, false, 'post');
-    }
-
-    final protected function addSubmenuItemViewFuncAjax(
-        $text,
-        $imgHtml,
-        $viewFunc,
-        array $urlParams = []
-    ) {
-        $this->addSubmenuItemViewFunc($text, $imgHtml, $viewFunc, $urlParams, false, 'ajax');
-    }
-
-    final protected function addSubmenuItemViewFuncAjaxPost(
-        $text,
-        $imgHtml,
-        $viewFunc,
-        ?array $urlParams = []
-    ) {
-        $this->addSubmenuItemViewFunc($text, $imgHtml, $viewFunc, $urlParams, false, 'ajax-post');
-    }
-
-    final protected function addSubmenuItemUrl($text, $imgHtml, $url, $blank = false)
+    final protected function addSubmenuLink(Link $link)
     {
-        if ($imgHtml) {
-            $text = $imgHtml . ' ' . $text;
+        if ($link->module === $this->getModule()) {
+            $link->params($this->getModuleSessionUrlParams());
         }
+        $this->submenuLinks[] = $link;
+    }
 
-        $this->_submenuItemsTplData[] = [
-            'text' => $text,
-            'url' => $url,
-            'blank' => $blank
-        ];
+    final protected function addSubmenuLinkViewFunc($innerHtml, string $func): Link
+    {
+        $link = Link::create($this->getModule(), $innerHtml)
+            ->view($this->_obj->getId())
+            ->func($func);
+
+        $this->addSubmenuLink($link);
+
+        // Метод возващает ссылку, чтобы к ней можно было добавить опций по месту вызова
+        // $this->addSubmenuLinkViewFunc(..., ...)->params(...)->ajax()->post()->...
+        return $link;
     }
 
     final protected function riseSaveWarning($msg, $fieldKey = '')
@@ -2518,7 +1836,7 @@ abstract class ModuleAbstract extends Table
         $this->_saveErrors[] = [
             'msg' => $msg,
             'fieldKey' => $fieldKey,
-            'critical' => $critical
+            'critical' => $critical,
         ];
     }
 
@@ -2674,7 +1992,7 @@ abstract class ModuleAbstract extends Table
         if ($this->folders) {
             $this->getFieldsetFirst()->addField($this->fieldFolder());
             $this->addFields(
-                $this->fieldFolderIsEmpty(),
+                $this->fieldFolderHasFiles(),
                 $this->fieldFolderFilesList(),
                 $this->fieldFolderFilesCount(),
                 $this->fieldFolderSize()
@@ -2753,14 +2071,14 @@ abstract class ModuleAbstract extends Table
 
     protected function tableLoadData()
     {
-        //Cформируем условие сортировки.
-        //Оно может состоять из сортировки указанной в trait TableSortable и из tableDefaultOrderBy
-        //Сначала соберём всё в массив, потом из него склеим строку
+        // Cформируем условие сортировки.
+        // Оно может состоять из сортировки указанной в trait TableSortable и из tableDefaultOrderBy
+        // Сначала соберём всё в массив, потом из него склеим строку
         $sqlOrderBy = $this->getSqlOrderBy();
 
         if (isset($_GET['excelIds']) && $this->isStateListExcel()) {
 
-            $idsString = implode(',', array_map('intval', explode(',', $_GET['excelIds'])));
+            $ids = Misc::idsFromComaSeparatedString($_GET['excelIds']);
 
         } else {
 
@@ -2806,22 +2124,11 @@ abstract class ModuleAbstract extends Table
 
             //Получим все ID из базы
             $timer = new Timer();
-            $res = Db::query($queryIds);
-            if ($res->num_rows) {
-                $idsString = '0';
-                while ($row = $res->fetch_row()) {
-                    $idsString .= ',' . $row[0];
-                }
-            } else {
-                $idsString = '';
-            }
-            $res->free();
+            $ids = Db::getCol($queryIds);
             $this->_queryTime += $timer->get();
-
-
         }
 
-        if ($idsString) {
+        if ($ids) {
 
             //Сразу посчитаем общее количество строк, если это не режим экспорта в Excel
             if (!$this->isStateListExcel()) {
@@ -2832,7 +2139,7 @@ abstract class ModuleAbstract extends Table
             //Если это не режим экспорта в Excel, запишем ID всех отображенных пользователю строк в базу
             //Они понадобятся для навигации по стрелочкам в режимах View/Edit/Log
             if (!$this->isStateListExcel()) {
-                $this->createModuleSession($idsString, $this->getTablePage());
+                $this->createModuleSession($ids, $this->getTablePage());
             }
 
             //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->tableData
@@ -2842,34 +2149,20 @@ abstract class ModuleAbstract extends Table
             $query .= $this->getFieldset()->getSqlSelect($selectFieldKeys);
 
             $query .= " FROM " . Db::quote($this->getDbTable());
-            $query .= " WHERE ID IN (" . $idsString . ")";
+            $query .= " WHERE ID IN (@a)";
 
             if ($sqlOrderBy) {
-                $query .= " ORDER BY " . $sqlOrderBy;
+                $query .= " ORDER BY $sqlOrderBy";
             }
 
             $timer = new Timer();
-            $res = Db::query($query);
-            $this->tableData = $res->fetch_all(MYSQLI_ASSOC);
-            $res->free();
-            $res = null;
+            $this->tableData = Db::getAll($query, $ids);
 
             //Загрузим специальный массив с закешированным состоянием непустых папок
-            $this->loadCacheNotEmptyFolderIds($idsString);
-
+            FilesFolder::loadFoldersStatus($this->getModule(), $ids);
             $this->_queryTime += $timer->get();
 
         }
-    }
-
-    public function getTableDataCount()
-    {
-            return count($this->tableData);
-    }
-
-    public function getTableData()
-    {
-        return $this->tableData;
     }
 
     final protected function isStateListExcel()
@@ -3010,7 +2303,7 @@ abstract class ModuleAbstract extends Table
 
     protected function hasWriteAccessRightToFolder(ObjAbstract $obj)
     {
-        return User::hasWriteAccess() && self::hasWriteAccessRightToObj($obj);
+        return User::hasWriteAccess() && $this->hasWriteAccessRightToObj($obj);
     }
 
     /**
@@ -3021,25 +2314,6 @@ abstract class ModuleAbstract extends Table
     {
         return $this->hasWriteAccessRightToObj($obj);
     }
-
-    /**
-     * Метод для переорпделения в классах потомках. Здесь нужно последовательно вызывать $this->addPrintForm()
-     * для добавления новых печатных форм
-     */
-    protected function initPrintForms()
-    {
-    }
-
-    /**
-     * Метод используется для добавления печатной формы описанной в собственном классе
-     * В качестве единственного параметра нужно передать класс унаследованный от PrintForm
-     * @param PrintForm $printForm
-     */
-    final protected function addPrintForm(PrintForm $printForm)
-    {
-        $this->printForms[$printForm->getKey()] = $printForm;
-    }
-
 
     protected function getFindidUrlParams()
     {
@@ -3070,123 +2344,4 @@ abstract class ModuleAbstract extends Table
 
         return $out;
     }
-
-    /**
-     * Метод для переопределения в классах потомках - здесь должен заполняться массив $this->massactions
-     * Для более удобного заполнения массива $this->massactions можно использовать метод $this->addMassaction()
-     */
-    protected function initMassactions()
-    {
-    }
-
-    /**
-     * @param string $action уникальный ключ этого massaction
-     * @param string $text текст отображаемый в выпадающем списке
-     * @param string $cssClass класс которым подсветить элемент в выпадающем списке
-     * @param string $optgroup
-     * @param string|null $class
-     * @param bool $blank открывать при сабмите в новом окне браузера
-     */
-    protected function addMassaction(
-        string $action,
-        string $text,
-        string $cssClass = '',
-        string $optgroup = '',
-        string $class = null,
-        bool $blank = false
-    ) {
-        //Если передан флаг blank, значит нужно откывать новое окно браузера при сабмите massaction
-        //Это происходит в js окружении, поэтому нужно как-то передать информацию в js окружение, что данный massaction
-        //следует открывать в новом окне. Используем для этого css class
-        if ($blank) {
-            $cssClass = trim($cssClass . ' massaction-target-blank');
-        }
-
-        if (!$class && strpos($action, PROJECT_NAMESPACE . '\\') === 0) {
-            // В качестве имени $action может передаваться fully qualifued class name
-            // это удобно для избежания опечаток.
-            // Сохраним указатель на этот класс в свойстве "class"
-            $class = $action;
-        }
-
-        $this->massactions[$action] = [
-            'text' => $text,
-            'cssClass' => $cssClass,
-            'optgroup' => $optgroup,
-            'class' => $class
-        ];
-    }
-
-    /**
-     * Читает переменную $_POST['CheckedIds'] и проверяет каждый id на предмет доступа к этому объекту
-     * @return array
-     * @throws \Exception
-     */
-    protected function getMassactionIdsFromPost(): array
-    {
-        if (!isset($_POST['CheckedIds'])) {
-            return [];
-        }
-
-        $ids = array_unique(array_filter(array_map('intval', explode(',', $_POST['CheckedIds']))));
-        if (!$ids) {
-            return [];
-        }
-
-        // На этот массив наложим банальный SQL WHERE, который проверяет на чтение
-        $accessSqlWhere = $this->getAccessSqlWhere();
-        if ($accessSqlWhere) {
-            $ids = Db::getCol("SELECT ID FROM {$this->getDbTable()} WHERE $accessSqlWhere AND ID IN (@a)", $ids);
-        }
-
-        return $ids;
-    }
-
-    /**
-     * Метод вызывается напрямую из браузера через url `?a=${_lightModule}&p=massaction&action=${action}`;
-     */
-    public function proceedMassaction()
-    {
-        $this->initMassactions();
-
-        $action = $_GET['action'];
-        $ids = $this->getMassactionIdsFromPost();
-
-        if ($action === 'FilesDialog') {
-            // Особый massaction которого нет в массиве $this->massactions
-            $this->massactionFilesDialog($ids);
-            return;
-        }
-
-        if ($action === 'Print') {
-            // Особый massaction которого нет в массиве $this->massactions
-            $this->massactionPrint($ids);
-            return;
-        }
-
-        if (!isset($this->massactions[$action])) {
-            throw new \InvalidArgumentException("Unknown massaction $action");
-        }
-
-        $class = $this->massactions[$action]['class'];
-        if ($class) {
-            // Если внутри Massaction определён какой-то калсс для запуска - инициализируем и запустим его!
-            /** @var MassactionAbstract $massactionObj */
-            $massactionObj = new $class;
-            $massactionObj($ids);
-
-        } else {
-
-            // В противном случае попробуем запустить метод с определённым именем в текущем классе
-            $handler = 'massaction' . ucfirst($action);
-            if (!method_exists($this, $handler)) {
-                $this->{$handler}($ids);
-                throw new \BadMethodCallException("Unknown function $handler in class " . get_class($this));
-            }
-
-            $this->{$handler}($ids);
-
-        }
-    }
-
 }

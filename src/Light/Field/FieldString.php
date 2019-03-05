@@ -11,7 +11,11 @@ class FieldString extends FieldInputAbstract
 
     protected function getHtmlInner($value, array $data, $forTable)
     {
-        return htmlspecialchars($value);
+        $outHtml = htmlspecialchars($value);
+        if (!$forTable && $outHtml && $this->uom) {
+            $outHtml .= ' ' . $this->uom;
+        }
+        return $outHtml;
     }
 
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
@@ -33,8 +37,8 @@ class FieldString extends FieldInputAbstract
     {
         $maxLength = (int)$this->editMaxLength;
         if ($maxLength && mb_strlen($filterValue) === $maxLength) {
-            //Если длина строки совпадает с максимально заданной длиной, используем строгое сравнение
-            //Удобно для IATA кодов, например
+            // Если длина строки совпадает с максимально заданной длиной, используем строгое сравнение
+            // Удобно для IATA кодов, например
             $sqlWhere = "{fieldKey} = '{value}'";
         } else {
             //Длина строки не чёткая - сравнение тоже не чёткое

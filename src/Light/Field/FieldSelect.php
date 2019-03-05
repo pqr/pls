@@ -159,7 +159,11 @@ class FieldSelect extends FieldOptionsAbstract
             $htmls[] = $this->getOptionHtml($option, $singleValue, $forTable);
         }
 
-        return implode($this->multipleViewSeparator, $htmls);
+        $outHtml = implode($this->multipleViewSeparator, $htmls);
+        if (!$forTable && $outHtml && $this->uom) {
+            $outHtml .= ' ' . $this->uom;
+        }
+        return $outHtml;
     }
 
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
@@ -333,7 +337,7 @@ class FieldSelect extends FieldOptionsAbstract
                 'editWidth' => $this->editWidth,
                 'editName' => $editName,
                 'editId' => $editId,
-                'placeholder' => $this->addNewPlaceholder
+                'placeholder' => $this->addNewPlaceholder,
             ];
             if ($this->editCssClass !== null) {
                 $inputParams['editCssClass'] = $this->editCssClass;
@@ -436,7 +440,7 @@ class FieldSelect extends FieldOptionsAbstract
                 }
             }
             Response::json([
-                'results' => $this->getSelect2ajaxResultsArray($returnOptions)
+                'results' => $this->getSelect2ajaxResultsArray($returnOptions),
             ]);
             return;
         }
@@ -466,7 +470,7 @@ class FieldSelect extends FieldOptionsAbstract
                 Response::json([
                     'action' => 'change',
                     'id' => $theOnlyOptionValue,
-                    'text' => $this->getOptionText($theOnlyOption, $theOnlyOptionValue)
+                    'text' => $this->getOptionText($theOnlyOption, $theOnlyOptionValue),
                 ]);
                 return;
             }
@@ -476,14 +480,14 @@ class FieldSelect extends FieldOptionsAbstract
             if ($currentChildValue === '' || isset($options[$currentChildValue])) {
                 // Да, текущее значение допустимо
                 Response::json([
-                    'action' => 'dontchange'
+                    'action' => 'dontchange',
                 ]);
                 return;
             }
 
             // Текущее значение не допустимо, нужно отправить инструкцию на сборс на пустой вариант
             Response::json([
-                'action' => 'reset'
+                'action' => 'reset',
             ]);
             return;
         }
@@ -536,7 +540,7 @@ class FieldSelect extends FieldOptionsAbstract
         foreach ($optgroups as $optgroup => $options) {
             $results[] = [
                 'text' => $optgroup,
-                'children' => $this->getSelect2ajaxResultsArray($options)
+                'children' => $this->getSelect2ajaxResultsArray($options),
             ];
         }
 
@@ -544,7 +548,7 @@ class FieldSelect extends FieldOptionsAbstract
         if ($inactiveGroup) {
             $results[] = [
                 'text' => 'Inactive',
-                'children' => $this->getSelect2ajaxResultsArray($inactiveGroup)
+                'children' => $this->getSelect2ajaxResultsArray($inactiveGroup),
             ];
         }
 
@@ -691,7 +695,7 @@ class FieldSelect extends FieldOptionsAbstract
         foreach ($options as $optionValue => $option) {
             $results[] = [
                 'id' => $optionValue,
-                'text' => $this->getOptionText($option, $optionValue)
+                'text' => $this->getOptionText($option, $optionValue),
             ];
         }
         return $results;
@@ -706,7 +710,7 @@ class FieldSelect extends FieldOptionsAbstract
             }
             $sql = [];
             foreach ($values as $singleValue) {
-                $sql[] = "{fieldKey} = " . Db::escString($singleValue);
+                $sql[] = str_replace("{value}", Db::esc($singleValue), parent::getSqlWhereInner($singleValue));
             }
             return implode(" " . $this->multipleSqlWhereOperator . " ", $sql);
         }

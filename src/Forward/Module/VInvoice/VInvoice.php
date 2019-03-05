@@ -376,7 +376,7 @@ class VInvoice extends InvoiceModuleAbstract
 
         // Создадим временную локальную папку, куда скопируем все файлы
         $tmpdir = LIGHT_DIR_TEMP . '/VInvoices' . date('Y-m-d_H_i_s') . '-' . User::getId();
-        File::mkdir($tmpdir);
+        File::fs()->mkdir($tmpdir);
 
         $usedFilenames = [];
         foreach ($vinvoices as $vinvoice) {
@@ -386,7 +386,7 @@ class VInvoice extends InvoiceModuleAbstract
             $mawbNumbers = array_unique(array_filter(array_map('trim', $mawbNumbers)));
             $mawbNumbersForFile = File::getValidFilename(implode(',', $mawbNumbers));
 
-            $folder = $this->getFolderRelativePath($vinvoice);
+            $folder = $this->getFolderRelative($vinvoice);
             foreach (FilesFolder::scandir($folder) as $file) {
 
                 $fileForZip = $mawbNumbersForFile . ' ' . $file;
@@ -403,9 +403,9 @@ class VInvoice extends InvoiceModuleAbstract
                 }
 
                 $usedFilenames[$fileForZip] = true;
-                $srcFilepath = FilesFolder::getAbsolutePath($folder) . '/' . $file;
+                $srcFilepath = FilesFolder::getAbsolute($folder) . '/' . $file;
 
-                copy(File::encode($srcFilepath), File::encode($tmpdir . '/' . $fileForZip));
+                copy($srcFilepath, "$tmpdir/$fileForZip");
 
             }
         }
@@ -641,8 +641,8 @@ class VInvoice extends InvoiceModuleAbstract
 //        ];
 //
 //        // Добавим файлы
-//        $folder = $this->getFolderRelativePath($vinvObj->getData());
-//        $folderpathAbs = FilesFolder::getAbsolutePath($folder);
+//        $folder = $this->getFolderRelative($vinvObj->getData());
+//        $folderpathAbs = FilesFolder::getAbsolute($folder);
 //        foreach (FilesFolder::scandir($folder) as $file) {
 //            $data['Files'][] = [
 //                'Filename' => $file,

@@ -13,7 +13,7 @@ import {
     postMetric,
     round,
     setNodeValue,
-    loadSortableJs
+    loadSortableJs, toastError
 } from "./Light";
 import { getObjectId } from "./Module";
 import { Dialog } from "./Dialog";
@@ -387,42 +387,45 @@ export class Subtable {
 
                 //Переберём все строки из вставленного текста
                 const text = <string>dialog.$div!.find("textarea").val()!;
-                let lines = text.split("\n");
-                //Удаляем пустые строки
-                lines = lines.filter((line: string) => line != "");
+                $.post('?a=Core&ps=ParseCsv', text)
+                    .done((lines:any) => {
+                        lines = lines.filter((line: any) => Array.isArray(line) && line.length);
+                        const rows = lines.map((line: string[]) => {
+                            const row: { [key: string]: string } = {};
 
-                //Сформируем массив из строк для вставки (строки готовые для передачи в метод addRow()
-                const rowsData = lines.map((line: string) => {
-                    const lineData = line.split("\t");
-                    const rowData: { [key: string]: string } = {};
+                            //Перебираем поля и вынимаем из массива lineData ячейки одна за одной
+                            for (const fieldKey in that.fields) {
+                                //Если для данного поля вставка из буфера не запрещена, используем текущее значение из lineData
+                                if (!that.fields[fieldKey].disablePaste && !that.isColHidden(fieldKey)) {
+                                    row[fieldKey] = line.shift() || "";
+                                }
+                            }
 
-                    //Перебираем поля и вынимаем из массива lineData ячейки одна за одной
-                    for (const fieldKey in that.fields) {
-                        //Если для данного поля вставка из буфера не запрещена, используем текущее значение из lineData
-                        if (!that.fields[fieldKey].disablePaste && !that.isColHidden(fieldKey)) {
-                            rowData[fieldKey] = lineData.shift() || "";
+                            return row;
+                        });
+
+                        // Теперь можно вставить все сформированные строки (метод addRows() сам пересчитает total и обновит count span)
+                        that.addRows(rows);
+
+                        const workTimeMs = performance.now() - startMs;
+                        if (workTimeMs > 1000) {
+                            // Если вставка на стороне JavaScript заняла более секунды, то зарегистрируем это событие на сервере
+                            postMetric("subtablepaste", workTimeMs, {
+                                lines: rows.length,
+                                module: getModule(),
+                                id: getObjectId(),
+                                subtable: that.getName(),
+                                text: text
+                            });
                         }
-                    }
 
-                    return rowData;
-                });
-
-                //Теперь можно вставить все сформированные строки (метод addRows() сам пересчитает total и обновит count span)
-                that.addRows(rowsData);
-
-                const workTimeMs = performance.now() - startMs;
-                if (workTimeMs > 1000) {
-                    // Если вставка на стороне JavaScript заняла более секунды, то зарегистрируем это событие на сервере
-                    postMetric("subtablepaste", workTimeMs, {
-                        lines: rowsData.length,
-                        module: getModule(),
-                        id: getObjectId(),
-                        subtable: that.getName(),
-                        text: text
+                        dialog.close();
+                    })
+                    .fail(() => {
+                        dialog.unblockButtons();
+                        const msg = isLangRu ? 'Не удалось распознать csv данные' : 'Cant parse csv data';
+                        toastError(msg);
                     });
-                }
-
-                dialog.close();
             }
         });
 

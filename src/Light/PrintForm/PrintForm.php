@@ -99,9 +99,9 @@ class PrintForm
         $this->out = $out;
     }
 
-    public function setPdfLandscape()
+    public function setPdfLandscape(bool $isLandscape = true)
     {
-        $this->pdfLandscape = true;
+        $this->pdfLandscape = $isLandscape;
     }
 
     final public function getFieldset(): Fieldset
@@ -290,7 +290,7 @@ class PrintForm
     /**
      * Можно переопределить в классах потомках для заполнения диалогоа массовой печати начальными данными
      * @param array $ids
-     * @param array $objectsAndPaths массив кортежей [$obj, $relativePath]
+     * @param array $objects
      * @return array
      */
     public function getDataForAjaxDialogMultiple(array $ids, array $objects): array
@@ -312,6 +312,11 @@ class PrintForm
 
         // Заготовим имя временного файла, куда запишем результат работы $templater
         $tmpDir = $this->createTmpDir();
+        if (!$tmpDir) {
+            Response::abort(500, 'Can\'t create temp dir');
+            return;
+        }
+
         // В качестве расширения выходного файла используем заданный $this->format
         $tmpFile = $tmpDir . '/result.' . $this->format;
 
@@ -321,7 +326,7 @@ class PrintForm
         $count = \count($objects);
 
         // Время отдать результат пользовтателю или переложить его в папку объекта
-        $targetFilename =  $this->getFilenameMultiple($count);
+        $targetFilename = $this->getFilenameMultiple($count);
 
         // Если в настройках печатной формы указано отправлять файл в браузер пользователю,
         // то отправим только что сохранённый временный файл
@@ -332,9 +337,6 @@ class PrintForm
         } else {
             Response::streamFileFromFilesystem($tmpFile, $targetFilename);
         }
-
-        // Удаляем временную директорию со всем её содержимом
-        File::rmdir($tmpDir);
 
         Metric::record(Request::getModule() . '::proceedPrintMultipeAsOne ' . $this->key, $timer->getMs(),
             'Count: ' . $count);
@@ -364,6 +366,11 @@ class PrintForm
 
         // Заготовим имя временного файла, куда запишем результат работы $templater
         $tmpDir = $this->createTmpDir();
+        if (!$tmpDir) {
+            Response::abort(500, 'Can\'t create temp dir');
+            return;
+        }
+
         // В качестве расширения выходного файла используем заданный $this->format
         $tmpFile = $tmpDir . '/result.' . $this->format;
 
@@ -386,21 +393,18 @@ class PrintForm
         }
 
         if ($this->isOutSave()) {
+
             try {
 
-                // Скопируем временный файл в папку объекта
-                File::mkdir($targetDir);
-                $fs = new Filesystem();
-                $fs->copy($tmpFile, "$targetDir/$targetFilename", true);
+                // Скопируем временный файл в папку объекта (если $targetDir не усущетсует, она будет автоматически создана)
+                File::fs()->copy($tmpFile, "$targetDir/$targetFilename", true);
 
             } catch (\Throwable $e) {
                 // Не прерываем работу приложения, но сообщим об ошибке в rollbar
                 reportException($e);
             }
-        }
 
-        // Удаляем временную директорию со всем её содержимом
-        File::rmdir($tmpDir);
+        }
 
         Metric::record(Request::getModule() . '::proceedPrint ' . $this->key, $timer->getMs(), 'ID: ' . $obj->getId());
     }
@@ -420,6 +424,10 @@ class PrintForm
 
         // Подготавливаем временную директорию, куда будут сохранены все распечатанные файлы
         $tmpDir = $this->createTmpDir();
+        if (!$tmpDir) {
+            Response::abort(500, 'Can\'t create temp dir');
+            return;
+        }
 
         $tmpFiles = [];
 
@@ -498,7 +506,6 @@ class PrintForm
         }
 
         if ($this->isOutSave()) {
-            $fs = new Filesystem();
             // Переместим временные файлы в папки объектов
             foreach ($objects as $i => $obj) {
 
@@ -522,10 +529,9 @@ class PrintForm
                         continue;
                     }
 
-                    if (File::mkdir($targetDir)) {
-                        $targetFilename = $this->getFilename($obj);
-                        $fs->copy($tmpFile, "$targetDir/$targetFilename", true);
-                    }
+                    $targetFilename = $this->getFilename($obj);
+                    // Если $targetDir не существует, то она будет автоматически создана
+                    File::fs()->copy($tmpFile, "$targetDir/$targetFilename", true);
 
                 } catch (\Throwable $e) {
                     // Отлавливаем Exceptions, если какой-то файл не удалось скоприовать
@@ -535,9 +541,6 @@ class PrintForm
                 }
             }
         }
-
-        // Удаляем временную директорию со всем её содержимом
-        File::rmdir($tmpDir);
 
         Metric::record(Request::getModule() . '::proceedPrintMultiple ' . $this->key, $timer->getMs(),
             'Count: ' . \count($objects));
@@ -553,18 +556,15 @@ class PrintForm
         return $this->out & self::OUT_SAVE;
     }
 
-    private $tmpDir;
-
     /**
      * @return string
      * @throws \Exception
      */
     private function createTmpDir(): string
     {
-        $this->tmpDir = LIGHT_DIR_TEMP . '/PrintForm_' . $this->key . '_' . time() . '_' . random_int(1, 1000);
-        $fs = new Filesystem();
-        $fs->mkdir($this->tmpDir);
-        return $this->tmpDir;
+        $prefix = 'PrintForm_' . $this->key . '_' . date('Y-m-d_H_i_s');
+        // Функция File::mkdirTmp автоматически запланирует удаление директории после окончания работы скрипта
+        return File::mkdirTmp($prefix);
     }
 
     /**
@@ -577,7 +577,8 @@ class PrintForm
         switch ($this->templateFormat) {
             case self::TEMPLATE_FORMAT_EXCEL:
                 $titleExcelSheet = $this->getTitleExcelSheet($obj);
-                return new TemplaterExcel($templateFilepathAbs, $titleExcelSheet, $obj->getFieldset(), $this->excelTableOpts);
+                return new TemplaterExcel($templateFilepathAbs, $titleExcelSheet, $obj->getFieldset(),
+                    $this->excelTableOpts);
 
             case self::TEMPLATE_FORMAT_DOCX:
                 return new TemplaterDocx($templateFilepathAbs);

@@ -8,6 +8,7 @@ use Light\Config;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\FilesFolder;
+use Light\Img;
 use Light\Link;
 use Light\Mailer;
 use Light\Misc;
@@ -35,13 +36,14 @@ abstract class EmailDialogAbstract
      */
     private $msgBuff;
 
+    public $allowAttachementsFromFolder = true;
+    public $allowAttachementsManual = true;
+
     public function __construct(ObjAbstract $obj, Msg $msgBuff)
     {
         $this->obj = $obj;
         $this->msgBuff = $msgBuff;
-
         $this->fieldset = new Fieldset();
-        $this->initFieldset();
     }
 
     public function getFieldset()
@@ -49,21 +51,44 @@ abstract class EmailDialogAbstract
         return $this->fieldset;
     }
 
-    protected function initFieldset()
+    protected function getIcon(): string
     {
+        return Img::icon('fa-email');
+    }
+
+    protected function getTitle(): string
+    {
+        return 'E-mail';
+    }
+
+    protected function initFieldset(): void
+    {
+        $emailAccountIdOptions = $this->getEmailAccountIdOptions();
+
         $this->addFields(
+
+            F::createSelect('EmailAccountID', [
+                'name' => Config::$lang === 'ru' ? 'От имени' : 'From',
+                'editTagParams' => 'required',
+                'editMandatory' => true,
+                'nullable' => true,
+                'options' => $emailAccountIdOptions,
+                'default' => $this->getDefaultEmailAccountId($emailAccountIdOptions),
+                'empty' => count($emailAccountIdOptions) !== 1,
+            ]),
 
             F::createText('EmailTo', [
                 'name' => Config::$lang === 'ru' ? 'Кому' : 'To',
                 'default' => $this->getDefaultTo(),
                 'editTagParams' => 'required',
+                'editMandatory' => true,
                 'editWidth' => 'full',
                 'rows' => 2,
             ]),
 
             F::createCheckbox('EmailSeparateTo', [
                 'name' => Config::$lang === 'ru' ? 'Каждому получателю отдельное письмо (адреса получателей должны быть разделены запятыми)' : 'Separate E-mail for each "To" (separated by coma)',
-                'default' => true,
+                'default' => $this->getDefaultEmailSeparateTo(),
             ]),
 
             F::createText('EmailCc', [
@@ -81,6 +106,7 @@ abstract class EmailDialogAbstract
             F::createText('EmailSubject', [
                 'name' => Config::$lang === 'ru' ? 'Тема' : 'Subject',
                 'default' => $this->getDefatulSubject(),
+                'editTagParams' => 'required',
                 'editMandatory' => true,
                 'editWidth' => 'full',
                 'rows' => 2,
@@ -89,47 +115,76 @@ abstract class EmailDialogAbstract
             F::createText('EmailBody', [
                 'name' => Config::$lang === 'ru' ? 'Сообщение' : 'Body',
                 'default' => $this->getDefaultBody(),
-                'rows' => 10,
+                'rows' => 15,
+                'editTagParams' => 'style="width: 800px"',
             ])
-
         );
 
         $this->initFieldsetFilesCheckboxes();
     }
 
-    protected function initFieldsetFilesCheckboxes()
+    protected function getEmailAccountIdOptions(): array
     {
+        return [
+            0 => Config::$swiftmailerUser,
+        ];
+    }
+
+    protected function getDefaultEmailAccountId(array $emailAccountIdOptions)
+    {
+        return count($emailAccountIdOptions) === 1 ? key($emailAccountIdOptions) : '';
+    }
+
+    protected function initFieldsetFilesCheckboxes(): void
+    {
+        if (!$this->allowAttachementsFromFolder) {
+            return;
+        }
+
         $files = $this->getFiles();
         if (!$files) {
             return;
         }
 
         $this->addField(
-            F::createCheckboxSet('EmailAttahements', [
-                'name' => Config::$lang === 'ru' ? 'Вложения' : 'Attahements',
-                'options' => array_combine($files, $files)
+            F::createCheckboxSet('EmailAttachementsFromFolder', [
+                'name' => Config::$lang === 'ru' ? 'Вложения' : 'Attachements',
+                'options' => function () use ($files) {
+                    $options = [];
+                    foreach ($files as $file) {
+                        $options[$file] = $file
+                            . ' '
+                            . Link::create($this->obj->getMasterModuleForDbLog(),
+                                '(посмотреть ' . Img::iconExternalLink() . ')')
+                                ->filePreview($this->obj->getId(), $file)
+                                ->cssClass('small')
+                                ->getHtml();
+                    }
+                    return $options;
+                },
             ])
         );
     }
 
-    protected function getFolderRelative()
+    protected function getFolderRelative(): string
     {
-        return FilesFolder::getModuleRelative($this->obj->getMasterModuleForDbLog(), $this->obj->getId());
+        return FilesFolder::getRelativeModule($this->obj->getMasterModuleForDbLog(), $this->obj->getId());
     }
 
     protected function getFiles(): array
     {
         $relative = $this->getFolderRelative();
-        if (!FilesFolder::isDir($relative)) {
-            return [];
-        }
-
         return FilesFolder::scandir($relative);
     }
 
     protected function getDefaultTo(): string
     {
         return '';
+    }
+
+    protected function getDefaultEmailSeparateTo(): bool
+    {
+        return true;
     }
 
     protected function getDefaultCc(): string
@@ -152,7 +207,7 @@ abstract class EmailDialogAbstract
         return '';
     }
 
-    protected function getFormAction()
+    protected function getFormAction(): string
     {
         $module = $this->obj->getMasterModuleForDbLog();
         $id = $this->obj->getId();
@@ -165,66 +220,103 @@ abstract class EmailDialogAbstract
             ->getHref();
     }
 
-    public function proceedShowDialog()
+    public function proceedShowDialog(): void
     {
-        $dialogBody = $this->getDialogBody();
+        $this->initFieldset();
+        $dialogBody = $this->getDialogHtml();
         $sendBtnText = $this->getSendBtnText();
 
         Response::showDialog($dialogBody, $sendBtnText);
     }
 
-    protected function getDialogBody()
+    protected function getDialogHtml(): string
+    {
+        $action = $this->getFormAction();
+        return '<form action="' . $action . '" method="post" enctype="multipart/form-data">'
+            . $this->getFormInnerHtml()
+            . '</form>';
+    }
+
+    protected function getFormInnerHtml(): string
     {
         $tdata = $this->getTplData();
         $template = $this->getTemplate();
         return Template::parseTpl($template, $tdata);
     }
 
-    protected function getTplData()
+    protected function getTplData(): array
     {
         $tdata = $this->fieldset->getTplData([], F::MODE_EDIT);
         $tdata['action'] = $this->getFormAction();
 
-        if (!$this->hasField('EmailAttahements')) {
+        if ($this->allowAttachementsFromFolder && !$this->hasField('EmailAttachementsFromFolder')) {
             // Если нет поля отвечающего за аттачменты, значит либо папка пуста, либо папки вообще нет
-            $folderRelative = $this->getFolderRelative();
-            if (FilesFolder::isDir($folderRelative)) {
+            $relative = $this->getFolderRelative();
+            if ($relative && is_dir(FilesFolder::getAbsolute($relative))) {
                 // Если папка на самом есть, выведем сообщение, что "папка пуста"
                 $emptyFolderMsg = Config::$lang === 'ru'
-                    ? 'Папка с файлами пуста, поэтому нет вложений'
-                    : 'Empty folder, no attachements';
-                $tdata['emptyFolderMsg'] = FilesFolder::getLinkWithIcon($folderRelative, $emptyFolderMsg);
+                    ? 'Папка с файлами пуста'
+                    : 'Empty folder';
+                $tdata['emptyFolderMsg'] = FilesFolder::getLinkWithIcon($relative, $emptyFolderMsg);
             }
         }
+
+        $tdata['allowAttachementsManual'] = $this->allowAttachementsManual;
 
         return $tdata;
     }
 
-    protected function getTemplate()
+    protected function getTemplate(): string
     {
-        return __DIR__ . '/EMailDialog.tpl.php';
+        return __DIR__ . '/EmailDialogForm.tpl.php';
     }
 
-    protected function getSendBtnText()
+    protected function getSendBtnText(): string
     {
         return Config::$lang === 'ru' ? 'Отправить' : 'Send';
     }
 
-    public function proceedSendSubmit()
+    protected function getDataFromDialog(): array
     {
-        $data = $this->fieldset->getDataFromRequest($_POST);
+        return $this->fieldset->getDataFromRequest($_POST);
+    }
 
-        if (!$data['EmailTo']) {
-            $msg = Config::$lang === 'ru' ? 'Не заполнено поле "Кому"' : 'Empty "To"';
-            $this->msgBuff->addError($msg);
-            return false;
+    public function proceedSendSubmit(): bool
+    {
+        $this->initFieldset();
+        $formData = $this->getDataFromDialog();
+
+        $attachementsFullPaths = [];
+
+        if ($this->allowAttachementsManual) {
+            // Возможно, пользователь вручную загрузил какие-то файлы для отправки?
+            $attachementsFullPaths = $this->getManualAttachementsFullPaths($this->msgBuff);
+        }
+
+        if ($this->allowAttachementsFromFolder) {
+            $attachementsFullPaths = array_merge(
+                $attachementsFullPaths,
+                $this->getAttachementsFromFolderFullPaths($formData)
+            );
         }
 
         $sentCount = 0;
 
-        $emailTo = trim($data['EmailTo']);
-        $toArr = $data['EmailSeparateTo'] ? Mailer::getEmailsAsArray($emailTo) : [$emailTo];
+        $emailTo = trim($formData['EmailTo']);
+        $toArr = $formData['EmailSeparateTo'] ? Mailer::getEmailsAsArray($emailTo) : [$emailTo];
+
+        if (!$toArr) {
+            $msg = Config::$lang === 'ru' ? 'Не заполнено поле "Кому"' : 'Empty "To"';
+            $this->msgBuff->addError($msg);
+        }
+
+        // Возможно, при загрузке файлов вложений были какие-то ошибки? Тогда не будем отправлять E-mail
+        if ($this->msgBuff->hasError()) {
+            return false;
+        }
+
         foreach ($toArr as $to) {
+
             if (!$to) {
                 continue;
             }
@@ -233,7 +325,16 @@ abstract class EmailDialogAbstract
 
                 $oneMsgBuff = new Msg();
 
-                $sentCount += $this->sendOneEmail($to, $data, $oneMsgBuff);
+                $success = $this->sendOneEmail(
+                    $to,
+                    $formData,
+                    $attachementsFullPaths,
+                    $oneMsgBuff
+                );
+
+                if ($success) {
+                    $sentCount++;
+                }
 
                 $this->msgBuff->merge($oneMsgBuff);
 
@@ -241,6 +342,7 @@ abstract class EmailDialogAbstract
                 $this->obj->writeDbLogText($dbLogMsg, Misc::getClass($this));
 
             } catch (\Throwable $e) {
+
                 $this->msgBuff->addError($e->getMessage());
             }
         }
@@ -248,26 +350,33 @@ abstract class EmailDialogAbstract
         return $sentCount > 0;
     }
 
-    protected function emailsStringToArray(string $emails): array
+    protected function sendOneEmail(string $to, array $formData, array $attachementsFullPaths, Msg $oneMsgBuff): bool
     {
-        return array_values(array_unique(array_filter(array_map('strtolower',
-            array_map('trim', explode(',', $emails))))));
+        $queueId = Mailer::create($to, $formData['EmailSubject'], $formData['EmailBody'])
+            ->emailAccountId($formData['EmailAccountID'])
+            ->cc($formData['EmailCc'])
+            ->replyTo($formData['EmailReplyTo'])
+            ->attachements($attachementsFullPaths)
+            ->asText()
+            ->send($oneMsgBuff);
+
+        return (bool)$queueId;
     }
 
-    protected function getAttachementsFullPaths(array $formData): array
+    protected function getAttachementsFromFolderFullPaths(array $formData): array
     {
-        if (!isset($formData['EmailAttahements']) || !$formData['EmailAttahements']) {
+        if (!isset($formData['EmailAttachementsFromFolder']) || !$formData['EmailAttachementsFromFolder']) {
             return [];
         }
-        $formAttachements = explode('|', $formData['EmailAttahements']);
+        $attachementsFromFolder = explode('|', $formData['EmailAttachementsFromFolder']);
         $validFiles = $this->getFiles();
-        $validAttachements = array_intersect($formAttachements, $validFiles);
+        $validAttachements = array_intersect($attachementsFromFolder, $validFiles);
         if ($validAttachements) {
 
             $relative = $this->getFolderRelative();
             foreach ($validAttachements as &$attachement) {
                 // Сделаем пути абсолютными
-                $attachement = FilesFolder::getAbsolutePath($relative . '/' . $attachement);
+                $attachement = FilesFolder::getAbsolute("$relative/$attachement");
             }
         }
 
@@ -275,28 +384,48 @@ abstract class EmailDialogAbstract
 
     }
 
-    protected function sendOneEmail(string $to, array $formData, Msg $oneMsgBuff): int
+    protected function getManualAttachementsFullPaths(Msg $oneMsgBuff): array
     {
-        $email = Mailer::create($to, $formData['EmailSubject'], $formData['EmailBody'])
-            ->cc($formData['EmailCc'])
-            ->replyTo($formData['EmailReplyTo'])
-            ->asText();
-
-        $userEmail = User::getEmail();
-        if ($userEmail) {
-            // Попробуем отправить почту от имени текущего пользователя
-            // From будет установлено в $userEmail при отправке, если у пользователя заполнено поле user.EmailPassword
-            // в противном случае отправка произойдёт от Config::$swiftmailerUser
-            $email->from($userEmail);
+        if (!isset($_FILES['ManualAttachements']) || !$_FILES['ManualAttachements']) {
+            return [];
         }
 
-        $validAttachements = $this->getAttachementsFullPaths($formData);
-        if ($validAttachements) {
-            $email->attachements($validAttachements);
+        $queueDirRelative = 'EmailQueue/' . time() . '_' . User::getId();
+        if (!FilesFolder::mkdir($queueDirRelative)) {
+            $msg = Config::$lang === 'ru' ? 'Не удалось загрузить вложения' : 'Can\'t upload attachements';
+            $oneMsgBuff->addError($msg);
+            return [];
         }
 
+        $out = [];
 
-        $email->send($oneMsgBuff);
-        return 1;
+        $queueDirAbs = FilesFolder::getAbsolute($queueDirRelative);
+        foreach ($_FILES['ManualAttachements']['name'] as $index => $name) {
+
+            if (!$name) {
+                continue;
+            }
+
+            $filepathAbs = "$queueDirAbs/" . $name;
+            if (move_uploaded_file($_FILES['ManualAttachements']['tmp_name'][$index], $filepathAbs)) {
+
+                $out[] = $filepathAbs;
+
+            } else {
+
+                $err = error_get_last();
+                if ($err) {
+                    $errMsg = $err['message'] ?? '';
+                    \Light\reportException(new \Exception('Ошибка при перемещении загруженного файла через диалог отправки E-mail ' . $filepathAbs . ' ' . $errMsg));
+                }
+                $msg = Config::$lang === 'ru' ? 'Не удалось загрузить вложение' : 'Can\'t upload attachement';
+                $msg .= ' ' . htmlspecialchars($name);
+                $oneMsgBuff->addError($msg);
+
+            }
+
+        }
+
+        return $out;
     }
 }

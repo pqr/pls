@@ -376,7 +376,6 @@ div.alert {
 }
 
 div.alert:last-child {
-    margin-bottom: 20px;
 }
 
 span.cnt {
@@ -417,7 +416,6 @@ ul.msg {
 
 .alert-badge {
     padding: 8px;
-    margin-bottom: 20px;
     border: 1px solid transparent;
     border-radius: 4px;
     display: inline-block;
@@ -671,6 +669,7 @@ textarea.input-error:focus,
 select.input-error:focus,
 .select2-container.select2-container-multi.select2-container-active.input-error .select2-choices {
     border-color: #ff1111;
+    outline-color: #ff1111;
 }
 
 select.select-select2 {
@@ -935,9 +934,14 @@ ul.checkboxset {
     padding: 10px;
     background-color: #f2f2f2;
     border-radius: 0 0 4px 4px;
+    min-height: 32px;
 }
 
-.submenu a,
+.submenu:after {
+    clear: both;
+}
+
+.submenu a:not(.CreatedLink),
 a.massactionprintdialog__button {
     display: inline-block;
     padding: 4px 6px;
@@ -948,6 +952,13 @@ a.massactionprintdialog__button {
     vertical-align: middle;
 }
 
+.submenu a.CreatedLink {
+    font-size: 10px;
+    color: silver;
+    float: right;
+    margin-top: 10px;
+}
+
 /*.submenu i,*/
 .submenu img,
 .docprints input,
@@ -956,7 +967,7 @@ a.massactionprintdialog__button {
     vertical-align: bottom;
 }
 
-.submenu a:hover,
+.submenu a:not(.CreatedLink):hover,
 a.massactionprintdialog__button:hover {
     border: 1px solid #f1c43f;
     background: #fdeeb3;
@@ -1017,6 +1028,17 @@ table.form > tbody > tr > td {
     padding: 5px;
     width: 304px;
     background-color: #eaf2fb;
+}
+
+table.form > tbody > tr > td.form_td_subtable {
+    background-color: transparent;
+    padding-left: 0;
+}
+
+td.col-middle .MoneyView, td.col-right .MoneyView {
+    display: inline-block;
+    width: 110px;
+    text-align: right;
 }
 
 table.form.form-full > tbody > tr > td {
@@ -2142,6 +2164,7 @@ button.btn-floating {
     padding: 5px;
     cursor: move;
 }
+
 .MainmenuSettings-Item:hover {
     background-color: #eee;
 }
@@ -2160,3 +2183,4 @@ button.btn-floating {
     opacity: 1;
     border-bottom: 1px dashed;
 }
+

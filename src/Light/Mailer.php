@@ -3,13 +3,14 @@
 namespace Light;
 
 
+use Light\Module\EmailLogModule\EmailLogModule;
 use Symfony\Component\Filesystem\Filesystem;
 
 class Mailer
 {
 
-    /** @var string */
-    private $from;
+    /** @var int */
+    private $emailAccountId;
 
     /** @var array|string */
     private $to;
@@ -77,7 +78,27 @@ class Mailer
 
     public function from(string $from)
     {
-        $this->from = $from;
+        if ($from === Config::$swiftmailerUser) {
+
+            // Отправляем от стандартного пользователя установленного в конфиге приложения
+            // Значит указать на EmailAccountID нужно занулить
+            $emailAccountId = null;
+
+        } else {
+            $emailAccountId = Db::getOne("SELECT ID FROM emailaccount WHERE Username = @s", $from);
+            if (!$emailAccountId) {
+                throw new \InvalidArgumentException("Unknown E-mail account with Username = $from");
+            }
+        }
+
+        $this->emailAccountId = $emailAccountId;
+
+        return $this;
+    }
+
+    public function emailAccountId(?int $emailAccountId)
+    {
+        $this->emailAccountId = $emailAccountId;
         return $this;
     }
 
@@ -177,85 +198,86 @@ class Mailer
      * А также можно вызывать вручную, если нужно отправить E-mail здесь и сейчас (без добавления в очередь)
      *
      * @param Msg $msgBuff
-     * @param \Swift_Mailer|null $swiftmailer
      * @return int число отправленных писем
      */
-    public function sendImmideatelly(Msg $msgBuff, \Swift_Mailer $swiftmailer = null)
+    public function sendNow(Msg $msgBuff): int
     {
-        // Логи отпавки конкретно данного сообщения сначала будем записывать в чистый буфер $thisMsgBuff
-        $thisMsgBuff = new Msg();
-        $sent = 0;
-        try {
-
-            if (!$swiftmailer) {
-                // Если не передан какой-то особый Swift_Mailer, то используем настройки по умолчанию
-                // прописанные в Config::$swiftmailer...
-                $swiftmailer = $this->getDefaultSwitfmailer();
-            }
-
-            /** @var \Swift_SmtpTransport $transport */
-            $transport = $swiftmailer->getTransport();
-            $correctFrom = (string)$transport->getUsername();
-
-            $message = $this->getSwiftMessage($correctFrom);
-            $failedRecipients = [];
-            $sent = $swiftmailer->send($message, $failedRecipients);
-            if ($failedRecipients) {
-                $thisMsgBuff->addError('Failed recipients: ' . htmlspecialchars(implode(', ', $failedRecipients)));
-            }
-            if ($sent) {
-                $thisMsgBuff->addSuccess($this->getSuccessMsg());
-                $report = $thisMsgBuff->getHtml();
-                $this->writeLog($report, $correctFrom);
-            } else {
-                $thisMsgBuff->addError($this->getErrorMsg());
-            }
-
-        } catch (\Throwable $e) {
-
-            $thisMsgBuff->addError($this->getErrorMsg());
-            $thisMsgBuff->addError($e->getMessage());
-
+        $dataForQueue = $this->getDataForQueue();
+        // Срау установим PID, чтобы этот E-mail случайно не был подхвачен в Autolaunch
+        $dataForQueue['PID'] = 'IMMEDIATE';
+        $queueId = $this->writeToQueue($dataForQueue, $msgBuff);
+        if (!$queueId) {
+            // По каким-то причинам не удалось записать в очередь
+            // (конкретная ошибка уже добавлена в $msgBuff внутри $this->writeToQueue($msgBuff);
+            return 0;
         }
 
-        // Добавим логи отпавки конкретно данного сообщения к общему буферу сообщений
-        $msgBuff->merge($thisMsgBuff);
+        $sent = MailSender::sendFromQueue($queueId, $msgBuff);
+        if (!$sent) {
+            try {
+                // Если отправка не удалась, значит что-то пошло не так. Очистим PID у этой записи в очереди
+                Db::query("UPDATE queue_email SET PID = NULL WHERE ID = @i", $queueId);
+            } catch (\Exception $e) {
+                reportException($e);
+            }
+        }
 
         return $sent;
     }
 
-    public function send(Msg $msgBuff = null)
+    /**
+     * Стандартный способ отправки - добавление в очередь queue_email
+     * Из которой почта рассылается с помощью Autolaunch Light/Email раз в минуту
+     * @param Msg|null $msgBuff
+     * @return int возвращает ID записи в очереди queue_email
+     */
+    public function send(Msg $msgBuff = null): int
+    {
+        if (!$msgBuff) {
+            // Создадим буфер загрушку
+            $msgBuff = new Msg();
+        }
+        $dataForQueue = $this->getDataForQueue();
+        $queueId = $this->writeToQueue($dataForQueue, $msgBuff);
+        if (!$queueId) {
+            // По каким-то причинам не удалось записать в очередь
+            // (конкретная ошибка уже добавлена в $msgBuff внутри $this->writeToQueue($msgBuff);
+            return 0;
+        }
+
+        // Вывдем сообщенеи об отложенной отправке: "На почту ... будет отправлено сообщение ... (Сс: ...)"
+        $msgBuff->addSuccess(MailSender::getSuccessMsgQueue($dataForQueue));
+        return $queueId;
+    }
+
+    private function getDataForQueue(): array
+    {
+        return [
+            'CreatedBy' => User::getId(),
+            'Subject' => $this->subject,
+            'EmailAccountID' => $this->emailAccountId ?: null,
+            'To' => Mailer::getEmailsAsString($this->to),
+            'Cc' => Mailer::getEmailsAsString($this->getFinalCc()),
+            'Bcc' => Mailer::getEmailsAsString($this->bcc),
+            'Body' => $this->getFinalBody(),
+            'ContentType' => $this->contentType,
+            'ReplyTo' => Mailer::getEmailsAsString($this->replyTo),
+            'Attachements' => implode("\n", $this->attachements),
+        ];
+    }
+
+    private function writeToQueue(array $dataForQueue, Msg $msgBuff): int
     {
         try {
 
-            $finalBody = $this->getFinalBody();
+            return Db::insertRow($dataForQueue, 'queue_email');
 
-            $insertData = [
-                'CreatedBy' => User::getId(),
-                'Subject' => $this->subject,
-                'From' => $this->from ?? '',
-                'To' => Mailer::getEmailsAsString($this->to),
-                'Cc' => Mailer::getEmailsAsString($this->cc),
-                'Bcc' => Mailer::getEmailsAsString($this->bcc),
-                'Body' => $finalBody,
-                'ContentType' => $this->contentType,
-                'ReplyTo' => Mailer::getEmailsAsString($this->replyTo),
-                'Attachements' => implode("\n", $this->attachements)
-            ];
-
-            Db::insertRow($insertData, 'queue_email');
-
-            if ($msgBuff) {
-                $msgBuff->addSuccess($this->getSuccessMsgQueue());
-            }
-
-        } catch (\Throwable $e) {
-
-            $msgBuff->addError($this->getErrorMsg());
+        } catch (\Exception $e) {
+            reportException($e);
+            $msgBuff->addError(MailSender::getErrorMsg($dataForQueue));
             $msgBuff->addError($e->getMessage());
-
+            return 0;
         }
-
     }
 
     /**
@@ -288,51 +310,6 @@ class Mailer
         return array_values(array_unique($emails));
     }
 
-    private function copyAttachementsToLogDir(int $logId)
-    {
-        $logDirRelative = FilesFolder::getModuleRelative('LogEmailAttachements', $logId);
-        FilesFolder::mkdir($logDirRelative);
-        $logDirAbs = FilesFolder::getAbsolutePath($logDirRelative);
-
-        $fs = new Filesystem();
-        foreach ($this->attachements as $attachement) {
-            if ($attachement && file_exists($attachement)) {
-                $target = $logDirAbs . '/' . pathinfo($attachement, PATHINFO_BASENAME);
-                try {
-                    $fs->copy($attachement, $target);
-                    @chmod($target, 0666);
-                } catch (\Throwable $e) {
-                    reportException($e);
-                }
-            }
-        }
-    }
-
-    private function getDefaultSwitfmailer(): \Swift_Mailer
-    {
-        $swiftmailerUser = Config::$swiftmailerUser;
-        $swiftmailerPassword = Config::$swiftmailerPassword;
-
-        if ($this->from != Config::$swiftmailerUser) {
-            // Если адрес отправителя ($from) не совпадает с пользователем заданным для отправки по умолчанию в конфиге
-            // то нужно проверить, есть ли в базе пароль от почты указанного пользователя?
-            $userEmailPassword = (string)Db::getOne("SELECT EmailPassword FROM user WHERE Email = @s", $this->from);
-            if ($userEmailPassword !== '') {
-                // Для данного пользователя определён его собственный пароль для отправки почты, используем его
-                $swiftmailerUser = $this->from;
-                $swiftmailerPassword = $userEmailPassword;
-            }
-        }
-
-        return self::createSwiftmailer(
-            Config::$swiftmailerHost,
-            Config::$swiftmailerPort,
-            Config::$swiftmailerSecuriy,
-            $swiftmailerUser,
-            $swiftmailerPassword
-        );
-    }
-
     private function getFinalCc()
     {
         $toArr = Mailer::getEmailsAsArray($this->to);
@@ -340,140 +317,4 @@ class Mailer
         // Уберём из массив Cc те адреса, которые уже встречались в To (чтобы пользователю не приходило по два письма)
         return array_diff($ccArr, $toArr);
     }
-
-    private function getSwiftMessage(string $correctFrom)
-    {
-        $toArr = Mailer::getEmailsAsArray($this->to);
-        $message = (new \Swift_Message($this->subject, $this->body, $this->contentType))
-            ->setFrom($correctFrom)
-            ->setTo($toArr);
-
-        $ccArr = $this->getFinalCc();
-        if ($ccArr) {
-            $message->setCc($ccArr);
-        }
-
-        $bccArr = Mailer::getEmailsAsArray($this->bcc);
-        if ($bccArr) {
-            $message->setBcc($bccArr);
-        }
-
-        $replyToArr = Mailer::getEmailsAsArray($this->replyTo);
-        if ($replyToArr) {
-            $message->setReplyTo($replyToArr);
-        }
-
-        foreach ($this->attachements as $attachement) {
-            if ($attachement && file_exists($attachement)) {
-                $message->attach(\Swift_Attachment::fromPath($attachement));
-            }
-        }
-
-        return $message;
-    }
-
-    public static function createSwiftmailer($host, $port, $security, $user, $pass): \Swift_Mailer
-    {
-        static $mailers = [];
-        if (!isset($mailers[$user])) {
-
-            $transport = new \Swift_SmtpTransport($host, $port, $security);
-
-            if ($user) {
-                $transport->setUsername($user);
-            }
-
-            if ($pass) {
-                $transport->setPassword($pass);
-            }
-
-            $mailers[$user] = new \Swift_Mailer($transport);
-
-        }
-
-        return $mailers[$user];
-    }
-
-    private function writeLog(string $report, string $correctFrom)
-    {
-        $record = [
-            'CreatedBy' => $this->createdBy,
-            'CreatedDateTime' => $this->createdDateTime,
-            'SentDateTime' => date('Y-m-d H:i:s'),
-            'From' => $correctFrom,
-            'To' => Mailer::getEmailsAsString($this->to),
-            'Cc' => Mailer::getEmailsAsString($this->getFinalCc()),
-            'Bcc' => Mailer::getEmailsAsString($this->bcc),
-            'ReplyTo' => Mailer::getEmailsAsString($this->replyTo),
-            'Subject' => $this->subject,
-            'ContentType' => $this->contentType,
-            'RetryCount' => $this->retryCount,
-            'Attachements' => implode("\n", $this->attachements)
-        ];
-        $logId = Db::insertRow($record, 'log_email');
-
-        Db::insertRow([
-                'ID' => $logId,
-                'Body' => $this->getFinalBody(),
-                'Report' => $report
-            ]
-            , 'log_email_text'
-        );
-
-        // Скопируем все файлы вложений в отдельную папку log
-        $this->copyAttachementsToLogDir($logId);
-    }
-
-    private function getSuccessMsgQueue(): string
-    {
-        $to = Mailer::getEmailsAsString($this->to);
-        $msg = 'На почту <strong>'
-            . htmlspecialchars($to)
-            . '</strong> будет отправлено сообщение <strong>'
-            . htmlspecialchars($this->subject)
-            . '</strong>';
-
-        $ccArr = $this->getFinalCc();
-        if ($ccArr) {
-            $cc = Mailer::getEmailsAsString($ccArr);
-            $msg .= ' (Cc: ' . htmlspecialchars($cc) . ')';
-        }
-
-        if ($this->attachements) {
-            $title = htmlspecialchars(implode(', ', $this->attachements));
-            $msg .= ', вложений: <span title="' . $title . '">' . count($this->attachements) . '</span>';
-        }
-
-        return $msg;
-    }
-
-    private function getSuccessMsg(): string
-    {
-        $msg = $this->getSuccessMsgQueue();
-        $msg = str_replace('будет', '', $msg);
-        return $msg;
-    }
-
-    private function getErrorMsg()
-    {
-        $to = Mailer::getEmailsAsString($this->to);
-        $msg = 'Ошибка при отправке сообщения на почту <strong>'
-            . htmlspecialchars($to)
-            . '</strong> <strong>'
-            . htmlspecialchars($this->subject)
-            . '</strong>';
-
-        $ccArr = $this->getFinalCc();
-        if ($ccArr) {
-            $cc = Mailer::getEmailsAsString($ccArr);
-            $msg .= ' (Cc: ' . htmlspecialchars($cc) . ')';
-        }
-
-        if ($this->attachements) {
-            $title = htmlspecialchars(implode(', ', $this->attachements));
-            $msg .= ', вложений: <span title="' . $title . '">' . count($this->attachements) . '</span>';
-        }
-
-        return $msg;
-    }
-} 
+}

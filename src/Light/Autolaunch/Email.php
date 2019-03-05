@@ -5,6 +5,7 @@ namespace Light\Autolaunch;
 use Light\Db;
 use Light\DbLog;
 use Light\Mailer;
+use Light\MailSender;
 use Light\Module\Autolaunch\AutolaunchAbstract;
 use Light\Msg;
 use Light\Timer;
@@ -48,6 +49,9 @@ class Email extends AutolaunchAbstract
 
             $alreadyDoneIds[] = $record['ID'];
 
+            // Перед отправкой следующего письма сделаем задержку в 2 секунды
+            sleep(2);
+
         }
 
         // Если какие-то записи в очереди не удалось обработать и они там так и остались
@@ -75,16 +79,17 @@ class Email extends AutolaunchAbstract
         }
     }
 
-    private function pickOneRecord($pid, $alreadyDoneIds)
+    private function pickOneRecord(string $pid, array $alreadyDoneIds)
     {
         // Для одной записи из таблицы установим флаг блокировки (PID)
-        $updateQuery = "UPDATE queue_email SET PID = @s WHERE RetryCount < 1 AND PID IS NULL";
-        if ($alreadyDoneIds) {
-            //Если передан массив ID уже обработанных на предыдущих шагах записей, то добавим условие, чтобы не выбирать эти записи заново
-            $updateQuery .= " AND ID NOT IN(" . implode(',', $alreadyDoneIds) . ")";
-        }
-        $updateQuery .= " ORDER BY ID LIMIT 1";
-        $res = Db::query($updateQuery, $pid);
+        $updateQuery = "UPDATE queue_email 
+              SET PID = @s 
+              WHERE RetryCount < 1 
+                  AND PID IS NULL
+                  AND ID NOT IN(@a)
+              ORDER BY ID
+              LIMIT 1";
+        $res = Db::query($updateQuery, $pid, $alreadyDoneIds);
         if (!$res || !Db::getAffectedRows()) {
             // Ничего не обновилось, значит нет больше записей доступных для обработки
             return null;
@@ -92,74 +97,29 @@ class Email extends AutolaunchAbstract
 
         // Попробуем выбрать из базы только что заблокированную с помощью PID запись
         // Эту операцию нужно сделать атомарно, поэтому сначала ставим PID, а только потом выбираем из очереди ID
-        $selectQuery = "SELECT * FROM queue_email WHERE PID=@s";
+        $selectQuery = "SELECT ID FROM queue_email WHERE PID=@s";
         if ($alreadyDoneIds) {
             //Если передан массив ID уже обработанных на предыдущих шагах записей, то добавим условие, чтобы не выбирать эти записи заново
             $selectQuery .= " AND ID NOT IN(" . implode(',', $alreadyDoneIds) . ")";
         }
         $selectQuery .= " ORDER BY ID LIMIT 1";
-        return Db::getRow($selectQuery, $pid);
+        return Db::getOne($selectQuery, $pid);
     }
 
     /**
      * Непосредсвенная отправка письма
-     * @param array $record - данные выбранной строки из таблицы queue_email
+     * @param int $queueId ID строки из queue_email
      * @return int
      */
-    protected function proceedOneRecord(array $record)
+    protected function proceedOneRecord(int $queueId)
     {
         $timer = new Timer();
 
-        $mail = Mailer::create($record['To'], $record['Subject'], $record['Body'])
-            ->from($record['From'])
-            ->cc($record['Cc'])
-            ->bcc($record['Bcc'])
-            ->replyTo($record['ReplyTo'])
-            ->attachements(explode("\n", $record['Attachements']));
-
-        if ($record['ContentType'] == 'text/html') {
-            $mail->asHtml();
-        } else {
-            $mail->asText();
-        }
-
-        $mail->setFromQueue($record['CreatedBy'], $record['CreatedDateTime'], $record['RetryCount'] + 1);
-
-        $thisMsgBuff = new Msg();
-        $sent = $mail->sendImmideatelly($thisMsgBuff);
-        if ($sent) {
-            $this->removeFromQueue($record['ID']);
-        } else {
-            // Если отправить не удалось, просто увеличим счётчик RetryCount
-            $report = $thisMsgBuff->getHtml();
-            $this->incRetryCount($record['ID'], $report);
-            reportException(new \Exception($report));
-        }
-
-        $this->_msgBuff->merge($thisMsgBuff);
+        $sent = MailSender::sendFromQueue($queueId, $this->_msgBuff);
 
         $this->_msgBuff->addHtml('<p class="note">Время выполнения: ' . $timer->getHtml() . '</p>');
         $this->_msgBuff->addEmptyLine();
 
-        // Перед отправкой следующего письма сделаем задержку в 2 секунды
-        sleep(2);
-
         return $sent;
     }
-
-    private function removeFromQueue(int $queueId)
-    {
-        Db::query("DELETE FROM queue_email WHERE ID = $queueId");
-    }
-
-    private function incRetryCount(int $queueId, string $report)
-    {
-        Db::query(
-            "UPDATE queue_email 
-            SET RetryCount = RetryCount + 1,
-                Report = CONCAT(" . Db::escString($report) . ", '\\n\\n')
-            WHERE ID = $queueId"
-        );
-    }
-
 }

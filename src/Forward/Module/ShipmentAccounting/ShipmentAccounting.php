@@ -32,7 +32,7 @@ class ShipmentAccounting extends ModuleAbstract
     protected $allowEdit = false;
     protected $allowLog = false;
     protected $allowDelete = false;
-    public $folderBaseDir = 'Shipment';
+    public $folderModule = 'Shipment';
 
     public function __construct()
     {
@@ -115,7 +115,7 @@ class ShipmentAccounting extends ModuleAbstract
 
                     [$invName, $docDate, $invAmount, $currencyIso] = explode('|', $value);
                     return "$invName от $docDate на $invAmount $currencyIso";
-                }
+                },
             ]),
 
             ShipmentFields::cacts(),
@@ -177,7 +177,7 @@ class ShipmentAccounting extends ModuleAbstract
         foreach (Constant::$standardFolders as $i => $standardFolder) {
             $this->addFilter(F::createYesNo("File$i", [
                 'name' => $standardFolder,
-                'sqlWhere' => "1"
+                'sqlWhere' => "1",
             ]));
         }
 
@@ -196,7 +196,7 @@ class ShipmentAccounting extends ModuleAbstract
             ],
             [
                 'ATA',
-            ]
+            ],
         ];
 
         foreach (Constant::$standardFolders as $i => $standardFolder) {
@@ -319,7 +319,7 @@ class ShipmentAccounting extends ModuleAbstract
                 // Пройдём по всем активным фильтрам
                 $shipmentOk = true;
                 foreach ($fileFilters as $i => $filterValue) {
-                    $notEmpty = FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[$i]));
+                    $notEmpty = FilesFolder::hasFiles("$folderRelative/" . Constant::$standardFolders[$i]);
                     $correct = ($notEmpty && $filterValue == 1) || (!$notEmpty && $filterValue == 0);
                     if (!$correct) {
                         // Этот шипмент нам не подходит
@@ -345,12 +345,21 @@ class ShipmentAccounting extends ModuleAbstract
 
     protected function initViewSubmenu()
     {
-        $this->addSubmenuItemViewFunc('Комплект документов', Img::icon('file-archive-o'), 'DownloadDocs', [], true);
+        $this->addSubmenuLinkViewFunc(Img::icon('file-archive-o') . ' Комплект документов', 'DownloadDocs')
+            ->blank();
     }
 
     protected function viewGetDownloadDocs()
     {
-        ShipmentDownloadDocs::download([$this->_obj->getId()], true);
+        $sd = ShipmentDownloadDocs::create($this->flash);
+        $ids = [$this->_obj->getId()];
+        $resultFilepath = $sd->generateZip($ids, true);
+        if (!$resultFilepath) {
+            $this->redirectToView();
+            return;
+        }
+
+        Response::streamFileFromFilesystem($resultFilepath);
     }
 
 }

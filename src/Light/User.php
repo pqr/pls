@@ -19,6 +19,10 @@ class User
 
     public function __construct(int $userId)
     {
+        if (!$userId) {
+            return;
+        }
+
         $query = "SELECT user.*
                       , usergroup.Name AS GroupName
                       , usergroup.ID AS GroupID
@@ -90,10 +94,6 @@ class User
                 return;
             }
         }
-
-        // Загружаем flash сообщения текущего пользователя
-        //(они будут загружены, если текущего пользователя удалось загрузить)
-        Session::loadFlash();
     }
 
     public static function loadAsCurrent(string $login)
@@ -320,5 +320,10 @@ class User
     public static function updateLastRefreshDateTime()
     {
         Db::query("UPDATE user_visit SET LastRefreshDateTime=NOW() WHERE UserID = " . (int)self::getId());
+    }
+
+    public static function getEmailAccountId(): ?int
+    {
+        return Db::getOne("SELECT ID FROM emailaccount WHERE Username = @s", User::getEmail());
     }
 }

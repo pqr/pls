@@ -20,7 +20,7 @@ class CommonFields
         self::VAT_EMPTY => '',
         self::VAT_BEZNDS => 'Без НДС',
         self::VAT_0 => '0%',
-        self::VAT_18 => ['Name' => '18%', 'Active' => 0],
+        self::VAT_18 => '18%',
         self::VAT_20 => '20%',
     ];
 
@@ -461,10 +461,12 @@ class CommonFields
 
     public static function vatPercent()
     {
+        $options = self::VAT_OPTIONS;
+        $options[self::VAT_18] = ['Name' => $options[self::VAT_18], 'Active' => 0];
         return F::createSelect('VATPercent', [
             'name' => Config::$lang === 'ru' ? 'НДС %' : 'VAT %',
             'default' => self::VAT_BEZNDS,
-            'options' => self::VAT_OPTIONS,
+            'options' => $options,
             'empty' => false,
             'copy' => true,
             'tableWidthHtml' => 59,

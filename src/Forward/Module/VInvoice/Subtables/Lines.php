@@ -23,8 +23,8 @@ class Lines extends Subtable
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
 
         $this->folders = true;
-        $this->folderBaseDir = 'Shipment';
-        $this->folderNameFieldKey = 'FileNumber';
+        $this->folderModule = 'Shipment';
+        $this->folderIdFieldKey = 'FileNumber';
 
         $this->allowTablePrintTotalRecordsFound = true;
         $this->tableDataTotal = ['Name' => 'Total'];

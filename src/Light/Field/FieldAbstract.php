@@ -57,6 +57,7 @@ use Light\Html;
  * @method $this setAjax(bool $ajax)
  * @method $this setNullable(bool $nullable)
  * @method $this setFilterNot(bool $filterNot)
+ * @method $this setFilterFieldKey(string $filterFieldKey)
  *
  * @method $this setAcReadonly(bool $value)
  * @method $this setAcSource(string $value)
@@ -454,6 +455,13 @@ abstract class FieldAbstract implements \JsonSerializable
     public $sqlWhereFormatFunction;
 
     /**
+     * Имя поля, которое подставлять в стандартное sqlWhere условие {fieldKey} = '{value}'
+     * По умолчанию будет использовано значение $this->key
+     * @var string
+     */
+    public $filterFieldKey;
+
+    /**
      * Автоматически обрезает длинный текст
      * Может принимать одно из четырёх значений:
      * - null
@@ -699,7 +707,7 @@ abstract class FieldAbstract implements \JsonSerializable
 
     private function getHtmlOneLine($value, array $data, $forTable, $groupconcatLinesCount = null, $forLog = false)
     {
-        //Сначала сформируем HTML представление этого значения стандартными средсвами класса
+        // Сначала сформируем HTML представление этого значения стандартными средсвами класса
         $outHtml = $this->getHtmlInner($value, $data, $forTable);
 
         if ($this->textTruncate) {
@@ -717,11 +725,7 @@ abstract class FieldAbstract implements \JsonSerializable
             }
         }
 
-        if (!$forTable && $outHtml && $this->uom) {
-            $outHtml .= ' ' . $this->uom;
-        }
-
-        //Затем, если передана специальная функцяи обёртка getHtmlFunction, передадим результат ей
+        // Затем, если передана специальная функцяи обёртка getHtmlFunction, передадим результат ей
         if ($this->getHtmlFunction) {
             $function = $this->getHtmlFunction;
             $outHtml = $function(
@@ -917,7 +921,7 @@ abstract class FieldAbstract implements \JsonSerializable
         // Сохраним введённое значение в базуе, если это поле поддерживает виджет Autocomplete
         $this->saveAutocompleteValue($value);
 
-        if ($this->nullable && ($value === '' || $value == 0)) {
+        if ($this->nullable && ($value === '' || (is_numeric($value) && $value == 0))) {
             $value = null;
         }
 
@@ -973,7 +977,16 @@ abstract class FieldAbstract implements \JsonSerializable
      */
     protected function getSqlWhereInner($value)
     {
+        if ($value === null) {
+            return "{fieldKey} IS NULL";
+        }
+
         return "{fieldKey} = '{value}'";
+    }
+
+    protected function getFilterFieldKey(): string
+    {
+        return $this->filterFieldKey ?? $this->key;
     }
 
     final public function getEvaluatedSqlWhere($value, array $filtersValues = [])
@@ -1003,7 +1016,7 @@ abstract class FieldAbstract implements \JsonSerializable
 
             //Если хоть какой-то запрос получился, проведём над ним последние операции
             if ($sqlWhere) {
-                $sqlWhere = str_replace(['{value}', '{fieldKey}'], [Db::esc($value), Db::quote($this->key)], $sqlWhere);
+                $sqlWhere = str_replace(['{value}', '{fieldKey}'], [Db::esc($value), Db::quote($this->getFilterFieldKey())], $sqlWhere);
                 $sqlWhere = "($sqlWhere)";
 
                 $notFilterKey = 'Not' . $this->key;

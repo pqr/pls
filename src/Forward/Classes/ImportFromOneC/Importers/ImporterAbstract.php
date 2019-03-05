@@ -85,17 +85,16 @@ abstract class ImporterAbstract
     ) {
 
         FilesFolder::mkdir($folderRelative);
-        $folderpathAbs = FilesFolder::getAbsolutePath($folderRelative);
+        $folderpathAbs = FilesFolder::getAbsolute($folderRelative);
         $filepathAbs = "$folderpathAbs/$filename";
-        $filepathAbsEnc = File::encode($filepathAbs);
-        $result = file_put_contents($filepathAbsEnc, $fileData);
+        $result = file_put_contents($filepathAbs, $fileData);
         if ($result) {
             $this->msgBuff->addSuccess('Файл <strong>' . htmlspecialchars($filename) . '</strong> сохранён в папку  ' . $cinvocieOrShipmentLink);
         } else {
             // Файл сущетсвует, значит мы не смогли его перезаписать из-за блокировки (он открыт кем-то)
             $uniqueFilepath = File::getUniqueFilename($filepathAbs);
             $uniqueFilename = pathinfo($uniqueFilepath, PATHINFO_BASENAME);
-            $result = file_put_contents($filepathAbsEnc, $fileData);
+            $result = file_put_contents($filepathAbs, $fileData);
             if ($result) {
                 $this->msgBuff->addSuccess('Файл <strong>' . htmlspecialchars($uniqueFilename) . '</strong> сохранён в папку ' . $cinvocieOrShipmentLink);
             } else {
@@ -116,7 +115,7 @@ abstract class ImporterAbstract
                 ->getHtml();
 
             // Перекладываем файл в папку внутри shipment
-            $shipmentFolderRelative = FilesFolder::getModuleRelative(Shipment::class, $shipmentId);
+            $shipmentFolderRelative = FilesFolder::getRelativeModule(Shipment::class, $shipmentId);
             $targetRelative = "$shipmentFolderRelative/$shipmentSubfolder";
             $this->writeFile($targetRelative, $filename, $fileData, $shipmentLink);
         }

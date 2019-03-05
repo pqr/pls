@@ -42,7 +42,10 @@ class Filters
 
     public function getValue(string $fieldKey)
     {
-        return $this->data[$fieldKey] ?? $this->getDefaultValue($fieldKey);
+        if (array_key_exists($fieldKey, $this->data)) {
+            return $this->data[$fieldKey];
+        }
+        return $this->getDefaultValue($fieldKey);
     }
 
     public function getValues(): array

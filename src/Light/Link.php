@@ -2,20 +2,30 @@
 
 namespace Light;
 
+use Light\Module\Core\Core;
+
 class Link
 {
-    private $innerHtml = '';
-    private $module = '';
-    private $title = '';
-    private $isBlank = false;
-    private $isAjax = false;
-    private $isPost = false;
-    private $hash = '';
-    private $isAbsolute = false;
-    private $params = [];
-    private $cssClass = [];
-    private $attributes = [];
-    private $filters = [];
+    /**
+     * Обычно адрес ссылки формируется на основе $module и $params,
+     * но если задать url напрямую, то он будет иметь приоритет.
+     * Удобно для ссылок на внешние ресурсы.
+     * @var string
+     */
+    public $externalUrl;
+
+    public $innerHtml;
+    public $module;
+    public $title = '';
+    public $isBlank = false;
+    public $isAjax = false;
+    public $isPost = false;
+    public $hash = '';
+    public $isAbsolute = false;
+    public $params = [];
+    public $cssClass = [];
+    public $attributes = [];
+    public $filters = [];
 
     public function __construct(string $module, string $innerHtml = '')
     {
@@ -26,9 +36,45 @@ class Link
         $this->module = Misc::getModule($module);
     }
 
-    public static function create(string $module, ?string $innerHtml = '')
+    public static function create(?string $module = '', ?string $innerHtml = '')
     {
-        return (new self($module, (string)$innerHtml));
+        return (new self((string)$module, (string)$innerHtml));
+    }
+
+    public static function userDialog(
+        int $userId,
+        string $innerHtml,
+        string $mailSubject = '',
+        string $mailBody = ''
+    ): Link {
+        $link = Link::create(Core::class, $innerHtml)
+            ->params([
+                'ps' => 'ShowUserDialog',
+                'UserID' => $userId,
+            ])
+            ->ajax();
+
+        if ($mailSubject) {
+            $link->params(['MailSubject' => $mailSubject]);
+        }
+        if ($mailBody) {
+            $link->params(['MailBody' => $mailBody]);
+        }
+
+        return $link;
+    }
+
+    /**
+     * Обычно адрес ссылки формируется на основе $module и $params,
+     * но если задать url напрямую, то он будет иметь приоритет.
+     * Удобно для ссылок на внешние ресурсы.
+     * @var string $externalUrl
+     * @return Link
+     */
+    public function externalUrl(string $externalUrl)
+    {
+        $this->externalUrl = $externalUrl;
+        return $this;
     }
 
     public function innerHtml(string $innerHtml)
@@ -61,6 +107,12 @@ class Link
         return $this;
     }
 
+    public function dataPost(array $dataPost)
+    {
+        $this->attrs(['data-post' => json_encode($dataPost)]);
+        return $this;
+    }
+
     public function hash(string $hash)
     {
         $this->hash = $hash;
@@ -79,12 +131,14 @@ class Link
         return $this;
     }
 
-    public function proceed(string $funcName) {
+    public function proceed(string $funcName)
+    {
         $this->params['p'] = $funcName;
         return $this;
     }
 
-    public function massaction(string $massaction) {
+    public function massaction(string $massaction)
+    {
         $this->params['p'] = 'massaction';
         $this->params['action'] = $massaction;
         return $this;
@@ -125,7 +179,8 @@ class Link
         return $this;
     }
 
-    public function addNew() {
+    public function addNew()
+    {
         $this->params['addnew'] = 1;
         return $this;
     }
@@ -150,9 +205,18 @@ class Link
 
     public function funcDialog()
     {
-        $this->params['func'] = 'dialog';
+        $this->params['func'] = 'Dialog';
         $this->isAjax = true;
         return $this;
+    }
+
+    public function filePreview(int $id, string $file)
+    {
+        return $this
+            ->view($id)
+            ->func('FilePreview')
+            ->params(['file' => $file])
+            ->blank();
     }
 
     public function filters(array $filters)
@@ -182,36 +246,38 @@ class Link
 
     public function getHref(): string
     {
-        $href = "?a=$this->module";
-        if ($this->params) {
+        if ($this->externalUrl) {
 
-            $href .= '&' . http_build_query($this->params);
-
-        }
-
-        if ($this->filters) {
-            $href .= '&filterValues=' . htmlspecialchars(json_encode($this->filters));
-        }
-
-        if ($this->hash) {
-
-            $href .= '#' . $this->hash;
+            /**
+             * Обычно адрес ссылки формируется на основе $module и $params,
+             * но если задать url напрямую, то он будет иметь приоритет.
+             * Удобно для ссылок на внешние ресурсы.
+             */
+            $href = $this->externalUrl;
 
         } else {
 
-            if ($this->isAjax && $this->isPost) {
-                $href .= "#ajax-post";
-            } elseif ($this->isAjax) {
-                $href .= "#ajax";
-            } elseif ($this->isPost) {
-                $href .= "#post";
+            $href = $this->isAbsolute ? rtrim(Config::$localUrl, '/') . '/' : '';
+            $href .= "?a=$this->module";
+            if ($this->params) {
+                $href .= '&' . http_build_query($this->params);
             }
 
+            if ($this->filters) {
+                $href .= '&filterValues=' . htmlspecialchars(json_encode($this->filters));
+            }
         }
 
-        if ($this->isAbsolute) {
-            $href = Config::$localUrl . '/' . $href;
+        if ($this->hash) {
+            $href .= '#' . $this->hash;
+        } elseif ($this->isAjax && $this->isPost) {
+            $href .= "#ajax-post";
+        } elseif ($this->isAjax) {
+            $href .= "#ajax";
+        } elseif ($this->isPost) {
+            $href .= "#post";
         }
+
         return $href;
     }
 
@@ -237,7 +303,7 @@ class Link
 
     public function __toString()
     {
-        return $this->getHtml();
+        return $this->innerHtml !== '' ? $this->getHtml() : $this->getHref();
     }
 
     /**

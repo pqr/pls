@@ -29,25 +29,26 @@
             display: none;
         }
 
-        .table td, .table th {
+        table.table > thead > tr > th, table.table > tbody > tr > td {
             padding: 2px;
             border: 1px solid #000;
+            text-align: left;
         }
 
-        .table tr{
+        table..table tr {
             page-break-inside: avoid;
         }
 
-        table.table tr.total {
+        table.table > tbody > tr.total {
             font-weight: bold;
         }
 
-        table.table td.tar {
-            text-align: right;
+        table.table > thead > tr > th.tac, table.table > tbody > tr > td.tac {
+            text-align: center;
         }
 
-        table.table td.tac {
-            text-align: center;
+        table.table > thead > tr > th.tar, table.table > tbody > tr > td.tar {
+            text-align: right;
         }
 
         .page-break {

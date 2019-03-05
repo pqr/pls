@@ -82,7 +82,7 @@ class ImportCAct extends ImporterAbstract
         $actName = $data['CActName'];
         $actDate = $cinvObj['CActDate'];
 
-        $cinvFolderRelative = FilesFolder::getModuleRelative(CInvoice::class, $cinvId);
+        $cinvFolderRelative = FilesFolder::getRelativeModule(CInvoice::class, $cinvId);
 
         $pdfDataBase64 = $data['Data'];
         $pdfData = base64_decode($pdfDataBase64);

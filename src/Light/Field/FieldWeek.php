@@ -175,10 +175,10 @@ class FieldWeek extends FieldInputAbstract
     {
         [$year, $week] = explode('-', $value);
         if ($week !== '' && $week !== '00') {
-            //Неделя задана точно, используем полное совпадение
+            // Неделя задана точно, используем полное совпадение
             $sqlWhere = "{fieldKey} = '{value}'";
         } else {
-            //Неделя задана не точно, используем только год
+            // Неделя задана не точно, используем только год
             $sqlWhere = "{fieldKey} LIKE '" . Db::esc($year) . "-%'";
         }
 

@@ -47,7 +47,7 @@ class ImportFromOneC
 
         $relativePath = "log_onecimport/" . (floor($this->importId / 1000)) . "/$this->importId";
         FilesFolder::mkdir($relativePath);
-        $filepathAbs = FilesFolder::getAbsolutePath($relativePath) . "/" . time() . ".txt";
+        $filepathAbs = FilesFolder::getAbsolute($relativePath) . "/" . time() . ".txt";
         file_put_contents($filepathAbs, $text);
 
         $this->msgBuff = new Msg();

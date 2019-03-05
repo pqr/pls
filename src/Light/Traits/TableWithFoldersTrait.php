@@ -2,12 +2,15 @@
 
 namespace Light\Traits;
 
+use Light\A;
 use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldHtml;
 use Light\Fieldset;
+use Light\File;
 use Light\FilesFolder;
+use Light\Img;
 use Light\Link;
 use Light\Response;
 
@@ -15,9 +18,16 @@ trait TableWithFoldersTrait
 {
     public $folders = false;
 
-    // Во-вторых, нужно указать ключ поля, которое искать в массиве $data - там должно храниться id внешнего элемента
-    public $folderNameFieldKey = 'ID';
-    public $folderBaseDir;
+    // Во-вторых, нужно указать
+
+    /**
+     * Ключ поля, которое искать в массиве $data - там должно храниться id для папки
+     * @var string
+     */
+    public $folderIdFieldKey = 'ID';
+
+    /** @var string */
+    public $folderModule = '';
 
     protected $_cacheNotEmptyFolderIds;
 
@@ -28,20 +38,26 @@ trait TableWithFoldersTrait
     abstract public function getFieldsetFirst();
 
     /**
-     * Возвращает имя папки на основе переданного id объекта
-     * По умолчанию это будет id записи, но можно переопределить в классах потомках, загрузив данные об объекте
+     * Возвращает модуль имя которого будет использоваться в качестве папки. По умолчанию возвращает $this->folderModule
+     * но можно переопределить в классе потомке, если нужно вернуть что-то особенное (зависящее от $data - текущего объекта)
      * @param array $data
-     * @return string|null имя папки
+     * @return string
      */
-    protected function getFolderName(array $data)
+    protected function getFolderModule(array $data): string
     {
-        //По умаолчанию используется алгоритм основанный на ID текущего объекта (от котогоро массив $data)
-        if (!isset($data[$this->folderNameFieldKey])) {
-            return null;
-        }
+        return $this->folderModule;
+    }
 
-        $sub = floor($data[$this->folderNameFieldKey] / 1000);
-        return "$sub/" . $data[$this->folderNameFieldKey];
+    /**
+     * Возвращает ID папки на основе параметра $this->folderIdFieldKey, но может быть переопределено в классе потомке
+     * если нужно вычислять ID каким-то хитрым способом
+     * @param array $data
+     * @return int
+     */
+    protected function getFolderId(array $data): int
+    {
+        // По умолчанию используется алгоритм основанный на ID текущего объекта (от котогоро массив $data)
+        return (int)($data[$this->folderIdFieldKey] ?? 0);
     }
 
     /**
@@ -49,20 +65,19 @@ trait TableWithFoldersTrait
      * Это нужно для вывода в режиме таблицы
      * @return null|string
      */
-    protected function getFolderRelativePath(array $data = null)
+    final protected function getFolderRelative(array $data = null): ?string
     {
-        if (!$this->folderBaseDir) {
-            return null;
-        }
         if ($data === null) {
             $data = $this->_obj->getData();
         }
-        $folder = $this->getFolderName($data);
-        if ($folder === null) {
+
+        $module = $this->getFolderModule($data);
+        $folderId = $this->getFolderId($data);
+        if (!$module || !$folderId) {
             return null;
         }
 
-        return $this->folderBaseDir . '/' . $folder;
+        return FilesFolder::getRelativeModule($module, $folderId);
     }
 
     /**
@@ -70,13 +85,13 @@ trait TableWithFoldersTrait
      * @param array|null $data
      * @return null|string
      */
-    protected function getFolderAbsolutePath(array $data = null)
+    final protected function getFolderAbsolute(array $data = null): ?string
     {
-        $relative = $this->getFolderRelativePath($data);
+        $relative = $this->getFolderRelative($data);
         if (!$relative) {
             return null;
         }
-        return FilesFolder::getAbsolutePath($relative);
+        return FilesFolder::getAbsolute($relative);
     }
 
     /**
@@ -85,18 +100,23 @@ trait TableWithFoldersTrait
      */
     protected function createFolder(array $data = null)
     {
-        $relative = $this->getFolderRelativePath($data);
-        if ($relative) {
-            FilesFolder::mkdir($relative);
+        if ($data === null) {
+            $data = $this->_obj->getData();
+        }
+
+        $folderModule = $this->getFolderModule($data);
+        $folderId = $this->getFolderId($data);
+        if ($folderModule && $folderId) {
+            FilesFolder::mkdirModule($folderModule, $folderId);
         }
     }
 
     protected function deleteFolder(array $data = null)
     {
-        $folderRelativePath = $this->getFolderRelativePath($data);
-        if ($folderRelativePath !== null) {
+        $relative = $this->getFolderRelative($data);
+        if ($relative) {
             // Перемещаем папку в специальную директорию deleted
-            FilesFolder::moveToDeleted($folderRelativePath);
+            FilesFolder::moveToDeleted($relative);
         }
     }
 
@@ -113,40 +133,26 @@ trait TableWithFoldersTrait
                         return '';
                     }
 
-                    if (!$this->folderBaseDir) {
+                    $folderModule = $this->getFolderModule($data);
+                    $folderId = $this->getFolderId($data);
+                    if (!$folderModule || !$folderId) {
                         return '';
                     }
 
-                    $folderRelativePath = $this->getFolderRelativePath($data);
-                    if ($folderRelativePath === null) {
-                        return '';
-                    }
-
-                    //При выводе иконок папок в таблицу проверим по массиву закешированных ID по которым папки точно
-                    //не пустые
-                    if (isset($this->_cacheNotEmptyFolderIds[$data[$this->folderNameFieldKey]])) {
-                        $isNotEmpty = true;
-                    } else {
-                        //Для текущей строки в кеше непустых ничего нет, значит запустим проверку на пустоту вручную,
-                        //сохраним в базу
-                        $isNotEmpty = FilesFolder::updateCacheNotEmpty($folderRelativePath, $this->folderBaseDir,
-                            $data[$this->folderNameFieldKey]);
-                    }
-
-                    $innerHtml = FilesFolder::getImgHtml($isNotEmpty);
+                    $innerHtml = '';
                     if (!$forTable) {
-                        $innerHtml .= ' ' . (Config::$lang === 'ru' ? 'Файлы' : 'Folder');
+                        $innerHtml = Config::$lang === 'ru' ? 'Файлы' : 'Folder';
                     }
 
-                    return FilesFolder::getLink($folderRelativePath, $innerHtml);
-                }
+                    return FilesFolder::getLinkWithIconModule($folderModule, $folderId, $innerHtml);
+                },
             ]
         );
     }
 
-    protected function fieldFolderIsEmpty()
+    protected function fieldFolderHasFiles()
     {
-        return F::createSelect('FolderIsEmpty', [
+        return F::createSelect('FolderHasFiles', [
             'modes' => F::MODE_LIST,
             'name' => 'Файлы: есть/нет?',
             'sqlSelect' => '',
@@ -157,16 +163,16 @@ trait TableWithFoldersTrait
                 1 => ['text' => 'Есть файлы', 'cssClass' => 'good'],
             ],
             'calcFunction' => function ($value, array $data) {
-                if (!isset($data[$this->folderNameFieldKey])) {
+                if (!isset($data[$this->folderIdFieldKey])) {
                     return 0;
                 }
 
-                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->folderNameFieldKey]])) {
+                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->folderIdFieldKey]])) {
                     return 0;
                 }
 
-                return FilesFolder::isNotEmpty($this->getFolderRelativePath($data)) ? 1 : 0;
-            }
+                return FilesFolder::hasFiles($this->getFolderRelative($data)) ? 1 : 0;
+            },
         ]);
     }
 
@@ -179,25 +185,30 @@ trait TableWithFoldersTrait
             'tableWidthExcel' => 20,
             'groupconcat' => true,
             'calcFunction' => function ($value, array $data) {
-                $folderRelative = $this->getFolderRelativePath($data);
-                if (!$folderRelative) {
+                $folderAbs = $this->getFolderAbsolute($data);
+                if (!$folderAbs) {
                     return '';
                 }
 
-                $files = FilesFolder::recursivelyScanDir($folderRelative);
-                return implode("\n", $files);
+                $splFiles = File::scandirRecurcive($folderAbs);
+                $filenamesRelative = array_map(function ($splFileInfo) use ($folderAbs) {
+                    /** @var \SplFileInfo $splFileInfo */
+                    return rtrim(File::fs()->makePathRelative($splFileInfo->getPathname(), $folderAbs), '/');
+                }, $splFiles);
+
+                return implode("\n", $filenamesRelative);
             },
             'getHtmlFunction' => function ($value, array $data, $outHtml) {
                 if (!isset($data['ID'])) {
                     return $outHtml;
                 }
-                return Link::create($this->folderBaseDir, htmlspecialchars($value))
+                return Link::create($this->folderModule, htmlspecialchars($value))
                     ->view((int)$data['ID'])
                     ->func('FilePreview')
                     ->params(['file' => $value])
                     ->blank()
                     ->getHtml();
-            }
+            },
         ]);
     }
 
@@ -214,20 +225,25 @@ trait TableWithFoldersTrait
             return;
         }
 
-        $folderRelative = $this->getFolderRelativePath($this->_obj->getData());
-        if (!$folderRelative) {
+        $folderAbs = $this->getFolderAbsolute();
+        if (!$folderAbs) {
             Response::abort(404);
             return;
         }
 
-        $files = FilesFolder::recursivelyScanDir($folderRelative);
-        if (!in_array($file, $files)) {
+        $filepathAbs = "$folderAbs/$file";
+
+        $splFiles = File::scandirRecurcive($folderAbs);
+        $found = A::some($splFiles, function ($splFileInfo) use ($filepathAbs) {
+            /** @var \SplFileInfo $splFileInfo */
+            return $splFileInfo->getPathname() === $filepathAbs;
+        });
+        if (!$found) {
             Response::abort(404);
             return;
         }
 
-        FilesFolder::streamFile("$folderRelative/$file", true);
-
+        Response::streamFileFromFilesystem($filepathAbs, null, true);
     }
 
     protected function fieldFolderFilesCount()
@@ -241,16 +257,16 @@ trait TableWithFoldersTrait
             'tableAlign' => 'center',
             'tableWidthHtml' => 50,
             'calcFunction' => function ($value, array $data) {
-                if (!isset($data[$this->folderNameFieldKey])) {
+                if (!isset($data[$this->folderIdFieldKey])) {
                     return 0;
                 }
 
-                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->folderNameFieldKey]])) {
+                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->folderIdFieldKey]])) {
                     return 0;
                 }
 
-                return FilesFolder::filesCount($this->getFolderRelativePath($data));
-            }
+                return FilesFolder::filesCount($this->getFolderRelative($data));
+            },
         ]);
     }
 
@@ -266,15 +282,15 @@ trait TableWithFoldersTrait
             'tableAlign' => 'center',
             'tableWidthHtml' => 70,
             'calcFunction' => function ($value, array $data) {
-                if (!isset($data[$this->folderNameFieldKey])) {
+                if (!isset($data[$this->folderIdFieldKey])) {
                     return '';
                 }
 
-                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->folderNameFieldKey]])) {
+                if (!isset($this->_cacheNotEmptyFolderIds[$data[$this->folderIdFieldKey]])) {
                     return 0;
                 }
 
-                $sizeBite = FilesFolder::size($this->getFolderRelativePath($data));
+                $sizeBite = FilesFolder::size($this->getFolderRelative($data));
                 if ($sizeBite === 0) {
                     return 0;
                 }
@@ -286,20 +302,7 @@ trait TableWithFoldersTrait
                     return '';
                 }
                 return $value . ' Мб';
-            }
+            },
         ]);
-    }
-
-    protected function loadCacheNotEmptyFolderIds($idsString)
-    {
-        if ($this->folders && $this->folderBaseDir && $idsString) {
-            //подгрузим заранее все значения из кэширующей таблицы с данными о заполненности папок
-            $this->_cacheNotEmptyFolderIds = Db::getAssoc(
-                "SELECT RecordID, 1
-                 FROM `cache_notemptyfilesfolder`
-                 WHERE `ModuleName` = @s AND RecordID IN ($idsString)",
-                $this->folderBaseDir
-            );
-        }
     }
 }

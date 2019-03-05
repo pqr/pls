@@ -94,7 +94,7 @@ class LoggerCsv
     {
         //Определим директорию и создадим её, если её ещё нет
         $path = LIGHT_DIR_LOGS . "/$dir";
-        File::mkdir($path);
+        File::fs()->mkdir($path);
 
         $isNewFile = false;
         $filepath = $path . '/' . date('Y-m') . '.csv';

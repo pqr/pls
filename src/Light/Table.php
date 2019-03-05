@@ -267,6 +267,11 @@ class Table implements \JsonSerializable
         return $this->fieldsetShowedCache;
     }
 
+    public function resetFieldsetShowedCache(): void
+    {
+        $this->fieldsetShowedCache = null;
+    }
+
     protected function addCheckboxCol($class = 'cb')
     {
         $checkboxField = F::createHtml('CheckBox', [
@@ -280,7 +285,7 @@ class Table implements \JsonSerializable
                     }
 
                     return '';
-                }
+                },
             ]
         );
         $this->getFieldsetFirst()->addField($checkboxField);
@@ -346,10 +351,15 @@ class Table implements \JsonSerializable
 
         $id = ' id="' . $tableName . '-table-div"';
         $dataTablename = ' data-tablename="' . $tableName . '"';
-        $linkmodule =
-            $this->tableLinkModule ? ' data-linkmodule="' . htmlspecialchars($this->tableLinkModule) . '"' : '';
+        $linkmodule = '';
+        if ($this->tableLinkModule) {
+            $linkmodule = ' data-linkmodule="' . htmlspecialchars(Misc::getModule($this->tableLinkModule)) . '"';
+        }
 
-        $reloadurl = $this->tableReloadUrl ? ' data-reloadurl="' . htmlspecialchars($this->tableReloadUrl) . '"' : '';
+        $reloadurl = '';
+        if ($this->tableReloadUrl) {
+            $reloadurl = ' data-reloadurl="' . htmlspecialchars(Misc::getModule($this->tableReloadUrl)) . '"';
+        }
 
         $ajaxChangeFieldUrl = $this->getTableAjaxChangeFieldUrl();
         if ($ajaxChangeFieldUrl) {
@@ -564,7 +574,7 @@ class Table implements \JsonSerializable
      * @param array $allFields
      * @return string
      */
-    private function getHtmlTableThead(array $allFields)
+    protected function getHtmlTableThead(array $allFields)
     {
         $outHtml = '<thead><tr>';
         /** @var FieldAbstract $field */
@@ -577,7 +587,13 @@ class Table implements \JsonSerializable
             $fieldKey = ' data-fieldkey="' . htmlspecialchars($field->key) . '"';
             $dataTotal = $field->total ? ' data-total="true"' : '';
 
-            $outHtml .= '<th' . $title . $width . $fieldKey . $dataTotal . '>'
+            $cssClass = '';
+            if ($field->tableAlign) {
+                $cssClass = 'ta' . $field->tableAlign[0]; //получается 'tac' (если center) или 'tar' (если right)
+                $cssClass = " class=$cssClass";
+            }
+
+            $outHtml .= '<th' . $title . $width . $fieldKey . $dataTotal . $cssClass . '>'
                 . $this->getHtmlTableTheadThContent($field)
                 . '</th>';
         }
@@ -734,7 +750,8 @@ class Table implements \JsonSerializable
         int $rowNum,
         array $allFields,
         array $tableLinkUrlParams
-    ) {
+    )
+    {
         $cssClass = $this->getTableRowCssClass($rowDataCalculated, $rowNum);
 
         if ($this->isFindId($rowDataCalculated)) {
@@ -1118,6 +1135,7 @@ class Table implements \JsonSerializable
         if (!$this->tableLinkModule) {
             return '';
         }
-        return "?a=" . $this->tableLinkModule . "&func=ChangeField&id=";
+        $linkModule = Misc::getModule($this->tableLinkModule);
+        return "?a=$linkModule&func=ChangeField&id=";
     }
 }

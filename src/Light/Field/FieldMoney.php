@@ -38,8 +38,13 @@ class FieldMoney extends FieldFloat
             return '';
         }
 
-        $currencyIso = $this->currencyIso;
-        return self::beautify($value, $this->short, $currencyIso, $this->useSymbol);
+        $currencyIso = $this->currencyIso ?: $this->uom;
+        $outHtml = self::beautify($value, $this->short, $currencyIso, $this->useSymbol);
+        if (!$forTable && $outHtml) {
+            $outHtml = '<span class="MoneyView">' . $outHtml . '</span>';
+        }
+
+        return $outHtml;
     }
 
     protected function getHtmlInputInner($value, array $data, $idPrefix)

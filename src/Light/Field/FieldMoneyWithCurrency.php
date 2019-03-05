@@ -106,7 +106,12 @@ class FieldMoneyWithCurrency extends FieldMoney
             return '';
         }
 
-        return FieldMoney::beautify($amount, $this->short, $currencyIso, $this->useSymbol);
+        $outHtml = FieldMoney::beautify($amount, $this->short, $currencyIso, $this->useSymbol);
+        if (!$forTable) {
+            $outHtml = '<span class="MoneyView">' . $outHtml . '</span>';
+        }
+
+        return $outHtml;
     }
 
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)

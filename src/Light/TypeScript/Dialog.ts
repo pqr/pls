@@ -172,7 +172,7 @@ export class Dialog {
                         });
                     }
 
-                    const $files = $form.find("input[type=file]");
+                    const $files = $form.find("input[type=file][required]");
                     if ($files.length > 0) {
                         $files.each((_: any, file: HTMLInputElement) => {
                             if (file.value === "") {
@@ -201,10 +201,16 @@ export class Dialog {
                             e.preventDefault();
                             this.blockButtons();
                             const url: string = $form.attr("action")!;
-                            const postData = $form.serialize();
-                            //Отправляем POST запрос на сервер. В случае ошибки - нужно разблокировать кнопки
-                            //Если всё успешно - тут мы ничего не делаем. Сервер сам должен решить что делать, например вернуть x-light-redirect
-                            $.post(url, postData)
+                            const formData = new FormData(<HTMLFormElement>$form.get(0));
+                            // Отправляем POST запрос на сервер. В случае ошибки - нужно разблокировать кнопки
+                            // Если всё успешно - тут мы ничего не делаем. Сервер сам должен решить что делать, например вернуть x-light-redirect
+                            $.ajax({
+                                url: url,
+                                type: "POST",
+                                data: formData,
+                                processData: false,
+                                contentType: false
+                            })
                                 .done(() => {
                                     this.unblockButtons();
                                     this.close();

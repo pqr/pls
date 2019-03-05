@@ -1,12 +1,13 @@
 <?php
+
 namespace Light;
 
 use Light\Field\FieldDate;
 
 class Currency
 {
-    private static $rates = []; //Массив курсов валют [CurrencyISO][Дата] = array('CurrencyISO' => '...', 'RateToUSD' => '...', 'ValidDate' => '...')
-    private static $currencies; //Основная информация по валютам из таблицы currency
+    private static $rates = []; // Массив курсов валют [CurrencyISO][Дата] = array('CurrencyISO' => '...', 'RateToUSD' => '...', 'ValidDate' => '...')
+    private static $currencies; // Основная информация по валютам из таблицы currency
 
     /**
      * Если дата не передана, возвращает текущий день
@@ -60,11 +61,11 @@ class Currency
             // Запишем все загруженные курсы во внутренний кеширующий массив
             foreach ($ratesFromDb as $currencyIso => $rateInfo) {
                 if ($rateInfo['RateToRUB'] > 0) {
-                    self::$rates[$date][$currencyIso] = [
-                        'CurrencyISO' => $currencyIso,
-                        'RateToRUB' => (float)$rateInfo['RateToRUB'],
-                        'ValidDate' => $rateInfo['ValidDate']
-                    ];
+                    self::$rates[$date][$currencyIso] = new CurrencyRate(
+                        $currencyIso,
+                        $rateInfo['RateToRUB'],
+                        $rateInfo['ValidDate']
+                    );
                 }
             }
         }
@@ -72,28 +73,51 @@ class Currency
         return self::$rates[$date];
     }
 
-    //Возвращает отношение курсов валют на указанную дату, подгружает из базы при необходимости
-    public static function getRate(string $from, string $to = 'USD', $date = null): float
+    /**
+     * Возвращает отношение курсов валют на указанную дату, подгружает из базы при необходимости
+     * @param string $from
+     * @param string $to
+     * @param null $date дата на которую загрузить курсы из базы
+     * @param array|null $rates можно передать собственный массив ставок - массивк инстансов класса CurrencyRate
+     * в этом случае параметр $date не используется
+     * @return float
+     */
+    public static function getRate(string $from, string $to = 'USD', $date = null, array $rates = null): float
     {
         if ($from === $to) {
             return 1.0;
         }
 
-        $rates = self::getRates($date);
+        if (!$rates) {
+            $rates = self::getRates($date);
+        }
 
         //Если хотя бы одна из валют рубли, то используем и RateToRUB
         if ($from === 'RUB') {
             //Пользователь хочет перевести рубли в какую-то другую валюту
             //Например, хочет перевести рубли в доллары. В этом случае в toCurrencyIso.RateToRUB будет что-то типа 35.1234
             //А отношение RUB / USD будет соответственно 1 / 35.1234
-            return 1 / ($rates[$to]['RateToRUB'] ?? 1);
+            if (!isset($rates[$to])) {
+                return 1.0;
+            }
+            /** @var CurrencyRate $rate */
+            $rate = $rates[$to];
+            if ($rate->rateToRub == 0) {
+                return 1.0;
+            }
+            return 1 / $rate->rateToRub;
         }
 
         if ($to === 'RUB') {
             //Пользователь хочет перевести какую-то валюту в рубли
             //Например, хочет перевести доллары в рубли. В этом случае в fromCurrencyIso.RateToRUB будет что-то типа 35.1234
             //Его и возвращаем
-            return $rates[$from]['RateToRUB'] ?? 1;
+            if (!isset($rates[$from])) {
+                return 1;
+            }
+            /** @var CurrencyRate $rate */
+            $rate = $rates[$from];
+            return $rate->rateToRub;
         }
 
         // Если перевод никак не связан с рублями
@@ -102,12 +126,17 @@ class Currency
         // Сначала делаем getRate('GBP', 'RUB') === 100
         // Затем делаем getRate('RUB', 'EUR') === 1/70
         // Перемножаем 100 * (1/70) ~= 1.5!
-        return self::getRate($from, 'RUB', $date) * self::getRate('RUB', $to, $date);
+        return self::getRate($from, 'RUB', $date, $rates) * self::getRate('RUB', $to, $date, $rates);
     }
 
-    public static function convertValue(float $value, string $from, string $to = 'USD', $date = null): float
-    {
-        return $value * self::getRate($from, $to, $date);
+    public static function convertValue(
+        float $value,
+        string $from,
+        string $to = 'USD',
+        $date = null,
+        array $rates = null
+    ): float {
+        return $value * self::getRate($from, $to, $date, $rates);
     }
 
     /**
@@ -118,9 +147,15 @@ class Currency
      * @param string $date
      * @return string
      */
-    public static function getRealDate(string $currencyIso, $date = null)
+    public static function getRealDate(string $currencyIso, $date = null): ?string
     {
-        return self::getRates($date)[$currencyIso]['ValidDate'] ?? null;
+        $rates = self::getRates($date);
+        if (!isset($rates[$currencyIso])) {
+            return null;
+        }
+        /** @var CurrencyRate $rate */
+        $rate = $rates[$currencyIso];
+        return $rate->validDate;
     }
 
     public static function getSymbol(string $currencyIso): string
@@ -151,7 +186,7 @@ class Currency
     public static function putJsRates()
     {
         Response::addJsData([
-            'CurrencyRates' => self::getRates(date('Y-m-d'))
+            'CurrencyRates' => self::getRates(date('Y-m-d')),
         ]);
     }
 }

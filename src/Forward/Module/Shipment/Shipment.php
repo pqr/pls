@@ -123,13 +123,13 @@ class Shipment extends ModuleAbstract
                 'groupconcat' => true,
                 'sqlSelect' => $getSqlSelectInvoices('C'),
                 'getHtmlFunction' => $getHtmlFunctionInvoices,
-                'getExcelFunction' => $getExcelFunctionInvoices
+                'getExcelFunction' => $getExcelFunctionInvoices,
             ]),
             F::createMoney('CustomerInvoicesAmounts', [
                 'name' => 'Customer Invoices Amounts',
                 'groupconcat' => true,
                 'zeroEmpty' => true,
-                'sqlSelect' => $getSqlSelectInvoicesAmounts('C')
+                'sqlSelect' => $getSqlSelectInvoicesAmounts('C'),
             ]),
             F::createString('VendorInvoices', [
                 'name' => 'Vendor Invoices',
@@ -137,13 +137,13 @@ class Shipment extends ModuleAbstract
                 'groupconcat' => true,
                 'sqlSelect' => $getSqlSelectInvoices('V'),
                 'getHtmlFunction' => $getHtmlFunctionInvoices,
-                'getExcelFunction' => $getExcelFunctionInvoices
+                'getExcelFunction' => $getExcelFunctionInvoices,
             ]),
             F::createMoney('VendorInvoicesAmounts', [
                 'name' => 'Vendor Invoices Amounts',
                 'groupconcat' => true,
                 'zeroEmpty' => true,
-                'sqlSelect' => $getSqlSelectInvoicesAmounts('V')
+                'sqlSelect' => $getSqlSelectInvoicesAmounts('V'),
             ]),
 
             $this->getListVatMountField(12),
@@ -170,7 +170,7 @@ class Shipment extends ModuleAbstract
             'title' => "Сумма приходящаяся на НДС $vatPercent% во входящих счетах Vendor Invoices (на основе столбца 'VAT Amount' в строках счёта + сумма из строки в счёте с текстом услуги 'НДС $vatPercent%')",
             'sqlSelect' => "IFNULL((SELECT sum(VATAmount) FROM vinvoiceline WHERE VATPercent = $vatPercent AND FileNumber = shipment.Name), 0) + IFNULL((SELECT sum(FinalAmount) FROM vinvoiceline WHERE FileNumber = shipment.Name AND (Name LIKE 'НДС $vatPercent%' OR Name LIKE 'VAT $vatPercent%')), 0)",
             'zeroEmpty' => true,
-            'zeroEmptyExcel' => true
+            'zeroEmptyExcel' => true,
         ]);
     }
 
@@ -203,7 +203,7 @@ class Shipment extends ModuleAbstract
                 'VendorID',
                 'NatureOfGoods',
                 'Incoterms',
-                'IncotermsLocation'
+                'IncotermsLocation',
             ],
             null
         );
@@ -281,16 +281,17 @@ class Shipment extends ModuleAbstract
             $href = substr($href, 0, 2040);
         }
 
-        $this->_submenuItemsTplData[] = [
-            'html' => '<a href="' . $href . '" id="emailnotice-link">' . Img::iconMail() . ' Email Notice</a>'
-        ];
+        $this->addSubmenuLink(
+            Link::create(null, Img::iconMail() . ' Email Notice')
+                ->externalUrl($href)
+                ->cssClass('emailnotice-link')
+        );
 
         if (Constant::isOneCCompany($this->_obj['CompanyID'])) {
 
-            $this->addSubmenuItemViewFuncPost('Заявка', Img::iconDownload(), 'ShipmentRequestExcel');
-
-            $this->addSubmenuItemViewFunc('Комплект документов', Img::icon('file-archive-o'), 'DownloadDocs');
-            $this->addSubmenuItemViewFunc('Документы на печать', Img::icon('file-archive-o'), 'DownloadDocsForPrint');
+            $this->addSubmenuLinkViewFunc(Img::iconDownload() . ' Заявка', 'ShipmentRequestExcel')->post();
+            $this->addSubmenuLinkViewFunc(Img::icon('file-archive-o') . ' Комплект документов', 'DownloadDocs');
+            $this->addSubmenuLinkViewFunc(Img::icon('file-archive-o') . ' Документы на печать', 'DownloadDocsForPrint');
 
         }
 
@@ -314,7 +315,7 @@ class Shipment extends ModuleAbstract
                     'name' => 'File Numbers',
                     'sqlWhere' => function ($value) {
                         return Db::getSqlWhereSeparatedByComa($value, 'shipment.Name', -1, false, true, 1);
-                    }
+                    },
                 ]
             ),
             ShipmentFields::filterMawbs(),
@@ -342,7 +343,7 @@ class Shipment extends ModuleAbstract
                             foreach ($users as $id => $name) {
                                 $options[$roleField . '_' . $id] = [
                                     'text' => $name,
-                                    'optgroup' => $roleDescription
+                                    'optgroup' => $roleDescription,
                                 ];
                             }
                         }
@@ -358,7 +359,7 @@ class Shipment extends ModuleAbstract
                         }
 
                         return '';
-                    }
+                    },
                 ]
             ),
             GeneralFields::buIdsFilter(),
@@ -411,7 +412,7 @@ class Shipment extends ModuleAbstract
                         }
 
                         return $query;
-                    }
+                    },
                 ]
             ),
             ShipmentFields::fileClosed(),
@@ -441,7 +442,7 @@ class Shipment extends ModuleAbstract
                     }
 
                     return $sqlWhere;
-                }
+                },
             ]),
             F::createMonth('MonthUntil', [
                 'name' => 'Month Until',
@@ -450,7 +451,7 @@ class Shipment extends ModuleAbstract
                 'sqlWhere' => function ($value, $filtersValues, $sqlWhere) {
                     $sqlWhere = str_replace('{fieldKey}', 'Month', $sqlWhere);
                     return str_replace('=', '<=', $sqlWhere);
-                }
+                },
             ]),
             CF::color(),
 
@@ -461,7 +462,7 @@ class Shipment extends ModuleAbstract
             F::createSelect('HasVAT', [
                 'name' => 'VAT (НДС)',
                 'options' => [1 => 'Есть НДС'],
-                'sqlWhere' => "EXISTS(SELECT * FROM vinvoiceline WHERE FileNumber = shipment.Name AND (VATAmount !=0 OR Name = 'НДС'))"
+                'sqlWhere' => "EXISTS(SELECT * FROM vinvoiceline WHERE FileNumber = shipment.Name AND (VATAmount !=0 OR Name = 'НДС'))",
             ])
 
         );
@@ -489,7 +490,7 @@ class Shipment extends ModuleAbstract
                 'DepartureLocationName' => GeneralFields::filterTemplateLocation('Departure'),
                 'ArrivalLocationName' => GeneralFields::filterTemplateLocation('Arrival'),
                 'Comments',
-                'CriterionID'
+                'CriterionID',
             ],
             [
                 'Color' => function () {
@@ -511,8 +512,8 @@ class Shipment extends ModuleAbstract
                 'FlightNo' => function () {
                     return Template::html('FlightNo') . ' ' . Template::html('FlightDate');
                 },
-                'HasVAT'
-            ]
+                'HasVAT',
+            ],
         ];
     }
 
@@ -601,7 +602,7 @@ class Shipment extends ModuleAbstract
                 'ChargeableWeight',
                 'GrossWeight',
                 'Volume',
-                'NatureOfGoods'
+                'NatureOfGoods',
             ];
 
             if ($dataFromRequest['TrafficID'] == Constant::TRAFFIC_OCEAN) {
@@ -711,7 +712,7 @@ class Shipment extends ModuleAbstract
                 F::TYPE_STRING,
                 [
                     'editCssClass' => 'input-int',
-                    'editMaxLength' => 3
+                    'editMaxLength' => 3,
                 ]
             )->getHtmlInput($mawb1);
 
@@ -720,7 +721,7 @@ class Shipment extends ModuleAbstract
                 F::TYPE_STRING,
                 [
                     'editCssClass' => 'input-int',
-                    'editMaxLength' => 8
+                    'editMaxLength' => 8,
                 ]
             )->getHtmlInput($mawb2);
 
@@ -789,7 +790,7 @@ class Shipment extends ModuleAbstract
             'trafficTypes' => Db::getAssoc("SELECT ID, Type FROM traffic"),
             'airlineCodes' => Db::getAssoc(
                 "SELECT DigitalCode, AlphaCode FROM airline WHERE DigitalCode != 0 AND AlphaCode != ''"
-            )
+            ),
         ]);
     }
 
@@ -807,7 +808,7 @@ class Shipment extends ModuleAbstract
         $menuItems[] = [
             'text' => 'Cost-sheets',
             'url' => $this->_obj->getLinkView()->func('cs')->params($this->getModuleSessionUrlParams())->getHref(),
-            'active' => isset($_GET['func']) && $_GET['func'] === 'cs'
+            'active' => isset($_GET['func']) && $_GET['func'] === 'cs',
         ];
 
         return $menuItems;
@@ -992,7 +993,7 @@ class Shipment extends ModuleAbstract
     ) {
         if (!$fromMultipleUpdate) {
             // Заготовим стандартные папки
-            $folderRelative = $this->getFolderRelativePath();
+            $folderRelative = $this->getFolderRelative();
             foreach (Constant::$standardFolders as $standardFolder) {
                 FilesFolder::mkdir("$folderRelative/$standardFolder");
             }
@@ -1157,7 +1158,7 @@ class Shipment extends ModuleAbstract
                     'ShipmentID' => $shipmentId,
                     'Quantity' => $multiplier,
                     'Price' => $price,
-                    'Amount' => $quotationCurrencyIso . ' ' . $amount
+                    'Amount' => $quotationCurrencyIso . ' ' . $amount,
                 ];
             }
 
@@ -1213,7 +1214,7 @@ class Shipment extends ModuleAbstract
                 'ShipmentID' => $shipmentId,
                 'Quantity' => $quantity,
                 'Price' => $price,
-                'Amount' => $rate[$sellingOrBuying . 'CurrencyISO'] . ' ' . $amount
+                'Amount' => $rate[$sellingOrBuying . 'CurrencyISO'] . ' ' . $amount,
             ];
 
             //Добавим FSC и SSC
@@ -1225,7 +1226,7 @@ class Shipment extends ModuleAbstract
                         'ShipmentID' => $shipmentId,
                         'Quantity' => $chargeableWeight,
                         'Price' => $price,
-                        'Amount' => $rate[$sellingOrBuying . 'CurrencyISO'] . ' ' . ($price * $chargeableWeight)
+                        'Amount' => $rate[$sellingOrBuying . 'CurrencyISO'] . ' ' . ($price * $chargeableWeight),
                     ];
                 }
             }
@@ -1265,7 +1266,7 @@ class Shipment extends ModuleAbstract
                     'ShipmentID' => $shipmentId,
                     'Quantity' => $quantity,
                     'Price' => $price,
-                    'Amount' => $surcharge['CurrencyISO'] . ' ' . $amount
+                    'Amount' => $surcharge['CurrencyISO'] . ' ' . $amount,
                 ];
             }
         }
@@ -1468,7 +1469,7 @@ class Shipment extends ModuleAbstract
 
         $filenameWithoutExt = File::getValidFilename($filenameWithoutExt);
 
-        $folderAbs = $this->getFolderAbsolutePath();
+        $folderAbs = $this->getFolderAbsolute();
 
         $filepathAbsWithStamp = "$folderAbs/$filenameWithoutExt.xlsx";
 
@@ -1481,7 +1482,7 @@ class Shipment extends ModuleAbstract
 
         } catch (\Exception $e) {
 
-            Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($filenameWithoutExt.".pdf") . '</strong> в папку перевозки, возможно, он открыт в Excel?');
+            Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($filenameWithoutExt . ".pdf") . '</strong> в папку перевозки, возможно, он открыт в Excel?');
 
         }
 
@@ -1496,7 +1497,7 @@ class Shipment extends ModuleAbstract
 
         } catch (\Exception $e) {
 
-            Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($filenameWithoutExt.".xlsx") . '</strong> в папку "'.htmlspecialchars($requestFolder).'", возможно, он открыт в Excel?');
+            Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($filenameWithoutExt . ".xlsx") . '</strong> в папку "' . htmlspecialchars($requestFolder) . '", возможно, он открыт в Excel?');
         }
 
         if (file_exists($filepathAbsWithStamp)) {
@@ -1533,7 +1534,7 @@ class Shipment extends ModuleAbstract
             $iterator->next();
         }
 
-        foreach($unsetOffset as $key) {
+        foreach ($unsetOffset as $key) {
             $drawingCollection->offsetUnset($key);
         }
     }
@@ -1615,21 +1616,24 @@ class Shipment extends ModuleAbstract
 
             $this->setPageHeadForObj('Cost-sheet');
             $this->addModuleSessionNextPrevLinks($shipmentId, 'id', ['func' => 'cs']);
-            $this->initCsSubmenuItems();
 
             $tdata = [
                 'content' => $content,
+                'module' => $this->getModule(),
                 'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
-                'submenuItems' => $this->getSubmenuItemsTplData(),
-                'id' => $shipmentId
+                'submenuHtml' => $this->getCsSubmenuHtml(),
+                'id' => $shipmentId,
             ];
 
             Template::includeTpl('module/view.tpl.php', $tdata);
         }
     }
 
-    private function initCsSubmenuItems()
+    private function getCsSubmenuHtml()
     {
+        $outHtml = $this->getSubmenuHtml();
+        $outHtml = str_replace('</div>', '', $outHtml);
+
         //Если у пользователя нет специальных прав на редактирование перевозки после закрытия и она закрыта - не будем добавлять кнопки
         /** @var ShipmentObj $shipmentObj */
         $shipmentObj = $this->_obj;
@@ -1637,30 +1641,14 @@ class Shipment extends ModuleAbstract
             return;
         }
 
-        $this->_submenuItemsTplData[] = [
-            'html' => '<a href="#" class="cs-edit-btn">'
-                . Img::iconEdit() . ' Edit Cost-sheet</a>'
-        ];
+        $outHtml .= '<a href="#" class="cs-edit-btn">' . Img::iconEdit() . ' Edit Cost-sheet</a>'
+            . '<a href="#" class="cs-cinvoice-btn">' . Img::iconUpload() . ' Create Customer Invoice</a>'
+            . '<a href="#" class="cs-vinvoice-btn">' . Img::iconDownload() . ' Register Vendor Invoice</a>'
+            . '<a href="#" id="cs-copy-btn" class="display-none">' . Img::iconCopy() . ' Copy</a>'
+            . '<a href="#" id="cs-fillquotation-btn" class="display-none">' . Img::iconSearch() . ' Quotation / Standart Rate</a>'
+            . '</div>';
 
-        $this->_submenuItemsTplData[] = [
-            'html' => '<a href="#" class="cs-cinvoice-btn">'
-                . Img::iconUpload() . ' Create Customer Invoice</a>'
-        ];
-
-        $this->_submenuItemsTplData[] = [
-            'html' => '<a href="#" class="cs-vinvoice-btn">'
-                . Img::iconDownload() . ' Register Vendor Invoice</a>'
-        ];
-
-        $this->_submenuItemsTplData[] = [
-            'html' => '<a href="#" id="cs-copy-btn" class="display-none">'
-                . Img::iconCopy() . ' Copy</a>'
-        ];
-
-        $this->_submenuItemsTplData[] = [
-            'html' => '<a href="#" id="cs-fillquotation-btn" class="display-none">'
-                . Img::iconSearch() . ' Quotation / Standart Rate</a>' //
-        ];
+        return $outHtml;
     }
 
     public static function proceedCopyFromCs()

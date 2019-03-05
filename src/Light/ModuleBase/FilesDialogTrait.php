@@ -21,15 +21,19 @@ trait FilesDialogTrait
         return Config::$lang === 'ru' ? 'Описания файлов' : 'Files Descriptions';
     }
 
-    protected function filesDialogSubmenuItemHtml(): string
+    protected function filesDialogAddMassaction(): void
+    {
+        $this->addMassaction('FilesDialog', $this->filesDialogButtonText());
+    }
+
+    protected function filesDialogSubmenuLink(): Link
     {
         $btnText = $this->filesDialogButtonText();
         return Link::create($this->getModule(), Img::icon('fa-bars') . " $btnText")
             ->view($this->_obj->getId())
             ->func('FilesDialog')
             ->ajax()
-            ->post()
-            ->getHtml();
+            ->post();
     }
 
     /**
@@ -205,8 +209,8 @@ trait FilesDialogTrait
         // Подготовим специальный объект для записи в базу, чтобы одновременно и логи записались правильно
         $manager = $this->filesDialogManager($masterId);
         foreach ($rowsDataFromPost as $base64 => $rowDataFromPost) {
-            $relativePath = base64_decode($base64);
-            $manager->updateFromDialog($relativePath, $rowDataFromPost);
+            $relative = base64_decode($base64);
+            $manager->updateFromDialog($relative, $rowDataFromPost);
         }
     }
 

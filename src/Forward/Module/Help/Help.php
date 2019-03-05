@@ -127,7 +127,6 @@ if ($pdfs): ?>
 <ul>
     <?php
     foreach ($pdfs as $pdf):
-        //$pdf = \Light\File::decode($pdf);
         $pdf = basename($pdf);
         ?>
         <li><a href="Module/Help/<?= htmlspecialchars(rawurlencode($pdf)) ?>" target="_blank"><?= $pdf ?></a></li>

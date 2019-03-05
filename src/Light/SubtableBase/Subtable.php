@@ -11,6 +11,7 @@ use Light\Field\FieldFloat;
 use Light\Field\FieldMoney;
 use Light\Field\FieldMoneyWithCurrency;
 use Light\Field\FieldText;
+use Light\FilesFolder;
 use Light\Img;
 use Light\Misc;
 use Light\Msg;
@@ -431,20 +432,26 @@ abstract class Subtable extends Table
             $this->subtableData[$id] = $row;
         }
 
-        //Скопируем все данные в таблицу
-        //Массив $this->_data в качестве ключей имеет ID записей в базе
-        //Массив $this->tableData специально приводим к виду последовательно пронумерованного
-        $this->tableData = array_values($data);
-
-        if ($this->_state == self::STATE_VIEW && $data && $this->folders) {
-            //Загрузим специальный массив с закешированным состоянием непустых папок
-            $notEmptyIds = array_filter(array_column($data, $this->folderNameFieldKey));
-            if ($notEmptyIds) {
-                $idsString = implode(',', $notEmptyIds);
-                $this->loadCacheNotEmptyFolderIds($idsString);
+        if ($this->_state == self::STATE_VIEW && $data && $this->folders && $this->folderModule) {
+            // Загрузим специальный массив с закешированным состоянием непустых папок
+            $folderIds = array_filter(array_column($data, $this->folderIdFieldKey));
+            if ($folderIds) {
+                FilesFolder::loadFoldersStatus($this->folderModule, $folderIds);
             }
         }
 
+        //Скопируем все данные в таблицу
+        //Массив $this->_data в качестве ключей имеет ID записей в базе
+        //Массив $this->tableData специально приводим к виду последовательно пронумерованного
+        $this->updateTableDataFromSubtableData();
+    }
+
+    private function updateTableDataFromSubtableData()
+    {
+        //Скопируем все данные в таблицу
+        //Массив $this->_data в качестве ключей имеет ID записей в базе
+        //Массив $this->tableData специально приводим к виду последовательно пронумерованного
+        $this->tableData = array_values($this->subtableData);
         if (is_array($this->subtableDataAdditional)) {
             $this->tableData = array_merge($this->tableData, array_values($this->subtableDataAdditional));
         }
@@ -465,6 +472,7 @@ abstract class Subtable extends Table
     public function setSubtableData(array $data)
     {
         $this->subtableData = $data;
+        $this->updateTableDataFromSubtableData();
     }
 
     public function getSubtableData()
@@ -850,7 +858,7 @@ abstract class Subtable extends Table
 
         $ids = implode(',', $ids);
 
-        //В режиме редактирования разложим default данные в отсутсвующие поля $data
+        // В режиме редактирования разложим default данные в отсутсвующие поля $data
         foreach ($this->tableData as &$rowData) {
             foreach ($this->getFieldset() as $field) {
                 if (!array_key_exists($field->key, $rowData)) {

@@ -139,12 +139,17 @@ class FieldMonth extends FieldInputAbstract
             return '1';
         }
 
-        if (strlen($value) === 10) {
-            return "DATE_FORMAT($fieldKey, '%Y-%m-01') = " . Db::escString($value);
+        $dbKeyQuoted = $fieldKey;
+        if ($dbKeyQuoted !== '{fieldKey}') {
+            $dbKeyQuoted = Db::quote($dbKeyQuoted);
         }
 
-        //Задан целый год
-        return "YEAR($fieldKey) = " . Db::escString($value);
+        if (strlen($value) === 10) {
+            return "DATE_FORMAT($dbKeyQuoted, '%Y-%m-01') = " . Db::escString($value);
+        }
+
+        // Задан целый год
+        return "YEAR($dbKeyQuoted) = " . Db::escString($value);
     }
 
     public static function parse($value)

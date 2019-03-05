@@ -31,7 +31,7 @@ class FieldCheckboxSet extends FieldOptionsAbstract
             $outHtml .= '<li' . $cssClass . '>'
                 . '<label>'
                 . '<input type="checkbox" name="' . $tdata['editName'] . '[]" value="' . htmlspecialchars($optionValue) . '"' . $tdata['tagParams'] . $checked . '> '
-                . htmlspecialchars($this->getOptionText($option, $optionValue))
+                . $this->getOptionText($option, $optionValue)
                 . '</label>'
                 . '</li>';
         }

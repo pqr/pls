@@ -35,6 +35,10 @@ abstract class ApplicationAbstract
         self::$app = $this;
         self::$timer = new Timer();
 
+        // Чтобы при создании директорий с помощью mkdir можно было выставить права 0777
+        // https://stackoverflow.com/questions/3997641/why-cant-php-create-a-directory-with-777-permissions
+        umask(0);
+
         // Зарегистрируем обработчик ошибок или  rollbar
         if (!defined("CODECEPTION_FUNCTIONAL_TEST")) {
             include __DIR__ . '/ErrorHandler.php';
@@ -373,7 +377,7 @@ abstract class ApplicationAbstract
                 //В параметре ps можно передать имя статического модуля,
                 // в этом случае объект класса модуля не создаётся,
                 // а у казанный в ps метод вызывается статически
-                if (strpos(strtolower($_GET['ps']), 'post') === 0
+                if (stripos($_GET['ps'], 'post') === 0
                     && !Request::isPost()
                 ) {
                     // функции, которые начинаются со слова post разрешено вызывать только
@@ -399,7 +403,7 @@ abstract class ApplicationAbstract
 
                 if (isset($_GET['p'])) {
                     // Если в url был параметр p, значит нужно запустить особый метод proceed внутри этого класса
-                    if (strpos(strtolower($_GET['p']), 'post') === 0
+                    if (stripos($_GET['p'], 'post') === 0
                         && !Request::isPost()
                     ) {
                         // функции, которые начинаются со слова post разрешено вызывать только
@@ -441,15 +445,12 @@ abstract class ApplicationAbstract
             $finalOutput .= $additionalOutput;
         }
 
-        if (!isset($GLOBALS['argv']) && Request::isAjax() && !Response::isRedirected()) {
+        if (!ApplicationAbstract::isCli() && Request::isAjax() && !Response::isRedirected()) {
             // Запрос пришел через ajax - отправим все накопившиеся flash сообщения обратно через ajax
             $messagess = Session::flashGetAllAndClear();
             if ($messagess) {
-                if (Session::$showAsToast) {
-                    Response::header('x-light-toastmsg: ' . json_encode($messagess));
-                } else {
-                    Response::header('x-light-flashmsg: ' . json_encode($messagess));
-                }
+                $header = Session::$showAsToast ? 'x-light-toastmsg' : 'x-light-flashmsg';
+                Response::header($header . ': ' . json_encode($messagess));
             }
         }
 
@@ -478,15 +479,15 @@ abstract class ApplicationAbstract
             session_write_close();
         }
 
+        // Записываем все накопившиеся flash сообщения в таблицу user_flash
+        Session::writeFlash();
+
         // https://secure.php.net/manual/en/function.fastcgi-finish-request.php
         // https://symfony.com/doc/current/components/http_kernel.html#the-kernel-terminate-event
         // https://github.com/symfony/symfony/blob/0aa4273b39eeb2b4184d4b62ab76bf490eef15ec/src/Symfony/Component/HttpFoundation/Response.php#L378
         if (function_exists('fastcgi_finish_request')) {
             fastcgi_finish_request();
         }
-
-        // Записываем все накопившиеся flash сообщения в таблицу user_flash
-        Session::writeFlash();
 
         if (!isset($_REQUEST['nouserrefreshtime']) && !self::isCli() && User::isAuth()) {
             User::updateLastRefreshDateTime();

@@ -53,11 +53,11 @@ trait ModuleSessionTrait
         return [];
     }
 
-    private function createModuleSession(string $idsString, $tablePage)
+    private function createModuleSession(array $ids, $tablePage)
     {
-        $this->moduleSessionId = Db::insertRow(['IDs' => $idsString, 'StartPage' => (int)$tablePage], 'modulesession');
+        $this->moduleSessionId = Db::insertRow(['IDs' => implode(',', $ids), 'StartPage' => (int)$tablePage], 'modulesession');
         $this->moduleSessionStartPage = (int)$tablePage;
-        $this->moduleSessionObjectsIds = explode(',', $idsString);
+        $this->moduleSessionObjectsIds = $ids;
 
         $this->moduleSessionInited = true;
 

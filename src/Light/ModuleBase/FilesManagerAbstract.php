@@ -48,11 +48,8 @@ class FilesManagerAbstract
                 'name' => Config::$lang === 'ru' ? 'Файл' : 'File',
                 'modes' => F::MODE_READONLY,
                 'getHtmlFunction' => function ($value, array $data, $outHtml) {
-                    return $file = Link::create($this->module, $outHtml)
-                        ->view($this->masterId)
-                        ->func('FilePreview')
-                        ->params(['file' => $value])
-                        ->blank()
+                    return Link::create($this->module, $outHtml)
+                        ->filePreview($this->masterId, $value)
                         ->getHtml();
                 }
             ]),
@@ -180,7 +177,7 @@ class FilesManagerAbstract
      */
     protected function getMasterFolderAbs(): string
     {
-        return FilesFolder::getModuleAbsolute($this->module, $this->masterId);
+        return FilesFolder::getAbsoluteModule($this->module, $this->masterId);
     }
 
     protected function saveNewFilesFromFolder(array $newFilesFromFolder)
@@ -289,19 +286,19 @@ class FilesManagerAbstract
     }
 
     /**
-     * @param string $relativePath
+     * @param string $relative
      * @param array $dataFromPost сырые данные по текущему файлу из post запроса
      * @return int affectedRows
      * @throws \Exception
      */
-    public function updateFromDialog(string $relativePath, array $dataFromPost): int
+    public function updateFromDialog(string $relative, array $dataFromPost): int
     {
         $id = Db::getOne(
             "SELECT ID 
               FROM {$this->getDbTable()} 
               WHERE RelativePath = @s 
                   AND {$this->getMasterFieldKey()} = @i"
-            , $relativePath
+            , $relative
             , $this->masterId
         );
         if (!$id) {

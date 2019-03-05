@@ -47,9 +47,9 @@ class Response
         self::redirectUrl($url, $blank);
     }
 
-    public static function redirectToFilesFolder(string $relativePath)
+    public static function redirectToFilesFolder(string $relative)
     {
-        $url = FilesFolder::getUrl($relativePath);
+        $url = FilesFolder::getUrl($relative);
         self::redirectUrl($url);
     }
 
@@ -69,8 +69,12 @@ class Response
         ApplicationAbstract::terminate();
     }
 
-    public static function redirectWithPost(string $module, array $params = null, array $postData = null, $blank = false)
-    {
+    public static function redirectWithPost(
+        string $module,
+        array $params = null,
+        array $postData = null,
+        $blank = false
+    ) {
         self::$isRedirected = true;
         $link = Link::create($module);
         if ($params) {
@@ -215,7 +219,7 @@ class Response
 
         print json_encode([
             'html' => $html,
-            'dialogOptions' => $dialogOptions
+            'dialogOptions' => $dialogOptions,
         ]);
         ApplicationAbstract::terminate();
     }
@@ -357,27 +361,27 @@ class Response
         Response::setMasterTemplate(null);
     }
 
-    public static function streamFileFromFilesystem(string $filepathAbs, string $downloadFilename = null, bool $preview = false)
-    {
-        $filepathAbsEnc = File::encode($filepathAbs);
-
+    public static function streamFileFromFilesystem(
+        string $filepathAbs,
+        string $downloadFilename = null,
+        bool $preview = false
+    ) {
         if (!$downloadFilename) {
-            $downloadFilename = pathinfo($filepathAbsEnc, PATHINFO_BASENAME);
+            $downloadFilename = pathinfo($filepathAbs, PATHINFO_BASENAME);
         }
 
-        // используем стандартное расширенеи PHP, нужно включить php_fileinfo.dll
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $contentType = finfo_file($finfo, $filepathAbsEnc);
+        $contentType = finfo_file($finfo, $filepathAbs);
         finfo_close($finfo);
 
         Response::header('Content-Type: ' . $contentType);
-        Response::header('Content-Length: ' . filesize($filepathAbsEnc));
+        Response::header('Content-Length: ' . filesize($filepathAbs));
         if (!$preview) {
             Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($downloadFilename)));
         }
         Response::header('Cache-Control: max-age=0');
 
-        readfile($filepathAbsEnc);
+        readfile($filepathAbs);
 
         Response::setMasterTemplate(null);
     }

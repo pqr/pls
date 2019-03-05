@@ -9,6 +9,7 @@ use Forward\Classes\CustomerAccess;
 use Forward\Field\GeneralFields;
 use Forward\Module\CustomerAccount\Subtables\Customers;
 use Light\Img;
+use Light\Link;
 use Light\ModuleBase\ModuleAbstract;
 use Light\User;
 
@@ -62,7 +63,10 @@ class CustomerAccount extends ModuleAbstract
             $body = "Внесите, пожалуйста, нового клиента $customerAccountName в 1С для нашей компании $ourCompanyName, ID=$id. Договор во вложении.";
 
             $url = "mailto:$mailto?subject=" . rawurlencode($subject) . "&body=" . rawurlencode($body);
-            $this->addSubmenuItemUrl('Email в бухгалтерию', Img::iconMailBlue(), $url);
+            $this->addSubmenuLink(
+                Link::create(null, Img::iconMailBlue() . ' Email в бухгалтерию')
+                    ->externalUrl($url)
+            );
         }
     }
 

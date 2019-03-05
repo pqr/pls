@@ -6,38 +6,31 @@ use Symfony\Component\Process\Process;
 
 class Pdf
 {
+    const CONCAT_TMPDIR_PREFIX = 'concatenate_pdfs';
+
     /**
      * Генерирует pdf из html контента по абсолютному пути. Проверок на сущетсвование файла не осущетсвляет
      * @param string $html
      * @param string $filepathAbs абсолютный путь до файла (с именем файла и расширением .pdf)
      * @param bool $landscape
      * @param Msg $msgBuff
+     * @param bool $recall
      * @return bool
      */
     public static function save($html, $filepathAbs, $landscape = false, Msg $msgBuff = null, bool $recall = false)
     {
-        //Создадим директорию, если её ещё нет
-        //$filepathAbs = File::encode($filepathAbs);
-        $dir = pathinfo($filepathAbs, PATHINFO_DIRNAME);
-        File::mkdir($dir);
-
         //Обработаем html содержимое - заменим все относительные ссылки на абсолютные пути в файловой системе
         //$replacement = [' src="' => ' src="' . Config::$localUrl . '/', ' href="' => ' href="' . Config::$localUrl . '/'];
         if (Config::$useAthena) {
             $replacementBase = Config::$localUrlNetIp;
         } else {
-            $isHttp = strpos(Config::$wkhtmltopdfPath, 'http://') === 0;
-            if ($isHttp) {
-                $replacementBase = Config::$localUrl;
-            } else {
-                $replacementBase = LIGHT_DIR_PUBLIC;
-            }
+            $replacementBase = LIGHT_DIR_PUBLIC;
         }
 
         $replacement = [
             ' src="' => ' src="' . $replacementBase . '/',
             ' href="' => ' href="' . $replacementBase . '/',
-            ' url(' => ' url(' . $replacementBase . '/'
+            ' url(' => ' url(' . $replacementBase . '/',
         ];
 
         $html = str_replace(array_keys($replacement), array_values($replacement), $html);
@@ -47,18 +40,13 @@ class Pdf
             $flagSuccess = self::runAthena($html, $filepathAbs, $landscape, $msgBuff);
 
         } else {
-            if ($isHttp) {
-                $flagSuccess = self::runHttp($html, $filepathAbs, $msgBuff);
-            } else {
-                $flagSuccess = self::runLocal($html, $filepathAbs, $landscape, $msgBuff);
-            }
+            $flagSuccess = self::runLocal($html, $filepathAbs, $landscape, $msgBuff);
         }
 
         // проверим, не пустой ли файл сгенерировался
-        $filepathAbsEnc = File::encode($filepathAbs);
-        if ($flagSuccess && !trim(file_get_contents($filepathAbsEnc))) {
+        if ($flagSuccess && !trim(file_get_contents($filepathAbs))) {
             // удалим файл и повторно попробуем сгенерировать pdf
-            unlink($filepathAbsEnc);
+            unlink($filepathAbs);
             if (!$recall) {
                 self::save($html, $filepathAbs, $landscape, $msgBuff, true);
             } else {
@@ -73,44 +61,23 @@ class Pdf
         return $flagSuccess;
     }
 
-    private static function runHttp($html, $filepathAbs, Msg $msgBuff = null)
-    {
-        $url = Config::$wkhtmltopdfPath;
-
-        $postField = ['html' => $html];
-
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($postField));
-        $output = curl_exec($curl);
-
-        $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-
-        curl_close($curl);
-
-        if ((int)$status === 200) {
-            //Переименуем временный файл в реальный
-            $filepathAbsEnc = File::encode($filepathAbs);
-            file_put_contents($filepathAbsEnc, $output);
-            @chmod($filepathAbsEnc, 0666);
-            return true;
-        } else {
-            if ($msgBuff) {
-                $msgBuff->addError($output);
-            }
-            return false;
-        }
-    }
-
     private static function runLocal($html, $filepathAbs, $landscape = false, Msg $msgBuff = null)
     {
         $tmpfilepathAbs = LIGHT_DIR_TEMP . '/' . User::getId() . '_' . time() . '.pdf';
         $cmd = self::getCmdPdfFromHtmlStdin($tmpfilepathAbs, $landscape);
 
-        $result = Misc::procOpen($cmd, $msgBuff, $html);
-        if (!$result) {
+        try {
+
+            $proc = Process::fromShellCommandline($cmd, null, null, $html);
+            // Запускаем синхронно. Если процесс вернёт код отличный от 0, то бростися исключение
+            // https://symfony.com/doc/current/components/process
+            $proc->mustRun();
+
+        } catch (\Exception $e) {
+            if ($msgBuff) {
+                $msgBuff->addError($e->getMessage());
+            }
+            reportException($e);
             return false;
         }
 
@@ -123,17 +90,26 @@ class Pdf
             return false;
         }
 
-        //Переименуем временный файл в реальный
-        $filepathAbsEnc = File::encode($filepathAbs);
-        rename($tmpfilepathAbs, $filepathAbsEnc);
-        @chmod($filepathAbsEnc, 0666);
+        try {
+            // Переименуем временный файл в реальный
+            $dir = \dirname($filepathAbs);
+            File::fs()->mkdir($dir);
+            File::fs()->rename($tmpfilepathAbs, $filepathAbs, true);
+            File::fs()->chmod($filepathAbs, 0666);
+        } catch (\Exception $e) {
+            if ($msgBuff) {
+                $msgBuff->addError($e->getMessage());
+            }
+            reportException($e);
+            return false;
+        }
 
         return true;
     }
 
     public static function getCmdPdfFromHtmlStdin(string $targetFile, bool $landscape = false): string
     {
-//Путь к исполняемому файлу wkhtmltopd должен быть в конфиге
+        // Путь к исполняемому файлу wkhtmltopd должен быть в конфиге
         $cmd = '"' . Config::$wkhtmltopdfPath . '"';
 
         if ($landscape) {
@@ -207,7 +183,9 @@ class Pdf
         @chmod($tmpFilename, 0666);
         $cmd .= ' "' . $tmpFilename . '"';
 
-        $content = Misc::procOpen($cmd, $msgBuff, $html, true);
+        $process = Process::fromShellCommandline($cmd, null, null, $html);
+        $process->mustRun();
+        $content = $process->getOutput();
 
         // Удалим временный файл
         unlink($tmpFilename);
@@ -220,92 +198,10 @@ class Pdf
         }
 
         // Сохраним stdOut в файл
-        $filepathAbsEnc = File::encode($filepathAbs);
-        file_put_contents($filepathAbsEnc, $content);
-        @chmod($filepathAbsEnc, 0666);
+        File::fs()->dumpFile($filepathAbs, $content);
+        File::fs()->chmod($filepathAbs, 0666);
 
         return true;
-    }
-
-    /**
-     * Конвертирует переданный html в pdf и сохраняет по указанному пути внутри filesfolder
-     * Перед тем как запускать процесс конвертации, программа проверяет, возможно этот pdf файл уже есть в папке
-     * Для проверки, нужно ли его обновить, используется вспомагательная таблица в базе данных pdfhash, в которую сохраняется
-     * md5 хэш от html контента
-     * @param string $html
-     * @param string $fileRelativePath путь и имя pdf файла относительно filesfolder (расширение .pdf тоже нужно указать)
-     * @param Msg $msgBuff
-     * @return bool обновился ли файл на файловой системе реально?
-     */
-    public static function saveIntoFilesFolder(string $html, string $fileRelativePath, Msg $msgBuff = null)
-    {
-        //Для начала проверим, нужно ли перегенерировать этот pdf файл? Возможно он уже есть в папке и содержимое совпаадает?
-        if (!self::isRegenerationNeeded($html, $fileRelativePath)) {
-            //Проверка показала, что такой файл уже есть и содержимое совпадает.
-            //Ничего дальше делать не будем
-            return false;
-        }
-
-        //Определим абсолютный путь до генерируемого файла
-        $filepathAbs = FilesFolder::getAbsolutePath($fileRelativePath);
-        //Сохраняем pdf файла
-        $result = self::save($html, $filepathAbs, false, $msgBuff);
-        if ($result) {
-            //Если успешно сохранили файл в папку, нужно записать md5 хеш от html в специальную таблицу pdfhash
-            Db::replaceRow(['Filepath' => $fileRelativePath, 'HtmlMD5' => md5($html)], 'pdfhash');
-        }
-
-        return $result;
-    }
-
-    /**
-     * Принимает массив путей к pdf файлам (относительно filesfolder), склеивает их и отдаёт пользователю в браузер
-     * @param array $filesRelative массив имён файлов относительно FilesFolder
-     * @param string $attachementFilename имя файла, которое пользователь увидит в браузере в диалоговом окне "скачать..."
-     * @throws Codeception\TestResponseException
-     */
-    public static function concatenateAndStreamFromFilesFolder(array $filesRelative, $attachementFilename)
-    {
-        $timer = new Timer();
-
-        Response::header('Content-Type: application/pdf');
-        Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . $attachementFilename);
-        Response::header('Cache-Control: max-age=0');
-
-        // Важный параметр -dSubsetFonts=false, чтобы не терять символы при склейке
-        // http://stackoverflow.com/questions/12806911/ghostscript-skips-characters-when-merging-pdfs
-        // Чтобы окончательно победить баг с пропадающими символами при склейке PDF файлов, не будем использовать ghostscript
-        // $cmd = '"' . Config::$ghostScriptPath . '" -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dSubsetFonts=false -sOutputFile=-';
-        // будем использовать более простую утилиту pdftk
-        $files = FilesFolder::copyToTmpDirAndRename($filesRelative);
-        $cmd = self::getCmdConcatenatePdf($files, '-');
-        passthru($cmd);
-
-        Metric::record('Pdf::concatenateAndStreamFromFilesFolder', $timer->getMs(),
-            'files: ' . count($filesRelative));
-
-        ApplicationAbstract::terminate();
-    }
-
-    public static function concatenateAndSaveFromFilesFolder(
-        array $filesRelative,
-        string $outAbsFilepathEnc,
-        Msg $msgBuff = null
-    ) {
-        $files = FilesFolder::copyToTmpDirAndRename($filesRelative);
-        $cmd = self::getCmdConcatenatePdf($files, $outAbsFilepathEnc);
-        Misc::procOpen($cmd, $msgBuff);
-    }
-
-    public static function getCmdConcatenatePdf(array $files, string $resultFile): string
-    {
-        $cmd = '"' . Config::$pdftkPath . '"';
-        foreach ($files as $file) {
-            $cmd .= ' "' . $file . '"';
-        }
-        $cmd .= ' output ' . $resultFile;
-
-        return $cmd;
     }
 
     /**
@@ -313,80 +209,81 @@ class Pdf
      * @param array $srcFilepaths массив абсолютных путей к файлам источникам (не encoded)
      * @param string $destFilepath путь к файлу назначения (не encoded).
      * @param Msg $msgBuff опционально буфер для сообщений об ошибках.
-     * @return bool|string
-     */
-    public static function concatenatePdfs(array $srcFilepaths, string $destFilepath, Msg $msgBuff = null)
-    {
-        $timer = new Timer();
-
-        $cmd = '"' . Config::$pdftkPath . '"';
-        foreach ($srcFilepaths as $filepathAbsEnc) {
-            $cmd .= ' "' . File::encode($filepathAbsEnc) . '"';
-        }
-        $cmd .= ' output "' . File::encode($destFilepath) . '"';
-
-        $result = Misc::procOpen($cmd, $msgBuff);
-        Metric::record('Pdf::concatenatePdfs', $timer->getMs(), 'files: ' . count($srcFilepaths));
-
-        return $result;
-    }
-
-    /**
-     * @param array $srcFilepaths массив абсолютных путей к файлам источникам (не encoded)
-     * @param string $attachementFilename имя под которым результат будет отправлен в браузер пользователю
-     */
-    public static function concatenatePdfsAndStream(array $srcFilepaths, string $attachementFilename)
-    {
-        $timer = new Timer();
-
-        Response::header('Content-Type: application/pdf');
-        Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($attachementFilename)));
-        Response::header('Cache-Control: max-age=0');
-
-        $cmd = '"' . Config::$pdftkPath . '"';
-        foreach ($srcFilepaths as $filepathAbsEnc) {
-            $cmd .= ' "' . File::encode($filepathAbsEnc) . '"';
-        }
-        $cmd .= ' output -';
-
-        passthru($cmd);
-
-        Metric::record('Pdf::concatenatePdfsAndStream', $timer->getMs(), 'files: ' . count($srcFilepaths));
-    }
-
-    /**
-     * Проверяет, нужно ли перегенрировать pdf файл?
-     * Его нужно перегенерировать в двух случаях:
-     * 1) если его нет по указанному пути
-     * 2) если он есть, но содержимое отличается
-     * @param string $html
-     * @param string $filepath
      * @return bool
      */
-    private static function isRegenerationNeeded($html, $filepath)
+    public static function concatenatePdfs(array $srcFilepaths, string $destFilepath, Msg $msgBuff = null): bool
     {
-        //Сначала проверим, может pdf файл уже есть в этой папке?
-        if (FilesFolder::isFile($filepath)) {
-            //pdf файл уже существует. Возможно его нужно обновить?
-            //для этого сверим хэш с таблицей pdfhash
-            //найдём старый хеш (относящийся у уже существующему файлу)
-            $oldMd5 = Db::getOne("SELECT HtmlMD5 FROM pdfhash WHERE Filepath = '" . Db::esc($filepath) . "'");
-            if ($oldMd5 && $oldMd5 === md5($html)) {
-                //md5 у html контента существуюего файла и у нового html совпадают!
-                //ничего пересохранять не будем, возвращаем false
-                return false;
+        $timer = new Timer();
+
+        // Чтобы не было проблем с исходными файлами и русскими буквами в них, скопируем все исходные файлы
+        // в отдельную временную папку
+        $tmpDir = File::mkdirTmp(self::CONCAT_TMPDIR_PREFIX);
+        if (!$tmpDir) {
+            if ($msgBuff) {
+                $msg = Config::$lang === 'ru'
+                    ? 'Не удалось создать временную директорию concatenate_pdfs'
+                    : 'Can\'t create temp dir concatenate_pdfs';
+                $msgBuff->addError($msg);
+            }
+            return false;
+        }
+
+        $tmpFiles = [];
+        $i = 0;
+        foreach ($srcFilepaths as $filepath) {
+            $tmpFilepath = "$tmpDir/{$i}.pdf";
+            $successCopy = File::copy($filepath, $tmpFilepath);
+            if ($successCopy) {
+                // Успешно скопированные файлы накапливаем в массив
+                $tmpFiles[] = $tmpFilepath;
+                $i++;
+            } elseif ($msgBuff) {
+                // Если по каким-то причинам не удалось скопировать очередной исходный pdf во временный файл
+                // то добавим сообщение об ошибке
+                $msg = Config::$lang === 'ru' ? 'Не удалось прочитать файл ' : 'Can\'t read file ';
+                $msg .= htmlspecialchars($filepath);
+                $msgBuff->addError($msg);
             }
         }
 
-        //Если одно из условий в алгоритме выше не выполнилось, значит pdf файл нуждается в перегенерации
-        return true;
+        $tmpDest = "$tmpDir/result.pdf";
+        $cmdArgs = array_merge([Config::$pdftkPath], $tmpFiles, ["output", $tmpDest]);
+
+        try {
+
+            $process = new Process($cmdArgs);
+            $process->setTimeout(600);
+            $process->mustRun();
+
+            // Теперь копируем получившийся временный файл result.pdf под нужным именем в нужную директорию назначения
+            $successCopy = File::copy($tmpDest, $destFilepath);
+            Metric::record('Pdf::concatenatePdfs', $timer->getMs(), 'files: ' . count($srcFilepaths));
+
+            if (!$successCopy && $msgBuff) {
+                $msg = Config::$lang === 'ru' ? 'Не удалось записать файл ' : 'Can\'t write file ';
+                $msg .= htmlspecialchars($destFilepath);
+                $msgBuff->addError($msg);
+            }
+
+            return $successCopy;
+
+        } catch (\Exception $e) {
+
+            reportException($e);
+            if ($msgBuff) {
+                $msgBuff->addError($e->getMessage());
+            }
+
+            return false;
+
+        }
     }
 
     public static function getNumberOfPages(string $file): int
     {
-        $cmd = '"' . Config::$pdftkPath . '" "' . $file . '" dump_data';
+        $cmdAgts = [Config::$pdftkPath, $file, 'dump_data'];
 
-        $process = new Process($cmd);
+        $process = new Process($cmdAgts);
         $process->mustRun();
         $out = $process->getOutput();
 

@@ -1,8 +1,6 @@
 <?php
 namespace Light\Traits;
 
-use Light\Misc;
-
 /**
  * Для реализации Submodule используем Trait, а не abstract class, т.к. конечная реализация Submodule зачастую будет
  * потомком класса Table (например, ReportAbstract).

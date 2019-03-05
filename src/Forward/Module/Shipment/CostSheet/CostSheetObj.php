@@ -194,7 +194,7 @@ class CostSheetObj
         $folder = $this->getHistoryFolder();
         $histId = (int)$histId;
         $filepath = $folder . '/' . $histId . '.html';
-        return FilesFolder::getAbsolutePath($filepath);
+        return FilesFolder::getAbsolute($filepath);
     }
 
     public function saveToHistory()

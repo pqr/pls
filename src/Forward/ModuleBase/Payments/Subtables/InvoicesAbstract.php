@@ -44,8 +44,8 @@ abstract class InvoicesAbstract extends Subtable
         $this->textAddLink = 'Add Invoice';
 
         $this->folders = true;
-        $this->folderBaseDir = strtolower($firstLetter) . 'Invoice';
-        $this->folderNameFieldKey = 'RealInvoiceID';
+        $this->folderModule = strtolower($firstLetter) . 'Invoice';
+        $this->folderIdFieldKey = 'RealInvoiceID';
 
         $commonFields = $firstLetter . 'InvoiceName|InvoiceAmount|InvoiceOutstandingAmount|ClearingAmountInInvoiceCurrency|RateToInvoiceCurrency|ClearingAmountInPaymentCurrency';
         $this->subtableLayoutView = 'StatusIco|' . $commonFields;

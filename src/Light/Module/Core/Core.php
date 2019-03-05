@@ -3,8 +3,12 @@
 namespace Light\Module\Core;
 
 use Carbon\Carbon;
+use League\Csv\Reader;
 use Light\ApplicationAbstract;
 use Light\Config;
+use Light\Field\FieldAbstract;
+use Light\Fieldset;
+use Light\File;
 use Light\LogerCsv;
 use Light\Currency;
 use Light\Db;
@@ -15,10 +19,13 @@ use Light\LoggerCsv;
 use Light\Mainmenu;
 use Light\Metric;
 use Light\Misc;
+use Light\Module\UserSettings\UserSettings;
 use Light\ModuleRegister;
+use function Light\reportException;
 use Light\Request;
 use Light\Response;
 use Light\Table\TableUserParamsRepository;
+use Light\Template;
 use Light\Traits\TableLayoutable;
 use Light\User;
 
@@ -170,7 +177,7 @@ class Core
             'Height',
             'Server Working Time',
             'domContentLoadedEventStart',
-            'domContentLoadedEventDuration'
+            'domContentLoadedEventDuration',
         ];
         $data = [
             date('Y-m-d H:i:s'),
@@ -183,7 +190,7 @@ class Core
             $_POST['height'],
             $_POST['serverWorkingTime'],
             $_POST['domContentLoadedEventStart'],
-            $_POST['domContentLoadedEventDuration']
+            $_POST['domContentLoadedEventDuration'],
         ];
 
         LoggerCsv::write('jslog', $head, $data);
@@ -276,7 +283,7 @@ class Core
             Db::insertRow([
                 'CreatedBy' => User::getId(),
                 'TableID' => $tableId,
-                'Defaults' => $defaultsJson
+                'Defaults' => $defaultsJson,
             ], 'user_filter_settings');
         }
 
@@ -354,7 +361,7 @@ class Core
             'CreatedBy' => User::getId(),
             'Name' => $_POST['Name'],
             'TableID' => $tableId,
-            'FiltersJSON' => json_encode($_POST['Filters'])
+            'FiltersJSON' => json_encode($_POST['Filters']),
         ], 'user_filter_saved');
 
         $msg = Config::$lang === 'ru'
@@ -411,7 +418,7 @@ class Core
         $tableId = (int)DbLog::getTableId($_GET['TableName']);
         $data = [
             'Sort' => json_encode($_POST['Layout']),
-            'Invisible' => json_encode($_POST['Invisible'] ?? [])
+            'Invisible' => json_encode($_POST['Invisible'] ?? []),
         ];
 
         $existSettingsId = $id = Db::getOne(
@@ -425,7 +432,7 @@ class Core
         } else {
             Db::insertRow($data + [
                     'CreatedBy' => User::getId(),
-                    'TableID' => $tableId
+                    'TableID' => $tableId,
                 ], 'user_filter_settings');
         }
 
@@ -465,11 +472,17 @@ class Core
             return;
         }
 
-        $relativePath = FilesFolder::getModuleRelative('User', User::getId());
-        FilesFolder::mkdir($relativePath);
+        $dir = FilesFolder::getAbsoluteModule('User', User::getId());
+        try {
+            File::fs()->mkdir($dir);
+        } catch (\Exception $e) {
+            Response::json(['error' => true, 'text' => $e->getMessage()], 500);
+            reportException($e);
+            return;
+        }
 
-        $photoFileAbs = FilesFolder::getAbsolutePath("$relativePath/Photo.jpg");
-        $avatarFileAbs = FilesFolder::getAbsolutePath("$relativePath/Avatar.jpg");
+        $photoFileAbs = "$dir/Photo.jpg";
+        $avatarFileAbs = "$dir/Avatar.jpg";
 
         move_uploaded_file($tmpFileName, $photoFileAbs);
 
@@ -495,8 +508,8 @@ class Core
     public static function proceedGetUserPhoto()
     {
         $userId = $_GET['UserID'] ?? User::getId();
-        $relativePath = FilesFolder::getModuleRelative('User', $userId);
-        $avatarFileAbs = FilesFolder::getAbsolutePath("$relativePath/Photo.jpg");
+        $relative = FilesFolder::getRelativeModule('User', $userId);
+        $avatarFileAbs = FilesFolder::getAbsolute("$relative/Photo.jpg");
         if (file_exists($avatarFileAbs)) {
 
             Response::header('Content-Type: image/jpg');
@@ -554,5 +567,40 @@ class Core
     public static function proceedMainmenuSettings()
     {
         Mainmenu::proceedMainmenuSettings();
+    }
+
+    public static function proceedParseCsv()
+    {
+        $input = file_get_contents('php://input');
+        $csv = Reader::createFromString($input);
+        $csv->setDelimiter("\t");
+        Response::json($csv);
+    }
+
+    public static function proceedShowUserDialog()
+    {
+        if (!Request::isAjax()) {
+            Response::abort(400);
+            return;
+        }
+        $userId = (int)($_GET['UserID'] ?? 0);
+        if (!$userId) {
+            Response::abort(400, 'Empty GET UserID');
+            return;
+        }
+        $fieldset = static::getUserDialogFieldset();
+        $user = Db::getRow("SELECT {$fieldset->getSqlSelect()} FROM user WHERE ID = @i", $userId);
+        if (!$user) {
+            Response::abort(404, "User ID = $userId not found");
+            return;
+        }
+        $tdata = $fieldset->getTplData($user, FieldAbstract::MODE_VIEW);
+        $html = Template::parseTpl('UserDialog.tpl.php', $tdata);
+        Response::showDialog($html);
+    }
+
+    protected static function getUserDialogFieldset(): Fieldset
+    {
+        return (new UserSettings())->getFieldset();
     }
 }

@@ -16,7 +16,7 @@ class Img
         return 'lightpublic/i/user.png';
     }
 
-    private static function getTag($src, $alt, $title)
+    private static function getTag($src, $alt, $title): string
     {
         if ($alt) {
             $alt = ' alt="' . htmlspecialchars($alt) . '"';
@@ -29,27 +29,27 @@ class Img
         return '<img src="' . $src . '"' . $alt . $title . '>';
     }
 
-    public static function gif($file, $alt = null, $title = null)
+    public static function gif($file, $alt = null, $title = null): string
     {
         return self::getTag(self::findFile($file . '.gif'), $alt, $title);
     }
 
-    public static function gifLight($file, $alt = null, $title = null)
+    public static function gifLight($file, $alt = null, $title = null): string
     {
         return self::getTag('Light/i/' . $file . '.gif', $alt, $title);
     }
 
-    public static function png($file, $alt = null, $title = null)
+    public static function png($file, $alt = null, $title = null): string
     {
         return self::getTag(self::findFile($file . '.png'), $alt, $title);
     }
 
-    public static function pngLight($file, $alt = null, $title = null)
+    public static function pngLight($file, $alt = null, $title = null): string
     {
         return self::getTag('Light/i/' . $file . '.png', $alt, $title);
     }
 
-    public static function icon(string $cssClass)
+    public static function icon(string $cssClass): string
     {
         if (strpos($cssClass, 'fa-') !== 0) {
             $cssClass = "fa-$cssClass";
@@ -57,89 +57,95 @@ class Img
         return "<i class=\"fa $cssClass\"></i>";
     }
 
-    public static function iconExternalLink()
+    public static function iconExternalLink(): string
     {
         return self::icon('fa-external-link');
     }
 
-    public static function iconExcel()
+    public static function iconExcel(): string
     {
         return self::icon('fa-file-excel-o');
     }
 
-    public static function iconCopy()
+    public static function iconCopy(): string
     {
         return self::icon('fa-clone');
     }
 
-    public static function iconPlus()
+    public static function iconPlus(): string
     {
         return self::icon('fa-plus');
     }
 
-    public static function iconUpload()
+    public static function iconUpload(): string
     {
         return self::icon('fa-upload');
     }
 
-    public static function iconDownload()
+    public static function iconDownload(): string
     {
         return self::icon('fa-download');
     }
 
-    public static function iconPrint()
+    public static function iconPrint(): string
     {
         return self::icon('fa-print');
     }
 
-    public static function iconWord()
+    public static function iconWord(): string
     {
         return self::icon('fa-file-word-o');
     }
 
-    public static function iconPdf()
+    public static function iconPdf(): string
     {
         return self::icon('fa-file-pdf-o');
     }
 
-    public static function iconMail()
+    public static function iconMail(): string
     {
         return self::icon('fa-envelope-o icon-mail');
     }
 
-    public static function iconMailRed()
+    public static function iconMailRed(): string
     {
         return self::icon('fa-envelope-o icon-red');
     }
 
-    public static function iconMailBlue()
+    public static function iconMailBlue(): string
     {
         return self::icon('fa-envelope-o icon-blue');
     }
 
-    public static function iconMailGreen()
+    public static function iconMailGreen(): string
     {
         return self::icon('fa-envelope-o icon-green');
     }
 
-    public static function iconSearch()
+    public static function iconSearch(): string
     {
         return self::icon('fa-search icon-search');
     }
 
-    public static function iconEdit()
+    public static function iconEdit(): string
     {
         return self::icon('fa-pencil icon-edit');
     }
 
-    public static function iconDelete()
+    public static function iconDelete(): string
     {
         return self::icon('fa-trash icon-delete');
     }
 
-    public static function iconInfo()
+    public static function iconInfo(): string
     {
         return self::icon('fa-info-circle icon-info');
+    }
+
+    public static function iconFolder(bool $hasFiles): string
+    {
+        $cssClass = $hasFiles ? 'icon-folderfull' : 'icon-folderempty';
+        return self::icon("fa-folder $cssClass");
     }
 
     /**

@@ -24,6 +24,8 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
     private $justInserted = false;
     private $alreadyUpdated = false;
+    private $affectedRows = 0;
+
     // Массив с данными, которые были в объекте перед первым update/insert.
     // Все последующие update уже не меняют oldData, таким образом после череды update
     // можно сравнить текущее состояние data и oldData
@@ -103,24 +105,24 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
                 WHERE ID = " . (int)$this->_id;
     }
 
-    public function getFieldData($fieldKey)
+    public function getFieldValue(string $fieldKey)
     {
-        return $this->_data[$fieldKey];
+        return $this[$fieldKey];
     }
 
-    public function getFieldHtml($fieldKey)
+    public function getFieldHtml(string $fieldKey)
     {
-        return $this->getField($fieldKey)->getHtml($this->_data[$fieldKey], $this->_data);
+        return $this->getField($fieldKey)->getHtml($this[$fieldKey], $this->_data);
     }
 
-    public function getFieldText($fieldKey)
+    public function getFieldText(string $fieldKey)
     {
-        return $this->getField($fieldKey)->getText($this->_data[$fieldKey], $this->_data);
+        return $this->getField($fieldKey)->getText($this[$fieldKey], $this->_data);
     }
 
-    public function getFieldExcel($fieldKey)
+    public function getFieldExcel(string $fieldKey)
     {
-        return $this->getField($fieldKey)->getExcel($this->_data[$fieldKey], $this->_data);
+        return $this->getField($fieldKey)->getExcel($this[$fieldKey], $this->_data);
     }
 
     public function getId()
@@ -229,6 +231,8 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
             $this->oldData = $this->_data;
         }
 
+        $this->alreadyUpdated = true;
+
         // Отдельно сохраним текущее сосотояние в $oldData, чтобы записать изменения в dblog
         $oldData = $this->_data;
 
@@ -237,7 +241,11 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         //Подготовим данные для вставки в базу. Например, расчленим MoneyWithCurrency
         $fieldsData = $this->prepareFieldsDataForDb($fieldsData);
 
-        if ($affectedRows = Db::updateRow($fieldsData, $this->getDbTable(), $this->_id)) {
+        $affectedRows = Db::updateRow($fieldsData, $this->getDbTable(), $this->_id);
+        // Инкрементируем общий счётчик обновлений по данному объекту
+        $this->affectedRows += $affectedRows;
+
+        if ($affectedRows) {
             //Если обновление реально произошло (что-то изменилось), запишем логи
             $this->loadData();
             $this->writeCompareLog($oldData, $fieldKeys, $dbLogMsg);
@@ -278,7 +286,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
                     $val = $fieldsData[$fieldKey];
                     if (is_string($val) && isset($val[3]) && $val[3] === ' ') {
                         //Это строка и в ней есть пробел на четвёртой позиции - значит надо разбить на два поля!
-                        list($currencyIso, $amount) = FieldMoneyWithCurrency::getAsTouple($val);
+                        [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($val);
                         //Запишем сумму непосредственно в поле $fieldKey
                         $fieldsData[$fieldKey] = $amount;
                         //Добавим поле с валютой, но для этого нужно сначала получить имя поля для валюты
@@ -317,6 +325,16 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         $newValue = $this->_data[$fieldKey];
 
         return $oldValue !== $newValue;
+    }
+
+    public function isJustInserted(): bool
+    {
+        return $this->justInserted;
+    }
+
+    public function isSomethingChanged(): bool
+    {
+        return $this->affectedRows > 0;
     }
 
     /**
@@ -368,7 +386,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
         return $field::isEmpty($oldValue) && !$field::isEmpty($newValue);
     }
-
 
 
     /**
@@ -512,7 +529,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
                     'NewValue' => $newValue,
                     'NewValueFormated' => $newValueFormated,
                     'Text' => $dbLogMsg,
-                    'ObjectDescription' => $this->getDescriptionHtml()
+                    'ObjectDescription' => $this->getDescriptionHtml(),
                 ];
 
                 DbLog::write($masterModule, $masterId, $tableName, $recordId, $field->key, $fieldDescription,
@@ -578,6 +595,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
         // Используем REPLACE, чтобы избежать ошибки Already Exists на сложных таблицах с уникальными полями
         $id = Db::insertRow($fieldsData, $this->getDbTable(), true);
+        $this->affectedRows = 1;
 
         $this->setId($id);
         $this->loadData();
@@ -587,7 +605,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
             $msg .= ' ' . $dbLogMsg;
         }
 
-        //Запишем логи о вставке, в качестве oldData передаём пустой массив
+        // Запишем логи о вставке, в качестве oldData передаём пустой массив
         $this->writeCompareLog([], $fieldKeys, $msg);
 
         return $id;
@@ -636,7 +654,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
         $textData = [
             'Text' => $text,
-            'ObjectDescription' => $this->getDescriptionHtml()
+            'ObjectDescription' => $this->getDescriptionHtml(),
         ];
 
         DbLog::write($masterModule, $masterId, $tableName, $recordId, $fieldKey, $fieldDescription, $textData);

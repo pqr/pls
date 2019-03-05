@@ -120,7 +120,7 @@ class FieldDateTime extends FieldInputAbstract
 
         if ($this->filterFromUntil) {
             //Одно из полей тандема "From ... until ..."
-            $dbKey = preg_replace('/(From|Until)$/', '', $this->key);
+            $dbKey = preg_replace('/(From|Until)$/', '', $this->getFilterFieldKey());
             if (substr($this->key, -4) === 'From') {
                 if (strlen($value) === 10) {
                     $value .= ' 00:00:00';

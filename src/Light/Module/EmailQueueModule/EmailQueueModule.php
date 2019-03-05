@@ -32,9 +32,9 @@ class EmailQueueModule extends ModuleAbstract
             F::createString('PID', [
                 'viewCssClass' => function ($value) {
                     return $value ? 'bad' : '';
-                }
+                },
             ]),
-            F::createString('From'),
+            F::createSelect('EmailAccountID', ['name' => 'From', 'options' => "SELECT ID, Username FROM emailaccount"]),
             F::createText('To'),
             F::createText('Cc'),
             F::createText('Bcc'),
@@ -50,7 +50,7 @@ class EmailQueueModule extends ModuleAbstract
             ]),
             F::createHtml('Report', [
                 'name' => 'Отчёт о попытках отправки',
-                'modes' => F::MODE_VIEW
+                'modes' => F::MODE_VIEW,
             ])
 
         );

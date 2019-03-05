@@ -4,6 +4,7 @@ namespace Forward\Field;
 
 use Forward\Classes\Constant;
 use Forward\Module\DocsInventory\DocsInventory;
+use Forward\Module\Shipment\Shipment;
 use Forward\Module\Shipment\ShipmentObj;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
@@ -93,10 +94,10 @@ class ShipmentFields
             'sqlSelect' => '',
             'modes' => F::MODE_READONLY,
             'tableWidthExcel' => 10,
-            'calcFunction' => function ($value, array $data) use ($folderNo) {
+            'calcFunction' => function ($value, array $data) use ($standardFolder) {
                 if (isset($data['ID'])) {
-                    $folderRelative = "Shipment/" . (floor($data['ID'] / 1000)) . '/' . $data['ID'];
-                    if (FilesFolder::isNotEmpty("$folderRelative/" . File::decode(Constant::$standardFolders[$folderNo]))) {
+                    $folderRelative = FilesFolder::getRelativeModule(Shipment::class, $data['ID']);
+                    if (FilesFolder::hasFiles("$folderRelative/$standardFolder")) {
                         return 1;
                     }
                 }

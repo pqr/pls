@@ -314,25 +314,23 @@ class Quotation extends ModuleAbstract
     {
         //Кнопка экспорта в Excel
         //$this->addSubmenuItem('Export to Excel', Img::sprite('excel'), 'printExcel');
-        $this->addSubmenuItemViewFunc('Export to Excel (En)', Img::iconExcel(), 'Excel', ['lang' => 'en']);
-        $this->addSubmenuItemViewFunc('Export to Excel (Ru)', Img::iconExcel(), 'Excel', ['lang' => 'ru']);
+        $this->addSubmenuLinkViewFunc(Img::iconExcel() . ' Export to Excel (En)', 'Excel')->params(['lang' => 'en']);
+        $this->addSubmenuLinkViewFunc(Img::iconExcel() . ' Export to Excel (Ru)', 'Excel')->params(['lang' => 'ru']);
 
         //Добавим кнопку просмотра шипмента, если эта котровка привязана к каой-то перевозке
         $shipmentId = Db::getOne("SELECT ID FROM shipment WHERE QuotationID = " . $this->_obj->getId());
         if ($shipmentId) {
 
-            $this->addSubmenuItemUrl(
-                'View Shipment',
-                Img::iconSearch(),
-                Link::create(Shipment::class)->view($shipmentId)->getHref()
+            $this->addSubmenuLink(
+                Link::create(Shipment::class, Img::iconSearch() . ' View Shipment')
+                    ->view($shipmentId)
             );
 
         } elseif ($this->_obj['Status'] === 'win') {
 
-            $this->addSubmenuItemUrl(
-                'Create Shipment',
-                Img::iconPlus(),
-                Link::create(Shipment::class)->params(['addnew' => 1, 'qid' => $this->_obj->getId()])->getHref()
+            $this->addSubmenuLink(
+                Link::create(Shipment::class, Img::iconPlus() . ' Create Shipment')
+                    ->params(['addnew' => 1, 'qid' => $this->_obj->getId()])
             );
 
         }
@@ -547,7 +545,7 @@ class Quotation extends ModuleAbstract
 
 
         // Сначала сохраним файл в папке
-        $filepathAbs = $this->getFolderAbsolutePath() . '/' . $fileName;
+        $filepathAbs = $this->getFolderAbsolute() . '/' . $fileName;
         $xls->save($filepathAbs);
 
         // Затем отправим пользотвателю

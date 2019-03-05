@@ -7,6 +7,7 @@ use Light\Db;
 use Light\Field\CommonFields;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
+use Light\Link;
 use Light\ModuleRegister;
 use Light\Request;
 use Light\Table;
@@ -29,14 +30,14 @@ class ModuleAbstractLog extends Table
         'OldValueFormated',
         'NewValueFormated',
         'Text',
-        'ObjectDescription'
+        'ObjectDescription',
     ];
 
     public function __construct($masterId)
     {
         parent::__construct(Request::getModule() . 'Log');
 
-        $this->tableReloadUrl = '?a=' . Request::getModule() . "&logid=$masterId";
+        $this->tableReloadUrl = Link::create(Request::getModule())->params(['logid' => $masterId])->getHref();
         $this->allowFiltersLayoutChange = false;
 
         $this->_moduleId = (int)Db::getOne(
@@ -54,35 +55,35 @@ class ModuleAbstractLog extends Table
             F::createSelect('TableID', [
                 'name' => 'Table',
                 'tableWidthExcel' => 25,
-                'options' => "SELECT ID, TableName FROM dblog_table"
+                'options' => "SELECT ID, TableName FROM dblog_table",
             ]),
             F::createInt('RecordID', [
-                'name' => 'Record ID'
+                'name' => 'Record ID',
             ]),
             F::createSelect('FieldID', [
                 'name' => 'Field',
                 'tableWidthExcel' => 30,
-                'options' => "SELECT ID, FieldDescription FROM dblog_field"
+                'options' => "SELECT ID, FieldDescription FROM dblog_field",
             ]),
             F::createHtml('OldValueFormated', [
                 'name' => 'Old Value',
                 F::PARAM_TEXTTRUNCATE => F::TEXTTRUNCATE_PART,
-                'getExcelFunction' => $formatExcel
+                'getExcelFunction' => $formatExcel,
             ]),
             F::createHtml('NewValueFormated', [
                 'name' => 'New Value',
                 F::PARAM_TEXTTRUNCATE => F::TEXTTRUNCATE_PART,
-                'getExcelFunction' => $formatExcel
+                'getExcelFunction' => $formatExcel,
             ]),
             F::createHtml('Text', [
                 'name' => 'Message',
                 'tableWidthExcel' => 80,
-                'getExcelFunction' => $formatExcel
+                'getExcelFunction' => $formatExcel,
             ]),
             F::createHtml('ObjectDescription', [
                 'name' => 'Object Description',
                 'tableWidthExcel' => 80,
-                'getExcelFunction' => $formatExcel
+                'getExcelFunction' => $formatExcel,
             ])
 
         );
@@ -133,7 +134,7 @@ class ModuleAbstractLog extends Table
                 'editWidth' => 'default',
                 'sqlWhere' => "ID in (SELECT dblogID FROM dblog_text WHERE Text LIKE '%{value}%'
                                                OR OldValueFormated LIKE '%{value}%'
-                                               OR NewValueFormated LIKE '%{value}%')"
+                                               OR NewValueFormated LIKE '%{value}%')",
             ]),
 
             CommonFields::filterRecordId()
@@ -147,12 +148,12 @@ class ModuleAbstractLog extends Table
                 'CreatedBy',
                 'TableID',
                 'FieldID',
-                'FilterName'
+                'FilterName',
             ],
             [
                 'CreatedDateTime',
-                'RecordID'
-            ]
+                'RecordID',
+            ],
         ];
     }
 

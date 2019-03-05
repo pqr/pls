@@ -84,8 +84,7 @@ class AutolaunchLog extends Table
         //ID всех элементов соберём в отдельный массив, чтобы записать в moduleSession
         $ids = array_column($data, 'ID');
 
-        $idsString = implode(',', $ids);
-        $this->createModuleSession($idsString, $tablePage);
+        $this->createModuleSession($ids, $tablePage);
 
         $foundRows = Db::getOne("SELECT FOUND_ROWS()");
         $this->setTableTotalRecordsFound($foundRows);

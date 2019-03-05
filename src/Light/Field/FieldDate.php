@@ -24,6 +24,8 @@ class FieldDate extends FieldInputAbstract
 {
     const UNTIL_FUTURE_NOTICE = '2099-01-01';
 
+    private const EXCEL_DATE_2000 = 36526; // // 01.01.2000 в формате Excel
+
     public $cssClassFuture;
     public $cssClassPast;
     public $cssClassToday;
@@ -149,7 +151,7 @@ class FieldDate extends FieldInputAbstract
         if ($this->filterFromUntil) {
 
             //Одно из полей тандема "From ... until ..."
-            $dbKey = preg_replace('/(From|Until)$/', '', $this->key);
+            $dbKey = preg_replace('/(From|Until)$/', '', $this->getFilterFieldKey());
             if (substr($this->key, -4) === 'From') {
                 if (strlen($value) === 10) {
                     $value .= ' 00:00';
@@ -213,8 +215,7 @@ class FieldDate extends FieldInputAbstract
         if (is_numeric($dateStr) && (int)$dateStr < 10000000) {
             // На вход получили какое-то число - это это может быть дата в формате Excel или что-то типа YYYYMMDD
             // Мы провериили, что указанное число не подходит под описание YYYYMMDD, значит это формат Excel
-            $days2000 = 36526; // 01.01.2000 в формате Excel
-            return @date('Y-m-d', @mktime(0, 0, 0, 1, (int)$dateStr - $days2000 + 1, 2000));
+            return @date('Y-m-d', @mktime(0, 0, 0, 1, (int)$dateStr - self::EXCEL_DATE_2000 + 1, 2000));
         }
 
         $timestamp = strtotime($dateStr);

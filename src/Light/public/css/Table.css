@@ -21,14 +21,14 @@ table.table.layoutfixed td {
 /* фиксация thead работает в Firefox и в Safari */
 table.table.sticky > thead {
     position: sticky;
-    position: -webkit-sticky; /* Для Safari нужно с префисом */
+    /*position: -webkit-sticky; !* Для Safari нужно с префисом *!*/
     top: 0;
 }
 
 /* Для Edge и Chome нужно фиксировать th */
 table.table.sticky > thead > tr > th {
     position: sticky;
-    position: -webkit-sticky; /* Для Safari нужно с префисом */
+    /*position: -webkit-sticky; !* Для Safari нужно с префисом *!*/
     top: 0;
 }
 
@@ -110,6 +110,7 @@ table.table > thead > tr > th {
     background-color: #eaeaea;
     color: #666666;
     font-weight: bold;
+    text-align: left;
 }
 
 table.table > tbody > tr > td {
@@ -142,11 +143,11 @@ table.table > tbody > tr > td i {
     z-index: auto !important;
 }
 
-table.table > tbody > tr > td.tac {
+table.table > thead > tr > th.tac, table.table > tbody > tr > td.tac {
     text-align: center;
 }
 
-table.table > tbody > tr > td.tar {
+table.table > thead > tr > th.tar, table.table > tbody > tr > td.tar {
     text-align: right;
 }
 

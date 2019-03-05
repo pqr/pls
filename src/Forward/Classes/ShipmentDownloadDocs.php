@@ -5,13 +5,11 @@ namespace Forward\Classes;
 
 use Forward\ForwardConfig;
 use Forward\Module\Shipment\Shipment;
-use Light\ApplicationAbstract;
 use Light\Autolaunch\BackupHelpres\P7zip;
 use Light\Db;
 use Light\File;
 use Light\FilesFolder;
 use Light\Msg;
-use Light\Response;
 use Light\User;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
@@ -88,7 +86,7 @@ class ShipmentDownloadDocs
         $resultFilepath = $this->tmpDir . "/$resultFilename";
 
         $p7z = P7zip::create($resultFilepath)
-        ->inputFilepath($this->tmpDir .'/*');
+            ->inputFilepath($this->tmpDir . '/*');
 
         if ($withPassword) {
             $p7z->password(ForwardConfig::$vinvoiceZipPass);
@@ -122,7 +120,7 @@ class ShipmentDownloadDocs
     public function removeTmpDir()
     {
         if ($this->tmpDir) {
-            File::rmdir($this->tmpDir);
+            File::fs()->remove($this->tmpDir);
         }
     }
 
@@ -130,7 +128,7 @@ class ShipmentDownloadDocs
     {
         $shipmentId = $shipment['ID'];
         $mawbNumber = $shipment['MAWBNumber'] ?: $shipment['ID'];
-        $shipmentFolderRelative = FilesFolder::getModuleRelative(Shipment::class, $shipmentId);
+        $shipmentFolderRelative = FilesFolder::getRelativeModule(Shipment::class, $shipmentId);
 
         $copied = 0;
 
@@ -138,7 +136,7 @@ class ShipmentDownloadDocs
             // Запрос на скачивание всех документов либо только заявок в формате Excel
             // которые находятся в корневой папке перевозки.
             // Добавим Excel заявку в папку $tmpdir (файл должен начинаться со слова "Заявка" и быть xlsx)
-            $copied += $this->copyFiles($shipmentFolderRelative, $mawbNumber, '0 заявка','xlsx', 'Заявка');
+            $copied += $this->copyFiles($shipmentFolderRelative, $mawbNumber, '0 заявка', 'xlsx', 'Заявка');
         }
 
         // Теперь перебираем все стандартные папки
@@ -153,9 +151,9 @@ class ShipmentDownloadDocs
             $nameSuffix = $standardFolder;
             /**
              * Добрый день!
-            Можем немного скорректировать? Акт для печати при нажатии кнопки «Документы на печать» выгружать в Excel, а не в PDF?
-            С уважением,
-            Валерия Титова
+             * Можем немного скорректировать? Акт для печати при нажатии кнопки «Документы на печать» выгружать в Excel, а не в PDF?
+             * С уважением,
+             * Валерия Титова
              * 2018.12.14
              */
             $onlyExtension = $folderNo == Constant::FOLDER_CACT ? 'xlsx' : null;
@@ -177,11 +175,11 @@ class ShipmentDownloadDocs
 
         $copied = 0;
         $i = 0;
-        $srcFolderAbs = FilesFolder::getAbsolutePath($srcFolderRelative);
+        $srcFolderAbs = FilesFolder::getAbsolute($srcFolderRelative);
 
         foreach (FilesFolder::scandir($srcFolderRelative) as $file) {
 
-            $ext = strtolower(pathinfo(File::encode($file), PATHINFO_EXTENSION));
+            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
             if ($onlyExtension && $onlyExtension !== $ext) {
                 continue;

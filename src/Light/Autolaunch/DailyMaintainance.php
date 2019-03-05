@@ -6,18 +6,19 @@ use Light\Config;
 use Light\Db;
 use Light\File;
 use Light\Module\Autolaunch\AutolaunchAbstract;
+use Light\Pdf;
 
 class DailyMaintainance extends AutolaunchAbstract
 {
-    protected static $_title = 'System: Daily Database Maintainance';
-    protected static $_description = 'Очищает modulesession, удаляет log_autolaunch > 3000шт, очищает папку FilesFolder_copyToTmpDirAndRename, очищает папки *_pdfs и *_massaction, зипует старые логи';
+    protected static $title = 'System: Daily Database Maintainance';
+    protected static $description = 'Очищает modulesession, удаляет log_autolaunch > 3000шт, удаляет temp/concatenate_pdfs, очищает папки *_pdfs и *_massaction, зипует старые логи';
 
     public function run(array $params)
     {
         $this->clearModulesession();
         $this->clearAutolaunchLog();
-        $this->clearCopyToTmpDirAndRename();
         $this->clearMassactions();
+        $this->clearConcatenatePdfs();
         $this->zipLastMonthLogs();
     }
 
@@ -52,19 +53,6 @@ class DailyMaintainance extends AutolaunchAbstract
         $this->_msgBuffShort->addSuccessOrInfo($msg, $deleted);
     }
 
-    private function clearCopyToTmpDirAndRename()
-    {
-        $tmpFolder = LIGHT_DIR_TEMP . '/FilesFolder_copyToTmpDirAndRename';
-        if (is_dir($tmpFolder)) {
-            $deletedFiles = File::clearDir($tmpFolder);
-            if ($deletedFiles) {
-                $msg = "FilesFolder_copyToTmpDirAndRename deleted files: $deletedFiles";
-                $this->_msgBuff->addSuccessOrInfo($msg, $deletedFiles);
-                $this->_msgBuffShort->addSuccessOrInfo($msg, $deletedFiles);
-            }
-        }
-    }
-
     private function clearMassactions()
     {
         $pdfsLen = strlen("_pdfs");
@@ -77,14 +65,49 @@ class DailyMaintainance extends AutolaunchAbstract
             }
 
             // Если папка заканчивается на _pdfs или _massaction - это нужная нам папка, очищаем!
-            if (substr($dir,-1 * $pdfsLen) === "_pdfs"
-            || substr($dir, -1 * $massLen) === "_massaction") {
-                $deletedFiles = File::clearDir($dirPath);
-                if ($deletedFiles) {
-                    $msg = htmlspecialchars($dir) . " deleted files: $deletedFiles";
-                    $this->_msgBuff->addSuccessOrInfo($msg, $deletedFiles);
-                    $this->_msgBuffShort->addSuccessOrInfo($msg, $deletedFiles);
+            if (substr($dir, -1 * $pdfsLen) === "_pdfs"
+                || substr($dir, -1 * $massLen) === "_massaction") {
+
+                try {
+                    File::fs()->remove($dirPath);
+                    $msg = htmlspecialchars($dir) . " deleted";
+                    $this->_msgBuff->addSuccess($msg);
+                    $this->_msgBuffShort->addSuccess($msg);
+                } catch (\Exception $e) {
+                    $this->_msgBuff->addError($e->getMessage());
                 }
+
+            }
+        }
+    }
+
+    private function clearConcatenatePdfs()
+    {
+        // После работы функции Pdf::concatenatePdfs() могли остаться не пустые папки concatenate_pdfs_1, concatenate_pdfs_2, ...
+        // В нормальном режиме эти папки должны были бы автоматически удалиться после выполнения скрипта, но если этого
+        // не произошло, то удалим их сейчас
+        foreach (scandir(LIGHT_DIR_TEMP) as $dir) {
+            $dirPath = LIGHT_DIR_TEMP . "/$dir";
+            if ($dir[0] === '.' || !is_dir($dirPath)) {
+                continue;
+            }
+
+            // Если папка начинается с нужного нам префикса  Pdf::CONCAT_TMPDIR_PREFIX, то удаляем её!
+            if (strpos($dir, Pdf::CONCAT_TMPDIR_PREFIX) === 0) {
+
+                try {
+
+                    File::fs()->remove($dirPath);
+                    $msg = htmlspecialchars($dirPath) . " deleted";
+                    $this->_msgBuff->addSuccess($msg);
+                    $this->_msgBuffShort->addSuccess($msg);
+
+                } catch (\Exception $e) {
+
+                    $this->_msgBuff->addError($e->getMessage());
+
+                }
+
             }
         }
     }

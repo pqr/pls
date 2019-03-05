@@ -28,7 +28,7 @@ class FieldText extends FieldAbstract
             $parsedown->setSafeMode(true);
             $html = $parsedown->text($value);
         } else {
-            $html = str_replace("\n", '<br>', htmlspecialchars($value));
+            $html = nl2br(htmlspecialchars($value));
         }
         return $html;
     }

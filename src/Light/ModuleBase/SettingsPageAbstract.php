@@ -9,7 +9,9 @@ use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
+use Light\Link;
 use Light\ModuleRegister;
+use function Light\reportException;
 use Light\Request;
 use Light\Response;
 use Light\Session;
@@ -44,7 +46,12 @@ class SettingsPageAbstract
             print '<p>' . $description . '</p>';
         }
 
-        print '<form action="?a=' . Request::getModule() . '&p=submit#ajax" method="post">';
+        $formAction = Link::create(Request::getModule())
+            ->proceed('submit')
+            ->ajax()
+            ->getHref();
+
+        print '<form action="' . $formAction . '" method="post">';
         print Template::csrfHidden();
         print $formInnerHtml;
         print '<div class="formactions_fixed">';
@@ -104,16 +111,37 @@ class SettingsPageAbstract
             return;
         }
 
-        $dataFromRequest = $this->getDataFromRequest($_POST);
+        try {
+
+            $dataFromRequest = $this->getDataFromPost();
+            $this->updateDb($dataFromRequest);
+
+            $msg = Config::$lang === 'ru' ? 'Сохранено' : 'Saved';
+            Session::flashSuccess($msg);
+
+            // Полностью обновим страницу с помощью редиректа, чтобы значения формы заново загрузились из базы
+            // таким образом пользователь будет уверен, что всё сохранилось как надо
+            Response::redirect(Request::getModule());
+
+        } catch (\Throwable $e) {
+
+            $msg = Config::$lang === 'ru' ? 'Не удалось сохранить' : 'Error while saving';
+            Session::flashError($msg . ' ' . $e->getMessage());
+            reportException($e);
+            Response::abort(500);
+
+        }
+    }
+
+    protected function getDataFromPost(): array
+    {
+        return $this->getDataFromRequest($_POST);
+    }
+
+    protected function updateDb(array $dataFromRequest)
+    {
         foreach ($dataFromRequest as $fieldKey => $value) {
             ApplicationAbstract::setParam($fieldKey, $value);
         }
-
-        $msg = Config::$lang === 'ru' ? 'Сохранено' : 'Saved';
-        Session::flashSuccess($msg);
-
-        // Полностью обновим страницу с помощью редиректа, чтобы значения формы заново загрузились из базы
-        // таким образом пользователь будет уверен, что всё сохранилось как надо
-        Response::redirect(Request::getModule());
     }
 }

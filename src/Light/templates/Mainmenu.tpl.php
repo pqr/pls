@@ -1,6 +1,9 @@
 <?php
 
+use Light\Link;
 use Light\Mainmenu;
+use Light\Module\UserModule\UserModule;
+use Light\Module\UserSettings\UserSettings;
 use Light\User;
 
 $activeModule = \Light\Request::getModule();
@@ -28,7 +31,7 @@ $activeModule = \Light\Request::getModule();
         <?php endif; ?>
 
         <div id="mainmenu__username">
-            <?= htmlspecialchars(\Light\User::getName()) ?>
+            <?= $UserName ?>
         </div>
 
         <div id="mainmenu__usergroup">

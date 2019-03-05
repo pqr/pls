@@ -3,6 +3,7 @@
 namespace Forward\Field;
 
 use Forward\Classes\Constant;
+use Forward\Module\Shipment\Shipment;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\File;
@@ -98,13 +99,13 @@ class PaymentFields
                     return '';
                 }
 
-                $folderNoName = File::decode(Constant::$standardFolders[$folderNo]);
+                $folderNoName = Constant::$standardFolders[$folderNo];
 
                 $somethingEmpty = null;
                 $somethingNotEmpty = null;
                 foreach ($shipmentIds as $shipmentId) {
-                    $folderRelative = FilesFolder::getModuleRelative('Shipment', $shipmentId);
-                    if (FilesFolder::isNotEmpty("$folderRelative/$folderNoName")) {
+                    $folderRelative = FilesFolder::getRelativeModule(Shipment::class, $shipmentId);
+                    if (FilesFolder::hasFiles("$folderRelative/$folderNoName")) {
                         $somethingNotEmpty = true;
                     } else {
                         $somethingEmpty = true;

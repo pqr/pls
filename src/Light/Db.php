@@ -152,17 +152,17 @@ class Db
      */
     private static function riseError($query, $errMsg)
     {
-        require_once __DIR__ . "/External/SqlFormatter.php";
-        $queryFormated = \SqlFormatter::format($query, false);
-        $msg = 'SQL error: ' . $queryFormated . "\n\n" . $errMsg;
+        $msg = 'SQL error: ' . $query . "\n\n" . $errMsg;
 
         if (Config::$sqlErrorThrowException) {
 
             throw new \Exception($msg);
 
-        } elseif (Config::$rollbar) {
+        }
 
-            //Создаём Exception и отправяем его в логи rollbar - таким образом в логах будет backtrace!
+        if (Config::$rollbar) {
+
+            // Создаём Exception и отправяем его в логи rollbar - таким образом в логах будет backtrace!
             Rollbar::log(Level::ERROR, new \Exception($msg));
 
         } elseif (Config::$sentry && Config::$sentry['dns']) {
@@ -171,11 +171,11 @@ class Db
 
         } else {
 
-            LoggerCsv::logSqlError($queryFormated, $errMsg);
+            LoggerCsv::logSqlError($query, $errMsg);
 
         }
 
-        $msgHtml = 'SQL error:' . \SqlFormatter::format($query) . htmlspecialchars($errMsg);
+        $msgHtml = 'SQL error: ' . $query . htmlspecialchars($errMsg);
         Response::sendErrorMsg($msgHtml);
     }
 
@@ -377,11 +377,12 @@ class Db
         return self::$mysqli->real_escape_string($value);
     }
 
-    public static function insertRow(array $fieldValues, string $table, bool $useReplace = false)
+    public static function insertRow(array $fieldValues, string $table, bool $replace = false, $ignore = false)
     {
         $fieldKeys = implode(',', array_map(__CLASS__ . '::quote', array_keys($fieldValues)));
 
-        $query = ($useReplace ? 'REPLACE' : 'INSERT')
+        $query = ($replace ? 'REPLACE' : 'INSERT')
+            . (!$replace && $ignore ? ' IGNORE' : '')
             . " INTO " . self::quote($table)
             . " (" . $fieldKeys . ")"
             . " VALUES (" . self::createIn($fieldValues) . ")";
@@ -394,11 +395,12 @@ class Db
      * Вставляет несколько строк одним запросом, возвращает число вставленных строк
      * @param array $rows массив строк. Важно: каждая строка должна содержать одинаковый набор полей
      * @param string $table
-     * @param bool $useReplace
+     * @param bool $replace
+     * @param bool $ignore
      * @return int
      * @throws \Exception
      */
-    public static function insertRows(array $rows, $table, $useReplace = false)
+    public static function insertRows(array $rows, $table, $replace = false, $ignore = false)
     {
         if (!$rows) {
             return 0;
@@ -407,7 +409,8 @@ class Db
         $firstRow = reset($rows);
         $fieldKeys = implode(',', array_map(__CLASS__ . '::quote', array_keys($firstRow)));
 
-        $query = ($useReplace ? 'REPLACE' : 'INSERT')
+        $query = ($replace ? 'REPLACE' : 'INSERT')
+            . (!$replace && $ignore ? ' IGNORE' : '')
             . " INTO " . self::quote($table)
             . " (" . $fieldKeys . ")"
             . " VALUES "
@@ -485,7 +488,7 @@ class Db
                 $json = json_encode($row, JSON_UNESCAPED_UNICODE);
                 self::insertRow([
                     'deletedID' => $logId,
-                    'JSON' => $json
+                    'JSON' => $json,
                 ], 'deleted_text');
             }
         }

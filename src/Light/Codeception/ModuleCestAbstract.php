@@ -361,7 +361,9 @@ abstract class ModuleCestAbstract
 
             if ($out & PrintForm::OUT_SAVE) {
                 // Если эта форма предполагает сохранение в папку, то сначала очистим папку объекта
-                File::clearDir(FilesFolder::getModuleAbsolute($module, $id));
+                $abs = FilesFolder::getAbsoluteModule($module, $id);
+                File::fs()->remove($abs);
+                File::fs()->mkdir($abs);
             }
 
             $I->wantTo("Print");
@@ -417,7 +419,7 @@ abstract class ModuleCestAbstract
 
                 // Если эта форма предполагает сохранение в папку, то проверим наличие файла в папке объекта
                 $I->expect("Out file exists in files folder");
-                $filepathAbs = FilesFolder::getModuleAbsolute($module, $id) . "/$filename";
+                $filepathAbs = FilesFolder::getAbsoluteModule($module, $id) . "/$filename";
                 $I->assertFileExists($filepathAbs);
 
                 if ($format === PrintForm::FORMAT_EXCEL) {

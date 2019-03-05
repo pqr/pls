@@ -16,7 +16,7 @@ class Template
      */
     public static function findfile(string $templateName): string
     {
-        if ($templateName[0] === '/') {
+        if (strpos($templateName, '/') === 0) {
             // Если имя шаблона начинается с /, значит это абсолютный путь к файлу
             return $templateName;
         }
@@ -29,7 +29,7 @@ class Template
             LIGHT_DIR_PROJECT . '/templates/',
             LIGHT_DIR_LIGHT . '/templates/',
             LIGHT_DIR_ROOT . '/src/',
-            ''
+            '',
         ];
 
         foreach ($folders as $folder) {

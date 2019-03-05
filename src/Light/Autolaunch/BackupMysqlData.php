@@ -83,14 +83,19 @@ class BackupMysqlData extends AutolaunchAbstract
 
     protected function runProcess(string $cmd)
     {
-        $process = new Process($cmd);
-        $process->setTimeout(null);
-        $process->mustRun();
-        $output = $process->getOutput();
-        $this->_msgBuff->addHtml('<pre style="font-weight: bold;">' . htmlspecialchars($cmd) . '</pre>');
-        $this->_msgBuff->addHtml('<pre>' . htmlspecialchars($output) . '</pre>');
-        $this->_msgBuff->addHtml('<hr>');
-        $this->_msgBuff->addEmptyLine();
+        try {
+            $process = Process::fromShellCommandline($cmd);
+            $process->setTimeout(null);
+            $process->mustRun();
+            $output = $process->getOutput();
+            $this->_msgBuff->addHtml('<pre style="font-weight: bold;">' . htmlspecialchars($cmd) . '</pre>');
+            $this->_msgBuff->addHtml('<pre>' . htmlspecialchars($output) . '</pre>');
+            $this->_msgBuff->addHtml('<hr>');
+            $this->_msgBuff->addEmptyLine();
+        } catch (\Throwable $e) {
+            $errorMsg = $e->getMessage();
+            $this->_msgBuff->addHtml('<pre>' . htmlspecialchars($errorMsg) . '</pre>');
+        }
     }
 
     protected function makeBackupDir()
@@ -141,29 +146,21 @@ class BackupMysqlData extends AutolaunchAbstract
     protected function getLogsTables(): array
     {
         $ignoreTables = [
-            'cache_notemptyfilesfolder',
             'dblog',
             'dblog_text',
             'dblog_trace',
             'deleted',
             'deleted_text',
             'deleted_trace',
+            'folderstatus',
             'metric',
             'modulesession',
-            'pdfhash',
             'phpsession',
-            'phpsessionflash',
+            'user_flash',
         ];
 
         $ignoreTables = array_merge($ignoreTables, Db::getCol("show tables LIKE '%log%'"));
-        $ignoreTables = array_merge($ignoreTables, Db::getCol("show tables LIKE 'queue_%'"));
-
         $ignoreTables = array_unique($ignoreTables);
-
-        $key = array_search('queue_email', $ignoreTables);
-        if ($key) {
-            unset($ignoreTables[$key]);
-        }
 
         return $ignoreTables;
     }
@@ -245,7 +242,8 @@ class BackupMysqlData extends AutolaunchAbstract
 
     protected function getMailer()
     {
-        $transport = new \Swift_SmtpTransport(Config::$swiftmailerHost, Config::$swiftmailerPort, Config::$swiftmailerSecuriy);
+        $transport = new \Swift_SmtpTransport(Config::$swiftmailerHost, Config::$swiftmailerPort,
+            Config::$swiftmailerSecuriy);
 
         if (Config::$swiftmailerUser) {
             $transport->setUsername(Config::$swiftmailerUser);

@@ -6,6 +6,7 @@ use Forward\Application;
 use Forward\Classes\Constant;
 use Forward\Module\VendorAccount\Subtables\Vendors;
 use Light\Img;
+use Light\Link;
 use Light\ModuleBase\ModuleAbstract;
 use Light\User;
 
@@ -57,7 +58,10 @@ class VendorAccount extends ModuleAbstract
             $body = "Внесите, пожалуйста, нового клиента $vendorAccountName в 1С для нашей компании $ourCompanyName, ID=$id. Договор во вложении.";
 
             $url = "mailto:$mailto?subject=" . rawurlencode($subject) . "&body=" . rawurlencode($body);
-            $this->addSubmenuItemUrl('Email в бухгалтерию', Img::iconMailBlue(), $url);
+            $this->addSubmenuLink(
+                Link::create(null, Img::iconMailBlue() . ' Email в бухгалтерию')
+                    ->externalUrl($url)
+            );
         }
     }
 }

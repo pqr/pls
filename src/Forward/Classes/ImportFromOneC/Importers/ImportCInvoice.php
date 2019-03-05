@@ -170,7 +170,7 @@ class ImportCInvoice extends ImporterAbstract
         $cinvLink = $cinvObj->getLinkView();
 
         // Запишем файл PDF файл и Excel файл в папку
-        $cinvFolderRelative = FilesFolder::getModuleRelative(CInvoice::class, $cinvId);
+        $cinvFolderRelative = FilesFolder::getRelativeModule(CInvoice::class, $cinvId);
 
         $pdfDataBase64 = $data['Data'];
         $pdfData = base64_decode($pdfDataBase64);

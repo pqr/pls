@@ -17,7 +17,7 @@ class MassactionUtils
         // В качестве $action может прийти fully qualified class name и это нормально
         // например <proj_namespace>\Module\<module>\Massactions\<massaction_class>
         return Link::create(Request::getModule())
-            ->params(['p' => 'massaction', 'action' => $action])
+            ->massaction($action)
             ->getHref();
     }
 
@@ -41,19 +41,27 @@ class MassactionUtils
             . '<label for="massaction-select">' . $textWithSelected . '<span></span>:</label>&nbsp;'
             . F::createSelect('massaction-select', [
                 'options' => $massactions,
-                'editWidth' => 'medium'
+                'editWidth' => 'medium',
             ])->getHtmlInput('')
             . '</div>'
             . '</div>';
     }
 
-    public static function getHtmlErrorsList(array $errors): string
+    /**
+     * @param array|string $errors
+     * @return string
+     */
+    public static function getHtmlErrorsList($errors): string
     {
-        if (count($errors) > 1) {
-            return '<ol><li>' . implode('</li><li>', $errors) . '</li></ol>';
-        } else {
-            return $errors[0];
+        if (is_array($errors)) {
+            if (count($errors) > 1) {
+                return '<ol><li>' . implode('</li><li>', $errors) . '</li></ol>';
+            }
+
+            return reset($errors);
         }
+
+        return (string)$errors;
     }
 
     public static function sendSuccessDialog(string $bodyHtml, $reloadTable = true)
@@ -71,27 +79,20 @@ class MassactionUtils
      */
     public static function sendErrorDialog($errors)
     {
-        if (is_array($errors)) {
-            $bodyHtml = self::getHtmlErrorsList($errors);
-        } else {
-            $bodyHtml = $errors;
-        }
-        Response::showDialog($bodyHtml, null, null, 'Close');
+        $bodyHtml = self::getHtmlErrorsList($errors);
+        Response::showDialog($bodyHtml);
     }
 
     /**
      * @param string|array $errors
+     * @param $ids
      */
-    public static function sendWarningDialog($errors, $ids)
+    public static function sendWarningDialog($errors, array $ids): void
     {
-        if (is_array($errors)) {
-            $bodyHtml = self::getHtmlErrorsList($errors);
-        } else {
-            $bodyHtml = $errors;
-        }
+        $bodyHtml = self::getHtmlErrorsList($errors);
         $bodyHtml .= '<form action="' . $_SERVER['REQUEST_URI'] . '&warning=1#ajax" method="post">'
             . self::getHtmlHiddenCheckedIds($ids)
             . '</form>';
-        Response::showDialog($bodyHtml, 'Продолжить', null, 'Close');
+        Response::showDialog($bodyHtml, 'Продолжить');
     }
 }

@@ -1,15 +1,77 @@
 <?php
+
 namespace Light;
 
-if (PHP_OS === 'WINNT') {
-    define('FILESYSTEM_ENCODING', 'cp1251');
-} else {
-    define('FILESYSTEM_ENCODING', 'UTF-8');
-}
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 
 class File
 {
-    public static function getValidFilename(string $filename, bool $removespaces = false):string
+    public static function fs(): Filesystem
+    {
+        static $fs;
+        if (!$fs) {
+            $fs = new Filesystem();
+        }
+        return $fs;
+    }
+
+    /**
+     * В отличие от Symfony/Filesystem реализации rename(),
+     * эта обёртка предварительно создаст необходимые директории в $target
+     * а также залогирует возможный exception и вернёт true или false
+     * @param $origin
+     * @param $target
+     * @return bool
+     */
+    public static function rename($origin, $target): bool
+    {
+        try {
+
+            if (!file_exists($origin)) {
+                return false;
+            }
+
+            $targetDir = \dirname($target);
+            File::fs()->mkdir($targetDir);
+            File::fs()->rename($origin, $target, true);
+            return true;
+
+        } catch (\Exception $e) {
+
+            reportException($e);
+            return false;
+
+        }
+    }
+
+    /**
+     * В отличие от Symfony/Filesystem реализации copy()
+     * эта обёртка залогирует возможный exception и вернёт true или false
+     * @param $origin
+     * @param $target
+     * @return bool
+     */
+    public static function copy($origin, $target): bool
+    {
+        try {
+
+            if (!file_exists($origin)) {
+                return false;
+            }
+
+            File::fs()->copy($origin, $target, true);
+            return true;
+
+        } catch (\Exception $e) {
+
+            reportException($e);
+            return false;
+
+        }
+    }
+
+    public static function getValidFilename(string $filename, bool $removespaces = false): string
     {
         $search = ['/', '\\', ':', '*', '?', '"', '<', '>', '|',];
 
@@ -25,119 +87,57 @@ class File
     }
 
     /**
-     * Создаёт директрию и все промеждуточные директории если нужно
-     * Созданной директрии и всем промежуточным присваивается chmod 777
-     * Для правильной работы chmod 777 все промежуточные директории создаются одна за одной
-     * @param string $path
-     * @return bool
+     * Создаёт временную директорию в папке LIGHT_DIR_TEMP и автоматически удаляет её после окончания работы скрипта
+     * @param string $prefix
+     * @return string
+     * @throws IOException On any directory creation failure
      */
-    public static function mkdir(string $path)
+    public static function mkdirTmp(string $prefix): string
     {
-        $pathEnc = rtrim(str_replace('\\', '/', self::encode($path)), '/');
-        $partsEnc = explode('/', $pathEnc);
+        try {
 
-        $currentFullEnc = '';
+            $tmpDir = File::getUniqueDir(LIGHT_DIR_TEMP . "/$prefix");
+            self::fs()->mkdir($tmpDir);
 
-        foreach($partsEnc as $partEnc) {
-            if ($partEnc === '') {
-                // Какая-то пустая часть, возможно это начало пути начинающегося с / или где-то в среедине было //
-                continue;
-            }
-
-            if (strpos($partEnc, ':') !== false) {
-                // Это индикатор диска в Windows (например C:)
-                $currentFullEnc = $partEnc;
-                continue;
-            }
-
-            // Создадим директорию на текущем нам уровне
-            $currentFullEnc .= '/' . $partEnc;
-            if (!is_dir($currentFullEnc)) {
-                if (!@mkdir($currentFullEnc, 0777) && !is_dir($currentFullEnc)) {
-                    $err = error_get_last();
-                    $errMsg = $err['message'] ?? '';
-                    reportException(new \Exception('Cant create dir ' . $currentFullEnc . ' from File::mkdir() ' . $errMsg));
-                    return false;
-                } else {
-                    if (!@chmod($currentFullEnc, 0777)) {
-                        $err = error_get_last();
-                        $errMsg = $err['message'] ?? '';
-                        reportException(new \Exception('Cant change chmod ' . $currentFullEnc . ' to 0777 from File::mkdir() ' . $errMsg));
-                    }
+            ApplicationAbstract::onAfterSend(function () use ($tmpDir) {
+                try {
+                    File::fs()->remove($tmpDir);
+                } catch (\Exception $e) {
+                    reportException($e);
                 }
-            }
+            });
 
+            return $tmpDir;
+
+        } catch (\Exception $e) {
+
+            reportException($e);
+
+            return '';
         }
-
-        return true;
     }
 
     /**
-     * Удаляет папку и все вложенные папки, включая файлы
-     * @param string $path
-     * @return bool
+     * @param string $dir
+     * @return array SplFileInfo[]
      */
-    public static function rmdir(string $path):bool
+    public static function scandirRecurcive(string $dir): array
     {
-        $pathEnc = self::encode($path);
-
-        // Функция работает только с директориями
-        if (!is_dir($pathEnc)) {
-            return false;
+        if (!file_exists($dir) || !is_dir($dir)) {
+            return [];
         }
 
-        // Очищаем содержимое директории
-        self::clearDir($path);
-
-        // Удаляем саму директорию
-        return rmdir($pathEnc);
-    }
-
-    /**
-     * Очищает директорию
-     * @param string $path
-     * @return int
-     */
-    public static function clearDir(string $path)
-    {
-        $pathEnc = self::encode($path);
-
-        // Функция работает только с директориями
-        if (!is_dir($pathEnc)) {
-            return 0;
-        }
-
-        $deletedFiles = 0;
-
-        // Удалим всё содержимое директории
-        foreach (scandir($pathEnc) as $fileEnc) {
-            if ($fileEnc === '.' || $fileEnc === '..') {
+        $out = [];
+        $flags = \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::CURRENT_AS_FILEINFO;
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir, $flags),
+            \RecursiveIteratorIterator::SELF_FIRST);
+        foreach ($iterator as $splFileInfo) {
+            if ($splFileInfo->isDir()) {
                 continue;
             }
-
-            $subpathEnc = $pathEnc . '/' . $fileEnc;
-
-            if (is_dir($subpathEnc)) {
-
-                //Удаляем поддиректрию рекурсивно
-                $subpath = $path . '/' . self::decode($fileEnc);
-
-                // Очищаем содержимое директории
-                $deletedFiles += self::clearDir($subpath);
-
-                // Удаляем саму директорию
-                rmdir($subpathEnc);
-
-            } else {
-
-                // Удаляем файл
-                unlink($subpathEnc);
-                $deletedFiles++;
-
-            }
+            $out[] = $splFileInfo;
         }
-
-        return $deletedFiles;
+        return $out;
     }
 
     /**
@@ -145,27 +145,21 @@ class File
      * @param string $path
      * @return int
      */
-    public static function size(string $path):int
+    public static function size(string $path): int
     {
-        $pathEnc = self::encode($path);
-
-        if (!file_exists($pathEnc)) {
+        if (!file_exists($path)) {
             return 0;
         }
 
-        if (is_file($pathEnc)) {
-            return filesize($pathEnc);
+        if (is_file($path)) {
+            return filesize($path);
         }
 
-        //Получается, это директория
+        // Получается, это директория
         $size = 0;
-        foreach (scandir($pathEnc) as $fileEnc) {
-            if ($fileEnc[0] === '.') {
-                continue;
-            }
-
-            $filepathAbs = $path . '/' . self::decode($fileEnc);
-            $size += self::size($filepathAbs);
+        /** @var \SplFileInfo $splFileInfo */
+        foreach (self::scandirRecurcive($path) as $splFileInfo) {
+            $size += $splFileInfo->getSize();
         }
 
         return $size;
@@ -176,70 +170,19 @@ class File
      * @param string $path
      * @return int
      */
-    public static function filesCount(string $path):int
+    public static function filesCount(string $path): int
     {
-        $pathEnc = self::encode($path);
-
-        if (!file_exists($pathEnc)) {
+        if (!file_exists($path)) {
             return 0;
         }
 
-        //Получается, это директория
-        $filesCount = 0;
-        foreach (scandir($pathEnc) as $fileEnc) {
-            if ($fileEnc[0] === '.') {
-                continue;
-            }
-
-            $fileAbsEnc = $pathEnc . '/' . $fileEnc;
-            if (is_file($fileAbsEnc)) {
-                //Это файл, увеличиваем счётчик
-                $filesCount++;
-            } else {
-                //Похоже это директория - запускаем рекурсивный подсчёт
-                $fileAbs = self::decode($fileAbsEnc);
-                $filesCount += self::filesCount($fileAbs);
-            }
+        if (!is_dir($path)) {
+            return 0;
         }
 
-        return $filesCount;
-    }
-
-    /**
-     * Аналог стандартного метода pathinfo в PHP с той разницей, что:
-     * 1) этот путь в кодировке utf8 (а не в кодировке файловой системы, как для стандартного pathinfo)
-     * 2) возвращает результаты в кодировке uft8 (а не в кодировке файловой системы, как для стандартного pathinfo)
-     * @param string $path
-     * @param int|null $options
-     * @return string|array
-     */
-    public static function pathinfo($path, $options = null)
-    {
-        $pathEnc = self::encode($path);
-        $resultEnc = pathinfo($pathEnc, $options);
-        if (is_array($resultEnc)) {
-            $result = [];
-            foreach ($resultEnc as $r) {
-                $result[] = self::decode($r);
-            }
-        } else {
-            $result = self::decode($resultEnc);
-        }
-        return $result;
-    }
-
-    /**
-     * @param string $path имя файла в кодировке UTF-8
-     * @return string имя файла в кодировке FILESYSTEM_ENCODING (cp1251)
-     */
-    public static function encode($path)
-    {
-        return mb_convert_encoding($path, FILESYSTEM_ENCODING, 'UTF-8');
-    }
-
-    public static function decode($pathEnc)
-    {
-        return mb_convert_encoding($pathEnc, 'UTF-8', FILESYSTEM_ENCODING);
+        // Получается, это директория
+        $files = self::scandirRecurcive($path);
+        return count($files);
     }
 
     /**
@@ -248,28 +191,42 @@ class File
      * @param string $filepath
      * @return string
      */
-    public static function getUniqueFilename(string $filepath):string
+    public static function getUniqueFilename(string $filepath): string
     {
-        //Для начала тестируем имя файла как есть без всяких добавок - если такого файла нет, то его и вернём!
-        $filepathEnc = self::encode($filepath);
-        if (!file_exists($filepathEnc)) {
+        // Для начала тестируем имя файла как есть без всяких добавок - если такого файла нет, то его и вернём!
+        if (!file_exists($filepath)) {
             return $filepath;
         }
 
         //Разобьём путь к файлу на путь без расширения и само расширение
-        $pathinfo = pathinfo($filepathEnc);
+        $pathinfo = pathinfo($filepath);
         $filepathWithoutExtEnc = $pathinfo['dirname'] . '/' . $pathinfo['filename'];
-        $extEnc = $pathinfo['extension'];
+        $ext = $pathinfo['extension'];
         //Счётчик, который будем добавлять в конец файла при тестировании
         //Поскольку оригинальное имя файла уже протестировали (в самом начале метода), начинаем добавлять индекс с 1
         $index = 0;
         do {
             $index++;
-            $testFilepathEnc = $filepathWithoutExtEnc . ' (' . $index . ').' . $extEnc;
-        } while (file_exists($testFilepathEnc));
+            $newFilepath = "$filepathWithoutExtEnc ($index).$ext";
+        } while (file_exists($newFilepath));
 
-        //Как только вышли из цикла, значит нашли уникальное имя!
-        return self::decode($testFilepathEnc);
+        // Как только вышли из цикла, значит нашли уникальное имя!
+        return $newFilepath;
     }
 
+    public static function getUniqueDir(string $dir): string
+    {
+        if (!file_exists($dir)) {
+            return $dir;
+        }
+
+        $index = 0;
+        do {
+            $index++;
+            $newDir = "{$dir}_{$index}";
+        } while (file_exists($newDir));
+
+        // Как только вышли из цикла, значит нашли уникальное имя!
+        return $newDir;
+    }
 }

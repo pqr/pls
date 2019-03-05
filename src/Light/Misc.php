@@ -53,7 +53,7 @@ class Misc
             'шестнадцать',
             'семнадцать',
             'восемнадцать',
-            'девятнадцать'
+            'девятнадцать',
         ];
         $tens = [
             2 => 'двадцать',
@@ -63,7 +63,7 @@ class Misc
             'шестьдесят',
             'семьдесят',
             'восемьдесят',
-            'девяносто'
+            'девяносто',
         ];
         $hundred = [
             '',
@@ -75,7 +75,7 @@ class Misc
             'шестьсот',
             'семьсот',
             'восемьсот',
-            'девятьсот'
+            'девятьсот',
         ];
         $unit = [
             ['тысяча', 'тысячи', 'тысяч', 1],
@@ -125,16 +125,16 @@ class Misc
         $currency = [
             'RUB' => [
                 ['копейка', 'копейки', 'копеек'],
-                ['рубль', 'рубля', 'рублей']
+                ['рубль', 'рубля', 'рублей'],
             ],
             'USD' => [
                 ['цент', 'цента', 'центов'],
-                ['доллар США', 'доллара США', 'долларов США']
+                ['доллар США', 'доллара США', 'долларов США'],
             ],
             'EUR' => [
                 ['цент', 'цента', 'центов'],
-                ['евро', 'евро', 'евро']
-            ]
+                ['евро', 'евро', 'евро'],
+            ],
         ];
         if (!isset($currency[$currencyIso])) {
             return false;
@@ -196,7 +196,7 @@ class Misc
             "Сентябр",
             "Октябр",
             "Ноябр",
-            "Декабр"
+            "Декабр",
         ];
         $end = ["ь", "ь", "", "ь", "й", "ь", "ь", "", "ь", "ь", "ь", "ь"];
         $endGen = ["я", "я", "а", "я", "я", "я", "я", "а", "я", "я", "я", "я"];
@@ -444,75 +444,6 @@ class Misc
         return '';
     }
 
-    public static function exec($command)
-    {
-        //Перенаправляем stderr в stdout, чтобы увидеть ошибки, если они есть
-        //Для вывода stderr можно было бы использовать proc_open вместо exec, но есть баг: https://bugs.php.net/bug.php?id=60181
-        $command .= ' 2>&1';
-
-        exec($command, $out);
-
-        $outTxt = implode("\n", $out);
-        if (PHP_OS == 'WINNT') {
-            $outTxt = mb_convert_encoding($outTxt, 'UTF8', 'cp866');
-        }
-
-        return $outTxt;
-    }
-
-    public static function procOpen($cmd, Msg $msgBuff = null, $stdInContent = null, bool $stdOutReturn = false)
-    {
-        $cmdEnc = File::encode($cmd);
-        $descriptorspec = [];
-
-        if ($stdInContent) {
-            $descriptorspec[0] = ['pipe', 'r']; //stdin
-        }
-
-        $descriptorspec[1] = ['pipe', 'w']; //stdout
-        $descriptorspec[2] = ['pipe', 'w']; //stderr
-
-        //bypass_shell (только для Windows): при установке в TRUE процесс будет запущен в обход оболочки cmd.exe
-        //это нужно для обхода бага https://bugs.php.net/bug.php?id=60181 "proc_open fails to read quoted whitespaced directories in Windows"
-        $process = proc_open($cmdEnc, $descriptorspec, $pipes/*, null, null, ['bypass_shell' => true]*/);
-
-        if (!is_resource($process)) {
-            if ($msgBuff) {
-                $msgBuff->addError('Cant open process ' . $cmd);
-            }
-            return false;
-        }
-
-        if ($stdInContent) {
-            // Пишем в stdin
-            fwrite($pipes[0], $stdInContent);
-            fclose($pipes[0]);
-        }
-
-        if ($stdOutReturn) {
-            // Читаем из stdOut
-            $stdOut = stream_get_contents($pipes[1]);
-            fclose($pipes[1]);
-        }
-
-        //Возможно ,были какие-то ошибки и мы можем прочитать их в stderr
-        $errText = stream_get_contents($pipes[2]);
-        fclose($pipes[2]);
-
-        $result = proc_close($process);
-
-        if ($errText && $msgBuff) {
-            $msgBuff->addWarning($cmdEnc);
-            $msgBuff->addWarning(mb_convert_encoding($errText, 'UTF-8', 'cp866'));
-        }
-
-        if ($stdOutReturn) {
-            return $stdOut;
-        }
-
-        return $result == 0;
-    }
-
     public static function makeLinksAbsolute($html)
     {
         if (isset($_SERVER['REQUEST_URI'])) {
@@ -526,7 +457,7 @@ class Misc
         $replacement = [
             ' src="' => ' src="' . $url,
             ' href="' => ' href="' . $url,
-            ' url(' => ' url(' . $url
+            ' url(' => ' url(' . $url,
         ];
         return str_replace(array_keys($replacement), array_values($replacement), $html);
     }
@@ -656,7 +587,7 @@ class Misc
 
     public static function latToRus($string)
     {
-        $cyr = array(
+        $cyr = [
             "К",
             "В",
             "в",
@@ -731,9 +662,9 @@ class Misc
             "э",
             "є",
             "ї",
-            "і"
-        );
-        $lat = array(
+            "і",
+        ];
+        $lat = [
             "Q",
             "W",
             "w",
@@ -808,8 +739,8 @@ class Misc
             "e",
             "e",
             "yi",
-            "i"
-        );
+            "i",
+        ];
         $string = str_replace($lat, $cyr, $string);
         $string = str_replace("_", " ", $string);
         return ($string);
@@ -817,8 +748,8 @@ class Misc
 
     public static function rusToLat($string)
     {
-        $rus = array('ё', 'ж', 'ц', 'ч', 'ш', 'щ', 'ю', 'я', 'Ё', 'Ж', 'Ц', 'Ч', 'Ш', 'Щ', 'Ю', 'Я');
-        $lat = array('yo', 'zh', 'tc', 'ch', 'sh', 'sh', 'yu', 'ya', 'YO', 'ZH', 'TC', 'CH', 'SH', 'SH', 'YU', 'YA');
+        $rus = ['ё', 'ж', 'ц', 'ч', 'ш', 'щ', 'ю', 'я', 'Ё', 'Ж', 'Ц', 'Ч', 'Ш', 'Щ', 'Ю', 'Я'];
+        $lat = ['yo', 'zh', 'tc', 'ch', 'sh', 'sh', 'yu', 'ya', 'YO', 'ZH', 'TC', 'CH', 'SH', 'SH', 'YU', 'YA'];
         $string = str_replace($rus, $lat, $string);
         $string = strtr($string,
             "АБВГДЕЗИЙКЛМНОПРСТУФХЪЫЬЭабвгдезийклмнопрстуфхъыьэ",
@@ -920,7 +851,7 @@ class Misc
         return str_replace(')', '\\\\)', str_replace('(', '\\\\(', $string));
     }
 
-    public static function getClass($classNameOrObj)
+    public static function getClass($classNameOrObj): string
     {
         if (is_string($classNameOrObj) && strpos($classNameOrObj, '\\') === false) {
             // Имя класса задано простой строкой без неймспейсов - тут уже ничего сделать нельзя
@@ -933,11 +864,21 @@ class Misc
 
     public static function getModule($classNameOrObj): string
     {
-        // Сначала проверим, если на вход передан объект, то нужно получить полный путь к его классу
-        $className = (is_object($classNameOrObj)) ? get_class($classNameOrObj) : $classNameOrObj;
-        $parts = explode('\\', $className);
+        if (is_string($classNameOrObj)) {
+            $className = $classNameOrObj;
+        } elseif (is_object($classNameOrObj)) {
+            $className = get_class($classNameOrObj);
+        } else {
+            throw new \InvalidArgumentException('Misc::getModule invalid $classNameOrObj type (should be string or object)');
+        }
+
+        if (strpos($className, '\\') === false) {
+            return $className;
+        }
+
         // Имя модуля по соглашению идёт под индексом 2
         // например: Basis\Module\Shipment\SomeClass - имя модуля Shipment
+        $parts = explode('\\', $className);
         return $parts[2] ?? $className;
     }
 
@@ -977,7 +918,7 @@ class Misc
 
     public static function filesize_formatted(int $size): string
     {
-        $units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
+        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
         $power = $size > 0 ? floor(log($size, 1024)) : 0;
         return number_format(($size / (1024 ** $power)), 1, '.', ' ') . ' ' . $units[$power];
     }
@@ -1007,15 +948,15 @@ class Misc
             'http' => [
                 'method' => 'POST',
                 'header' => 'Content-type: application/x-www-form-urlencoded',
-                'content' => http_build_query(['text' => $text])
-            ]
+                'content' => http_build_query(['text' => $text]),
+            ],
         ];
 
         $context = stream_context_create($opts);
 
         $url = 'https://translate.yandex.net/api/v1.5/tr.json/translate?' . http_build_query([
                 'key' => Config::$yandexTranslateApiKey,
-                'lang' => $lang
+                'lang' => $lang,
             ]);
 
         $result = file_get_contents($url, false, $context);

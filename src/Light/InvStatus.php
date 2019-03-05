@@ -5,7 +5,6 @@ namespace Light;
 
 class InvStatus
 {
-
     // Open process
     const DRAFT = 14;
     const OPEN = 11;
@@ -14,7 +13,8 @@ class InvStatus
 
     // Part Cleared/Cleared
     const PAYMENT_ON_CHEKCING = 24;
-    const CLEARED_DRAFT = 23;
+    const PAYMENT_CONFIRMED = 23;
+    const PAYMENT_SENT_TO_BANK = 25;
     const PARTCLEARED = 21;
     const CLEARED = 22;
 
@@ -96,9 +96,14 @@ class InvStatus
             'cssClass' => 'invstatus24',
             'Active' => 0
         ],
-        self::CLEARED_DRAFT => [
+        self::PAYMENT_CONFIRMED => [
             'text' => 'Подтверждён к оплате',
             'cssClass' => 'invstatus23',
+            'Active' => 0
+        ],
+        self::PAYMENT_SENT_TO_BANK => [
+            'text' => 'Поручение Банком исполнено',
+            'cssClass' => 'invstatus25',
             'Active' => 0
         ],
         self::PARTCLEARED => [
@@ -144,7 +149,7 @@ class InvStatus
         self::DISPUTE => self::DISPUTE,
         self::ACCEPTED => self::ACCEPTED,
         self::PARTCLEARED => self::PARTCLEARED,
-        self::CLEARED_DRAFT => self::CLEARED_DRAFT,
+        self::PAYMENT_CONFIRMED => self::PAYMENT_CONFIRMED,
         self::PAYMENT_ON_CHEKCING => self::PAYMENT_ON_CHEKCING
     ];
 
@@ -212,13 +217,19 @@ class InvStatus
             return "<i class=\"$iconColorClass\"$title></i>";
         }
 
+        if ($status === self::PAYMENT_CONFIRMED) {
+            return "<i class=\"$iconColorClass\"$title></i>";
+        }
+
+        if ($status === self::PAYMENT_SENT_TO_BANK) {
+            return "<i class=\"$iconColorClass\"$title></i>";
+        }
+
         if ($status === self::CLEARED) {
             return "<i class=\"$iconColorClass\"$title></i>";
         }
 
-        if ($status === self::CLEARED_DRAFT) {
-            return "<i class=\"$iconColorClass\"$title></i>";
-        }
+
 
         if ($status === self::PARTCLEARED) {
             return "<span class=\"nobr $iconColorClass\"$title><i></i><i></i></span>";

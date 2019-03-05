@@ -40,12 +40,12 @@ trait FieldsetAwareTrait
      * @param string $fieldKey
      * @return F
      */
-    public function getField($fieldKey)
+    public function getField(string $fieldKey)
     {
         return $this->getFieldset()->getField($fieldKey);
     }
 
-    public function hasField($fieldKey)
+    public function hasField(string $fieldKey)
     {
         return $this->getFieldset()->hasField($fieldKey);
     }

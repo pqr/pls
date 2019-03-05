@@ -313,7 +313,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * @param string $fieldKey
      * @return bool
      */
-    public function hasField($fieldKey)
+    public function hasField(string $fieldKey)
     {
         return isset($this[$fieldKey]);
     }
@@ -324,7 +324,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * @param $paramValue
      * @return $this
      */
-    public function setParam($paramName, $paramValue)
+    public function setParam(string $paramName, $paramValue)
     {
         foreach ($this->_fields as $field) {
             $field->setParam($paramName, $paramValue);
@@ -353,7 +353,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * @param string $fieldKey
      * @return F
      */
-    public function getField($fieldKey)
+    public function getField(string $fieldKey)
     {
         return $this[$fieldKey];
     }
@@ -449,21 +449,17 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
                     // Если возвращает несколько значений, запишем их все
                     /** @noinspection SlowArrayOperationsInLoopInspection */
                     $outData = array_merge($outData, $value);
-                } else {
-                    if ($value === 'n/a' && $field->getType() === 'Money') {
+                } elseif ($value === 'n/a' && $field->getType() === 'Money') {
                         $outData[$field->key] = null;
                     } else {
                         $outData[$field->key] = $value;
                     }
-                }
-            } else {
-                // Если из FieldAbstract::getDataFromRequest() вернулось значение null, тут можем быть несколько вариантов
-                // 1) это поле вообще не приншо в $request (тогда его не нужно добавлять в $outData)
-                // 2) это поле пришло в $request и пришло какое-то пустое значение и поле имеет флаг nullable (нужно добавлять в $outData)
-                if ($field->nullable && array_key_exists($field->key, $request)) {
+            } elseif ($field->nullable && array_key_exists($field->key, $request)) {
+                    // Если из FieldAbstract::getDataFromRequest() вернулось значение null, тут можем быть несколько вариантов
+                    // 1) это поле вообще не приншо в $request (тогда его не нужно добавлять в $outData)
+                    // 2) это поле пришло в $request и пришло какое-то пустое значение и поле имеет флаг nullable (нужно добавлять в $outData)
                     $outData[$field->key] = null;
                 }
-            }
         }
 
         return $outData;
@@ -558,7 +554,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     {
         $sqlWhere = [];
         foreach ($this->_fields as $field) {
-            if (isset($filtersValues[$field->key])) {
+            if (array_key_exists($field->key, $filtersValues)) {
                 $value = $filtersValues[$field->key];
 
                 $sql = $field->getEvaluatedSqlWhere($value, $filtersValues);
