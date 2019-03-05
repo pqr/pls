@@ -2,9 +2,9 @@
 git checkout master
 git pull
 
-php public/index.php Light/Migrate
-
 composer install --no-dev -o
+
+php public/index.php Light/Migrate
 
 sudo service php7.2-fpm reload
 
