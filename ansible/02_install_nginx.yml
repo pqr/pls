@@ -1,25 +1,23 @@
 # Example: ansible-playbook playbook_02_install_nginx.yml
-- hosts: []
+- hosts: all
   become: true
-  become_user: root
-  become_method: sudo
   vars_files:
   - vars_decrypted.yml
 
   tasks:
   # Обновить apt cache:
-  - name: nginx 1. Update cache
+  - name: Update cache
     apt: update_cache=true
     changed_when: no
     tags: cache
 
   # Установить nginx:
-  - name: nginx 2. Install nginx
+  - name: Install nginx
     apt: name=nginx state=latest
     tags: nginx
 
   # Установить конфигурацию nginx.conf
-  - name: nginx 3. Copy sites-available/default
+  - name: Copy sites-available/default
     template:
       src: files/etc/nginx/sites-available/default
       dest: /etc/nginx/sites-available/default
@@ -28,7 +26,7 @@
     tags: conf
 
   # Установить конфигурацию nginx.conf
-  - name: nginx 4. Copy sites-available/flowerbase
+  - name: Copy sites-available/flowerbase
     template:
       src: files/etc/nginx/sites-available/flowerbase
       dest: /etc/nginx/sites-available/flowerbase
@@ -36,7 +34,7 @@
     notify: reload nginx
     tags: conf
 
-  - name: nginx 5. Create link for sites-enabled nginx style
+  - name: Create link for sites-enabled nginx style
     file: src={{ item.src }} dest={{ item.dest }} state=link
     with_items:
       - { src: "/etc/nginx/sites-available/default", dest: "/etc/nginx/sites-enabled/default" }
@@ -45,7 +43,7 @@
     tags: conf
 
   # Активировать и запустить nginx:
-  - name: nginx 6. Enable nginx
+  - name: Enable nginx
     service: name=nginx state=started enabled=true
     tags: nginx
 

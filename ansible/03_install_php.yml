@@ -1,27 +1,25 @@
-# Example: ansible-playbook playbook_03_install_php.yml
+# Example: ansible-playbook 03_install_php.yml
 - hosts: all
   become: true
-  become_user: root
-  become_method: sudo
   vars_files:
    - vars_decrypted.yml
 
   tasks:
   # Обновить apt cache:
-  - name: php 1. Update cache
+  - name: Update cache
     apt: update_cache=true
     changed_when: no
     tags: cache
 
   # Установить репозиторий php:
-  - name: php 2. Add repository for Ubuntu
+  - name: Add repository for Ubuntu
     apt_repository: repo={{ php_use_ppa }}
     tags: php
 
   # Установить нужные пакеты php:
-  - name: php 3. Install base php packages
+  - name: Install base php packages
     apt: name={{ item }} state=latest
-    with_items:
+    loop:
       - php-common
       - php{{ php_version }}-cli
       - php{{ php_version }}-common
@@ -38,23 +36,30 @@
       - php{{ php_version }}-xml
       - php{{ php_version }}-xsl
       - php{{ php_version }}-zip
-    notify: reload nginx
+    notify: reload php-fpm
     tags: php
 
   # Установить конфигурации php
-  - name: php 4. Install configs for php{{ php_version }}
-    template: src=files/{{ item }} dest=/{{ item }} backup=yes
-    with_items:
-      - etc/php/{{ php_version }}/cli/php.ini
-      - etc/php/{{ php_version }}/fpm/php.ini
+  - name: Install configs for php{{ php_version }}
+    template: src=files/{{ item }}.j2 dest=/{{ item }} backup=yes
+    loop:
+      - etc/php/{{ php_version }}/mods-available/99-forwardlog.ini
       - etc/php/{{ php_version }}/fpm/php-fpm.conf
       - etc/php/{{ php_version }}/fpm/pool.d/www.conf
     notify: reload php-fpm
     tags: conf
 
-  handlers:
-    - name: reload nginx
-      service: name=nginx state=restarted enabled=true
+  - name: Create link for 99-forwardlog.ini into conf.d (fpm and cli)
+    file:
+      src: "/etc/php/{{ php_version }}/mods-available/99-forwardlog.ini"
+      dest: "{{ item }}/99-forwardlog.ini"
+      state: link
+    loop:
+      - "/etc/php/{{ php_version }}/fpm/conf.d"
+      - "/etc/php/{{ php_version }}/cli/conf.d"
+    notify: reload php-fpm
+    tags: conf
 
+  handlers:
     - name: reload php-fpm
       service: name=php{{ php_version }}-fpm state=restarted enabled=true

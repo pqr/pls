@@ -251,7 +251,7 @@ pm.status_path = /status
 
 ; The access log file
 ; Default: not set
-;access.log = /home/ubuntu/php-fpm.access.log
+;access.log = /home/{{ ansible_user }}/php-fpm.access.log
 
 {% raw %}
 ; The access log format.
@@ -317,7 +317,7 @@ pm.status_path = /status
 ; The log file for slow requests
 ; Default Value: not set
 ; Note: slowlog is mandatory if request_slowlog_timeout is set
-slowlog = /home/ubuntu/php-fpm.slow.log
+slowlog = /home/{{ ansible_user }}/php-fpm.slow.log
 
 ; The timeout for serving a single request after which a PHP backtrace will be
 ; dumped to the 'slowlog' file. A value of '0s' means 'off'.
