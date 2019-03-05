@@ -1,4 +1,4 @@
-# Example: ansible-playbook playbook_deploy_webserver.yml -i inventory.test --tags=nginx
+# Example: ansible-playbook 09_deploy_pls.yml -i inventory.test
 - hosts: all
   become: false
   vars_files:
@@ -7,12 +7,12 @@
 
   tasks:
   # Установить deploy ssh key (если его нет или отличается):
-  - name: deploy pls 1. Copy id_rsa to user folder
-    copy: content={{ id_rsa }} dest=/home/ubuntu/.ssh/id_rsa mode=0600 owner=ubuntu group=ubuntu
+  - name: Copy id_rsa to user folder
+    copy: content={{ id_rsa }} dest=/home/{{ ansible_user }}/.ssh/id_rsa mode=0600 owner=ubuntu group=ubuntu
     tags: key
 
   # Клонировать репозиторий prod website (и затереть изменения если были):
-  - name: deploy pls 2. Clone git repo
+  - name: Clone git repo to {{ project_dir_pls }}
     git:
       repo: git@bitbucket.org:pqr/pls.git
       dest: "{{ project_dir_pls }}"
@@ -22,7 +22,7 @@
       accept_hostkey: true
     tags: code
 
-  - name: deploy pls 5. Install composer deps
+  - name: Install composer deps
     become: no
     composer:
       command: install
@@ -34,7 +34,7 @@
     tags: code
 
   # Проверить папки logs и temp и права 777 на них:
-  - name: deploy pls 3. Check logs and temp folders and mode
+  - name: Check logs and temp folders and mode
     become: true
     file:
       path: "{{ item }}"
@@ -48,7 +48,7 @@
     tags: dirs
 
   # Установить файл config.php с переменными
-  - name: deploy pls 4. Copy config.php
+  - name: Copy config.php
     template:
       src: files/config_pls.php
       dest: "{{ project_dir_pls }}/config/config.php"
@@ -63,7 +63,7 @@
     tags: migrate
 
     # Создать символические ссылки на папки для nginx
-  - name: deploy pls 6. Create lightpublic symlink
+  - name: Create lightpublic symlink
     file:
       state: link
       src: "{{ project_dir_pls }}/src/Light/public"
@@ -84,7 +84,7 @@
       executable: /bin/bash
     tags: sentry
 
-  - name: deploy pls 7. Cron Light/CurrencyRateCBRF today at 6am
+  - name: Cron Light/CurrencyRateCBRF today at 6am
     become: false
     cron:
       name: "pls CurrencyRateCBRF today"
@@ -93,7 +93,7 @@
       job: "php {{ project_dir_pls }}/public/index.php Light/CurrencyRateCBRF today"
     tags: cron
 
-  - name: deploy pls 8. Cron Light/CurrencyRateCBRF every 30 min 11-18
+  - name: Cron Light/CurrencyRateCBRF every 30 min 11-18
     become: false
     cron:
       name: "pls CurrencyRateCBRF"
@@ -102,14 +102,14 @@
       job: "php {{ project_dir_pls }}/public/index.php Light/CurrencyRateCBRF"
     tags: cron
 
-  - name: deploy pls 9. Cron CitadeleCurrencyLoader every hour 9-21
+  - name: Cron CitadeleCurrencyLoader every hour 9-21
     become: false
     cron:
       name: "pls CitadeleCurrencyLoader"
       state: absent
     tags: cron
 
-  - name: deploy pls 10. Cron UpdateCustomerOutstandingCache at 8
+  - name: Cron UpdateCustomerOutstandingCache at 8
     become: false
     cron:
       name: "pls UpdateCustomerOutstandingCache"
@@ -118,7 +118,7 @@
       job: "php {{ project_dir_pls }}/public/index.php UpdateCustomerOutstandingCache"
     tags: cron
 
-  - name: deploy pls 11. Cron UpdateShipmentCriteria at 0:10
+  - name: Cron UpdateShipmentCriteria at 0:10
     become: false
     cron:
       name: "pls UpdateShipmentCriteria"
@@ -127,7 +127,7 @@
       job: "php {{ project_dir_pls }}/public/index.php UpdateShipmentCriteria"
     tags: cron
 
-  - name: deploy pls 12. Cron Light/Email every minute
+  - name: Cron Light/Email every minute
     become: false
     cron:
       name: "pls Light/Email"
@@ -145,7 +145,7 @@
       job: "php {{ project_dir_pls }}/public/index.php Light/BackupMysqlData"
     tags: cron
 
-  - name: Backup Database Logs Tables (once per month)
+  - name: Cron Backup Database Logs Tables (once per month)
     become: false
     cron:
       name: "pls Light/BackupMysqlLogs"
@@ -155,7 +155,7 @@
       job: "php {{ project_dir_pls }}/public/index.php Light/BackupMysqlLogs"
     tags: cron
 
-  - name: deploy pls 14. Cron EmailPendingQuotations14days at 16:30 working days
+  - name: Cron EmailPendingQuotations14days at 16:30 working days
     become: false
     cron:
       name: "pls EmailPendingQuotations14days"

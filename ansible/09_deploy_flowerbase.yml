@@ -1,4 +1,4 @@
-# Example: ansible-playbook playbook_deploy_webserver.yml -i inventory.test --tags=nginx
+# Example: ansible-playbook 09_deploy_flowerbase.yml -i inventory.test --tags=nginx
 - hosts: all
   become: false
   vars_files:
@@ -7,12 +7,12 @@
 
   tasks:
   # Установить deploy ssh key (если его нет или отличается):
-  - name: deploy flowerbase 1. Copy id_rsa to user folder
-    copy: content={{ id_rsa }} dest=/home/ubuntu/.ssh/id_rsa mode=0600 owner=ubuntu group=ubuntu
+  - name: Copy id_rsa to user folder
+    copy: content={{ id_rsa }} dest=/home/{{ ansible_user }}/.ssh/id_rsa mode=0600 owner=ubuntu group=ubuntu
     tags: key
 
   # Клонировать репозиторий prod website (и затереть изменения если были):
-  - name: deploy flowerbase 2. Clone git repo
+  - name: Clone git repo to {{ project_dir_flowerbase }}
     git:
       repo: git@bitbucket.org:pqr/pls.git
       dest: "{{ project_dir_flowerbase }}"
@@ -22,7 +22,7 @@
       accept_hostkey: true
     tags: code
 
-  - name: deploy flowerbase 5. Install composer deps
+  - name: Install composer deps
     become: no
     composer:
       command: install
@@ -34,7 +34,7 @@
     tags: code
 
   # Проверить папки logs и temp и права 777 на них:
-  - name: deploy flowerbase 3. Check logs and temp folders and mode
+  - name: Check logs and temp folders and mode
     become: true
     file:
       path: "{{ item }}"
@@ -48,7 +48,7 @@
     tags: dirs
 
   # Установить файл config.php с переменными
-  - name: deploy flowerbase 4. Copy config.php
+  - name: Copy config.php
     template:
       src: files/config_flowerbase.php
       dest: "{{ project_dir_flowerbase }}/config/config.php"
@@ -63,7 +63,7 @@
     tags: migrate
 
     # Создать символические ссылки на папки для nginx
-  - name: deploy flowerbase 6. Create lightpublic symlink
+  - name: Create lightpublic symlink
     file:
       state: link
       src: "{{ project_dir_flowerbase }}/src/Light/public"
@@ -77,7 +77,7 @@
       executable: /bin/bash
     tags: sentry
 
-  - name: deploy flowerbase 7. Cron Light/CurrencyRateCBRF today at 6am
+  - name: Cron Light/CurrencyRateCBRF today at 6am
     become: false
     cron:
       name: "flowerbase CurrencyRateCBRF today"
@@ -86,7 +86,7 @@
       job: "php {{ project_dir_flowerbase }}/public/index.php Light/CurrencyRateCBRF today"
     tags: cron
 
-  - name: deploy flowerbase 8. Cron Light/CurrencyRateCBRF every 30 min 11-18
+  - name: Cron Light/CurrencyRateCBRF every 30 min 11-18
     become: false
     cron:
       name: "flowerbase CurrencyRateCBRF"
@@ -95,14 +95,14 @@
       job: "php {{ project_dir_flowerbase }}/public/index.php Light/CurrencyRateCBRF"
     tags: cron
 
-  - name: deploy flowerbase 9. Cron CitadeleCurrencyLoader every hour 9-21
+  - name: Cron CitadeleCurrencyLoader every hour 9-21
     become: false
     cron:
       name: "flowerbase CitadeleCurrencyLoader"
       state: absent
     tags: cron
 
-  - name: deploy flowerbase 10. Cron UpdateCustomerOutstandingCache at 8
+  - name: Cron UpdateCustomerOutstandingCache at 8
     become: false
     cron:
       name: "flowerbase UpdateCustomerOutstandingCache"
@@ -111,7 +111,7 @@
       job: "php {{ project_dir_flowerbase }}/public/index.php UpdateCustomerOutstandingCache"
     tags: cron
 
-  - name: deploy flowerbase 11. Cron UpdateShipmentCriteria at 0:10
+  - name: Cron UpdateShipmentCriteria at 0:10
     become: false
     cron:
       name: "flowerbase UpdateShipmentCriteria"
@@ -120,7 +120,7 @@
       job: "php {{ project_dir_flowerbase }}/public/index.php UpdateShipmentCriteria"
     tags: cron
 
-  - name: deploy flowerbase 12. Cron Light/Email every minute
+  - name: Cron Light/Email every minute
     become: false
     cron:
       name: "flowerbase Light/Email"
@@ -139,7 +139,7 @@
       job: "php {{ project_dir_flowerbase }}/public/index.php Light/BackupMysqlData"
     tags: cron
 
-  - name: Backup Database Logs Tables (once per month)
+  - name: Cron Backup Database Logs Tables (once per month)
     become: false
     cron:
       name: "flowerbase Light/BackupMysqlLogs"

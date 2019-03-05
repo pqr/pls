@@ -1,47 +1,28 @@
-# Example: ansible-playbook playbook_deploy_toolkit.yml -i inventory.test
+# Example: ansible-playbook 06_install_toolkit.yml -i inventory.test
 - hosts: all
   become: true
-  become_user: root
-  become_method: sudo
   vars_files:
    - vars_decrypted.yml
    - vars_encrypted.yml
 
   tasks:
   # Обновить apt cache:
-  - name: toolkit 1. Update cache
+  - name: Update cache
     apt: update_cache=true
     changed_when: no
 
   # Установить dependency libicu52 для wkhtmltopdf:
-  - name: toolkit 2. Install libicu52
-    apt: deb=http://launchpadlibrarian.net/201330288/libicu52_52.1-8_amd64.deb
+  - name: Install libicu52
+    apt:
+      deb: http://launchpadlibrarian.net/201330288/libicu52_52.1-8_amd64.deb
     tags: wkhtmltopdf
 
   # Установить dependency libxrender1 для wkhtmltopdf:
-  - name: toolkit 2. Install libxrender1
-    apt: name=libxrender1
+  - name: Install libxrender1
+    apt:
+      name: libxrender1
     tags: wkhtmltopdf
 
-#  - name: Download and unarchive wkhtmltopdf
-#    unarchive:
-#      src: https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
-#      dest: /tmp
-#      remote_src: yes
-#    tags:
-#    - tools
-#    - wkhtmltopdf
-#
-#  - name: Copy wkhtmltopdf to bin
-#    become: true
-#    copy:
-#      remote_src: yes
-#      src: /tmp/wkhtmltox/bin/wkhtmltopdf
-#      dest: /usr/local/bin/wkhtmltopdf
-#      mode: 0755
-#    tags:
-#    - tools
-#    - wkhtmltopdf
   - name: Install wkhtmltopdf
     apt:
       deb: https://downloads.wkhtmltopdf.org/0.12/0.12.5/wkhtmltox_0.12.5-1.xenial_amd64.deb
@@ -50,12 +31,13 @@
       - wkhtmltopdf
 
   # Установить нужные в работе утилиты:
-  - name: toolkit 6. Install tools
+  - name: Install tools
     apt: name={{ item }} state=latest
     with_items:
       - mc
       - curl
       - wget
+      - htop
       - unzip
       - unrar
       - p7zip-full
@@ -66,15 +48,15 @@
     tags: tools
 
   # Установить mysql-client:
-  - name: toolkit 7. Install mysql-client
+  - name: Install mysql-client
     apt: name=mysql-client install_recommends=no
     tags: mysql
 
-  - name: toolkit 8. Copy .my.cnf
+  - name: Copy .my.cnf
     become: false
     template:
       src: files/.my.cnf
-      dest: /home/ubuntu/.my.cnf
+      dest: /home/{{ ansible_user }}/.my.cnf
       backup: yes
       mode: 0600
     tags: mysql
@@ -93,20 +75,20 @@
     become: false
     template:
       src: files/goss.yaml.j2
-      dest: /home/ubuntu/goss.yaml"
+      dest: "/home/{{ ansible_user }}/goss.yaml"
     tags:
     - tools
     - goss
 
-  - name: toolkit 9. Sentry-cli
+  - name: Sentry-cli
     become: false
     shell: "curl -sL https://sentry.io/get-cli/ | bash"
     tags: sentry
 
-  - name: toolkit 9. Copy .sentryclirc
+  - name: Copy .sentryclirc
     become: false
     template:
-      src: files/.sentryclirc
-      dest: /home/ubuntu/.sentryclirc
+      src: files/.sentryclirc.j2
+      dest: "/home/{{ ansible_user }}/.sentryclirc"
       mode: 0600
     tags: sentry

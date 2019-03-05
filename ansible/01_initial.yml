@@ -1,8 +1,6 @@
-# Example: ansible-playbook playbook_01_initial.yml
-- hosts: []
+# Example: ansible-playbook 01_initial.yml
+- hosts: all
   become: true
-  become_user: root
-  become_method: sudo
   vars_files:
     - vars_decrypted.yml
 
@@ -18,12 +16,21 @@
     changed_when: no
     tags: cache
 
-  # Установка python-software-properties
-  - name: initial 3. install python-software-properties
-    apt: name=python-software-properties
-    tags: python
+  - name: install software-properties-common
+    apt: name=software-properties-common
 
-  - name: initial 4. locale_gen
+  - name: Install locales
+    apt:
+      name: locales
+    tags: locale
+
+  - name: locale_gen ru_RU
+    locale_gen:
+      name: ru_RU
+      state: present
+    tags: locale
+
+  - name: locale_gen ru_RU.UTF-8
     locale_gen:
       name: ru_RU.UTF-8
       state: present

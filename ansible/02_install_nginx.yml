@@ -1,4 +1,4 @@
-# Example: ansible-playbook playbook_02_install_nginx.yml
+# Example: ansible-playbook 02_install_nginx.yml
 - hosts: all
   become: true
   vars_files:

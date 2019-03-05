@@ -1,4 +1,4 @@
-# Example: ansible-playbook playbook_04_install_composer.yml
+# Example: ansible-playbook 04_install_composer.yml
 - hosts: []
   become: true
   become_user: root
