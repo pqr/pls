@@ -130,11 +130,21 @@
       job: "php {{ project_dir_flowerbase }}/public/index.php Light/Email"
     tags: cron
 
-  - name: deploy flowerbase 13. Cron Light/Backup at 6:20
+  - name: Cron Light/BackupMysqlData at 6:20
     become: false
     cron:
-      name: "flowerbase Light/Backup"
+      name: "flowerbase Light/BackupMysqlData"
       minute: "20"
       hour: "6"
-      job: "php {{ project_dir_flowerbase }}/public/index.php Light/Backup"
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/BackupMysqlData"
+    tags: cron
+
+  - name: Backup Database Logs Tables (once per month)
+    become: false
+    cron:
+      name: "flowerbase Light/BackupMysqlLogs"
+      hour: 5
+      minute: 40
+      day: 3
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/BackupMysqlLogs"
     tags: cron

@@ -136,13 +136,23 @@
       job: "php {{ project_dir_pls }}/public/index.php Light/Email"
     tags: cron
 
-  - name: deploy pls 13. Cron Light/Backup at 6:15
+  - name: Cron Light/BackupMysqlData at 6:15
     become: false
     cron:
-      name: "pls Light/Backup"
+      name: "pls Light/BackupMysqlData"
       minute: "15"
       hour: "6"
-      job: "php {{ project_dir_pls }}/public/index.php Light/Backup"
+      job: "php {{ project_dir_pls }}/public/index.php Light/BackupMysqlData"
+    tags: cron
+
+  - name: Backup Database Logs Tables (once per month)
+    become: false
+    cron:
+      name: "pls Light/BackupMysqlLogs"
+      hour: 5
+      minute: 30
+      day: 3
+      job: "php {{ project_dir_pls }}/public/index.php Light/BackupMysqlLogs"
     tags: cron
 
   - name: deploy pls 14. Cron EmailPendingQuotations14days at 16:30 working days
