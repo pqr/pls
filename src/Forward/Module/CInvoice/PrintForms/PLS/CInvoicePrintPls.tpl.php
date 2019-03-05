@@ -45,7 +45,7 @@
                             ) ?></div>
                     </td>
                     <td width="180"
-                        style="font-size: 40px; text-align: right; font-family: Century Gothic, Verdana, Arial">INVOICE
+                        style="font-size: 40px; text-align: right; font-family: Century Gothic, Verdana, Arial"><?= strtoupper(t::text('DocType')) ?>
                     </td>
                 </tr>
             </table>
@@ -66,7 +66,7 @@
 
                     <td style="font-family: Verdana, Arial; font-size: 11px; text-align: right; width: 40%">
                         <div>Date: <?= t::html('DocDate') ?></div>
-                        <div>INVOICE # <?= t::html('Name') ?></div>
+                        <div><?= strtoupper(t::text('DocType')) ?> # <?= t::html('Name') ?></div>
                         <table style="font-size: 11px; font-family: Century Gothic, Verdana, Arial; width: auto;">
                             <tr valign="top">
                                 <td style="padding-right: 15px;">To:</td>

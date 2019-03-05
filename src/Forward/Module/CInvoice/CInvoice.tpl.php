@@ -207,7 +207,7 @@ if ($csLineIds) {
 
 
         <div style="text-align: right;" id="invoicedate">Date: <?= t::html('DocDate') ?></div>
-        <div style="text-align: right;" id="invoicename">INVOICE # <?= t::html('Name') ?></div>
+        <div style="text-align: right;" id="invoicename"><?= strtoupper(t::text('DocType')) ?> # <?= t::html('Name') ?></div>
         <div style="text-align: right; padding-right: 200px;" id="invoiceto1">To</div>
         <div style="text-align: right; margin-bottom: 15px;" id="invoiceto2"><?= t::html('InvoiceTo') ?></div>
 
