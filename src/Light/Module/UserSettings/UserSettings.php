@@ -87,7 +87,7 @@ class UserSettings extends SettingsPageAbstract
                 'options' => function () {
                     $options = [];
                     for ($m = 1; $m <= 12; $m++) {
-                        $text = Config::$lang === 'ru' ? Misc::getRusMonthName($m) : (new \DateTime("Y-$m-01"))->format('M');
+                        $text = Config::$lang === 'ru' ? Misc::getRusMonthName($m) : (new \DateTime(date('Y') . "-$m-01"))->format('M');
                         $options[$m] = $text;
                     }
                     return $options;
