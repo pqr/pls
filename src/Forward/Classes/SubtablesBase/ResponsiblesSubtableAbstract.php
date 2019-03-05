@@ -3,6 +3,7 @@ namespace Forward\Classes\SubtablesBase;
 
 use Forward\Application;
 use Light\Field\FieldAbstract as F;
+use Light\Link;
 use Light\ObjAbstract;
 use Light\SubtableBase\Subtable;
 
@@ -24,10 +25,6 @@ abstract class ResponsiblesSubtableAbstract extends Subtable
         $this->textAddLink = 'Add Responsible';
         $this->textTableEmpty = 'No responsibles';
 
-        $this->tableLinkModule = 'User';
-        $this->tableLinkIdFieldKey = 'UserID';
-        $this->tableLinkFieldKeys = ['UserID'];
-
         $this->addFields(
 
             F::createSelect('UserID', [
@@ -35,7 +32,14 @@ abstract class ResponsiblesSubtableAbstract extends Subtable
                 'tableWidthHtml' => 160,
                 'options' => "SELECT ID, Name, Active FROM user ORDER BY Name",
                 'empty' => false,
-                'editWidth' => 'medium'
+                'editWidth' => 'medium',
+                'getHtmlFunction' => function($value, array $data, $outHtml) {
+                    if (!$value) {
+                        return $outHtml;
+                    }
+
+                    return Link::userDialog($value, $outHtml);
+                }
             ]),
 
             F::createSelect('Role', [
