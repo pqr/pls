@@ -89,6 +89,12 @@ class Table implements \JsonSerializable
     public $tableLinkBlank = false;
 
     /**
+     * Делать ли ссылки на ключевых полях с хешем #ajax
+     * @var bool
+     */
+    public $tableLinkAjax = false;
+
+    /**
      * Массив ключей полей, которые следует отображать в нужном порядке.
      * Если это поле null, будут выведены все поля.
      * @var array|null
@@ -356,6 +362,16 @@ class Table implements \JsonSerializable
             $linkmodule = ' data-linkmodule="' . htmlspecialchars(Misc::getModule($this->tableLinkModule)) . '"';
         }
 
+        $dataLinkBlank = '';
+        if ($this->tableLinkBlank) {
+            $dataLinkBlank = ' data-linkblank=1';
+        }
+
+        $dataLinkAjax = '';
+        if ($this->tableLinkAjax) {
+            $dataLinkAjax = ' data-linkajax=1';
+        }
+
         $reloadurl = '';
         if ($this->tableReloadUrl) {
             $reloadurl = ' data-reloadurl="' . htmlspecialchars(Misc::getModule($this->tableReloadUrl)) . '"';
@@ -366,7 +382,7 @@ class Table implements \JsonSerializable
             $ajaxChangeFieldUrl = ' data-ajaxchangefieldurl="' . $ajaxChangeFieldUrl . '"';
         }
 
-        return '<div class="table-div"' . $id . $dataTablename . $linkmodule . $reloadurl . $ajaxChangeFieldUrl . '>';
+        return '<div class="table-div"' . $id . $dataTablename . $linkmodule . $dataLinkAjax . $dataLinkBlank . $reloadurl . $ajaxChangeFieldUrl . '>';
     }
 
     /**
@@ -738,6 +754,7 @@ class Table implements \JsonSerializable
                     ->view($id)
                     ->params($fullLinkParams)
                     ->blank($this->tableLinkBlank)
+                    ->ajax($this->tableLinkAjax)
                     ->getHtml();
             }
         }
@@ -750,8 +767,7 @@ class Table implements \JsonSerializable
         int $rowNum,
         array $allFields,
         array $tableLinkUrlParams
-    )
-    {
+    ) {
         $cssClass = $this->getTableRowCssClass($rowDataCalculated, $rowNum);
 
         if ($this->isFindId($rowDataCalculated)) {

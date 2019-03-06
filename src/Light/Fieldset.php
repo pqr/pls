@@ -182,7 +182,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
                 'modes' => F::MODE_READONLY,
                 'nobr' => true,
                 'tableWidthExcel' => 18,
-                'options' => 'user'
+                'options' => 'user',
             ])
         );
 
@@ -386,7 +386,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     {
         foreach ($this->_fields as $field) {
             $value = $rowData[$field->key] ?? null;
-            $value = $field::parseFromDb($value);
+            $value = $this->parseFieldValueFromDb($field, $value);
             if ($field->calcFunction) {
                 $value = $field->getCalculatedValue($value, $rowData, $forTable);
             }
@@ -394,6 +394,24 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
         }
 
         return $rowData;
+    }
+
+    private function parseFieldValueFromDb(F $field, $value)
+    {
+        if ($field->groupconcat && strpos($value, "\n") !== false) {
+            $lines = explode("\n", $value);
+            //Если число линий больше 1 - будем рекурсивно обрабатывать каждую линию
+            if (count($lines) > 1) {
+                //Обработаем каждую строку через метод $this->getCalculatedValueOneLine() и соберём все строки в текст
+                //через перевод строки
+                foreach ($lines as &$lineValue) {
+                    $lineValue = $field::parseFromDb($lineValue);
+                }
+                return implode("\n", $lines);
+            }
+        }
+
+        return $field::parseFromDb($value);
     }
 
     /**
@@ -450,16 +468,16 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
                     /** @noinspection SlowArrayOperationsInLoopInspection */
                     $outData = array_merge($outData, $value);
                 } elseif ($value === 'n/a' && $field->getType() === 'Money') {
-                        $outData[$field->key] = null;
-                    } else {
-                        $outData[$field->key] = $value;
-                    }
-            } elseif ($field->nullable && array_key_exists($field->key, $request)) {
-                    // Если из FieldAbstract::getDataFromRequest() вернулось значение null, тут можем быть несколько вариантов
-                    // 1) это поле вообще не приншо в $request (тогда его не нужно добавлять в $outData)
-                    // 2) это поле пришло в $request и пришло какое-то пустое значение и поле имеет флаг nullable (нужно добавлять в $outData)
                     $outData[$field->key] = null;
+                } else {
+                    $outData[$field->key] = $value;
                 }
+            } elseif ($field->nullable && array_key_exists($field->key, $request)) {
+                // Если из FieldAbstract::getDataFromRequest() вернулось значение null, тут можем быть несколько вариантов
+                // 1) это поле вообще не приншо в $request (тогда его не нужно добавлять в $outData)
+                // 2) это поле пришло в $request и пришло какое-то пустое значение и поле имеет флаг nullable (нужно добавлять в $outData)
+                $outData[$field->key] = null;
+            }
         }
 
         return $outData;

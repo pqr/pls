@@ -23,6 +23,8 @@ export class Table {
     private $tbody: JQuery;
     private name: string;
     private linkModule: string;
+    private linkBlank: boolean;
+    private linkAjax: boolean;
     private currentPage: number;
     private currentReloadXhr: JQueryXHR | null;
 
@@ -41,6 +43,8 @@ export class Table {
         this.name = $div.attr("data-tablename") || "";
         this.reloadUrl = $div.attr("data-reloadurl") || "";
         this.linkModule = $div.attr("data-linkmodule") || "";
+        this.linkBlank = !!$div.attr("data-linkblank");
+        this.linkAjax = !!$div.attr("data-linkajax");
 
         $div.on("click", "span.table-excel a", (e: any) => {
             const ids = this.getSelectedValues();
@@ -102,6 +106,10 @@ export class Table {
                     if (linkId) {
                         href = `?a=${that.linkModule}&id=${linkId}`;
 
+                        if (this.linkAjax) {
+                            href += '&func=Dialog';
+                        }
+
                         // Попробуем проверить, есть ли дополнительные параметры для url
                         const tableLinkUrlParams = this.$table.attr("data-linkurlparams");
                         if (tableLinkUrlParams) {
@@ -123,7 +131,13 @@ export class Table {
                 // Перемещаем окраску findid на строку, по которой был совершен двойной клик
                 $tr.addClass("findid");
                 // Переходим на другую страницу
-                document.location.href = href;
+                if (this.linkAjax) {
+                    $.ajax(href);
+                } else if (this.linkBlank) {
+                    window.open(href, "_blank");
+                } else {
+                    document.location.href = href;
+                }
             }
         });
 

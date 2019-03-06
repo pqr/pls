@@ -90,7 +90,7 @@ trait TableExcelExportable
     {
         $timer = new Timer();
 
-        list($filename, $sheetname) = $this->normalizeFilenameSheetname($filename, $sheetname);
+        [$filename, $sheetname] = $this->normalizeFilenameSheetname($filename, $sheetname);
         if (isset($_GET['json'])) {
 
             $json = json_encode($this->getTableData(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

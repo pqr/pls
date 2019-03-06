@@ -20,7 +20,7 @@ $activeModule = \Light\Request::getModule();
                 $files = glob('lightpublic/i/march8_gifs/*.gif');
                 $file = array_rand($files);
                 ?>
-                <img src="<?= $files[$file] ?>" style="width: 120px; cursor: pointer;" class="march8">
+                <img src="<?= $files[$file] ?>" style="max-width: 120px; max-height: 200px; cursor: pointer;" class="march8">
             </div>
         <?php else: ?>
             <div id="mainmenu__avatar">
