@@ -29,7 +29,7 @@ class CurrencyRate extends ModuleAbstract
         if (User::hasWriteAccess() && User::hasReadAccess('Autolaunch')) {
             $out[] = [
                 'text' => 'Обновить с сайта ЦБРФ',
-                'url' => '?a=Autolaunch&class=CurrencyRateCBRF'
+                'url' => '?a=Autolaunch&class=Light%5CAutolaunch%5CCurrencyRateCBRF'
             ];
         }
 

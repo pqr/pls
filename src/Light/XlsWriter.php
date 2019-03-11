@@ -560,7 +560,7 @@ class XlsWriter
             ->getAlignment()
             ->setVertical(Alignment::VERTICAL_CENTER);
 
-        if ($tableOpts & self::TABLES_WITH_HEADER & self::AUTOFILTER) {
+        if ($tableOpts & self::TABLES_WITH_HEADER && $tableOpts & self::AUTOFILTER) {
             $ws->setAutoFilterByColumnAndRow($col, $row, $lastCol, $lastRow);
         }
         $ws->setSelectedCellByColumnAndRow($col, $row);
