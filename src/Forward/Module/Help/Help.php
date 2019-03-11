@@ -20,7 +20,7 @@ if (isset($_GET['elfinder'])) {
         // Это первичный запрос на рендер каркаса диалога (пока без содержимого с файлами)
         Template::includeTpl(LIGHT_DIR_LIGHT . '/templates/module/elfinderdialog.tpl.php', [
             'module' => 'Help',
-            'id' => 0,
+            'id' => 1,
             'title' => 'Help'
         ]);
         ApplicationAbstract::terminate();
@@ -116,7 +116,7 @@ if (isset($_GET['elfinder'])) {
 
 <h2>Полезная информация</h2>
 <ul>
-    <li><?= \Light\FilesFolder::getLink('Help/0/0', 'Открыть папку с файлами с полезной информацией') ?></li>
+    <li><?= \Light\FilesFolder::getLinkModule('Help', 1, 'Открыть папку с файлами с полезной информацией') ?></li>
 </ul>
 
 <?php
