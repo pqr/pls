@@ -65,6 +65,8 @@ var Forward = {
 
     parseQuantity: function(num) {
         num = Light.parseFloat(num);
+        return Light.round(num);
+        /*
         var floor = Math.floor(num);
         var decimal = num - floor;
         if (decimal > 0) {
@@ -76,6 +78,7 @@ var Forward = {
         }
 
         return num;
+        */
     },
 
     addStandartListeners: function($root) {
@@ -90,7 +93,7 @@ var Forward = {
         });
 
         $root.find("#AirlineAlphaCode").on("keyup change", function() {
-            var newVal = this.value == "%" ? "" : this.value;
+            var newVal = this.value === "%" ? "" : this.value;
             $(this)
                 .prev("#AirlineAlphaCodeInput")
                 .val(newVal);

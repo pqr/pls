@@ -412,6 +412,7 @@ class GeneralFields
             'editWidth' => 'mini',
             'tableWidthHtml' => 50,
             'tableAlign' => 'center',
+            /*
             'getDataFromRequestFunction' => function ($value) {
                 if ($value !== null) {
                     //Округлим в большую сторону до 0.5
@@ -428,6 +429,7 @@ class GeneralFields
 
                 return $value;
             }
+            */
         ]);
     }
 
