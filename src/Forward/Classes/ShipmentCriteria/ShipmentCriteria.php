@@ -288,6 +288,7 @@ class ShipmentCriteria
                 self::NoCInv,
                 self::NotAllCInv,
                 self::OpenCInv,
+                self::PartClearedCInv,
                 self::AllInv,
                 self::AllInvCleared,
                 self::ToBeClosed
@@ -340,6 +341,7 @@ class ShipmentCriteria
                 self::NoVInv,
                 self::NotAllVInv,
                 self::OpenCInv,
+                self::PartClearedCInv,
                 self::AllInv,
                 self::AllInvCleared,
                 self::ToBeClosed
