@@ -164,3 +164,10 @@
       weekday: "1-5"
       job: "php {{ project_dir_pls }}/public/index.php EmailPendingQuotations14days"
     tags: cron
+
+  - name: Cron Light/DailyMaintainance at 5AM
+    cron:
+      name: "pls Light/DailyMaintainance"
+      minute: "0"
+      hour: "5"
+      job: "php {{ project_dir_pls }}/public/index.php Light/DailyMaintainance"
