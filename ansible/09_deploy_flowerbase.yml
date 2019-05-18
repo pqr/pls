@@ -148,3 +148,11 @@
       day: 3
       job: "php {{ project_dir_flowerbase }}/public/index.php Light/BackupMysqlLogs"
     tags: cron
+
+  - name: Cron Light/DailyMaintainance at 5AM
+    cron:
+      name: "pls Light/DailyMaintainance"
+      minute: "0"
+      hour: "5"
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/DailyMaintainance"
+    tags: cron
