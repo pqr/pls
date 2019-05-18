@@ -171,3 +171,12 @@
       minute: "0"
       hour: "5"
       job: "php {{ project_dir_pls }}/public/index.php Light/DailyMaintainance"
+    tags: cron
+
+  - name: Cron DiskFreeSpace at 8:30AM
+    cron:
+      name: "pls DiskFreeSpace"
+      hour: 8
+      minute: 30
+      job: "php {{ project_dir_pls }}/public/index.php DiskFreeSpace"
+    tags: cron

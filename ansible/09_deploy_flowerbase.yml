@@ -155,3 +155,4 @@
       minute: "0"
       hour: "5"
       job: "php {{ project_dir_flowerbase }}/public/index.php Light/DailyMaintainance"
+    tags: cron
