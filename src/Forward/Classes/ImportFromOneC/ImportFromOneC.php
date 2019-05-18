@@ -9,12 +9,15 @@ use Forward\Classes\ImportFromOneC\Importers\ImporterAbstract;
 use Forward\Classes\ImportFromOneC\Importers\ImportVInvoice;
 use Forward\Classes\ImportFromOneC\Importers\ImportVPayment;
 use Forward\ForwardConfig;
+use Light\Autolaunch\BackupHelpres\P7zip;
 use Light\Db;
 use Light\Field\FieldDate;
 use Light\FilesFolder;
 use Light\Msg;
+use function Light\reportException;
 use Light\Request;
 use Light\Response;
+use Symfony\Component\Process\Process;
 
 class ImportFromOneC
 {
@@ -43,14 +46,12 @@ class ImportFromOneC
             return;
         }
 
+        $this->msgBuff = new Msg();
+
         $text = file_get_contents('php://input');
 
-        $relativePath = "log_onecimport/" . (floor($this->importId / 1000)) . "/$this->importId";
-        FilesFolder::mkdir($relativePath);
-        $filepathAbs = FilesFolder::getAbsolute($relativePath) . "/" . time() . ".txt";
-        file_put_contents($filepathAbs, $text);
+        $this->saveOriginalTextToLogFile($text);
 
-        $this->msgBuff = new Msg();
         $data = $this->parseJson($text);
         if (!$data) {
             $log = $this->msgBuff->getText();
@@ -68,8 +69,6 @@ class ImportFromOneC
         Db::updateRow($logData, 'log_onecimport', $this->importId);
 
         $knownTypes = '"cinvoice", "cact", "cpayment", "vinvoice", "vpayment"';
-
-
 
         $importer = null;
         switch ($data['type']) {
@@ -154,4 +153,26 @@ class ImportFromOneC
 
         return $json;
     }
+
+    private function saveOriginalTextToLogFile(string $text)
+    {
+        $relativePath = FilesFolder::getRelativeModule('log_onecimport', $this->importId);
+        FilesFolder::mkdir($relativePath);
+        $time = time();
+        $filepathAbs = FilesFolder::getAbsolute($relativePath) . "/" . $time . ".zip";
+        $cmd = P7zip::create($filepathAbs)
+            ->fromStdin($time . ".txt")
+            ->getCmd();
+        try {
+            $proc = Process::fromShellCommandline($cmd, null, null, $text);
+            // Запускаем синхронно. Если процесс вернёт код отличный от 0, то бросится исключение
+            // https://symfony.com/doc/current/components/process
+            $proc->mustRun();
+
+        } catch (\Exception $e) {
+            $this->msgBuff->addError($e->getMessage());
+            reportException($e);
+        }
+    }
+
 }
