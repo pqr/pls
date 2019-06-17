@@ -2,6 +2,7 @@
 
 namespace Forward\Classes\ImportFromOneC;
 
+use Forward\Application;
 use Forward\Classes\ImportFromOneC\Importers\ImportCAct;
 use Forward\Classes\ImportFromOneC\Importers\ImportCInvoice;
 use Forward\Classes\ImportFromOneC\Importers\ImportCPayment;
@@ -159,20 +160,32 @@ class ImportFromOneC
         $relativePath = FilesFolder::getRelativeModule('log_onecimport', $this->importId);
         FilesFolder::mkdir($relativePath);
         $time = time();
-        $filepathAbs = FilesFolder::getAbsolute($relativePath) . "/" . $time . ".zip";
-        $cmd = P7zip::create($filepathAbs)
-            ->fromStdin($time . ".txt")
-            ->getCmd();
-        try {
-            $proc = Process::fromShellCommandline($cmd, null, null, $text);
-            // Запускаем синхронно. Если процесс вернёт код отличный от 0, то бросится исключение
-            // https://symfony.com/doc/current/components/process
-            $proc->mustRun();
+        $filepathTxtAbs = FilesFolder::getAbsolute($relativePath) . "/" . $time . ".txt";
+        // Сначала сохраняем логи в простом текстовом виде, чтобы сделать это максимально быстро (без тормозов).
+        file_put_contents($filepathTxtAbs, $text);
+        // Затем, отложенно, зазипуем
+        Application::onAfterSend(function() use ($filepathTxtAbs) {
+            $filepathZipAbs = "$filepathTxtAbs.zip";
+            $cmd = P7zip::create($filepathZipAbs)
+                ->inputFilepath($filepathTxtAbs)
+                ->getCmd();
+            try {
+                $proc = Process::fromShellCommandline($cmd);
+                // Запускаем синхронно. Если процесс вернёт код отличный от 0, то бросится исключение
+                // https://symfony.com/doc/current/components/process
+                $proc->mustRun();
 
-        } catch (\Exception $e) {
-            $this->msgBuff->addError($e->getMessage());
-            reportException($e);
-        }
+                // Если успешно зазиповали, можно удалять оригинальный текстовый файл
+                unlink($filepathTxtAbs);
+
+            } catch (\Exception $e) {
+
+                $this->msgBuff->addError($e->getMessage());
+                reportException($e);
+
+            }
+        });
+
     }
 
 }
