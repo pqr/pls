@@ -1,7 +1,7 @@
 <?php use Light\Template as t; ?>
 <table>
     <tr>
-        <td>
+        <td class="col-left">
             <table class="form">
                 <?= t::c('Name') ?>
                 <?= t::c('CompanyID') ?>
@@ -17,6 +17,11 @@
                         <?= t::subtableHtml('Vendors') ?>
                     </td>
                 </tr>
+            </table>
+        </td>
+        <td class="col-right">
+            <table class="form">
+                <?= t::c('NotifyAccountingByEmail') ?>
             </table>
         </td>
     </tr>

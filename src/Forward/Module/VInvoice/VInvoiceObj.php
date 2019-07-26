@@ -254,4 +254,5 @@ class VInvoiceObj extends InvoiceObjAbstract
             }
         }
     }
+
 }
