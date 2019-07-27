@@ -20,6 +20,7 @@ use Light\Field\FieldAbstract as F;
 use Light\File;
 use Light\FilesFolder;
 use Light\Link;
+use Light\Mailer;
 use Light\Misc;
 use Light\ModuleBase\MassactionUtils;
 use Light\Msg;
@@ -102,7 +103,7 @@ class VInvoice extends InvoiceModuleAbstract
             F::createText('Reference', [
                     'sqlWhere' => function ($value) {
                         return Db::getSqlWhereSeparatedByComa($value, 'Name', 0, true, false);
-                    }
+                    },
                 ]
             ),
             F::createText(
@@ -118,7 +119,7 @@ class VInvoice extends InvoiceModuleAbstract
 
                         return $query;
 
-                    }
+                    },
                 ]
             ),
             F::createText(
@@ -138,7 +139,7 @@ class VInvoice extends InvoiceModuleAbstract
                             ) . ")";
 
                         return $query;
-                    }
+                    },
                 ]
             ),
             CF::currency(),
@@ -156,14 +157,14 @@ class VInvoice extends InvoiceModuleAbstract
                     'sqlWhere' => "EXISTS (SELECT VInvoiceID
                                   FROM vinvoice_responsible vr
                                   WHERE vr.VInvoiceID = vinvoice.ID
-                                      AND vr.UserID ='{value}')"
+                                      AND vr.UserID ='{value}')",
                 ]
             ),
 
             F::createSelect('HasVAT', [
                 'name' => 'VAT (НДС)',
                 'options' => [1 => 'Есть НДС'],
-                'sqlWhere' => "EXISTS(SELECT * FROM vinvoiceline WHERE VInvoiceID = vinvoice.ID AND (VATAmount !=0 OR Name = 'НДС'))"
+                'sqlWhere' => "EXISTS(SELECT * FROM vinvoiceline WHERE VInvoiceID = vinvoice.ID AND (VATAmount !=0 OR Name = 'НДС'))",
             ]),
 
             InvoiceFields::filterStatus(
@@ -171,7 +172,7 @@ class VInvoice extends InvoiceModuleAbstract
                 [
                     'Manual' => ['text' => 'Manual Selection', 'optgroup' => 'Mixed'],
                     'Open' => ['text' => 'Open', 'optgroup' => 'Mixed'],
-                    'NotDeleted' => ['text' => 'Not Deleted', 'optgroup' => 'Mixed']
+                    'NotDeleted' => ['text' => 'Not Deleted', 'optgroup' => 'Mixed'],
                 ]
             )
         );
@@ -236,8 +237,8 @@ class VInvoice extends InvoiceModuleAbstract
                         . ' ' . Template::label('Status' . Finance::INVOICESTATUS_DELETED)
                         . '</div>'
                         . '</td></tr></table></div>';
-                }
-            ]
+                },
+            ],
         ];
     }
 
@@ -256,7 +257,7 @@ class VInvoice extends InvoiceModuleAbstract
             'title' => "Сумма приходящаяся на НДС $vatPercent% (на основе столбца 'VAT Amount' в строках счёта + сумма из строки в счёте с текстом услуги 'НДС $vatPercent%')",
             'sqlSelect' => "IFNULL((SELECT sum(VATAmount) FROM vinvoiceline WHERE VATPercent = $vatPercent AND VInvoiceID = vinvoice.ID), 0) + IFNULL((SELECT sum(FinalAmount) FROM vinvoiceline WHERE VInvoiceID = vinvoice.ID AND (Name LIKE 'НДС $vatPercent%' OR Name LIKE 'VAT $vatPercent%')), 0)",
             'zeroEmpty' => true,
-            'zeroEmptyExcel' => true
+            'zeroEmptyExcel' => true,
         ]);
     }
 
@@ -414,7 +415,7 @@ class VInvoice extends InvoiceModuleAbstract
         $resultFilepath = $tmpdir . '/' . $resultFilename;
 
         $descriptorspec = [
-            2 => ["pipe", "w"]
+            2 => ["pipe", "w"],
         ];
         $cmd = '7z';
         //Команда "a" означает добавить файл в архив
@@ -474,8 +475,10 @@ class VInvoice extends InvoiceModuleAbstract
 
         parent::afterSubmit($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, $fromMultipleUpdat);
 
-        // Автоматически создадим JSON файл для 1С
         /** @var VInvoiceObj $obj */
+        $this->emailToAccountingIfNeeded($obj, $msgBuff);
+
+        // Автоматически создадим JSON файл для 1С
         $this->sendToOneC($obj);
     }
 
@@ -563,7 +566,7 @@ class VInvoice extends InvoiceModuleAbstract
             //Иначе подставим имя инвойса в форму поиска в режиме List
             $filterValues = [
                 'Reference' => $_REQUEST['try'],
-                'FileNumbers' => $_REQUEST['filenumber']
+                'FileNumbers' => $_REQUEST['filenumber'],
             ];
             Response::redirect('VInvoice', ['filterValues' => json_encode($filterValues)]);
         }
@@ -659,4 +662,35 @@ class VInvoice extends InvoiceModuleAbstract
 //        file_put_contents($ftpFilepathAbs, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
     }
 
+    private function emailToAccountingIfNeeded(VInvoiceObj $obj, Msg $msgBuff)
+    {
+        $vendor = Db::getRow("SELECT NotifyAccountingByEmail, Name FROM vendoraccount WHERE ID = @i", $obj['VendorAccountID']);
+        if ($vendor['NotifyAccountingByEmail']) {
+
+            /*
+             * Прошу внести в карточку Vendor Accounts поле, при выборе которого, при внесении входящего счета в файл, база будет генерировать письмо в бухгалтерию.
+            В этом письме нам нужна следующая информация:
+            - наша компания (из Our Company);
+            - вендор;
+            - номер авианакладной или иного документа (коносамент);
+            - номер счета;
+            - дата счета.
+             */
+
+            $mawbs = Db::getOne("SELECT GROUP_CONCAT(DISTINCT MAWBNumber) FROM vinvoiceline WHERE VInvoiceID = @i",
+                $obj->getId());
+
+            $subject = 'Входщий счёт ' . $obj['Name'] . ' от ' . $vendor['Name'];
+            $body = 'Новый входящий счёт (' . $obj->getLinkView('Посмотреть в базе >>')->blank()->absolute()->getHtml() . ')'
+                . '<p><small>Our Company:</small> ' . $obj->getFieldText('CompanyID') . '</p>'
+                . '<p><small>Vendor Account:</small> ' . $obj->getFieldText('VendorAccountID') . '</p>'
+                . '<p><small>MAWB/BL:</small> ' . htmlspecialchars($mawbs) . '</p>'
+                . '<p><small>Номер счёта:</small> ' . $obj->getFieldText('Name') . '</p>'
+                . '<p><small>Дата счёта:</small> ' . $obj->getFieldText('DocDate') . '</p>';
+
+            Mailer::create('accounting@proactive-ls.com', $subject, $body)
+                ->wrapBodyWithHtmlTemplate()
+                ->send($msgBuff);
+        }
+    }
 }

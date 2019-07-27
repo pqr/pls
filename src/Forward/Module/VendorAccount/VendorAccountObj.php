@@ -26,7 +26,12 @@ class VendorAccountObj extends ObjAbstract
 
             CF::active(),
 
-            CF::comments()
+            CF::comments(),
+
+            F::createCheckbox('NotifyAccountingByEmail', [
+                'name' => 'Уведомить бухгалтерию при получении входящего счёта',
+                'ajax' => true,
+            ])
 
         );
     }
