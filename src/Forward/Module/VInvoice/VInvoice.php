@@ -476,7 +476,9 @@ class VInvoice extends InvoiceModuleAbstract
         parent::afterSubmit($obj, $dataFromPost, $affectedRows, $oldData, $msgBuff, $fromMultipleUpdat);
 
         /** @var VInvoiceObj $obj */
-        $this->emailToAccountingIfNeeded($obj, $msgBuff);
+        if ($this->_justInserted) {
+            $this->emailToAccountingIfNeeded($obj, $msgBuff);
+        }
 
         // Автоматически создадим JSON файл для 1С
         $this->sendToOneC($obj);
