@@ -2,6 +2,7 @@
 
 namespace Light;
 
+use Light\ChangeDetector\ChangeDetector;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldMoneyWithCurrency;
 use Light\SubtableBase\Subtable;
@@ -22,6 +23,14 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     protected $_id = 0;
     protected $_data = [];
 
+    /** @var string[] Массив классов подтаблиц, которые нужно загрузить для этого объекта
+     * чтобы правильно сработало определение изменений в методе afterSubmit
+     */
+    protected $subtablesChangeDetection = [];
+
+    /** @var Subtable[] массив истансов подтаблиц с загруженными данными - удобно для сравнения данных новых и старых */
+    private $subtables = [];
+
     private $justInserted = false;
     private $alreadyUpdated = false;
     private $affectedRows = 0;
@@ -32,13 +41,17 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     private $oldData = [];
 
     private $masterModuleForDbLog;
-    protected $_masterIdForDbLog;
+    private $masterFieldKey;
+    private $masterIdForDbLog;
 
-    /** @var Fieldset|F[] */
+    /** @var Fieldset */
     protected $_fieldset;
 
     private $_descriptionFunction;
 
+    /**
+     * @return Fieldset
+     */
     final public function getFieldset()
     {
         // Лениво инициализируем fieldset, если его ещё нет
@@ -100,6 +113,12 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
             }
         }
 
+        // Добавляем поле ссылающееся на Master объект
+        $masterFieldKey = $this->getMasterFieldKey();
+        if ($masterFieldKey !== 'ID' && !in_array($masterFieldKey, $correctKeys)) {
+            $correctKeys[] = $masterFieldKey;
+        }
+
         return "SELECT {$fieldset->getSqlSelect($correctKeys)}
                 FROM " . Db::quote($this->getDbTable()) . "
                 WHERE ID = " . (int)$this->_id;
@@ -115,6 +134,11 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this->getField($fieldKey)->getHtml($this[$fieldKey], $this->_data);
     }
 
+    public function getFieldHtmlInput(string $fieldKey)
+    {
+        return $this->getField($fieldKey)->getHtmlInput($this[$fieldKey], $this->_data);
+    }
+
     public function getFieldText(string $fieldKey)
     {
         return $this->getField($fieldKey)->getText($this[$fieldKey], $this->_data);
@@ -125,7 +149,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this->getField($fieldKey)->getExcel($this[$fieldKey], $this->_data);
     }
 
-    public function getId()
+    public function getId(): int
     {
         return $this->_id;
     }
@@ -152,18 +176,29 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this;
     }
 
-    public function getMasterIdForDbLog()
+    public function getMasterIdForDbLog(): int
     {
-        return $this->_masterIdForDbLog;
+        // Ссылка на родительский объект (для записи логов)
+        // 1) могла быть установлена явно вызовом setMasterIdForDbLog()
+        // 2) или может быть прочитана из уже загруженных данных $this->_data
+        // 3) или это просто id текущего объекта
+        return (int)($this->masterIdForDbLog ?? $this->_data[$this->getMasterFieldKey()] ?? $this->_id);
     }
 
     public function setMasterIdForDbLog(int $masterId)
     {
-        $this->_masterIdForDbLog = $masterId;
+        $this->masterIdForDbLog = $masterId;
         return $this;
     }
 
-    public function getMasterModuleForDbLog()
+    public function setMasterModuleForDbLog(string $masterModule)
+    {
+        // Поскольку в переменной $masterModule может прийти fully qualified class name, приведём к короткому имени
+        $this->masterModuleForDbLog = Misc::getModule($masterModule);
+        return $this;
+    }
+
+    public function getMasterModuleForDbLog(): string
     {
         if ($this->masterModuleForDbLog === null) {
             $this->masterModuleForDbLog = Misc::getModule($this);
@@ -172,11 +207,36 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this->masterModuleForDbLog;
     }
 
-    public function setMasterModuleForDbLog(string $masterModule)
+    public function setMasterFieldKey(string $fieldKey)
     {
-        // Поскольку в переменной $masterModule может прийти fully qualified class name, приведём к короткому имени
-        $this->masterModuleForDbLog = Misc::getModule($masterModule);
-        return $this;
+        $this->masterFieldKey = $fieldKey;
+    }
+
+    public function getMasterFieldKey(): string
+    {
+        if ($this->masterFieldKey === null) {
+            //<projectNamespace>\Module\<module>\<module>Obj
+            // или <projectNamespace>\Module\<module>\Subtables\<some>Obj
+
+            // Получим класс текущего объекта без неймспейсов
+            $class = get_class($this);
+            $parts = explode('\\', $class);
+            if (!empty($parts[3]) && $parts[3] === 'Subtables') {
+                // Получим модуль, в которм находится текущий объект
+                $module = $this->getMasterModuleForDbLog();
+                // Объекты подтаблиц имеют masterFieldKey, который выглядит как имя модуля + суффикс ID
+                // например: CustomerAccountID
+                $this->masterFieldKey = $module . 'ID';
+
+            } else {
+
+                // Это не объект подтаблицы, а какой-то другой обычный объект
+                // для него примем masterFieldKey = 'ID'
+                $this->masterFieldKey = 'ID';
+            }
+        }
+
+        return $this->masterFieldKey;
     }
 
     public function getDbTable()
@@ -309,22 +369,17 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      */
     public function isChanged(string $fieldKey): bool
     {
-        if (!array_key_exists($fieldKey, $this->_data)) {
-            // Если в текущем массиве данных нет этого поля, значит пользователь передал какой-то ошибочный fieldKey
-            // просто вернём false, будто поле не менялось
-            return false;
-        }
+        return ChangeDetector::isChanged($fieldKey, $this->_data, $this->oldData);
+    }
 
-        if (!$this->oldData || !array_key_exists($fieldKey, $this->oldData)) {
-            // Если в старом массиве данных нет этого поля, скорее всего объект был только что создан,
-            // считаем поле изменившимся
-            return true;
-        }
+    public function isChangedTo(string $fieldKey, $expectedValue): bool
+    {
+        return ChangeDetector::isChangedTo($fieldKey, $this->_data, $this->oldData, $expectedValue);
+    }
 
-        $oldValue = $this->oldData[$fieldKey];
-        $newValue = $this->_data[$fieldKey];
-
-        return $oldValue !== $newValue;
+    public function isChangedFrom(string $fieldKey, $expectedOldValue): bool
+    {
+        return ChangeDetector::isChangedFrom($fieldKey, $this->_data, $this->oldData, $expectedOldValue);
     }
 
     public function isJustInserted(): bool
@@ -335,6 +390,11 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     public function isSomethingChanged(): bool
     {
         return $this->affectedRows > 0;
+    }
+
+    public function getAffectedRows(): int
+    {
+        return $this->affectedRows;
     }
 
     /**
@@ -349,21 +409,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
             false;
         }
 
-        if (!array_key_exists($fieldKey, $this->_data)) {
-            // Если в текущем массиве данных нет этого поля, значит пользователь передал какой-то ошибочный fieldKey
-            // просто вернём false, будто поле не менялось
-            return false;
-        }
-
-        if (!$this->oldData || !array_key_exists($fieldKey, $this->oldData)) {
-            // Если в старом массиве данных нет этого поля, это странно, но вернём true, будто поле обновилось
-            return true;
-        }
-
-        $oldValue = $this->oldData[$fieldKey];
-        $newValue = $this->_data[$fieldKey];
-
-        return $oldValue !== $newValue;
+        return $this->isChanged($fieldKey);
     }
 
     /**
@@ -373,20 +419,15 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      */
     public function isFilled(string $fieldKey): bool
     {
-        if (!array_key_exists($fieldKey, $this->_data) || !$this->hasField($fieldKey)) {
-            // Если в текущем массиве данных нет этого поля, значит пользователь передал какой-то ошибочный fieldKey
-            // просто вернём false, будто поле не менялось
+        if (!$this->hasField($fieldKey)) {
+            // Пользователь ошибся в имени поля
             return false;
         }
 
-        $oldValue = $this->oldData[$fieldKey] ?? null;
-        $newValue = $this->_data[$fieldKey];
-
+        // Методу isFilled требуется объект самого поля, чтобы применить функцию $field::empty(...)
         $field = $this->getField($fieldKey);
-
-        return $field::isEmpty($oldValue) && !$field::isEmpty($newValue);
+        return ChangeDetector::isFilled($fieldKey, $this->_data, $this->oldData, $field);
     }
-
 
     /**
      * Возвращает true, если поле изменило своё значение с заполненного на пустое
@@ -395,23 +436,48 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      */
     public function isCleared(string $fieldKey): bool
     {
-        if (!array_key_exists($fieldKey, $this->_data) || !$this->hasField($fieldKey)) {
-            // Если в текущем массиве данных нет этого поля, значит пользователь передал какой-то ошибочный fieldKey
-            // просто вернём false, будто поле не менялось
+        if (!$this->hasField($fieldKey)) {
+            // Пользователь ошибся в имени поля
             return false;
         }
 
-        $oldValue = $this->oldData[$fieldKey] ?? null;
-        $newValue = $this->_data[$fieldKey];
+        // Методу isFilled требуется объект самого поля, чтобы применить функцию $field::empty(...)
+        $field = $this->getField($fieldKey);
+        return ChangeDetector::isCleared($fieldKey, $this->_data, $this->oldData, $field);
+    }
+
+    public function empty(string $fieldKey): bool
+    {
+        if (!$this->hasField($fieldKey)) {
+            return true;
+        }
+
+        if (!array_key_exists($fieldKey, $this->_data)) {
+            return true;
+        }
 
         $field = $this->getField($fieldKey);
+        return $field::empty($this->_data[$fieldKey]);
+    }
 
-        return !$field::isEmpty($oldValue) && $field::isEmpty($newValue);
+    public function notEmpty(string $fieldKey): bool
+    {
+        return !$this->empty($fieldKey);
     }
 
     public function getOldFieldValue(string $fieldKey)
     {
         return $this->oldData[$fieldKey] ?? null;
+    }
+
+    public function oldEmpty(string $fieldKey): bool
+    {
+        if (!$this->hasField($fieldKey)) {
+            return true;
+        }
+
+        $field = $this->getField($fieldKey);
+        return $field::empty($this->getOldFieldValue($fieldKey));
     }
 
     /**
@@ -444,6 +510,84 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     final public function getData()
     {
         return $this->_data;
+    }
+
+    final public function getOldData(): array
+    {
+        return $this->oldData ?? [];
+    }
+
+    final public function isLoaded(): bool
+    {
+        return (bool)$this->_data;
+    }
+
+    /**
+     * Метод используется перед обновлением самого объекта в ModuleAbstract
+     * чтобы внутрь объекта загрузить информацию по его Subtables
+     *
+     * А после обновления самого объекта в ModuleAbstract, этот метод вызывается ещё раз
+     * чтобы загрузить свежие данные по его Subtables
+     *
+     * В итоге это позволит сравнить данные внутри подтаблиц до обновления и после обновления
+     *
+     */
+    final public function loadSubtablesForChangeDetection()
+    {
+        foreach ($this->subtablesChangeDetection as $subtableClass) {
+            $this->loadSubtable($subtableClass);
+        }
+    }
+
+    public function loadSubtable(string $subtableClass): Subtable
+    {
+        if (!isset($this->subtables[$subtableClass])) {
+            // Если это первый запуск загрузки подтаблиц, то нужно создать объект и сохранить его во внутреннем
+            // массиве
+            $subtable = new $subtableClass($this);
+            $this->subtables[$subtableClass] = $subtable;
+        }
+
+        // Внутри $subtable->loadData() происходит следующее:
+        // если это не первая загрузка (т.е. объект Subtable уже был инициализирован ранее и данные уже загружалис)
+        // то копия старых данных будет сохранена внутри Subtable в свойстве oldData - удобно для дальнейшего сравнения
+        $this->subtables[$subtableClass]->loadData();
+        return $this->subtables[$subtableClass];
+    }
+
+    public function hasSubtableOldData(string $subtableClass): bool
+    {
+        if (!isset($this->subtables[$subtableClass])) {
+            return false;
+        }
+
+        $subtable = $this->subtables[$subtableClass];
+        return $subtable->hasSubtableOldData();
+    }
+
+    public function getSubtableOldData(string $subtableClass): array
+    {
+        if (!isset($this->subtables[$subtableClass])) {
+            return [];
+        }
+
+        $subtable = $this->subtables[$subtableClass];
+        return $subtable->getSubtableOldData();
+    }
+
+    public function getSubtableData(string $subtableClass): array
+    {
+        $subtable = $this->getSubtable($subtableClass);
+        return $subtable->getSubtableData();
+    }
+
+    public function getSubtable(string $subtableClass): Subtable
+    {
+        if (!isset($this->subtables[$subtableClass])) {
+            $this->loadSubtable($subtableClass);
+        }
+
+        return $this->subtables[$subtableClass];
     }
 
     final public function getDataWithSubtables(array $subtables)
@@ -518,8 +662,8 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
             if ($newValueFormated !== $oldValueFormated || $oldValue != $newValue) {
 
-                $masterModule = (string)$this->getMasterModuleForDbLog();
-                $masterId = (int)($this->_masterIdForDbLog ?: $this->_id);
+                $masterModule = Misc::getModule($this->getMasterModuleForDbLog());
+                $masterId = $this->getMasterIdForDbLog();
                 $tableName = (string)$this->getDbTable();
                 $recordId = (int)$this->_id;
                 $fieldDescription = (string)$field->getNameDbLog();
@@ -551,15 +695,16 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     public function getDescriptionHtml()
     {
         $nameFieldKey = $this->getNameFieldKey();
+        $description = '';
         if (array_key_exists($nameFieldKey, $this->_data) && $this->hasField($nameFieldKey)) {
             // Получаем HTML представление поля в режиме forLog
             $description = $this->getField($nameFieldKey)->getHtml($this->_data[$nameFieldKey], $this->_data, false,
                 true);
-        } else {
-            $description = 'Unknown';
-            if (isset($this->_data['ID'])) {
-                $description .= " ID " . $this->_data['ID'];
-            }
+        }
+
+        if (!$description && !empty($this->_data['ID'])) {
+            // Если после получения описания на основе $nameFieldKey всё равно пусто, сделаем просто в форме ID
+            $description = "ID " . $this->_data['ID'];
         }
 
         if ($this->_descriptionFunction) {
@@ -570,6 +715,11 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $description;
     }
 
+    public function getDescriptionText()
+    {
+        return strip_tags($this->getDescriptionHtml());
+    }
+
     /**
      * @param array $fieldsData
      * @param string $dbLogMsg
@@ -578,7 +728,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      */
     public function insertDb(array $fieldsData, $dbLogMsg = '')
     {
-
         // Устанавливаем $oldData в пустой массив, чтобы зафиксировать факт, что раньше этот объект был
         // полностью пустым и мы сейчас его создаём
         $this->justInserted = true;
@@ -617,8 +766,8 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
             $this->loadData();
         }
 
-        $masterModule = (string)$this->getMasterModuleForDbLog();
-        $masterId = (int)($this->_masterIdForDbLog ?: $this->_id);
+        $masterModule = $this->getMasterModuleForDbLog();
+        $masterId = $this->getMasterIdForDbLog();
         $tableName = (string)$this->getDbTable();
         $recordId = (int)$this->_id;
 
@@ -635,8 +784,8 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
     public function writeDbLogText($text, $fieldKey = '', $fieldDescription = '')
     {
-        $masterModule = (string)$this->getMasterModuleForDbLog();
-        $masterId = (int)($this->_masterIdForDbLog ?: $this->_id);
+        $masterModule = $this->getMasterModuleForDbLog();
+        $masterId = $this->getMasterIdForDbLog();
         $tableName = (string)$this->getDbTable();
         $recordId = (int)$this->_id;
 
@@ -694,14 +843,13 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     {
         if (!$this->hasField($fieldKey)) {
             // Это может быть поле с фуффикстом CurrencyISO, но нужно проверить по основному полю Amount
-            // например: TruckingBuyingRateCurrencyISO и TruckingBuyingRateAmount
-            if (strpos($fieldKey, 'CurrencyISO') !== false) {
-                // Это часть составного поля MoneyWithCurrency, тогда всё зависит от прав доступа на основное поле
-                $baseFieldKey = str_replace('CurrencyISO', '', $fieldKey);
-                if (!$this->hasField($baseFieldKey)) {
-                    $baseFieldKey .= 'Amount';
+            // Найдём поле среди основных у которого getCurrencyIsoDbFieldKey() возвращает требуемый ключ
+            foreach ($this->getFieldset() as $possibleAmountFeld) {
+                if ($possibleAmountFeld instanceof FieldMoneyWithCurrency && $possibleAmountFeld->getCurrencyIsoDbFieldKey() === $fieldKey) {
+                    // Нашли основное поле Amount, к которому относится текущее поле с валютой
+                    // Доступ к валюте совпадает с основным полем
+                    return $this->hasFieldModeSubmit($possibleAmountFeld->key);
                 }
-                return $this->hasFieldModeSubmit($baseFieldKey);
             }
 
             // Если поля нет в fieldset, значит и доступа на сохранение (submit) нет
@@ -731,24 +879,50 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $fieldsData;
     }
 
+    private function checkFieldAccessFunction(string $fieldKey, array $currentObjData): bool
+    {
+        if (!$this->hasField($fieldKey)) {
+
+            $amountFieldKey = $this->getAmountFieldKeyFromCurrencyFieldKey($fieldKey);
+            if (!$amountFieldKey) {
+                // Если поля нет в fieldset, значит editAccessFunction проверить не удастся
+                return false;
+            }
+
+            return $this->checkFieldAccessFunction($amountFieldKey, $currentObjData);
+        }
+
+        return $this->getField($fieldKey)->checkAccessFunction($currentObjData);
+    }
+
     private function checkFieldEditAccessFunction(string $fieldKey, array $currentObjData): bool
     {
         if (!$this->hasField($fieldKey)) {
-            // Пример: TruckingBuyingRateAmount и TruckingBuyingRateCurrencyISO
-            if (strpos($fieldKey, 'CurrencyISO') !== false) {
-                // Это часть составного поля MoneyWithCurrency, тогда всё зависит от прав доступа на основное поле
-                $baseFieldKey = str_replace('CurrencyISO', '', $fieldKey);
-                if (!$this->hasField($baseFieldKey)) {
-                    $baseFieldKey .= 'Amount';
-                }
-                return $this->checkFieldEditAccessFunction($baseFieldKey, $currentObjData);
+
+            $amountFieldKey = $this->getAmountFieldKeyFromCurrencyFieldKey($fieldKey);
+            if (!$amountFieldKey) {
+                // Если поля нет в fieldset, значит editAccessFunction проверить не удастся
+                return false;
             }
 
-            // Если поля нет в fieldset, значит editAccessFunction проверить не удастся
-            return false;
+            return $this->checkFieldEditAccessFunction($amountFieldKey, $currentObjData);
         }
 
         return $this->getField($fieldKey)->checkEditAccessFunction($currentObjData);
+    }
+
+    private function getAmountFieldKeyFromCurrencyFieldKey(string $currencyFieldKey): ?string
+    {
+        // Пример: TruckingBuyingRateAmount и TruckingBuyingRateCurrencyISO
+        if (strpos($currencyFieldKey, 'CurrencyISO') !== false) {
+            // Это часть составного поля MoneyWithCurrency, тогда всё зависит от прав доступа на основное поле
+            $baseFieldKey = str_replace('CurrencyISO', '', $currencyFieldKey);
+            if (!$this->hasField($baseFieldKey)) {
+                $baseFieldKey .= 'Amount';
+            }
+            return $baseFieldKey;
+        }
+        return null;
     }
 
     final public function __call($method, $args)
@@ -779,16 +953,16 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     public function getLinkView(string $innerHtml = null): Link
     {
         if (!$innerHtml) {
-            $innerHtml = $this->getDescriptionHtml();
+            $innerHtml = $this->getDescriptionHtml() ?: (string)$this->getId();
         }
         $module = $this->getMasterModuleForDbLog();
-        $id = (int)($this->_masterIdForDbLog ?: $this->_id);
+        $id = $this->getMasterIdForDbLog();
         return Link::create($module, $innerHtml)->view($id);
     }
 
     public function getLinkViewDialog(): Link
     {
-        return $this->getLinkView()->funcDialog();
+        return $this->getLinkView()->viewDialog();
     }
 
     /**
@@ -796,12 +970,23 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      * Запускается автоматически в ModuleAbstract после того как сохранён сам объект и все подтаблицы
      * Удобен для пересчёта различных кеширующих полей, когда подтаблицы уже сохранены.
      * При вызове этого метода мы по сути принимаем текущий объект корнем агрегата
-     * @param array $oldData
      * @param Msg $msgBuff
      */
-    public function afterSubmit(array $oldData, Msg $msgBuff)
+    public function afterSubmit(Msg $msgBuff): void
     {
 
+    }
+
+    /**
+     * Отдельный метод на случай, когда нужно обновить кеширующие поля после Multiple Update
+     * По умолчанию он запускает более общий метод afterSubmit()
+     * Можно переопределить это поведение в классах потомках,
+     * если требуется какое-то особое поведение после Multiple Update
+     * @param Msg $msgBuff
+     */
+    public function afterMultipleUpdate(Msg $msgBuff): void
+    {
+        $this->afterSubmit($msgBuff);
     }
 
     /**
@@ -809,11 +994,24 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      * Запускается автоматически в ModuleAbstract после того как удалён сам объект и все подтаблицы
      * Удобен для удаления различных кеширующих полей, когда подтаблицы уже очищены.
      * При вызове этого метода мы по сути принимаем текущий объект корнем агрегата
-     * @param array $oldData
      * @param Msg $msgBuff
      */
-    public function afterDelete(array $oldData, Msg $msgBuff)
+    public function afterDelete(Msg $msgBuff): void
     {
+    }
 
+    public function accessRead(int $userId = null): bool
+    {
+        return true;
+    }
+
+    public function accessWrite(int $userId = null): bool
+    {
+        return true;
+    }
+
+    public function accessDelete(int $userId = null): bool
+    {
+        return $this->accessWrite($userId);
     }
 }

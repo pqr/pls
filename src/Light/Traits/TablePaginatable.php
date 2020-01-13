@@ -236,10 +236,25 @@ trait TablePaginatable
                 Скорее всего, вам и не нужно столько записей на одном экране, сложно смотреть одновременно на {$this->maxRowsPerPage} строк в таблице и понимать смысл происходящего.
                 <br>Рекомендуем <a href=#0 class=table-showall-link>переключиться в режим {$this->defaultRowsPerPage} на страницу</a>. Примечание: функция экспорта в Excel выгружает все найденные записи вне зависимости от выбранного режима отображения на экране и без разбивки по страницам."
                 : "You are in \"{$this->maxRowsPerPage} pre page\" mode - this might be slow. Recommend <a href=#0 class=table-showall-link>switch to {$this->defaultRowsPerPage} per page</a>.";
-            return '<div class="alert alert-warning">'.$msg.'</div>';
+            return '<div class="alert alert-warning">' . $msg . '</div>';
         }
 
         return '';
 
+    }
+
+    protected function getDataQueryWithLimits(string $query, bool $isXls): string
+    {
+        if ($isXls) {
+            return $query .' LIMIT ' . $this->getTableExcelMaxRows();
+        }
+
+        if (!$this->allowPagination) {
+            return $query;
+        }
+
+        $page = $this->getTablePage();
+        $rowsPerPage = $this->getTableRowsPerPage();
+        return $query . ' LIMIT ' . ($page - 1) * $rowsPerPage . ', ' . $rowsPerPage;
     }
 }

@@ -6,19 +6,33 @@ use Light\Config;
 
 class FieldYesNo extends FieldSelect
 {
+    public $textYes = 'Yes';
+    public $textNo = 'No';
+
+    public $cssClassYes = 'yes';
+    public $cssClassNo = 'no';
+
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
 
-        $textYes = Config::$lang === 'ru' ? 'Да' : 'Yes';
-        $textNo = Config::$lang === 'ru' ? 'Нет' : 'No';
+        if (Config::$lang === 'ru') {
+            $this->textYes = 'Да';
+            $this->textNo = 'Нет';
+        }
 
         $this->empty = false;
         $this->tableAlign = 'center';
-        $this->options = [
-            0 => ['text' => $textNo, 'cssClass' => 'no'],
-            1 => ['text' => $textYes, 'cssClass' => 'yes']
-        ];
+
+        // используем функцию, чтобы подставить текст который пользователь возможно позже заполнил
+        // в $this->textNo и $this->textYes
+        $this->options = function () {
+            return [
+                0 => ['text' => $this->textNo, 'cssClass' => $this->cssClassNo],
+                1 => ['text' => $this->textYes, 'cssClass' => $this->cssClassYes],
+            ];
+        };
+
         $this->editWidth = 'small';
     }
 

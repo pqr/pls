@@ -32,9 +32,9 @@ class FieldCheckbox extends FieldAbstract
         return parent::getNameTableSettings() . ' (' . $this->textYes . '/' . $this->textNo . ')';
     }
 
-    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeOverflow300 = false)
+    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeViewMaxWidth = false)
     {
-        $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeOverflow300);
+        $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeViewMaxWidth);
         if ($value !== null) {
             $viewCssClass .= ' ' . ($value ? $this->cssClassYes : $this->cssClassNo);
         }
@@ -44,6 +44,10 @@ class FieldCheckbox extends FieldAbstract
 
     public function getText($value, array $data = [], $forTable = false)
     {
+        if (!$this->checkAccessFunction($data)) {
+            return '';
+        }
+
         if ($value === null) {
             return '';
         }
@@ -105,6 +109,6 @@ class FieldCheckbox extends FieldAbstract
 
     public function allowSqlWhereValue($value)
     {
-        return false;
+        return !empty($this->sqlWhere);
     }
 }

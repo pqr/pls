@@ -119,7 +119,7 @@ class Session implements \SessionHandlerInterface
     {
         if (self::$msgBuff && count(self::$msgBuff) && User::getId()) {
             // Есть какие-то новые flash сообщения, запишем их в таблицу user_flash
-            $flashMessagesJson = json_encode(self::$msgBuff->getAll(), JSON_UNESCAPED_UNICODE);
+            $flashMessagesJson = Misc::json(self::$msgBuff->getAll());
             Db::query(
                 "INSERT INTO user_flash (UserID, Messages)
                  VALUES (" . User::getId() . ", " . Db::escString($flashMessagesJson) . ")"

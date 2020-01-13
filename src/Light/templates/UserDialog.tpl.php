@@ -1,29 +1,40 @@
 <?php
 
 use Light\Config;
+use Light\Ico;
 use Light\Mainmenu;
 use Light\Misc;
 use Light\Template as t;
+use Light\Translate;
+use Light\User;
 
 ?>
+
 <table class="form">
     <tr>
-        <th></th>
-        <td style="background-color: transparent">
-            <div style="display: flex; justify-content: space-between; align-items: center">
-                <div>
-                    <h3><?= t::text('Name') ?></h3>
-                </div>
-                <div style="text-align: right">
-                    <img class="avatar" src="<?= Mainmenu::getUserAvatarImgSrc(t::value('ID')) ?>">
-                </div>
-            </div>
+        <th><?= User::avatarImgHtml(t::value('ID')) ?></th>
+        <td style="background-color: transparent; vertical-align: middle">
+            <h3 style="font-size: 25px; margin: 0"><?= t::text('Name') ?></h3>
+            <?php if (isset($Idle)): ?>
+            <div class="small" style="margin-top: 5px">Последняя активность <?= $Idle ?></div>
+            <?php endif; ?>
         </td>
     </tr>
+
     <?= t::c('Email') ?>
-    <?= t::c('InnerPhone') ?>
-    <?= t::c('Mobile') ?>
-    <?= t::c('Position') ?>
+
+    <?php if (t::value('InnerPhone')): ?>
+        <?= t::c('InnerPhone') ?>
+    <?php endif; ?>
+
+    <?php if (t::value('Mobile')): ?>
+        <?= t::c('Mobile') ?>
+    <?php endif; ?>
+
+    <?php if (t::value('Position')): ?>
+        <?= t::c('Position') ?>
+    <?php endif; ?>
+
     <?php if (t::value('BirthDay') && t::value('BirthMonth')): ?>
         <tr>
             <th>
@@ -36,11 +47,20 @@ use Light\Template as t;
             <td>
                 <?= t::html('BirthDay') ?>
                 <?php if (Config::$lang === 'ru'): ?>
-                    <?= Misc::getRusMonthName(t::value('BirthMonth'), true) ?>
+                    <?= Translate::monthRu(t::value('BirthMonth'), true) ?>
                 <?php else: ?>
                     <?= t::html('BirthMonth') ?>
                 <?php endif; ?>
             </td>
         </tr>
     <?php endif; ?>
+    <?php if (isset($UserSettingsLink)): ?>
+        <tr>
+            <th></th>
+            <td style="background-color: transparent;"><?= $UserSettingsLink ?></td>
+        </tr>
+    <?php endif; ?>
 </table>
+
+<?= $UserVacationsHtml ?>
+<?= $UserDialogAdditionalHtml ?>

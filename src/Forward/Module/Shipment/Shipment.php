@@ -31,7 +31,7 @@ use Light\Field\FieldMoney;
 use Light\Field\FieldMoneyWithCurrency;
 use Light\File;
 use Light\FilesFolder;
-use Light\Img;
+use Light\Ico;
 use Light\InvStatus;
 use Light\Link;
 use Light\Mailer;
@@ -42,6 +42,7 @@ use Light\ObjAbstract;
 use Light\Response;
 use Light\Session;
 use Light\Template;
+use Light\Translate;
 use Light\User;
 use Light\XlsWriter;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -67,9 +68,9 @@ class Shipment extends ModuleAbstract
         $this->allowDelete = User::hasSpecialAccess(Application::SA_SHIPMENT_DELETE);
     }
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(Shippers::class);
+        $this->addSubtable(Shippers::class);
     }
 
     protected function initList()
@@ -103,7 +104,7 @@ class Shipment extends ModuleAbstract
 
         $getExcelFunctionInvoices = function ($value, array $data, $out) {
             if (strpos($value, '|') !== false) {
-                list($invoice, $contragent) = explode('|', $value, 2);
+                [$invoice, $contragent] = explode('|', $value, 2);
                 $out = $invoice . ' (' . $contragent . ')';
             }
 
@@ -160,7 +161,7 @@ class Shipment extends ModuleAbstract
         parent::initFieldsFromSubtables();
 
         // К полю Shipper добавим параметр, который будет обрезать длинные названия
-        $this->getField('CacheShippersName')->setViewMaxWidth300(true);
+        $this->getField('CacheShippersName')->setViewMaxWidth(300);
     }
 
     private function getListVatMountField($vatPercent)
@@ -219,8 +220,8 @@ class Shipment extends ModuleAbstract
 
     protected function initMassactions()
     {
-        $this->addMassactionMultipleUpdate();
-        $this->addMassaction('DownloadDocs', 'Собрать комплект документов', '', '', null, true);
+        $this->addMassactionMassUpdate();
+        $this->addMassaction('DownloadDocs', 'Собрать комплект документов', '', '', true);
         $this->addMassaction('CreateDocsInventory', 'Создать опись переданных док-ов');
     }
 
@@ -282,16 +283,16 @@ class Shipment extends ModuleAbstract
         }
 
         $this->addSubmenuLink(
-            Link::create(null, Img::iconMail() . ' Email Notice')
+            Link::create(null, Ico::mail() . ' Email Notice')
                 ->externalUrl($href)
                 ->cssClass('emailnotice-link')
         );
 
         if (Constant::isOneCCompany($this->_obj['CompanyID'])) {
 
-            $this->addSubmenuLinkViewFunc(Img::iconDownload() . ' Заявка', 'ShipmentRequestExcel')->post();
-            $this->addSubmenuLinkViewFunc(Img::icon('file-archive-o') . ' Комплект документов', 'DownloadDocs');
-            $this->addSubmenuLinkViewFunc(Img::icon('file-archive-o') . ' Документы на печать', 'DownloadDocsForPrint');
+            $this->addSubmenuLinkViewFunc(Ico::download() . ' Заявка', 'ShipmentRequestExcel')->post();
+            $this->addSubmenuLinkViewFunc(Ico::i('file-archive-o') . ' Комплект документов', 'DownloadDocs');
+            $this->addSubmenuLinkViewFunc(Ico::i('file-archive-o') . ' Документы на печать', 'DownloadDocsForPrint');
 
         }
 
@@ -917,72 +918,6 @@ class Shipment extends ModuleAbstract
         parent::proceedAddNew();
     }
 
-    protected function afterInsert(ObjAbstract $obj, array $dataFromPost)
-    {
-        //Если шипмент был создан из котировки (заполнено поле QuotationID), то нужно заполнить и Cost-sheet!
-        if ($obj['QuotationID'] && $obj['QuotationID'] < 700000) {
-
-            $newCsLines = $this->getCsLinesFromQuotation(
-                $obj['QuotationID'],
-                $obj['GrossWeight'],
-                $obj['ChargeableWeight'],
-                $obj['Pieces'],
-                $obj->getId()
-            );
-
-            if ($newCsLines) {
-
-                $shipmentId = $obj->getId();
-                $quotationId = $obj['QuotationID'];
-
-                // Вспомагательная функция, которая вставляет строки Cost-sheet (вызывается два раза: один раз для доходов и один раз для расходов)
-                $insertCsLines = function (array $csLines, IncomeExpensesObjAbstract $csLineObjBase) use (
-                    $shipmentId,
-                    $quotationId
-                ) {
-                    foreach ($csLines as $csLineData) {
-                        $csLineObj = clone $csLineObjBase;
-                        $csLineObj->setMasterIdForDbLog($shipmentId);
-                        $csLineObj->insertDb($csLineData, 'from Quotation ' . $quotationId);
-                    }
-                };
-
-                //Вставляем полученные строки в базу
-                $insertCsLines($newCsLines['income'], new IncomeObj());
-                $insertCsLines($newCsLines['expenses'], new ExpensesObj());
-
-                /** @var ShipmentObj $obj */
-                $cs = new CostSheetObj($obj);
-                //Обновляем EGP/Deviation и кеширующие поля Total Income и Total Expenses
-                $cs->updateShipmentCache();
-                //Сохраним первый (только что созданный Cost-sheet) в history
-                $cs->saveToHistory();
-
-            }
-        }
-
-        //При создании новой перевозки отправляем Email уведомление для Sales и для Customer Service
-        /** @var ShipmentObj $obj */
-        $this->sendShipmentEmail($obj, '', $this->flash);
-    }
-
-    protected function afterUpdate(
-        ObjAbstract $obj,
-        array $dataFromPost,
-        $affectedRows,
-        array $oldData,
-        Msg $msgBuff,
-        $fromMultipleUpdate
-    ) {
-        if ($oldData['ResponsibleCS'] != $obj['ResponsibleCS']) {
-            $additionalText = 'New Customer Service <strong>'
-                . htmlspecialchars(Db::getOne("SELECT Name FROM user WHERE ID = @i", $obj['ResponsibleCS']))
-                . '</strong>';
-            /** @var ShipmentObj $obj */
-            $this->sendShipmentEmail($obj, $additionalText, $msgBuff);
-        }
-    }
-
     protected function afterSubmit(
         ObjAbstract $obj,
         array $dataFromPost,
@@ -991,6 +926,67 @@ class Shipment extends ModuleAbstract
         Msg $msgBuff,
         $fromMultipleUpdate
     ) {
+        if ($this->_justInserted) {
+
+            // Если шипмент был создан из котировки (заполнено поле QuotationID), то нужно заполнить и Cost-sheet!
+            if ($obj['QuotationID'] && $obj['QuotationID'] < 700000) {
+
+                $newCsLines = $this->getCsLinesFromQuotation(
+                    $obj['QuotationID'],
+                    $obj['GrossWeight'],
+                    $obj['ChargeableWeight'],
+                    $obj['Pieces'],
+                    $obj->getId()
+                );
+
+                if ($newCsLines) {
+
+                    $shipmentId = $obj->getId();
+                    $quotationId = $obj['QuotationID'];
+
+                    // Вспомагательная функция, которая вставляет строки Cost-sheet (вызывается два раза: один раз для доходов и один раз для расходов)
+                    $insertCsLines = function (array $csLines, IncomeExpensesObjAbstract $csLineObjBase) use (
+                        $shipmentId,
+                        $quotationId
+                    ) {
+                        foreach ($csLines as $csLineData) {
+                            $csLineObj = clone $csLineObjBase;
+                            $csLineObj->setMasterIdForDbLog($shipmentId);
+                            $csLineObj->insertDb($csLineData, 'from Quotation ' . $quotationId);
+                        }
+                    };
+
+                    //Вставляем полученные строки в базу
+                    $insertCsLines($newCsLines['income'], new IncomeObj());
+                    $insertCsLines($newCsLines['expenses'], new ExpensesObj());
+
+                    /** @var ShipmentObj $obj */
+                    $cs = new CostSheetObj($obj);
+                    //Обновляем EGP/Deviation и кеширующие поля Total Income и Total Expenses
+                    $cs->updateShipmentCache();
+                    //Сохраним первый (только что созданный Cost-sheet) в history
+                    $cs->saveToHistory();
+
+                }
+            }
+
+            //При создании новой перевозки отправляем Email уведомление для Sales и для Customer Service
+            /** @var ShipmentObj $obj */
+            $this->sendShipmentEmail($obj, '', $this->flash);
+
+        } else {
+
+            // Обновление уже существующей перевозки
+            if (isset($oldData['ResponsibleCS'], $obj['ResponsibleCS']) && $oldData['ResponsibleCS'] != $obj['ResponsibleCS']) {
+                $additionalText = 'New Customer Service <strong>'
+                    . htmlspecialchars(Db::getOne("SELECT Name FROM user WHERE ID = @i", $obj['ResponsibleCS']))
+                    . '</strong>';
+                /** @var ShipmentObj $obj */
+                $this->sendShipmentEmail($obj, $additionalText, $msgBuff);
+            }
+        }
+
+
         if (!$fromMultipleUpdate) {
             // Заготовим стандартные папки
             $folderRelative = $this->getFolderRelative();
@@ -1301,13 +1297,13 @@ class Shipment extends ModuleAbstract
             $msg = "Can't delete shipment because ";
             $invMsg = [];
             if ($cinvCount) {
-                $invMsg[] = $cinvCount . " Customer Invoice" . Misc::getSSuffix($cinvCount);
+                $invMsg[] = $cinvCount . " Customer Invoices";
             }
             if ($vinvCount) {
-                $invMsg[] = $vinvCount . " Vendor Invoice" . Misc::getSSuffix($vinvCount);
+                $invMsg[] = $vinvCount . " Vendor Invoices";
             }
             $msg .= implode(' and ', $invMsg);
-            $msg .= " " . Misc::getIsAreVerb($cinvCount + $vinvCount) . " linked to the shipment";
+            $msg .= " are linked to the shipment";
 
             Response::showDialog($msg);
         }
@@ -1433,7 +1429,8 @@ class Shipment extends ModuleAbstract
         if ($firstCInvoice) {
             $excelData['AmountAndCurrency'] = strip_tags(FieldMoney::beautify($firstCInvoice['Amount'], false,
                 $firstCInvoice['CurrencyISO']));
-            $excelData['AmountText'] = Misc::num2str($firstCInvoice['Amount'], $firstCInvoice['CurrencyISO']);
+            $excelData['AmountText'] = Translate::amountWordsRu($firstCInvoice['Amount'],
+                $firstCInvoice['CurrencyISO']);
 
             if ($firstCInvoice['CurrencyISO'] !== 'RUB') {
                 $excelData['RateText'] = 'Оплата по курсу ЦБ РФ на день оплаты';
@@ -1445,7 +1442,7 @@ class Shipment extends ModuleAbstract
             }
         }
 
-        list($insuranceCurrency, $insuranceAmount) = FieldMoneyWithCurrency::getAsTouple($shipmentObj['InsuranceAmount']);
+        [$insuranceCurrency, $insuranceAmount] = FieldMoneyWithCurrency::getAsTouple($shipmentObj['InsuranceAmount']);
         if ($insuranceAmount) {
             $excelData['InsuranceFlag'] = 'Да';
             $excelData['InsuranceText'] = 'Объявленная ценность груза для перевозки/для страховки:';
@@ -1587,8 +1584,8 @@ class Shipment extends ModuleAbstract
 
     private static function getDateInText(string $mysqlDate)
     {
-        list($year, $month, $day) = explode('-', $mysqlDate);
-        return (int)$day . ' ' . Misc::getRusMonthName($month, true) . ' ' . $year . ' г.';
+        [$year, $month, $day] = explode('-', $mysqlDate);
+        return (int)$day . ' ' . Translate::monthRu($month, true) . ' ' . $year . ' г.';
     }
 
     protected function viewPostCs()
@@ -1623,6 +1620,7 @@ class Shipment extends ModuleAbstract
                 'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
                 'submenuHtml' => $this->getCsSubmenuHtml(),
                 'id' => $shipmentId,
+                'ajaxChangeFieldUrl' => $this->getAjaxChangeFieldUrl(),
             ];
 
             Template::includeTpl('module/view.tpl.php', $tdata);
@@ -1631,24 +1629,39 @@ class Shipment extends ModuleAbstract
 
     private function getCsSubmenuHtml()
     {
-        $outHtml = $this->getSubmenuHtml();
-        $outHtml = str_replace('</div>', '', $outHtml);
-
         //Если у пользователя нет специальных прав на редактирование перевозки после закрытия и она закрыта - не будем добавлять кнопки
         /** @var ShipmentObj $shipmentObj */
         $shipmentObj = $this->_obj;
-        if (!CostSheetRouter::hasAccessWriteCostSheet($shipmentObj)) {
-            return;
+        if (CostSheetRouter::hasAccessWriteCostSheet($shipmentObj)) {
+
+            $this->addSubmenuLink(
+                Link::create(self::class, Ico::edit() . ' Edit Cost-sheet')
+                    ->cssClass('cs-edit-btn')
+            );
+
+            $this->addSubmenuLink(
+                Link::create(self::class, Ico::upload() . ' Create Customer Invoice')
+                    ->cssClass('cs-cinvoice-btn')
+            );
+
+            $this->addSubmenuLink(
+                Link::create(self::class, Ico::download() . ' Register Vendor Invoice')
+                    ->cssClass('cs-vinvoice-btn')
+            );
+
+            $this->addSubmenuLink(
+                Link::create(self::class, Ico::copy() . ' Copy')
+                    ->cssClass('cs-copy-btn display-none')
+            );
+
+            $this->addSubmenuLink(
+                Link::create(self::class, Ico::search() . ' Quotation / Standart Rate')
+                    ->cssClass('cs-fillquotation-btn display-none')
+            );
+
         }
 
-        $outHtml .= '<a href="#" class="cs-edit-btn">' . Img::iconEdit() . ' Edit Cost-sheet</a>'
-            . '<a href="#" class="cs-cinvoice-btn">' . Img::iconUpload() . ' Create Customer Invoice</a>'
-            . '<a href="#" class="cs-vinvoice-btn">' . Img::iconDownload() . ' Register Vendor Invoice</a>'
-            . '<a href="#" id="cs-copy-btn" class="display-none">' . Img::iconCopy() . ' Copy</a>'
-            . '<a href="#" id="cs-fillquotation-btn" class="display-none">' . Img::iconSearch() . ' Quotation / Standart Rate</a>'
-            . '</div>';
-
-        return $outHtml;
+        return $this->getSubmenuHtml();
     }
 
     public static function proceedCopyFromCs()

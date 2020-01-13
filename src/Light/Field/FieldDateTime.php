@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Field;
 
 use Light\Config;
@@ -33,8 +34,18 @@ class FieldDateTime extends FieldInputAbstract
         return 'input-datetime ' . parent::getEditCssClass($value, $data);
     }
 
+    protected function getEditTagParams($value, array $data)
+    {
+        return parent::getEditTagParams($value, $data) . ' autocomplete="off"';
+    }
+
     protected function getHtmlInner($value, array $data, $forTable)
     {
+        if ($this->ajax) {
+            Js::addLight('jquery.datetimepicker.js');
+            Css::addLight('jquery.datetimepicker.css');
+        }
+
         if (!$value) {
             $outHtml = '';
         } elseif (strpos($value, '0000-00-00') === 0) {
@@ -91,7 +102,7 @@ class FieldDateTime extends FieldInputAbstract
         $value = parent::getDataFromRequestInner($requset);
 
         if ($value !== null && strpos($value, ' ') !== false) {
-            list ($date, $time) = explode(' ', $value);
+            [$date, $time] = explode(' ', $value);
             $date = FieldDate::parse($date);
 
             if ($time === null) {
@@ -108,42 +119,48 @@ class FieldDateTime extends FieldInputAbstract
         return $value;
     }
 
-    public function allowSqlWhereValue($value)
+    public function allowSqlWhereValue($value): bool
     {
         $value = trim($value);
-        return $value !== '' && $value !== '0000-00-00 00:00:00';
+        return self::notEmpty($value);
     }
 
-    public function getSqlWhereInner($value)
+    public function getSqlWhereInner($value): string
     {
-        $sqlWhere = '';
-
         if ($this->filterFromUntil) {
-            //Одно из полей тандема "From ... until ..."
-            $dbKey = preg_replace('/(From|Until)$/', '', $this->getFilterFieldKey());
-            if (substr($this->key, -4) === 'From') {
-                if (strlen($value) === 10) {
-                    $value .= ' 00:00:00';
-                }
-                $dbKey .= $this->asInterval ? 'Until' : '';
-                $sqlWhere = $dbKey . " >= '" . Db::esc($value) . "'";
-            } elseif (substr($this->key, -5) === 'Until') {
-                if (strlen($value) === 10) {
-                    $value .= ' 23:59:59';
-                }
-                $dbKey .= $this->asInterval ? 'From' : '';
-                $sqlWhere = $dbKey . " <= '" . Db::esc($value) . "'";
-            }
-        } else {
-            //Обычная дата, проверяем на полное совпадение
-            $sqlWhere = "{fieldKey} = '{value}'";
+            // Одно из полей тандема "From ... until ..."
+            return $this->getSqlWhereFromUntil($value);
         }
 
-        return $sqlWhere;
+        // Обычная дата, проверяем на полное совпадение
+        return "{fieldKey} = '{value}'";
+    }
+
+    private function getSqlWhereFromUntil($value): string
+    {
+        // Одно из полей тандема "From ... until ..."
+        $dbKey = preg_replace('/(From|Until)$/', '', $this->getFilterFieldKeys()[0]);
+        if (substr($this->key, -4) === 'From') {
+            if (strlen($value) === 10) {
+                $value .= ' 00:00:00';
+            }
+            $dbKey .= $this->asInterval ? 'Until' : '';
+            return $dbKey . " >= '" . Db::esc($value) . "'";
+        }
+
+        if (substr($this->key, -5) === 'Until') {
+            if (strlen($value) === 10) {
+                $value .= ' 23:59:59';
+            }
+            $dbKey .= $this->asInterval ? 'From' : '';
+            return $dbKey . " <= '" . Db::esc($value) . "'";
+        }
+
+        return '';
     }
 
 
-    public static function isEmpty($value): bool
+    public static function empty($value): bool
     {
         return !$value || $value === '0000-00-00 00:00:00';
     }

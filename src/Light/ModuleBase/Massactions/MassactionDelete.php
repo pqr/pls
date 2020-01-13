@@ -56,10 +56,17 @@ trait MassactionDelete
 
             $oldData = $this->getOldDataBeforeSubmitOrDelete($obj);
 
+            // Загрузим данные подтаблиц внутрь самого obj, чтобы потом было удобно сравнивать
+            $obj->loadSubtablesForChangeDetection();
+
             $this->beforeDelete($obj);
             $this->proceedDeleteObj($obj, 'Multiple Delete');
             $this->proceedDeleteSubtables($obj);
-            $obj->afterDelete($oldData, $msgBuff);
+
+            // Загрузим обновлённые данные подтаблиц внутрь самого obj (по сути пустые подтаблицы)
+            $obj->loadSubtablesForChangeDetection();
+            $obj->afterDelete($msgBuff);
+
             $this->afterDelete($obj, $oldData);
             $deleted++;
         }

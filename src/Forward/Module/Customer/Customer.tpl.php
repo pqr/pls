@@ -102,9 +102,9 @@ use Light\Template as t; ?>
                         <a href="?a=Quotation&filterValues=<?=
                         htmlspecialchars(
                             json_encode(['CustomerID' => t::_id()])
-                        ) ?>"><?= \Light\Img::iconSearch(); ?> View in Quotations module</a>
+                        ) ?>"><?= \Light\Ico::search() ?> View in Quotations module</a>
 
-                        <a href="?a=Quotation&addnew=1&CustomerID=<?= t::_id() ?>"><?= \Light\Img::iconPlus(); ?>
+                        <a href="?a=Quotation&addnew=1&CustomerID=<?= t::_id() ?>"><?= \Light\Ico::plus() ?>
                             New
                             Quotation</a>
                     </div>
@@ -115,10 +115,10 @@ use Light\Template as t; ?>
             <div id="tabs-standartrates">
                 <?php if (t::_state() != \Light\ModuleBase\ModuleAbstract::STATE_ADDNEW): ?>
                     <div class="buttonsbar">
-                        <a href="?a=Customer&id=<?= t::_id() ?>&func=StandartRateDialog&action=new#ajax"><?= \Light\Img::iconPlus(); ?>
+                        <a href="?a=Customer&id=<?= t::_id() ?>&func=StandartRateDialog&action=new#ajax"><?= \Light\Ico::plus() ?>
                             New Standart Rate</a>
 
-                        <a href="#" class="standartrates__exporttoexcel"><?= \Light\Img::iconExcel() ?> Export to Excel</a>
+                        <a href="#" class="standartrates__exporttoexcel"><?= \Light\Ico::excel() ?> Export to Excel</a>
                     </div>
 
 

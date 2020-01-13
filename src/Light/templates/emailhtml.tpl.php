@@ -5,6 +5,43 @@
     <meta name="viewport" content="width=device-width"/>
     <style type="text/css">
         <?= file_get_contents(LIGHT_DIR_LIGHTPUBLIC . '/css/Table.css') ?>
+        .good,
+        .yes {
+            color: #468847;
+        }
+
+        .gray,
+        .skipp {
+            color: gray;
+        }
+
+        .warning {
+            color: #cd853f;
+        }
+
+        .bad,
+        .error,
+        .no {
+            color: #b94a48;
+        }
+
+        .label-active {
+            color: green;
+        }
+
+        .label-inactive {
+            color: gray;
+        }
+
+        .small {
+            font-size: 11px;
+        }
+
+        .note {
+            font-weight: normal;
+            font-size: 11px;
+            color: silver;
+        }
         .emailbody body {
             font-size: 14px;
             font-family: Arial, Helvetica, sans-serif;

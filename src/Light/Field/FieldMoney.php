@@ -20,6 +20,7 @@ class FieldMoney extends FieldFloat
     public $short = false;
     public $useSymbol = false;
     public $currencyIso;
+    public $decimals = 2;
 
     protected function initDefaultParams()
     {
@@ -39,12 +40,7 @@ class FieldMoney extends FieldFloat
         }
 
         $currencyIso = $this->currencyIso ?: $this->uom;
-        $outHtml = self::beautify($value, $this->short, $currencyIso, $this->useSymbol);
-        if (!$forTable && $outHtml) {
-            $outHtml = '<span class="MoneyView">' . $outHtml . '</span>';
-        }
-
-        return $outHtml;
+        return self::beautify($value, $this->short, $currencyIso, $this->useSymbol, $this->decimals);
     }
 
     protected function getHtmlInputInner($value, array $data, $idPrefix)
@@ -70,22 +66,22 @@ class FieldMoney extends FieldFloat
             return '';
         }
 
-        return number_format($value, 2, '.', '');
+        return number_format($value, $this->decimals, '.', '');
     }
 
-    public static function beautify($value, $short = false, $currencyIso = null, $useSymbol = false)
+    public static function beautify($value, $short = false, $currencyIso = null, $useSymbol = false, int $decimals = 2)
     {
         $value = (double)$value;
-        $outHtml = number_format($value, 2, '.', ' ');
+        $outHtml = number_format($value, $decimals, '.', ' ');
 
         //Если задан формат short, это значит нужно уобрать .00 копеек в конце вывода, если сумма целая
-        $cents = substr($outHtml, -2, 2);
+        $cents = substr($outHtml, -$decimals, $decimals);
         if ($short && $cents === '00') {
             //Отрезаем нули вместе с точкой на конце
             $outHtml = substr($outHtml, 0, -3);
         } else {
             //Иначе нужно обернуть центы в специальный класс, чтобы они отображались шрифтом поменьше
-            $outHtml = substr($outHtml, 0, -3) . '<span class="cnt">.' . $cents . '</span>';
+            $outHtml = substr($outHtml, 0, -($decimals + 1)) . '<span class="cnt">.' . $cents . '</span>';
         }
 
         //Если задана валюта - добавляем как суффикс
@@ -112,7 +108,7 @@ class FieldMoney extends FieldFloat
         return round((float)$dbValue, 2);
     }
 
-    public static function isEmpty($value): bool
+    public static function empty($value): bool
     {
         $value = (double)$value;
         return !$value;

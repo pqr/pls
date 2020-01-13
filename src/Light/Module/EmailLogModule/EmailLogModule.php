@@ -31,6 +31,10 @@ class EmailLogModule extends ModuleAbstract
             CF::id(),
             F::createDateTime('SentDateTime'),
             F::createString('From'),
+            F::createSelect('EmailAccountID', [
+                'name' => 'Email Account',
+                'options' => "SELECT ID, Username FROM emailaccount",
+            ]),
             F::createText('To', ['sqlSelect' => "REPLACE(`To`, ',', '\\n')"]),
             F::createText('Cc', ['sqlSelect' => "REPLACE(`Cc`, ',', '\\n')"]),
             F::createText('Bcc', ['sqlSelect' => "REPLACE(`Bcc`, ',', '\\n')"]),

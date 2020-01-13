@@ -4,13 +4,12 @@ namespace Light\Traits;
 
 use Light\A;
 use Light\Config;
-use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldHtml;
 use Light\Fieldset;
 use Light\File;
 use Light\FilesFolder;
-use Light\Img;
+use Light\Ico;
 use Light\Link;
 use Light\Response;
 
@@ -65,7 +64,7 @@ trait TableWithFoldersTrait
      * Это нужно для вывода в режиме таблицы
      * @return null|string
      */
-    final protected function getFolderRelative(array $data = null): ?string
+    protected function getFolderRelative(array $data = null): ?string
     {
         if ($data === null) {
             $data = $this->_obj->getData();
@@ -103,11 +102,9 @@ trait TableWithFoldersTrait
         if ($data === null) {
             $data = $this->_obj->getData();
         }
-
-        $folderModule = $this->getFolderModule($data);
-        $folderId = $this->getFolderId($data);
-        if ($folderModule && $folderId) {
-            FilesFolder::mkdirModule($folderModule, $folderId);
+        $relative = $this->getFolderRelative($data);
+        if ($relative) {
+            FilesFolder::mkdir($relative);
         }
     }
 
@@ -133,9 +130,8 @@ trait TableWithFoldersTrait
                         return '';
                     }
 
-                    $folderModule = $this->getFolderModule($data);
-                    $folderId = $this->getFolderId($data);
-                    if (!$folderModule || !$folderId) {
+                    $relative = $this->getFolderRelative($data);
+                    if (!$relative) {
                         return '';
                     }
 
@@ -144,7 +140,12 @@ trait TableWithFoldersTrait
                         $innerHtml = Config::$lang === 'ru' ? 'Файлы' : 'Folder';
                     }
 
-                    return FilesFolder::getLinkWithIconModule($folderModule, $folderId, $innerHtml);
+                    $hasFiles = FilesFolder::hasFiles($relative);
+                    $icon = Ico::folder($hasFiles);
+                    $innerHtml = trim("$icon $innerHtml");
+                    $folderModule = $this->getFolderModule($data);
+                    $folderId = $this->getFolderId($data);
+                    return FilesFolder::getLinkModule($folderModule, $folderId, $innerHtml);
                 },
             ]
         );
@@ -184,6 +185,7 @@ trait TableWithFoldersTrait
             'sqlSelect' => '',
             'tableWidthExcel' => 20,
             'groupconcat' => true,
+            'viewMaxWidth' => 150,
             'calcFunction' => function ($value, array $data) {
                 $folderAbs = $this->getFolderAbsolute($data);
                 if (!$folderAbs) {
@@ -203,10 +205,7 @@ trait TableWithFoldersTrait
                     return $outHtml;
                 }
                 return Link::create($this->folderModule, htmlspecialchars($value))
-                    ->view((int)$data['ID'])
-                    ->func('FilePreview')
-                    ->params(['file' => $value])
-                    ->blank()
+                    ->filePreview((int)$data['ID'], $value)
                     ->getHtml();
             },
         ]);

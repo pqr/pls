@@ -1,7 +1,9 @@
 <?php
+
 namespace Light\Module\FiltersLog;
 
 use Light\Db;
+use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
 use Light\Js;
 use Light\Request;
@@ -31,13 +33,13 @@ class FiltersLog extends Table
             F::createSelect('TableID', [
                 'name' => 'Table',
                 'tableWidthExcel' => 15,
-                'options' => "SELECT ID, TableName FROM dblog_table"
+                'options' => "SELECT ID, TableName FROM dblog_table",
             ]),
 
             F::createSelect('FieldID', [
                 'name' => 'Field',
                 'tableWidthExcel' => 30,
-                'options' => "SELECT ID, IF(FieldDescription = '', FieldKey, FieldDescription) FROM dblog_field"
+                'options' => "SELECT ID, IF(FieldDescription = '', FieldKey, FieldDescription) FROM dblog_field",
             ]),
 
             F::createString('Value', ['groupconcat' => true])
@@ -51,42 +53,28 @@ class FiltersLog extends Table
             'CreatedBy',
             'TableID',
             'FieldID',
-            'Value'
+            'Value',
         ];
     }
 
     protected function initFilters()
     {
-        $this->addFiltersDatesFromUntil('CreatedDateTime', ['name' => 'Date']);
+        $this->addFiltersDatesFromUntil('CreatedDateTime', ['name' => 'Дата создания']);
 
         $this->addFilters(
 
-            F::createSelect('CreatedBy', [
-                'name' => 'User',
-                'editWidth' => 'medium',
-                'select2' => true,
-                'options' => 'user',
-                'empty' => false
-            ]),
+            CommonFields::filterCreatedBy(),
 
-            F::createSelect('TableID', [
-                'name' => 'Table',
-                'editWidth' => 'medium',
-                'select2' => true,
-                'options' => "SELECT ID, TableName FROM dblog_table ORDER BY TableName",
-                'empty' => true
-            ]),
+            CommonFields::filterTableId(),
 
-            F::createSelect('FieldID', [
-                'name' => 'Field',
-                'editWidth' => 'default',
-                'select2' => true,
-                'options' => "SELECT f.ID AS value, IF(f.FieldDescription = '', f.FieldKey, f.FieldDescription) AS text, t.TableName AS optgroup
-                              FROM dblog_field f, dblog_table t
-                              WHERE f.TableID = t.ID
-                              ORDER BY t.TableName, f.FieldDescription, f.FieldKey"
-            ])
+            CommonFields::filterFieldId(),
+
         );
+
+        $this->filtersLayout = [
+            ['CreatedBy', 'TableID', 'FieldID'],
+            ['CreatedDateTime'],
+        ];
 
     }
 

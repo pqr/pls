@@ -7,6 +7,7 @@ use Light\Field\FieldAbstract as F;
 use Light\Field\FieldFloat;
 use Light\Field\FieldMoneyWithCurrency;
 use Light\Field\FieldOptionsAbstract;
+use Light\ModuleBase\Actions\AjaxChangeField;
 use Light\Table\TableUserParamsRepository;
 use Light\Traits\FieldsetAwareTrait;
 
@@ -58,6 +59,13 @@ class Table implements \JsonSerializable
     public $tableReloadUrl;
 
     /**
+     * Разрешать ли перезагрузку отдельной строки по data-rowid?
+     * Поддержка загрузки одной строки должна быть реализована в классах потомках ModuleAbstract и ReportAbstract
+     * @var bool
+     */
+    public $allowTableReloadRow = false;
+
+    /**
      * модуль, на который автоматически делать ссылки при двойном клике по строке
      * (в тег tr будет добавлен атрибут data-linkid)
      * @var string
@@ -92,7 +100,7 @@ class Table implements \JsonSerializable
      * Делать ли ссылки на ключевых полях с хешем #ajax
      * @var bool
      */
-    public $tableLinkAjax = false;
+    public $tableLinkModuleDialog = false;
 
     /**
      * Массив ключей полей, которые следует отображать в нужном порядке.
@@ -100,6 +108,8 @@ class Table implements \JsonSerializable
      * @var array|null
      */
     public $tableFieldsShow;
+
+    public $tableCheckboxValueFieldKey = 'ID';
 
     /** @var string Внутреннее имя таблицы, если оставить пустым будет приравнено к полному имени класса */
     private $tableName;
@@ -144,7 +154,7 @@ class Table implements \JsonSerializable
         } else {
             $tableClass = get_class($this);
             if (strpos($tableClass, 'class@anonymous') === 0) {
-                $tableClass = 'Table' . uniqid();
+                $tableClass = 'Table' . uniqid('Table', true);
             }
             $this->tableName = str_replace('\\', '_', $tableClass);
         }
@@ -160,8 +170,7 @@ class Table implements \JsonSerializable
         $tableClass = get_class($this);
         if (strpos($tableClass, 'class@anonymous') !== 0) {
             $objClass = $tableClass . 'Obj';
-            $filepath = LIGHT_DIR_ROOT . '/src/' . str_replace('\\', '/', $objClass) . '.php';
-            if (file_exists($filepath)) {
+            if (Misc::classExists($objClass)) {
                 //Файл найден, создаём объект именно этого класса
                 return new $objClass();
             }
@@ -286,8 +295,28 @@ class Table implements \JsonSerializable
                 'tableAlign' => 'center',
                 'nameTable' => '<input type="checkbox" class="cb-all">',
                 'getHtmlFunction' => function ($value, array $data) use ($class) {
-                    if (isset($data['ID'])) {
-                        return '<input type="checkbox" class="' . $class . '" value="' . $data['ID'] . '">';
+                    if (!empty($data['ID'])) {
+                        return '<input type="checkbox" class="' . $class . '" value="' . $data[$this->tableCheckboxValueFieldKey] . '">';
+                    }
+
+                    return '';
+                },
+            ]
+        );
+        $this->getFieldsetFirst()->addField($checkboxField);
+        return $checkboxField;
+    }
+
+    protected function addRadioCol($class = 'rb')
+    {
+        $checkboxField = F::createHtml('RadioButton', [
+                'tableWidthHtml' => 25,
+                'tableOrderBy' => '',
+                'tableAlign' => 'center',
+                'nameTable' => '',
+                'getHtmlFunction' => function ($value, array $data) use ($class) {
+                    if (!empty($data['ID'])) {
+                        return '<input type="radio" class="' . $class . '" value="' . $data[$this->tableCheckboxValueFieldKey] . '" name="Radio-' . $this->getTableName() . '">';
                     }
 
                     return '';
@@ -368,8 +397,8 @@ class Table implements \JsonSerializable
         }
 
         $dataLinkAjax = '';
-        if ($this->tableLinkAjax) {
-            $dataLinkAjax = ' data-linkajax=1';
+        if ($this->tableLinkModuleDialog) {
+            $dataLinkAjax = ' data-linkmoduledialog=1';
         }
 
         $reloadurl = '';
@@ -382,8 +411,14 @@ class Table implements \JsonSerializable
             $ajaxChangeFieldUrl = ' data-ajaxchangefieldurl="' . $ajaxChangeFieldUrl . '"';
         }
 
-        return '<div class="table-div"' . $id . $dataTablename . $linkmodule . $dataLinkAjax . $dataLinkBlank . $reloadurl . $ajaxChangeFieldUrl . '>';
+        $allowTableReloadUrl = '';
+        if ($this->allowTableReloadRow) {
+            $allowTableReloadUrl = ' data-allowtablereloadurl=1';
+        }
+
+        return '<div class="table-div"' . $id . $dataTablename . $linkmodule . $dataLinkAjax . $dataLinkBlank . $reloadurl . $ajaxChangeFieldUrl . $allowTableReloadUrl . '>';
     }
+
 
     /**
      * Возвращает Fieldset из всех отображаемых полей включая _fieldsetFirst и _fieldsetLast
@@ -412,15 +447,15 @@ class Table implements \JsonSerializable
 
     public function getHtmlTableForAjax()
     {
-        //Если таблица пуста, возвращаем сообщение No data available
+        // Если таблица пуста, возвращаем сообщение No data available
         if (!$this->allowTablePrintTheadIfEmpty && $this->getTableDataCount() === 0) {
-            return $this->textTableEmpty ?? (Config::$lang === 'ru' ? 'Нет данных' : 'No data available');
+            return $this->getHtmlTableForAjaxIfEmpty();
         }
 
         $allFields = $this->getAllFields();
         $this->prefetchSelectOptions($allFields);
 
-        //Сначала блок <p>...</p> над таблицей с различными ссылками: пажинация, экспорт в Excel и т.п.
+        // Сначала блок <p>...</p> над таблицей с различными ссылками: пажинация, экспорт в Excel и т.п.
         $htmlHeadBlock = '';
         if ($this->allowTablePrintHeadBlock) {
             $htmlHeadBlock = $this->getHtmlTableHeadBlock();
@@ -432,13 +467,13 @@ class Table implements \JsonSerializable
             $outHtml .= '<div style="display: inline-block;">';
         }
 
-        //Отркоем тег <table>, внутри будет много data-* атрибутов
+        // Откроем тег <table>, внутри будет много data-* атрибутов
         $outHtml .= $this->getHtmlTableOpenTableTag($allFields);
 
-        //Выводим <thead>...</thead>
+        // Выводим <thead>...</thead>
         $outHtml .= $this->getHtmlTableThead($allFields);
 
-        //Генерируем <tbody>...</tbody>
+        // Генерируем <tbody>...</tbody>
         $outHtml .= $this->getHtmlTableTbody($allFields);
 
         $outHtml .= '</table>';
@@ -447,12 +482,25 @@ class Table implements \JsonSerializable
             $outHtml .= '</div>';
         }
 
-        if ($this->getTableDataCount() > 30) {
-            //Если в таблице более 30 строк, то повторим блок <p>...</p> со сслыками пажинации, экспорт в Excel и т.п.
-            $outHtml .= $htmlHeadBlock;
-        }
+        $outHtml .= $this->getHtmlTableFooterBlock($htmlHeadBlock);
 
         return $outHtml;
+    }
+
+    protected function getHtmlTableFooterBlock(string $htmlHeadBlock): string
+    {
+        if ($this->getTableDataCount() > 30) {
+            // Если в таблице более 30 строк, то повторим блок <p>...</p> со сслыками пажинации, экспорт в Excel и т.п.
+            return $htmlHeadBlock;
+        }
+
+        return '';
+    }
+
+
+    protected function getHtmlTableForAjaxIfEmpty()
+    {
+        return $this->textTableEmpty ?? (Config::$lang === 'ru' ? 'Нет данных' : 'No data available');
     }
 
     protected function prefetchSelectOptions(array $allFields)
@@ -502,7 +550,7 @@ class Table implements \JsonSerializable
             /** @var $this \Light\Traits\TableExcelExportable */
             $exportToExcelText = Config::$lang === 'ru' ? 'Экспорт в Excel' : 'Export to Excel';
             $outHtml .= '<span class="table-excel"><a href="' . $this->tableReloadUrl . '&xls=1">'
-                . Img::iconExcel()
+                . Ico::excel()
                 . ' ' . $exportToExcelText
                 . '</a></span>';
         }
@@ -601,7 +649,7 @@ class Table implements \JsonSerializable
             $width = $field->getTableWidthHtml();
             $width = $width ? ' width="' . htmlspecialchars($width) . '"' : '';
             $fieldKey = ' data-fieldkey="' . htmlspecialchars($field->key) . '"';
-            $dataTotal = $field->total ? ' data-total="true"' : '';
+            $dataTotal = $field->total ? ' data-total="' . $field->getType() . '"' : '';
 
             $cssClass = '';
             if ($field->tableAlign) {
@@ -647,23 +695,10 @@ class Table implements \JsonSerializable
         $outHtml = '<tbody>';
         for ($rowNum = 0; $rowNum < $tableDataCount; $rowNum++) {
 
-            // Достаём данные из массива $this->tableData
-            // (метод getTableRowData() может быть переопределён в потомке, поэтому не можем читать напрямую из $this->tableData
-            $rowData = $this->getTableRowData($rowNum);
-            $rowDataCalculated = $rowData;
-            // Вызовем все методы calcData определённые внутри полей
-            /** @var FieldAbstract $field */
-            foreach ($allFields as $field) {
-                $fieldKey = $field->key;
-                $value = $rowData[$fieldKey] ?? null;
-                if ($field->calcFunction) {
-                    $value = $field->getCalculatedValue($value, $rowData, true); //$forTable = true
-                }
-                $rowDataCalculated[$fieldKey] = $value;
-            }
-            $dataCalculated[$rowNum] = $rowDataCalculated;
+            $rowDataCalculated = $this->getTableRowDataCalculated($rowNum, $allFields);
+            $outHtml .= $this->getHtmlTableTr($rowDataCalculated, $rowNum, $allFields);
 
-            $outHtml .= $this->getHtmlTableTr($rowDataCalculated, $rowNum, $allFields, $this->tableLinkUrlParams);
+            $dataCalculated[$rowNum] = $rowDataCalculated;
 
         }
 
@@ -673,6 +708,21 @@ class Table implements \JsonSerializable
         $outHtml .= '</tbody>';
 
         return $outHtml;
+    }
+
+    protected function getTableRowDataCalculated(int $rowNum, array $allFields): array
+    {
+        $rowData = $this->getTableRowData($rowNum);
+        $rowDataCalculated = $rowData;
+        // Вызовем все методы calcData определённые внутри полей
+        /** @var FieldAbstract $field */
+        foreach ($allFields as $field) {
+            $fieldKey = $field->key;
+            $value = $rowData[$fieldKey] ?? null;
+            $value = $field->getCalculatedValue($value, $rowData, true);
+            $rowDataCalculated[$fieldKey] = $value;
+        }
+        return $rowDataCalculated;
     }
 
     /**
@@ -736,7 +786,7 @@ class Table implements \JsonSerializable
         $value = $rowDataCalculated[$field->key] ?? null;
         $outHtml = $field->getHtml($value, $rowDataCalculated, true); //forTable = ture
         // Обернём значение ячейки в ссылку на модуль tableLinkModule, если это поле среди tableLinkFieldKeys
-        if ($this->tableLinkModule) {
+        if ($outHtml !== '' && $this->tableLinkModule) {
 
             if ($this->tableLinkFieldKeysHash === null) {
                 //Оптимизация: кеширующая переменная хэш с ключами полей, которые являются ссылками, чтобы
@@ -750,31 +800,47 @@ class Table implements \JsonSerializable
 
             if (isset($this->tableLinkFieldKeysHash[$field->key], $rowDataCalculated[$this->tableLinkIdFieldKey])) {
                 $id = $rowDataCalculated[$this->tableLinkIdFieldKey];
-                $outHtml = Link::create($this->tableLinkModule, $outHtml)
+                $link = Link::create($this->tableLinkModule, $outHtml)
                     ->view($id)
                     ->params($fullLinkParams)
-                    ->blank($this->tableLinkBlank)
-                    ->ajax($this->tableLinkAjax)
-                    ->getHtml();
+                    ->blank($this->tableLinkBlank);
+
+                if ($this->tableLinkModuleDialog) {
+                    $link->viewDialog();
+                }
+                $outHtml = $link->getHtml();
             }
         }
 
         return $outHtml;
     }
 
-    protected function getHtmlTableTr(
-        array $rowDataCalculated,
-        int $rowNum,
-        array $allFields,
-        array $tableLinkUrlParams
-    ) {
+    /**
+     * Особый метод, аналог getHtmlTableForAjax()
+     * однако он возвращает HTML код отдельно взятой строки для рендернинга через ajax
+     */
+    public function getHtmlTableTrForAjax(): string
+    {
+        $allFields = $this->getAllFields();
+        $this->prefetchSelectOptions($allFields);
+
+        // Формируем HTML код нулевой (т.е. единственной) строки
+        $rowNum = 0;
+
+        $rowDataCalculated = $this->getTableRowDataCalculated($rowNum, $allFields);
+
+        return $this->getHtmlTableTr($rowDataCalculated, $rowNum, $allFields);
+    }
+
+    protected function getHtmlTableTr(array $rowDataCalculated, int $rowNum, array $allFields)
+    {
         $cssClass = $this->getTableRowCssClass($rowDataCalculated, $rowNum);
 
         if ($this->isFindId($rowDataCalculated)) {
             $cssClass .= ' findid';
         }
 
-        if (isset($rowDataCalculated['Color']) && $rowDataCalculated['Color'] != 0) {
+        if (!empty($rowDataCalculated['Color'])) {
             //Если существует поле с зарезервированным именем Color, то внесём этот цвет в класс строки
             $cssClass .= ' color' . $rowDataCalculated['Color'];
         }
@@ -783,15 +849,17 @@ class Table implements \JsonSerializable
 
         $dataLinkId = isset($rowDataCalculated[$this->tableLinkIdFieldKey]) ? ' data-linkid="' . $rowDataCalculated[$this->tableLinkIdFieldKey] . '"' : '';
 
+        $dataRowId = isset($rowDataCalculated['ID']) ? ' data-rowid="' . $rowDataCalculated['ID'] . '"' : '';
+
         $rowLinkUrlParams = $this->getTableRowLinkUrlParams($rowDataCalculated, $rowNum);
         $dataLinkUrlParams = $rowLinkUrlParams ? ' data-linkurlparams="' . htmlspecialchars(http_build_query($rowLinkUrlParams)) . '"' : '';
 
-        $fullLinkParams = $tableLinkUrlParams + $rowLinkUrlParams;
+        $fullLinkParams = $this->tableLinkUrlParams + $rowLinkUrlParams;
 
         $tagParams = $this->getTableRowTagParams($rowDataCalculated, $rowNum);
         $tagParams = $tagParams ? ' ' . $tagParams : '';
 
-        $outHtml = "<tr{$cssClass}{$dataLinkId}{$dataLinkUrlParams}{$tagParams}>";
+        $outHtml = "<tr{$cssClass}{$dataLinkId}{$dataRowId}{$dataLinkUrlParams}{$tagParams}>";
 
         foreach ($allFields as $field) {
 
@@ -810,8 +878,9 @@ class Table implements \JsonSerializable
                 $tdCssClass = $field->getViewCssClass($value, $rowDataCalculated, true, true);
 
                 // Добавим этот класс внутрь содержимого, обернув содержимое дополнительным div
-                if ($field->viewMaxWidth300) {
-                    $tdHtml = "<div class=\"overflow300\">$tdHtml</div>";
+                if ($field->viewMaxWidth) {
+                    $divCssClass = 'overflow' . $field->viewMaxWidth;
+                    $tdHtml = "<div class=\"$divCssClass\">$tdHtml</div>";
                 }
             }
 
@@ -998,35 +1067,26 @@ class Table implements \JsonSerializable
      * Тут может быть нюанс: если поле типа MONEY_WITH_CURRENCY, то считать total нужно только в том случае, если все
      * значения имеют одинаковую валюту.
      * Также при типе MONEY_WITH_CURRENCY меняется тип возвращаемого значения - это уже не просто число, но строка
-     * @param FieldAbstract $field
+     * @param F $field
      * @param array $dataCalculated
      * @return float|string $total
      */
-    public function tableCalcFieldTotal(FieldAbstract $field, array $dataCalculated)
+    public function tableCalcFieldTotal(F $field, array $dataCalculated)
     {
         $amounts = array_column($dataCalculated, $field->key);
-        $isMoneyWithCurrency = $field->getType() == F::TYPE_MONEY_WITH_CURRENCY;
+        $isMoneyWithCurrency = $field instanceof FieldMoneyWithCurrency;
         if ($isMoneyWithCurrency) {
             $groupconcat = $field->groupconcat;
-            $amountPerCurrency = [];
+            $amountsLines = [];
             foreach ($amounts as $cellText) {
                 if ($groupconcat) {
-                    $linesText = explode("\n", $cellText);
+                    $amountsLines = array_merge($amountsLines, explode("\n", $cellText));
                 } else {
-                    $linesText = [$cellText];
-                }
-                foreach ($linesText as $lineText) {
-                    [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($lineText);
-                    if ($amount && $currencyIso) {
-                        if (!isset($amountPerCurrency[$currencyIso])) {
-                            $amountPerCurrency[$currencyIso] = 0;
-                        }
-                        $amountPerCurrency[$currencyIso] += round($amount, 2);
-                    }
+                    $amountsLines[] = $cellText;
                 }
             }
 
-            ksort($amountPerCurrency);
+            $amountPerCurrency = Misc::calcAmountPerCurrency($amountsLines);
 
             $resultAmountsWithCurrency = [];
             foreach ($amountPerCurrency as $currencyIso => $totalAmount) {
@@ -1119,7 +1179,7 @@ class Table implements \JsonSerializable
     }
 
     /**
-     * @return Fieldset|F[]
+     * @return Fieldset
      */
     public function getFieldset()
     {
@@ -1152,6 +1212,6 @@ class Table implements \JsonSerializable
             return '';
         }
         $linkModule = Misc::getModule($this->tableLinkModule);
-        return "?a=$linkModule&func=ChangeField&id=";
+        return Link::create($linkModule)->action(AjaxChangeField::class)->getHref() . '&id=';
     }
 }

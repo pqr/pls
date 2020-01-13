@@ -2,7 +2,10 @@
 
 namespace Light\Module\CurrencyRate;
 
+use Light\Autolaunch\CurrencyRateCBRF;
 use Light\Field\CommonFields as CF;
+use Light\Link;
+use Light\Module\Autolaunch\Autolaunch;
 use Light\ModuleBase\ModuleAbstract;
 use Light\User;
 
@@ -23,17 +26,14 @@ class CurrencyRate extends ModuleAbstract
         $this->addFiltersDatesFromUntil('ValidDate', ['name' => 'Valid']);
     }
 
-    protected function getListButtons()
+    protected function initListLinks()
     {
-        $out = parent::getListButtons();
         if (User::hasWriteAccess() && User::hasReadAccess('Autolaunch')) {
-            $out[] = [
-                'text' => 'Обновить с сайта ЦБРФ',
-                'url' => '?a=Autolaunch&class=Light%5CAutolaunch%5CCurrencyRateCBRF'
-            ];
+            $this->addListLink(
+                Link::create(Autolaunch::class, 'Обновить с сайта ЦБРФ')
+                    ->params(['class' => CurrencyRateCBRF::class])
+            );
         }
-
-        return $out;
     }
 }
 

@@ -1,13 +1,4 @@
-import {
-    listener,
-    myParseInt,
-    getPageParam,
-    getBeautyMoney,
-    myParseFloat,
-    parseJson,
-    toastError,
-    getModule
-} from "./Light";
+import { listener, myParseInt, getPageParam, parseJson, toastError, getModule, isLangRu } from "./Light";
 import * as form from "./Form";
 import * as table from "./Table";
 import { Dialog, DialogOptions } from "./Dialog";
@@ -21,132 +12,6 @@ const state: ModuleState = getPageParam("state");
 let editForm: form.Form;
 const objectId: number = myParseInt(getPageParam("id"));
 let validationHandler: () => boolean;
-
-/**
- * Обновляет div в котором находятся выпадающий список с massaction
- * Обновление происходит во время прокрутки таблицы или при выделении строк таблицы
- */
-function updateMassactionDiv() {
-    const listTable = table.get(getModule());
-    const $massactionDiv = $(".listmassaction");
-    if ($massactionDiv.length === 0) {
-        // В этом модуле вообще нет div отвечающего за massaction
-        return;
-    }
-
-    // Сразу удаляем все total-span, которые могли быть в этом div -
-    // в них отображались старые знаения total по полям
-    // (ниже будет пересчёт этих total и повторный вывод)
-    $massactionDiv.find(".listmassaction__total").remove();
-
-    const $countSpan = $massactionDiv.find('label[for="massaction-select"] > span');
-
-    const selectedCount = listTable.getSelectedCount();
-    if (selectedCount === 0) {
-        // Если ничего не выделено, больше ничего и не делаем
-        $massactionDiv.removeClass("sticky");
-        $countSpan.html("");
-        return;
-    }
-
-    // Если что-то выделено галочками, обязательно добавляем класс sticky, который выставит position: sticky; bottom: 0;
-    $massactionDiv.addClass("sticky");
-    $countSpan.html(` (${selectedCount})`);
-
-    // Некоторые колонки могут быть отмечены атрибутом data-total="true"
-    // по ним посчитаем сумму по выделенным галочками
-    const $thead = listTable.getTableNode().find("thead");
-    $thead.find("th[data-total]").each(function(this:HTMLTableHeaderCellElement) {
-        const $th = $(this);
-        // Узнаем порядковый номер колонки, чтобы далее прочитать все значения
-        // в выделенных строках
-        const colIndex = $thead.find("th").index($th);
-
-        // Обычно для подсчёта используются колонки типа суммы
-        // Иногда это сумма с валютой
-        // Сразу заготовим Map с разбивкой по валютам. Если в данной колонке нет валют
-        // то в итоге получим Map из одного элемента (ключём будет пустая валюта - пустая строка)
-        const totalPerCurrency = new Map<string, number>();
-
-        // Пройдём по всем выделенным строкам
-        listTable.getSelectedRows().each((_, tr) => {
-            const tdHtml = $(tr)
-                .find("td")
-                .eq(colIndex)
-                .html();
-
-            // HTML код внутри ячейки может содержать <br>
-            // это значит несколько сумм в режиме groupconcat
-            // разобьём на элементарные строки
-            tdHtml.split("<br>").forEach((oneLineHtml: string) => {
-                // Вырежем все теги (которые обычно оформляют суммы)
-                const text = $(oneLineHtml).text();
-
-                // Попробуем распарсить текст, возможно там какие суммы с валютами?
-                // Например "123 456.78 USD" или "1 234.00 $"
-                // По умолчанию примим валюту пустой
-                let currencyIso: string = "";
-                const parts = text.split(" ");
-                // Прововерим последнюю часть массива после разбивки по пробелам - там может быть реальная валюта
-                if (!$.isNumeric(parts[parts.length - 1])) {
-                    // Нашли валюту в конце числа, вынимаем валюту из массива частей
-                    currencyIso = parts.pop()!;
-                }
-                // Оставшиеся части после изъятия валюты склеиваем обратно
-                const amount = myParseFloat(parts.join(""));
-                if (!totalPerCurrency.has(currencyIso)) {
-                    // Нашли какую-то новую валюту, которая не встречалась ранее
-                    totalPerCurrency.set(currencyIso, amount);
-                } else {
-                    // Эта валюта уже есть в Map totalPerCurrency, прибавляем текующую сумму amount
-                    totalPerCurrency.set(currencyIso, totalPerCurrency.get(currencyIso)! + amount);
-                }
-            });
-        });
-
-
-        // После того как прошлись по всем строкам и собрали результат в totalPerCurrency
-        // выведем этот результат в massaction div
-        let perCurrencyBeautyAmounts: string[] = [];
-        totalPerCurrency.forEach((total: number, currencyIso: string) => {
-            if (total != 0) {
-                perCurrencyBeautyAmounts.push(getBeautyMoney(total, true, currencyIso));
-            }
-        });
-        if (perCurrencyBeautyAmounts.length > 0) {
-            // Имя поля возьмём из th, чтобы вывести внизу в massaction div
-            const fieldName = $th
-                .html()
-                .replace(/<br>/g, " ")
-                .replace(/<\/?[^>]+>/gi, "")
-                .replace("▼", "")
-                .replace("▲", "")
-                .trim();
-
-            const $totalSpan = $(`<div class="listmassaction__total"></div>`).append(
-                `<div class="listmassaction__totalfieldname"><strong>${fieldName}:&nbsp;</strong></div>`
-            );
-            // Склеиваем все суммы по валютам через запятую и доавляем в текущий $totalSpan
-            const amountsHtml = perCurrencyBeautyAmounts.join("<br>");
-            $totalSpan.append(`<div class="listmassaction__totalamount">${amountsHtml}</div>`);
-
-            // Итоговый результат вставляем в $massactionDiv
-            $massactionDiv.append($totalSpan);
-        }
-
-    });
-}
-
-export function initListListeners() {
-    try {
-        const listTable = table.get(getModule());
-        listTable.onSelectRow(updateMassactionDiv);
-        listTable.onSelectAll(updateMassactionDiv);
-        listTable.onReload(updateMassactionDiv);
-    } catch (e) {
-        console.log(e);
-    }
-}
 
 function blockSaveButtons(block: boolean) {
     editForm
@@ -194,8 +59,10 @@ function showErrorDialog(responseText: string) {
         hasCriticalError = errors.some(({ critical }) => critical !== undefined && critical);
     }
 
+    const closeMsg = isLangRu ? "Закрыть" : "Close";
+    const cancelMsg = isLangRu ? "Отменить" : "Cancel";
     const options: DialogOptions = {
-        buttonCancelText: hasCriticalError ? "Close" : "Cancel",
+        buttonCancelText: hasCriticalError ? closeMsg : cancelMsg,
         width: "500px",
         afterClose: () => {
             $(".input-error:first").focus();
@@ -204,7 +71,7 @@ function showErrorDialog(responseText: string) {
 
     if (!hasCriticalError) {
         // Если не было критичных ошибок, то добавим кнопку 'Confirm Save'
-        options.buttonOkText = "Confirm Save";
+        options.buttonOkText = isLangRu ? "Подтвердить" : "Confirm Save";
         options.buttonOkHandler = function(dialog) {
             dialog.close();
             // Вызываем метод сохранения с параметром true - чтобы в ajax запрос к серверу передать GET параметр
@@ -263,6 +130,14 @@ export function getState(): ModuleState {
     return state;
 }
 
+export function isView(): boolean {
+    return state === "view";
+}
+
+export function isAddNewOrEdit(): boolean {
+    return state === "addnew" || state === "edit";
+}
+
 export function getObjectId(): number {
     return objectId;
 }
@@ -319,12 +194,22 @@ $body.on("click", "#edit-form .btn-save", function(e: any) {
 
 $body.on("click", ".listmassaction__selectall", (e: any) => {
     e.preventDefault();
-    table.get(getModule()).selectAll(true);
+    let module = getModule();
+    if (module === "Reportmenu") {
+        const urlParams = new URLSearchParams(location.search);
+        module = "Report" + urlParams.get("class");
+    }
+    table.get(module).selectAll(true);
 });
 
 $body.on("click", ".listmassaction__selectnone", (e: any) => {
     e.preventDefault();
-    table.get(getModule()).selectAll(false);
+    let module = getModule();
+    if (module === "Reportmenu") {
+        const urlParams = new URLSearchParams(location.search);
+        module = "Report" + urlParams.get("class");
+    }
+    table.get(module).selectAll(false);
 });
 
 $body.on("change", "#massaction-select", function(this: HTMLSelectElement, e: any) {
@@ -336,26 +221,43 @@ $body.on("change", "#massaction-select", function(this: HTMLSelectElement, e: an
 
     let ids;
 
+    const module = getModule();
+    let reportClass;
+    if (module === "Reportmenu") {
+        const urlParams = new URLSearchParams(location.search);
+        reportClass = urlParams.get("class");
+    }
+
     //Соберём значения чекбоксов в таблице и отправим их ajax POST запросом
     try {
-        ids = table.get(getModule()).getSelectedValues();
+        let moduleName = module;
+        if (module === "Reportmenu") {
+            moduleName = "Report" + reportClass;
+        }
+        ids = table.get(moduleName).getSelectedValues();
     } catch (e) {
         // Почему-то на экране на нашлась таблица с именем _lightModule - ничего не делаем
         return;
     }
     if (ids.length === 0) {
-        toastError("Select rows with checkboxes");
+        const msg = isLangRu ? "Выберите строки галочками" : "Select rows with checkboxes";
+        toastError(msg);
         $(this).val("");
         return;
     }
 
     //Проверим, если была попытка отправить запрос на массовое удаление, нужно переспросить пользователя
-    if (action === "delete" && !confirm("Delete selected records?")) {
+    const confirmMsg = isLangRu ? "Удалить выбранные записи?" : "Delete selected records?";
+    if (action === "delete" && !confirm(confirmMsg)) {
         select.value = "";
         return;
     }
 
-    const url = `?a=${getModule()}&p=massaction&action=${action}`;
+    let url = `?a=${getModule()}`;
+    if (module === "Reportmenu") {
+        url = `?a=Reportmenu&class=${reportClass}`;
+    }
+    url += `&p=massaction&action=${action}`;
 
     // Узнаем, следует ли открывать новое окно при сабмите?
     if (
@@ -407,6 +309,37 @@ $body.on("click", "a.mushowhide", function(this: HTMLAnchorElement, e: any) {
         .toggleClass("display-none", newState === "hidden");
 });
 
+function initShowHideListeners() {
+    const $editForm = editForm.getFormNode();
+    $editForm.find("div[data-showhide-when-fieldkey]").each(function(this: HTMLDivElement) {
+        const $div = $(this);
+        const fieldKey = $div.attr("data-showhide-when-fieldkey")!;
+        let showWhenFieldValue = $div.attr("data-showhide-when-fieldvalue");
+        if (showWhenFieldValue !== undefined) {
+            showWhenFieldValue = JSON.parse(showWhenFieldValue);
+        }
+        onFieldChange(fieldKey, (newValue: any) => {
+            newValue = parseInt(newValue);
+            let show;
+            if (showWhenFieldValue !== undefined) {
+                if (Array.isArray(showWhenFieldValue)) {
+                    show = showWhenFieldValue.indexOf(newValue) !== -1;
+                } else {
+                    show = newValue == showWhenFieldValue;
+                }
+            } else {
+                show = !!newValue;
+            }
+
+            if (show) {
+                $div.slideDown();
+            } else {
+                $div.slideUp();
+            }
+        });
+    });
+}
+
 listener.simple_combo("ctrl e", function() {
     if (state === "view") {
         document.location.href = `?a=${getModule()}&editid=${objectId}&${getModuleSessionParams()}`;
@@ -429,6 +362,7 @@ if (state === "view") {
     });
 } else if (state === "edit" || state === "addnew") {
     editForm = form.get("edit-form");
+    initShowHideListeners();
     // Передаём фокус на элемент Name, но в следующем event loop цикле,
     // чтобы успели приинициализироваться все прочие JS файлы
     setTimeout(() => {
@@ -438,12 +372,11 @@ if (state === "view") {
             .focus();
     }, 0);
 } else if (state === "list") {
-    initListListeners();
-
     // В самом начел загрузки обновим таблицу в режиме List отдельным ajax запросом
     try {
         const tableName = getModule();
         const listTable = table.get(tableName);
+        listTable.initMassactionListeners();
         const findid = getPageParam("listInitialFindid");
         const page = getPageParam("listInitialPage");
         // В массив отправляемых данных поставляе начальную страницу с которой нужно начат рендеринг

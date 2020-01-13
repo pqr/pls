@@ -1,25 +1,18 @@
-import {
-    buildMapFromObj,
-    buildObjFromMap,
-    initTooltip,
-    isLangRu,
-    loadSortableJs,
-    parseJson,
-    toastError
-} from "./Light";
+import {buildMapFromObj, buildObjFromMap, initTooltip, isLangRu, loadSortableJs, parseJson, toastError} from "./Light";
 import * as forms from "./Form";
-import { Field, Form } from "./Form";
-import { Table } from "./Table";
+import {Field, Form} from "./Form";
 
 declare var Sortable: any;
 declare var dayjs: any;
 
+export type FiltersSubmitAction =  (filterValues:any) => void;
+
 export class Filters {
     private name: string;
+    private submitAction: FiltersSubmitAction;
 
     public form: Form;
     private $form: JQuery;
-    private table: Table;
     private $layer: JQuery;
 
     // Описание схемы
@@ -37,9 +30,12 @@ export class Filters {
     // чтобы при закрытии режима настроек сделать им всем destroy()
     private sortables: any[] = [];
 
-    constructor(table: Table) {
-        this.name = table.getName();
-        this.table = table;
+    constructor(name: string, submitAction: FiltersSubmitAction, resetAction: () => void) {
+        this.name = name;
+        this.submitAction = submitAction;
+        if (resetAction) {
+            this.resetHandlers.push(resetAction);
+        }
         this.form = forms.get(this.name);
         this.$form = this.form.getFormNode();
 
@@ -53,8 +49,11 @@ export class Filters {
         // Подсветим активные фильтры жирным цветом
         this.highlightActive();
 
+        // Фильтры с выпадающими списками сделаем полупрозрачными, если выбрано значение %
+        this.opacityForSelectAny();
+
         // Навесим различные обработчики на форму фильтров
-        $form.on("submit", this.onSubmit);
+        $form.on("submit", this.onFormSubmit);
         //Обработчик на кнопку Enter внутри textarea -> должен вызывать submit
         $form.on("keydown", "textarea", this.onTextareaKeydown);
         $form.find(".filters-reset").on("click", this.onResetClick);
@@ -92,6 +91,19 @@ export class Filters {
         this.form.setFieldValue(fieldKey, newValue);
     }
 
+    setValuesAfterReload(newValues:any) {
+        for (let fieldKey in newValues) {
+            this.setValue(fieldKey, newValues[fieldKey]);
+        }
+
+        // Подсветим активные фильтры жирным и семеним иконку у кнопки Filter, если нужно
+        this.highlightActive();
+
+        // Запустим механизм скрытия скрытых фильтров заново
+        // это нужно чтобы отобразить те фильтры, у которых значение отличается от значения по умолчанию
+        this.refreshInvisibleClasses();
+    }
+
     private renderHtmlIntoWidget(html: string) {
         if (this.$widget) {
             this.$widget.html(html);
@@ -121,7 +133,20 @@ export class Filters {
         });
     }
 
-    private onSubmit = (e: any) => {
+    private opacityForSelectAny()
+    {
+        const setSelectOpacity = (select:HTMLSelectElement) => {
+            $(select).toggleClass('select-any', select.value === '%');
+        };
+        this.$form.find('select').each((_, select) => {
+            setSelectOpacity(select as HTMLSelectElement);
+        });
+        this.$form.on("change", 'select', (e:any) => {
+            setSelectOpacity(e.target);
+        });
+    }
+
+    private onFormSubmit = (e: any) => {
         e.preventDefault();
         this.submit();
     };
@@ -142,10 +167,6 @@ export class Filters {
     }
 
     private onResetClick = () => {
-        if (this.table.isLoading()) {
-            // Если в момент нажатия RESET уже происходила какая-то загрузка данных, то её нужно прервать,
-            this.table.cancelReload();
-        }
         this.unblockFilterButton();
         this.reset();
         this.resetHandlers.forEach(handler => handler());
@@ -165,33 +186,19 @@ export class Filters {
             .prop("disabled", false);
     }
 
-    submit() {
+    async submit() {
         this.blockFilterButton();
-        const reloadParams = {
-            filterValues: JSON.stringify(buildObjFromMap(this.form.getFieldsValues())),
-            page: 1
-        };
-        this.table.reload(reloadParams, () => {
-            const hiddenInput = this.table.getDivNode().find("input[name=filterValues]");
-            if (hiddenInput.length > 0) {
-                const newValues = parseJson(<string>hiddenInput.val());
-                for (let fieldKey in newValues) {
-                    this.setValue(fieldKey, newValues[fieldKey]);
-                }
-
-                // Подсветим активные фильтры жирным и семеним иконку у кнопки Filter, если нужно
-                this.highlightActive();
-
-                // Запустим механизм скрытия скрытых фильтров заново
-                // это нужно чтобы отобразить те фильтры, у которых значение отличается от значения по умолчанию
-                this.refreshInvisibleClasses();
-            }
-
-            this.unblockFilterButton();
-        });
+        const filterValues = buildObjFromMap(this.form.getFieldsValues());
+        await this.submitAction(filterValues);
+        this.unblockFilterButton();
     }
 
     private showWidget(clickTarget: HTMLElement) {
+        // Если виджет уже открыт - удалим его
+        if (this.$widget) {
+            this.hideWidget();
+        }
+
         const $widget = $(`<div class='widget-block floatingwidget floatingwidget_withshadow'>
                                     <div class="cssload-container">
                                         <div class="cssload-speeding-wheel"></div>
@@ -395,7 +402,7 @@ export class Filters {
         }
 
         e.preventDefault();
-        const interval = e.target.hash.replace('#', '');
+        const interval = e.target.hash.replace("#", "");
         const dj = dayjs();
         let fromDate, untilDate;
         switch (interval) {
@@ -404,34 +411,33 @@ export class Filters {
                 untilDate = fromDate;
                 break;
             case "yesterday":
-                fromDate = dj.subtract(1, 'day');
+                fromDate = dj.subtract(1, "day");
                 untilDate = fromDate;
                 break;
             case "week":
-                fromDate = dj.startOf('week');
-                untilDate = dj.endOf('week');
+                fromDate = dj.startOf("week");
+                untilDate = dj.endOf("week");
                 break;
             case "month":
-                fromDate = dj.startOf('month');
-                untilDate = dj.endOf('month');
+                fromDate = dj.startOf("month");
+                untilDate = dj.endOf("month");
                 break;
             case "prevmonth":
-                fromDate = dj.subtract(1, 'month').startOf('month');
-                untilDate = fromDate.endOf('month');
+                fromDate = dj.subtract(1, "month").startOf("month");
+                untilDate = fromDate.endOf("month");
                 break;
             case "year":
-                fromDate = dj.startOf('year');
-                untilDate = fromDate.endOf('year');
+                fromDate = dj.startOf("year");
+                untilDate = fromDate.endOf("year");
                 break;
 
             default:
-                throw Error('From-Until Popup: unknown interval ' + interval);
-
+                throw Error("From-Until Popup: unknown interval " + interval);
         }
 
-        const $inputs = this.$fromUntilPopup.siblings('input.input-date');
-        $inputs.eq(0).val(fromDate.format('DD.MM.YYYY'));
-        $inputs.eq(1).val(untilDate.format('DD.MM.YYYY'));
+        const $inputs = this.$fromUntilPopup.siblings("input.input-date");
+        $inputs.eq(0).val(fromDate.format("DD.MM.YYYY"));
+        $inputs.eq(1).val(untilDate.format("DD.MM.YYYY"));
 
         this.hideFromUtilPopup();
     };
@@ -515,14 +521,6 @@ export class Filters {
         // Отображаем все скрытые фильтры
         $form.find(".filter-invisible").removeClass("filter-invisible");
 
-        /*
-        $form.find("table.filters").sortable({
-            connectWith: "table.filters",
-            items: "> tbody > tr",
-            cursor: "move",
-            handle: "th:not(:empty)"
-        });
-        */
         loadSortableJs().then(() => {
             $form.find("ul.filters__list").each((_: any, ul: HTMLUListElement) => {
                 const sortable = Sortable.create(ul, {
@@ -718,7 +716,12 @@ export class Filters {
         }
         this.$layer.fadeIn("fast");
 
-        $("body").css("overflow", "hidden");
+        const body = document.body,
+            html = document.documentElement;
+        let height = Math.max( body.scrollHeight, body.offsetHeight,
+            html.clientHeight, html.scrollHeight, html.offsetHeight )
+        height += 20;
+        this.$layer.css("height", height + "px");
 
         const $buttons = $form.find(".filters__buttons").addClass("display-none");
 

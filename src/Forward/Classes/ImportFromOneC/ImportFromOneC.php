@@ -12,10 +12,10 @@ use Forward\Classes\ImportFromOneC\Importers\ImportVPayment;
 use Forward\ForwardConfig;
 use Light\Autolaunch\BackupHelpres\P7zip;
 use Light\Db;
+use Light\ErrorHandler;
 use Light\Field\FieldDate;
 use Light\FilesFolder;
 use Light\Msg;
-use function Light\reportException;
 use Light\Request;
 use Light\Response;
 use Symfony\Component\Process\Process;
@@ -181,7 +181,7 @@ class ImportFromOneC
             } catch (\Exception $e) {
 
                 $this->msgBuff->addError($e->getMessage());
-                reportException($e);
+                ErrorHandler::reportException($e);
 
             }
         });

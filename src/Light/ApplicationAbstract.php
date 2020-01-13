@@ -12,9 +12,13 @@ define('LIGHT_DIR_PUBLIC', LIGHT_DIR_ROOT . '/public');
 define('LIGHT_DIR_LIGHTPUBLIC', LIGHT_DIR_ROOT . '/src/Light/public');
 
 use Light\Codeception\TestResponseException;
+use Light\Exceptions\ForceSendResponse;
 use Light\Module\Autolaunch\AutolaunchAbstract;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Rollbar\Payload\Level;
 use Rollbar\Rollbar;
+use Zend\HttpHandlerRunner\Emitter\SapiEmitter;
 
 abstract class ApplicationAbstract
 {
@@ -23,6 +27,9 @@ abstract class ApplicationAbstract
 
     /** @var Timer переменная таймер для измерения времени генерации всей страницы */
     private static $timer;
+
+    /** @var ServerRequestInterface */
+    protected $request;
 
     // С помощью вызова ApplicationAbstract::onBeforeSend(callable $handler) можно добавить обработчики перед отправкой
     private $handlersBeforeSend = [];
@@ -41,7 +48,7 @@ abstract class ApplicationAbstract
 
         // Зарегистрируем обработчик ошибок или  rollbar
         if (!defined("CODECEPTION_FUNCTIONAL_TEST")) {
-            include __DIR__ . '/ErrorHandler.php';
+            ErrorHandler::init();
         }
 
         $this->initDb();
@@ -169,15 +176,19 @@ abstract class ApplicationAbstract
 
     public static function setParam($name, $value)
     {
-        Db::query(
-            "REPLACE INTO system_param (CreatedBy, Name, Value) VALUES (" . User::getId() . ", '" . Db::esc($name) .
-            "','" . Db::esc($value) . "')"
-        );
+        $data = [
+            'CreatedBy' => User::getId(),
+            'CreatedDateTime' => date('Y-m-d H:i:s'),
+            'Name' => $name,
+            'Value' => $value,
+        ];
+        // Используем insert on duplicate key update (обновляем CreatedBy, CreatedDateTime, Value)
+        Db::insertRow($data, 'system_param', false, false, ['CreatedBy', 'CreatedDateTime', 'Value']);
     }
 
     public static function getParam($name)
     {
-        return Db::getOne("SELECT Value FROM system_param WHERE Name='" . Db::esc($name) . "'");
+        return Db::getOne("SELECT Value FROM system_param WHERE Name=" . Db::escString($name));
     }
 
     /**
@@ -279,14 +290,33 @@ abstract class ApplicationAbstract
         /** @var AutolaunchAbstract $autolaunchObj */
         $autolaunchObj = new $className;
         $autolaunchObj->proceedAutomaticRun();
-        self::terminate();
+
+        $this->finalize();
     }
 
-    /**
-     * @desc главная функция приложения - обрабатывает основные переменные и вызывает необходимый модуль
-     */
     public function __invoke()
     {
+        // Объект PSR-7 Request не передаём в явном виде - он будет создан fromGlobals()
+        // В Codeception окружении метод handleHttpRequest() запускается с явной передачей PSR-7 Request
+        $psr7Response = $this->handleHttpRequest();
+
+        $this->beforeSend();
+
+        $this->emitResponse($psr7Response);
+
+        $this->finalize();
+    }
+
+    public function handleHttpRequest(ServerRequestInterface $psr7Request = null): ResponseInterface
+    {
+        if ($psr7Request !== null) {
+            Request::$psr7 = $psr7Request;
+        } else {
+            Request::fromGlobals();
+        }
+
+        Response::new();
+
         //В качестве обработчика сессий используем самописный класс реализующий интерфейс SessionHandlerInterface
         //http://php.net/manual/en/class.sessionhandlerinterface.php
         //В этом самописном классе будем сохранять сессии в базу данных в таблицу phpsession
@@ -295,131 +325,167 @@ abstract class ApplicationAbstract
             session_start();
         }
 
-        // Пытаемся инициализировать пользователя на основе данных сессии
-        User::loadFromSession();
-        if (User::getId() && extension_loaded('newrelic')) {
-            // https://docs.newrelic.com/docs/agents/php-agent/php-agent-api/newrelic_add_custom_parameter
-            // Record custom data about this web transaction
-            newrelic_add_custom_parameter('user', User::getName());
-            newrelic_add_custom_parameter('user_id', User::getId());
+        try {
+
+            // Пытаемся инициализировать пользователя на основе данных сессии
+            User::loadFromSession();
+
+            //Вызовем метод, который должен быть определён в классе потомке - в нём настраивается title, добавляются глобкальные css
+            $this->init();
+
+            //Вызовем метод, который должен быть определён в классе потомке - в нём регистрируются все модули
+            $this->registerModules();
+
+            $this->checkCsrf();
+
+            // Проверим, есть ли текущий модуль вообще? Если нет, пользователь будет перенаправлен внутри метода
+            $this->checkModuleExists();
+
+            // Проверим, есть ли у текущего пользователя права доступа к текущему модулю?
+            $this->checkModuleAccess();
+
+            // Запускаем модуль (происходит автоматический поиск в папке Module в проекте, потом в Light/Module)
+            $resultFromModule = $this->proceedModule();
+
+            if (Request::isAjax()
+                || Request::isXls()
+                || !Response::haveMasterTemplate()
+                || Response::isRedirected()) {
+
+
+            } elseif (\is_string($resultFromModule) && $resultFromModule !== '') {
+
+                Intro\IntroManager::show();
+
+                Response::renderMasterTemplate($resultFromModule);
+                $resultFromModule = null;
+
+            }
+
+        } catch (ForceSendResponse $e) {
+
+            // Внутри модуля (внутри proceedModule()) могло быть выброшено специальное исключение
+            // для раннего завершения работы
+            $resultFromModule = $e->getResultFromModule();
+
+        } catch (\Throwable $e) {
+
+            if (Config::$debug) {
+
+                // В режиме отладки выбрасываем исключение до конца, чтобы отобразить его на экране
+                throw $e;
+
+            } else {
+
+                // В Production режиме логируем и показываем пользователю лишь кратое сообщение
+                ErrorHandler::reportException($e);
+                $resultFromModule = $e->getMessage();
+            }
+
         }
 
-        if (!defined("CODECEPTION_FUNCTIONAL_TEST") && Config::$sentry && Config::$sentry['dns']) {
-            $options = Config::$sentry['options'] + [
-                    'app_path' => LIGHT_DIR_ROOT . '/src',
-                    'prefixes' => [LIGHT_DIR_ROOT],
-                ];
-            $client = new \Raven_Client(Config::$sentry['dns'], $options);
-            $client->install();
-            $client->setRelease(ApplicationAbstract::getVersion());
-            $client->user_context([
-                'id' => User::getId(),
-                'username' => User::getLogin(),
-            ]);
+        $finalPsr7Response = $this->getFinalPsr7Response($resultFromModule);
+
+        // Сессию нужно записать и закрыть обязательно до отправки ответа
+        // Но после формирования $finalPsr7Response (в момент формирования flash сообещения могут быть очищены и это правильно)
+        if (session_id() && !self::isCli()) {
+            session_write_close();
         }
 
-        //Вызовем метод, который должен быть определён в классе потомке - в нём настраивается title, добавляются глобкальные css
-        $this->init();
+        // Записываем все накопившиеся flash сообщения в таблицу user_flash
+        Session::writeFlash();
 
-        //Вызовем метод, который должен быть определён в классе потомке - в нём регистрируются все модули
-        $this->registerModules();
-
-        $this->checkCsrf();
-
-        // Проверим, есть ли текущий модуль вообще? Если нет, пользователь будет перенаправлен внутри метода
-        $this->checkModuleExists();
-
-        // Проверим, есть ли у текущего пользователя права доступа к текущему модулю?
-        $this->checkModuleAccess();
-
-        // Запускаем модуль (происходит автоматический поиск в папке Module в проекте, потом в Light/Module)
-        $output = $this->proceedModule();
-
-        if (Request::isAjax()
-            || Request::isXls()
-            || !Response::haveMasterTemplate()
-            || Response::isRedirected()) {
-
-            //В случае ajax запроса или принудительно отключённого шаблона вывода - просто распечатаем $output
-            //print $output;
-            //Вывод $output будет ниже - передаётся как параметр в self::terminate($output);
-
-        } else {
-
-            Intro\IntroManager::show();
-
-            $output = Template::parseTpl(
-                Response::getMasterTemplate(),
-                ['output' => $output]
-            );
-        }
-
-        // Запись логов, завершение приложения
-        self::terminate($output);
+        // Возвращаем PSR-7 ответ
+        // Функция вызывавшая handleHttpRequest() может этот ответ либо отправить в браузер
+        // либо проверить в Codeception
+        // либо передать ещё куда-то (если, например, используется ReactPHP / RoadRunner)
+        return $finalPsr7Response;
     }
 
     /**
      * Запускает модуль (происходит автоматический поиск в папке Module в проекте, потом в Light/Module)
-     * @return string
+     * @return null|string|array|ResponseInterface
      */
     private function proceedModule()
     {
-        ob_start();
-
         $module = Request::getModule();
         $class = ModuleRegister::getModuleClass($module);
 
-        //Вызов функции class_exists породит вызов автолодера классов, который сделает include нужного файла
-        //Даже если в этом файле нет класса (т.е. модуль plain/php), он всё равно будет выполнен!
-        if (class_exists($class)) {
+        // Модуль внутри себя может делать print, поэтому оборачиваем в буфер вывода
+        ob_start();
+        $response = $this->proceedModuleClass($class);
+        $output = ob_get_clean();
 
-            if (isset($_GET['ps'])) {
-                //В параметре ps можно передать имя статического модуля,
-                // в этом случае объект класса модуля не создаётся,
-                // а у казанный в ps метод вызывается статически
-                if (stripos($_GET['ps'], 'post') === 0
-                    && !Request::isPost()
-                ) {
-                    // функции, которые начинаются со слова post разрешено вызывать только
-                    // методом POST. Это функции которые меняют что-то в базе,
-                    // и они обязательно должны вызываться как POST!
-                    Response::abort(403, 'Only POST is allowed for method proceed' . $_GET['ps']);
-                }
-
-                call_user_func($class . '::proceed' . ucfirst($_GET['ps']));
-
-            } elseif (isset($_GET['ac'])) {
-
-                //Специальный метод для Autocomplete - вызывается статически и возвращает массив для автокомплита
-                //Массив двухмерный: проиндексированный массив со строками и внутри ассоциативный массив с полями
-                //важное поле во вложенном массиве - 'value' - оно будет подставлено в input средствами JS
-                $value = trim($_GET['term']);
-                $out = call_user_func($class . '::ac' . ucfirst($_GET['ac']), $value);
-                Response::json($out);
-
-            } else {
-
-                $module = new $class();
-
-                if (isset($_GET['p'])) {
-                    // Если в url был параметр p, значит нужно запустить особый метод proceed внутри этого класса
-                    if (stripos($_GET['p'], 'post') === 0
-                        && !Request::isPost()
-                    ) {
-                        // функции, которые начинаются со слова post разрешено вызывать только
-                        // методом POST. Это функции которые меняют что-то в базе,
-                        // и они обязательно должны вызываться как POST!
-                        Response::abort(403, 'Only POST is allowed for method proceed' . $_GET['p']);
-                    }
-                    $module->{'proceed' . ucfirst($_GET['p'])}();
-                } else {
-                    //Иначе запускаем стандартный метод __invoke
-                    $module();
-                }
-            }
+        if ($response !== null) {
+            // Ответ из модуля получен в явном виде - возвращаем именно его
+            return $response;
         }
 
-        return ob_get_clean();
+        if ($output !== '') {
+            // Ответ из модуля получен в неявном виде в результате различных print операций - возвращаем этот текст
+            return $output;
+        }
+
+        // Ответа из модуля нет - значит он писал непосредственно в Response, пока вернём null
+        return null;
+    }
+
+    private function proceedModuleClass(string $class)
+    {
+        $proceedStatic = Request::getQueryParam('ps');
+        if ($proceedStatic) {
+            return $this->proceedModuleStatic($class, $proceedStatic);
+        }
+
+        $autocompleteMethod = Request::getQueryParam('ac');
+        if ($autocompleteMethod) {
+            return $this->proceedModuleAutocomplete($class, $autocompleteMethod);
+        }
+
+        $module = new $class();
+        $proceedMethod = Request::getQueryParam('p');
+        if ($proceedMethod) {
+            // Если в url был параметр p, значит нужно запустить особый метод proceed внутри этого класса
+            if (stripos($proceedMethod, 'post') === 0
+                && !Request::isPost()
+            ) {
+                // функции, которые начинаются со слова post разрешено вызывать только
+                // методом POST. Это функции которые меняют что-то в базе,
+                // и они обязательно должны вызываться как POST!
+                Response::abort(403, 'Only POST is allowed for method proceed' . $proceedMethod);
+            }
+
+            $fillProceedMethod = 'proceed' . ucfirst($proceedMethod);
+            return $module->{$fillProceedMethod}();
+        }
+
+        return $module();
+    }
+
+    private function proceedModuleStatic(string $class, string $proceedStatic)
+    {
+        //В параметре ps можно передать имя статического модуля,
+        // в этом случае объект класса модуля не создаётся,
+        // а у казанный в ps метод вызывается статически
+        if (stripos($proceedStatic, 'post') === 0
+            && !Request::isPost()
+        ) {
+            // функции, которые начинаются со слова post разрешено вызывать только
+            // методом POST. Это функции которые меняют что-то в базе,
+            // и они обязательно должны вызываться как POST!
+            Response::abort(403, 'Only POST is allowed for method proceed' . $proceedStatic);
+        }
+
+        return call_user_func($class . '::proceed' . ucfirst($proceedStatic));
+    }
+
+    private function proceedModuleAutocomplete(string $class, string $autocompleteMethod)
+    {
+        //Специальный метод для Autocomplete - вызывается статически и возвращает массив для автокомплита
+        //Массив двухмерный: проиндексированный массив со строками и внутри ассоциативный массив с полями
+        //важное поле во вложенном массиве - 'value' - оно будет подставлено в input средствами JS
+        $value = trim(Request::getQueryParam('term'));
+        return call_user_func($class . '::ac' . ucfirst($autocompleteMethod), $value);
     }
 
     public static function getWorkingTime()
@@ -428,59 +494,77 @@ abstract class ApplicationAbstract
     }
 
     /**
-     * Запись логов и принудительное завершениe приложения
-     * Этот метод вызывается, например, из Response::redirect()
+     * Этот метод вызывается для раннего завершения работы приложения
+     * В итоге он выбрасывает исключение ForceSendRequest
      *
-     * Параметр $finalOutput нужен, чтобы отправить тело ответа ПОСЛЕ заголовков, коими могут быть x-light-flashmsg
-     * в случае ajax запроса
-     * @param string $finalOutput
-     * @throws TestResponseException
+     * Но лучше не использовать раннее завершение, а возвращать результат работы модуля явно
+     * с помощью return из всех функций контроллера
+     *
+     * @param $resultFromModule
+     * @throws ForceSendResponse
+     *
      */
-    public static function terminate($finalOutput = '')
+    public static function terminate($resultFromModule = null)
     {
-        self::$app->beforeSend();
-
+        // Проверим, возможно есть дополнительные буферы вывода, которые нужно прочитать и приконкатинировать в $resultFromModule?
         while (ob_get_level()) {
             $additionalOutput = ob_get_clean();
-            $finalOutput .= $additionalOutput;
+            if ($additionalOutput) {
+                // Конкатенацию делаем только если $resultFromModule был null или строкой изначально
+                if ($resultFromModule === null) {
+                    $resultFromModule = '';
+                }
+                if (\is_string($resultFromModule)) {
+                    $resultFromModule .= $additionalOutput;
+                }
+            }
         }
 
-        if (!ApplicationAbstract::isCli() && Request::isAjax() && !Response::isRedirected()) {
+        throw new ForceSendResponse($resultFromModule);
+    }
+
+    /**
+     * @param null|string|array|ResponseInterface $resultFromModule
+     * @return ResponseInterface
+     */
+    protected function getFinalPsr7Response($resultFromModule): ResponseInterface
+    {
+        if ($resultFromModule instanceof ResponseInterface) {
+
+            // Пришел конкретный PSR-7 Response - его и будем отправлять
+            return $resultFromModule;
+
+        }
+
+        // Конкретного PSR-7 Response в явном виде не получен, значит будем использовать тот,
+        // что накоплен в статической переменной Response::$psr7
+        if (\is_string($resultFromModule)) {
+
+            Response::withBodyString($resultFromModule);
+
+        } elseif (\is_array($resultFromModule)) {
+
+            Response::withJson($resultFromModule);
+
+        }
+
+        if (Request::isAjax() && !Response::isRedirected()) {
             // Запрос пришел через ajax - отправим все накопившиеся flash сообщения обратно через ajax
             $messagess = Session::flashGetAllAndClear();
             if ($messagess) {
                 $header = Session::$showAsToast ? 'x-light-toastmsg' : 'x-light-flashmsg';
-                Response::header($header . ': ' . json_encode($messagess));
+                Response::withHeader($header, Misc::json($messagess));
             }
         }
 
-        // Далее пойдёт вывод всего в браузер.
-        // Если же мы находимся в режиме функциональных тестов Codeception, то нужно прерать поток выполнения
-        // Выбросим исключение в которое завернём весь получившийся результат $finalOutput
-        if (defined('CODECEPTION_FUNCTIONAL_TEST')) {
-            self::$app->afterSend();
-            // Передаём управление в codeception LightConnector по средствам выбрасывания специального исключения
-            throw new TestResponseException($finalOutput);
-        }
+        return Response::$psr7;
+    }
 
-        if (!self::isCli()) {
-            // Выводим заголовки, только если это не cli режим
-            foreach (Response::getHeaders() as $header) {
-                header($header);
-            }
-        }
-
-        print $finalOutput;
-
+    protected function emitResponse($finalPsr7Response)
+    {
+        // Если же не CLI, то нужно отправить с помощью эмиттера
+        (new SapiEmitter())->emit($finalPsr7Response);
         flush();
-
-        // Работаем с сессией, только если это не cli режим
-        if (session_id() && !self::isCli()) {
-            session_write_close();
-        }
-
-        // Записываем все накопившиеся flash сообщения в таблицу user_flash
-        Session::writeFlash();
 
         // https://secure.php.net/manual/en/function.fastcgi-finish-request.php
         // https://symfony.com/doc/current/components/http_kernel.html#the-kernel-terminate-event
@@ -488,22 +572,6 @@ abstract class ApplicationAbstract
         if (function_exists('fastcgi_finish_request')) {
             fastcgi_finish_request();
         }
-
-        if (!isset($_REQUEST['nouserrefreshtime']) && !self::isCli() && User::isAuth()) {
-            User::updateLastRefreshDateTime();
-            LoggerCsv::logVisit();
-        }
-
-        self::$app->afterSend();
-
-        //Если установлен специальный cookie, то запишем логи об этом sql запросе
-        //Запишем логи об ошибке в SQL запросе в CSV файл
-        if (isset($_COOKIE['sqllog']) && $_COOKIE['sqllog']) {
-            LoggerCsv::logSqlQueries();
-        }
-
-        exit();
-
     }
 
     protected function beforeSend()
@@ -511,9 +579,27 @@ abstract class ApplicationAbstract
         $this->runHandlers($this->handlersBeforeSend);
     }
 
-    protected function afterSend()
+    protected function finalize()
     {
+        if (!isset($_REQUEST['nouserrefreshtime']) && !self::isCli() && User::isAuth()) {
+            User::updateLastRefreshDateTime();
+            LoggerCsv::logVisit();
+        }
+
+        // Обработка всех хендлеров afterSend может быть долгой.
+        // Перед её началом сразу сбросим накопившиеся сообщения в dblog
+        DbLog::flush();
+
         $this->runHandlers($this->handlersAfterSend);
+
+        // Все новые сообщения для dblog, которые будут накоплены в процессе afterSend буду
+        // автоматически записаны в обработчике register_shutdown_function (см. DbLog.php)
+
+        // Если установлен специальный cookie, то запишем логи об этом sql запросе
+        // Запишем логи об ошибке в SQL запросе в CSV файл
+        if (isset($_COOKIE['sqllog']) && $_COOKIE['sqllog']) {
+            LoggerCsv::logSqlQueries();
+        }
     }
 
     private function runHandlers(array $handlers)
@@ -522,7 +608,7 @@ abstract class ApplicationAbstract
             try {
                 $handler();
             } catch (\Throwable $e) {
-                reportException($e);
+                ErrorHandler::reportException($e);
             }
         }
     }

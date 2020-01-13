@@ -35,15 +35,15 @@ class Customer extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(CustomerAccounts::class);
-        $this->registerSubtable(Responsibles::class);
-        $this->registerSubtable(Contacts::class);
-        $this->registerSubtable(Agents::class);
-        $this->registerSubtableReadonly(Quotations::class);
-        $this->registerSubtableReadonly(StandartRates::class);
-        $this->registerSubtable(Consignee::class);
+        $this->addSubtable(CustomerAccounts::class);
+        $this->addSubtable(Responsibles::class);
+        $this->addSubtable(Contacts::class);
+        $this->addSubtable(Agents::class);
+        $this->addSubtableReadonly(Quotations::class);
+        $this->addSubtableReadonly(StandartRates::class);
+        $this->addSubtable(Consignee::class);
     }
 
     protected function initList()
@@ -101,7 +101,7 @@ class Customer extends ModuleAbstract
     {
         $this->allowFiltersLayoutChange = false;
 
-        $this->addFilterName(F::TYPE_STRING);
+        $this->addFilterText('Name');
 
         $this->addFilters(
 

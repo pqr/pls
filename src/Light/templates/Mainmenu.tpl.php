@@ -1,18 +1,12 @@
 <?php
 
-use Light\Link;
-use Light\Mainmenu;
-use Light\Module\UserModule\UserModule;
-use Light\Module\UserSettings\UserSettings;
-use Light\User;
-
 $activeModule = \Light\Request::getModule();
 
-?>
+use Light\Ico; ?>
 <div id="mainmenu">
-    <div id="mainmenu__top">
+    <div class="MainmenuTop">
         <div style="text-align: right">
-            <a class="pin-menu-button"><i class="fa fa-thumb-tack"></i></a>
+            <a class="MainmenuPinBtn"><?= Ico::i('fa-thumbtack', 'fas') ?></i></a>
         </div>
         <?php if (date('m-d') === '03-07' && \Light\User::getFieldData('Sex') === 'f'): ?>
             <div style="margin: 0 auto 1em;">
@@ -23,40 +17,39 @@ $activeModule = \Light\Request::getModule();
                 <img src="<?= $files[$file] ?>" style="max-width: 120px; max-height: 200px; cursor: pointer;" class="march8">
             </div>
         <?php else: ?>
-            <div id="mainmenu__avatar">
-                <?php /*<img src="lightpublic/i/santa-hat.png" class="santa-hat">*/ ?>
-                <img class="avatar" src="<?= Mainmenu::getUserAvatarImgSrc(User::getId()) ?>">
-                <input id="mainmenu__avatarinputfile" type="file" name="avatar">
+            <div class="MainmenuAvatar">
+                <?php /* <img src="lightpublic/i/santa-hat.png" class="santa-hat"> */ ?>
+                <?= $Avatar ?>
             </div>
         <?php endif; ?>
 
-        <div id="mainmenu__username">
+        <div class="MainmenuUsername">
             <?= $UserName ?>
         </div>
 
-        <div id="mainmenu__usergroup">
+        <div class="MainmenuUsergroup">
             <?= htmlspecialchars(\Light\User::getGroupName()) ?>
-            <a href="index.php?a=Logout#ajax-post" id="mainmenu__logout" title="Logout"><i
-                        class="fa fa-sign-out"></i></a>
+            <a href="index.php?a=Logout#ajax-post" class="MainmenuLogout" title="Logout"><i
+                        class="fas fa-sign-out-alt"></i></a>
         </div>
 
-        <input type="text" placeholder="Поиск по меню" id="mainmenu__search">
+        <input type="text" placeholder="Поиск по меню" class="MainmenuSearch">
 
         <div style="text-align: left; margin: 2px 0 0 10px">
-            <a href="index.php?a=Core&ps=MainmenuSettings#ajax" id="mainmenu__settings" class="note">
+            <a href="index.php?a=Core&ps=MainmenuSettings#ajax" class="note">
                 Настройка меню
             </a>
         </div>
     </div>
 
-    <div class="Mainmenu-Favorites">
+    <div class="MainmenuFavorites">
         <?= $favoritesHtml ?>
     </div>
 
     <?php foreach ($sectionsHtml as $section => $sectionHtml): ?>
 
         <?php if ($section): ?>
-            <div class="mainmenu__sectionhead" data-name="<?= htmlspecialchars($section) ?>">
+            <div class="MainmenuSectionHead" data-name="<?= htmlspecialchars($section) ?>">
                 <?= $section ?>
             </div>
         <?php endif ?>

@@ -233,8 +233,7 @@ class ShipmentFields
                     return $text;
                 }
                 return Link::create(DocsInventory::class, $text)
-                    ->view($diId)
-                    ->funcDialog()
+                    ->viewDialog($diId)
                     ->getHtml();
             },
             'getExcelFunction' => function ($value) {

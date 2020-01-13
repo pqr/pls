@@ -11,7 +11,6 @@ use Light\Link;
 use Light\Metric;
 use Light\Misc;
 use Light\ObjAbstract;
-use function Light\reportException;
 use Light\Request;
 use Light\Response;
 use Light\Session;
@@ -37,18 +36,21 @@ trait DeleteTrait
         $id = (int)$_GET['delid'];
 
         // Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
-        $this->loadObjAndCheck($id);
+        if (!$this->loadObjAndCheck($id)) {
+            // Внутри произошел redirect и метод loadObjAndCheck() вернул false
+            return null;
+        }
 
         if (!$this->allowDelete || !User::hasDeleteAccess() || !$this->hasDeleteAccessRightToObj($this->_obj)) {
             $msg = Config::$lang === 'ru' ? 'Нет доступа на удаление' : 'No access to delete';
             Response::abort(403, $msg);
-            return;
+            return null;
         }
 
         if (!Request::isPost()) {
             // Если пришел не POST запрос, значит это запрос на рендеринг диалогового окна с подтверждением удаления
             $this->sendDeleteConfirmDialog();
-            return;
+            return null;
         }
 
         try {
@@ -72,10 +74,17 @@ trait DeleteTrait
 
             $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
 
+            // Загрузим данные подтаблиц внутрь самого obj, чтобы потом было удобно сравнивать
+            $this->_obj->loadSubtablesForChangeDetection();
+
             $this->beforeDelete($this->_obj);
             $this->proceedDeleteSubtables($this->_obj);
             $this->proceedDeleteObj($this->_obj);
-            $this->_obj->afterDelete($oldData, $this->flash);
+
+            // Загрузим свежие данные подтаблиц внутрь самого obj (по сути будут пустые подтаблицы после удаления)
+            $this->_obj->loadSubtablesForChangeDetection();
+
+            $this->_obj->afterDelete($this->flash);
             $this->afterDelete($this->_obj, $oldData);
 
             Db::commit();
@@ -89,7 +98,7 @@ trait DeleteTrait
 
             Db::rollback();
             $this->flash->addError($e->getMessage());
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
 
         }
 
@@ -125,7 +134,7 @@ trait DeleteTrait
         $select2AjaxUrl = Link::create($module)
             ->params(['fromDeleteDialogId' => $id]);
 
-        $bodyHtml = '<form action="' . $formAction->getHref() . '#ajax"
+        $bodyHtml = '<form action="' . $formAction->getHref() . '"
                            data-select2ajaxurl="' . $select2AjaxUrl->getHref() . '" 
                            method="post">'
             . $this->getDeleteConfirmationDialogHtml()
@@ -133,7 +142,7 @@ trait DeleteTrait
 
         $deleteText = Config::$lang === 'ru' ? 'Удалить' : 'Delete';
         $cancelText = Config::$lang === 'ru' ? 'Отмена' : 'Cancel';
-        Response::showDialog($bodyHtml, $deleteText, null, $cancelText);
+        Response::showDialog($bodyHtml, $deleteText, null, $cancelText, null, 400);
     }
 
     /**
@@ -291,6 +300,7 @@ trait DeleteTrait
         $options = "SELECT ID, Name FROM {$this->getDbTable()} WHERE ID != $deletingId ORDER BY Name";
         return F::createSelect('NewValueForReplacement', [
             'options' => $options,
+            'editWidth' => 'default',
         ]);
     }
 
@@ -325,7 +335,7 @@ trait DeleteTrait
         if ($linkedMessagess) {
             $textLinked = Config::$lang === 'ru'
                 ? 'Удаляемая запись связана с другими записями в базе'
-                : 'You are triing to delete a record which is linked to anothed records in database';
+                : 'You are trying to delete a record which is linked to anothed records in database';
             $outHtml = "$textLinked:<br>";
             $outHtml .= '<ul><li>' . implode('</li><li>', $linkedMessagess) . '</li></ul>';
 
@@ -370,7 +380,7 @@ trait DeleteTrait
         $messagess = [];
 
         // Проверим, а был ли передан ID нового элемента на замену?
-        $newId = (int)$this->whileDeleteFieldForReplacement($deletingId)->getDataFromRequest($_POST);
+        $newValue = $this->whileDeleteFieldForReplacement($deletingId)->getDataFromRequest($_POST);
 
         // Для начала проверим, есть ли связанные записи?
         foreach ($linkedClasses as $className => $description) {
@@ -378,7 +388,7 @@ trait DeleteTrait
             $countLinkedIds = count($linkedIds);
             if ($countLinkedIds > 0) {
                 // Нашли какие-то связанные записи!
-                if (!$newId) {
+                if (!$newValue) {
                     //Сразу возвращаем диалоговое окно с ошибкой
                     Response::showDialog('<span class="bad">При удалении нужно выбрать элемент на замену удаляемому</span>');
                     return false;
@@ -387,7 +397,7 @@ trait DeleteTrait
                 //Производим непосредственное обновление связанных записей в базе!
                 $updated = 0;
                 foreach ($linkedIds as $linkedId) {
-                    $affectedRows = $this->whileDeleteUpdateLinkedRecord($className, $linkedId, $newId, $dbLogMsg);
+                    $affectedRows = $this->whileDeleteUpdateLinkedRecord($className, $linkedId, $newValue, $dbLogMsg);
                     if ($affectedRows) {
                         $updated++;
                     }
@@ -419,7 +429,7 @@ trait DeleteTrait
      *
      * @param string $className
      * @param int $linkedId
-     * @param int $newId
+     * @param mixed $newValue
      * @param string $dbLogMsg
      * @return int affectedRows
      * @throws \Exception
@@ -427,13 +437,13 @@ trait DeleteTrait
     protected function whileDeleteUpdateLinkedRecord(
         string $className,
         int $linkedId,
-        int $newId,
+        $newValue,
         string $dbLogMsg
     ): int {
         /** @var ObjAbstract $obj */
         $obj = new $className;
         $obj->setId($linkedId);
-        $updateData = [$this->whileDeleteGetForeignFieldKey($className) => $newId];
+        $updateData = [$this->whileDeleteGetForeignFieldKey($className) => $newValue];
         // Возвращаем affected rows
         return $obj->updateDb($updateData, $dbLogMsg);
     }

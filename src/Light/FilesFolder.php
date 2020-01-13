@@ -189,7 +189,7 @@ class FilesFolder
     public static function getLinkWithIcon(string $relativePath, string $innerHtml = ''): string
     {
         $hasFiles = self::hasFiles($relativePath);
-        $icon = Img::iconFolder($hasFiles);
+        $icon = Ico::folder($hasFiles);
         $innerHtml = trim("$icon $innerHtml");
         return self::getLink($relativePath, $innerHtml);
     }
@@ -200,7 +200,7 @@ class FilesFolder
             return '';
         }
         $hasFiles = self::hasFilesModule($module, $id);
-        $icon = Img::iconFolder($hasFiles);
+        $icon = Ico::folder($hasFiles);
         $innerHtml = trim("$icon $innerHtml");
         return self::getLinkModule($module, $id, $innerHtml);
     }
@@ -338,12 +338,17 @@ class FilesFolder
     {
         try {
 
-            File::fs()->mkdir(self::getAbsolute($relative));
+            $dir = self::getAbsolute($relative);
+            if (is_dir($dir)) {
+                return true;
+            }
+
+            File::fs()->mkdir($dir);
             return true;
 
         } catch (\Exception $e) {
 
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             return false;
 
         }
@@ -417,6 +422,10 @@ class FilesFolder
      */
     public static function scandir(string $relative, string $filterExtension = null): array
     {
+        if ($relative === '') {
+            return [];
+        }
+
         $abs = self::getAbsolute($relative);
         if (!is_dir($abs)) {
             return [];
@@ -557,7 +566,7 @@ class FilesFolder
         $recordId = (int)$parts[2];
         $file = $parts[3];
 
-        $url = Link::create($module)->view($recordId)->params(['elfinder' => 'download', 'file' =>  $file])->getHref();
+        $url = Link::create($module)->view($recordId)->params(['elfinder' => 'download', 'file' => $file])->getHref();
         // Дадим браузеру команду на редирект на специальный адрес ModuleAbstract
         // который умеет отдавать файлы из FilesFolder
         Response::redirectUrl($url);

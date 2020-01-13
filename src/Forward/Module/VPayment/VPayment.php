@@ -13,9 +13,9 @@ class VPayment extends PaymentModuleAbstract
     protected $textSaveBtn = 'Vendor Payment';
     public $tableLayoutDefault = 'CompanyID|Name|VendorID|PaymentDate|Amount|CurrencyISO|Comments';
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(VInvoices::class);
+        $this->addSubtable(VInvoices::class);
     }
 
     protected function initFilters()
@@ -30,22 +30,11 @@ class VPayment extends PaymentModuleAbstract
 
         );
 
-        $this->addFilterName(
-            F::TYPE_TEXT,
+        $this->addFilterText(
+            ['Name', 'Comments'],
             [
                 'name' => 'Ref. / Comments',
                 'title' => 'Reference or Comments',
-                'sqlWhere' => function ($value) {
-                    return Db::getSqlWhereSeparatedByComa(
-                            $value,
-                            'Name',
-                            0,
-                            true,
-                            false,
-                            0
-                        ) . " OR Comments LIKE '%" .
-                        Db::esc($value) . "%'";
-                }
             ]
         );
 
@@ -59,7 +48,7 @@ class VPayment extends PaymentModuleAbstract
                 'VendorAccountID',
                 'FilterName',
             ],
-            ['PaymentDate']
+            ['PaymentDate'],
         ];
     }
 }

@@ -18,14 +18,6 @@ table.table.layoutfixed td {
     overflow: hidden;
 }
 
-/* фиксация thead работает в Firefox и в Safari */
-table.table.sticky > thead {
-    position: sticky;
-    /*position: -webkit-sticky; !* Для Safari нужно с префисом *!*/
-    top: 0;
-}
-
-/* Для Edge и Chome нужно фиксировать th */
 table.table.sticky > thead > tr > th {
     position: sticky;
     /*position: -webkit-sticky; !* Для Safari нужно с префисом *!*/
@@ -102,7 +94,7 @@ table.table > tbody > tr.separator {
 }
 
 table.table > tbody > tr.separator > td {
-    border: none ;
+    border: none;
     border-top: 1px solid #000000;
 }
 
@@ -128,10 +120,10 @@ table.table > tbody > tr > td {
 }
 
 table.table > tbody > tr:hover:not(.no-hover):not(.total) td,
-table.table > tbody > tr.hover td
-{
+table.table > tbody > tr.hover td {
     transition: all 0.1s ease-out;
     background-color: #fdeeb3;
+    color: black !important;
 }
 
 table.table > tbody > tr[class^="color"]:hover:not(.no-hover) td {
@@ -227,7 +219,8 @@ ul.filters__list > li.filters__layoutbuttons {
     min-width: 9em;
 }
 
-div.filters select.input-default {
+div.filters select.input-default,
+div.filters .choices {
     width: 250px;
 }
 

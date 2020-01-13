@@ -2,9 +2,15 @@
 
 namespace Light;
 
+use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
 use Light\Field\FieldInputAbstract;
+use Light\Field\FieldMonth;
+use Light\Field\FieldSelect;
+use Light\Field\FieldSelect2ChildMultiple;
+use Light\Field\FieldSelect2Multiple;
+use Light\Field\FieldText;
 use Light\Traits\FieldsetAwareTrait;
 
 /**
@@ -17,7 +23,7 @@ class Filters
     private $tableName;
     private $tableId;
     private $fieldset;
-    private $data;
+    private $data = [];
 
     public function __construct(string $tableName)
     {
@@ -29,6 +35,157 @@ class Filters
     public function getFieldset(): Fieldset
     {
         return $this->fieldset;
+    }
+
+    public function addFilters(...$fields)
+    {
+        if (count($fields) !== 0) {
+            if (is_array($fields[0]) && count($fields) === 1) {
+                $filtersArr = $fields[0];
+            } else {
+                $filtersArr = $fields;
+            }
+
+            foreach ($filtersArr as $filterField) {
+                $this->add($filterField);
+            }
+        }
+    }
+
+    public function add(F $field)
+    {
+        // В зависимости от типа поля, навесим доп параметры
+        if ($field instanceof FieldSelect2Multiple || $field instanceof FieldSelect2ChildMultiple) {
+
+            if (!isset($field->initialParams['any'])) {
+                $field->any = false;
+            }
+            if (!isset($field->initialParams['empty'])) {
+                $field->empty = false;
+            }
+            if (!isset($field->initialParams['default'])) {
+                $field->default = '%';
+            }
+
+            // Принудильено отключаем возможность добавления новых элементов в выпадающий список для фильтров
+            $field->addNew = false;
+
+        } elseif ($field instanceof FieldSelect) {
+
+            if (!isset($field->initialParams['any'])) {
+                $field->any = true;
+            }
+            if (!isset($field->initialParams['empty'])) {
+                $field->empty = false;
+            }
+            if (!isset($field->initialParams['default'])) {
+                $field->default = '%';
+            }
+
+            // Принудительно отключаем возможность добавления новых элементов в выпадающий список для фильтров
+            $field->addNew = false;
+
+        } elseif ($field instanceof FieldMonth) {
+
+            if (!isset($field->initialParams['allYear'])) {
+                $field->allYear = true;
+            }
+
+        } elseif ($field instanceof FieldText) {
+
+            if (!isset($field->initialParams['title'])) {
+                $field->title = 'Multiple values separated by comma or new line';
+            }
+            if (!isset($field->initialParams['rows'])) {
+                $field->rows = 2;
+            }
+
+        } elseif ($field->isAutocomplete()) {
+
+            //Если это поле с виджетом Autocomplete, то нужно сделать его readonly, чтобы после сабмита фильтров
+            //новое значение не запоминалось в базу
+            $field->acReadonly = true;
+
+        } /*elseif ($field instanceof FieldCheckbox) {
+
+            //Чекбоксы нужно превратить в выпадающие списки yes/no
+            $params = $field->getUserDefinedParams();
+            $params['any'] = true;
+            $params['default'] = '%';
+            $field = new FieldYesNo($field->key, $params);
+
+        }*/
+
+        // Обязательно проставим режим редактирования
+        $field->setModes(F::MODE_ALL);
+
+        $this->addField($field);
+
+        if ($field->filterNot) {
+            $this->addField(F::createCheckbox(
+                'Not' . $field->key, [
+                'name' => Config::$lang === 'ru' ? 'Кроме выбранных выше' : 'Except selected',
+                'sqlWhere' => '',
+            ]));
+        }
+    }
+
+    /**
+     * @param string|array $fieldKeys
+     * @param array $params
+     */
+    public function addManyText($fieldKeys, array $params)
+    {
+        $deafultParams = [
+            'name' => Config::$lang === 'ru' ? 'Поиск' : 'Search',
+            'filterFieldKeys' => $fieldKeys,
+            'filterMany' => true,
+            'filterOperator' => F::FILTER_LIKE,
+            'rows' => 2,
+        ];
+
+        $filterFieldKey = is_array($fieldKeys) ? implode('', $fieldKeys) : $fieldKeys;
+        $field = F::createText("Filter{$filterFieldKey}", $params + $deafultParams);
+        $this->add($field);
+    }
+
+    /**
+     * Добавляет сразу два фильтра: <$fieldKey>From и <$fieldKey>Until
+     * @param string|F $field
+     * @param array $params
+     */
+    public function addDatesFromUntil($field, array $params = [])
+    {
+        // Первым параметром может быть передано готовое поле (FieldAbstract) со всеми настройами
+        // а может быть передан только ключ (string)
+        if ($field instanceof F) {
+            $fieldKey = $field->key;
+            $baseField = $field;
+        } else {
+            // первый параметр это не целое поле, а всего лишь ключ (string)
+            $fieldKey = $field;
+            $baseField = new FieldDate('tmp');
+        }
+
+        $params['filterFromUntil'] = true;
+
+        // Добавим фильтр From
+        $this->add($baseField->getClone($fieldKey . 'From', $params));
+
+        // Добавим фильтр Until
+        $this->add($baseField->getClone($fieldKey . 'Until', $params));
+    }
+
+    /**
+     * Добавляет фильтр по году
+     * @param string $fieldKey
+     * @param int $yearFrom
+     * @param int $yearUntill
+     * @param array $params
+     */
+    public function addYear(string $fieldKey, string $filterFieldKey, int $yearFrom, int $yearUntill = null, array $params = [])
+    {
+        $this->add(CommonFields::filterYear($fieldKey, $filterFieldKey, $yearFrom, $yearUntill, $params));
     }
 
     private function getDefaultValue(string $fieldKey)
@@ -101,47 +258,36 @@ class Filters
         return $outValues;
     }
 
-    public function loadAndSave()
+    public function proceedFromRequestJson(string $filterValuesJson)
     {
-        // Если есть POST или GET параметр с новыми значениями фильтров, применим их!
-        if (isset($_REQUEST['filterValues'])) {
-
-            $this->loadFromRequest();
-
-            $notDefaultValues = $this->filtersGetNotDefaultValues();
-
-            // Сохраним текущие значения в таблицу user_filter
-            $this->saveAsCurrent($notDefaultValues);
-
-            // Сохраним в историю последних 10 комбинаций в таблицу user_filter_history, чтобы показывать пользователю в интерфейсе
-            $this->saveToHistory($notDefaultValues);
-
-            // Дополнительно запишем в лог таблицу log_filtes для последующего анализа используемых фильтров
-            $this->saveToLog($notDefaultValues);
-            return;
-
-        }
-
-        // Если POST/GET параметра с новыми значениями фильтров не было, загрузим текущие фильтры из базы
-        $this->loadCurrentFromDb();
-    }
-
-    private function loadFromRequest()
-    {
-        $newValues = json_decode($_REQUEST['filterValues'], true);
-        if (!is_array($newValues)) {
-            $newValues = [];
+        $values = json_decode($filterValuesJson, true);
+        if (!is_array($values)) {
+            $values = [];
         } else {
             // Прогоним значения массива через функции getDataFromRequest для каждого поля
             // чтобы нормализировать значения, например даты первести в формат YYYY-MM-DD
-            $newValues = $this->fieldset->getDataFromRequest($newValues);
+            $values = $this->fieldset->getDataFromRequest($values);
         }
 
-        $newValues = $this->fillDefaultForEditMandatory($newValues);
-        $this->setValues($newValues);
+        $values = $this->fillDefaultForEditMandatory($values);
+        $this->setValues($values);
+
+        $notDefaultValues = $this->filtersGetNotDefaultValues();
+
+        // Сохраним текущие значения в таблицу user_filter
+        $this->saveAsCurrent($notDefaultValues);
+
+        // Асинхронно сохраним историю фильтров
+        ApplicationAbstract::onAfterSend(function () use ($notDefaultValues) {
+            // Сохраним в историю последних 10 комбинаций в таблицу user_filter_history, чтобы показывать пользователю в интерфейсе
+            $this->saveToHistory($notDefaultValues);
+
+            // Дополнительно запишем в лог таблицу log_filters для последующего анализа используемых фильтров
+            $this->saveToLog($notDefaultValues);
+        });
     }
 
-    private function loadCurrentFromDb()
+    public function loadCurrentFromDb()
     {
         $currentValues = [];
         $currentFiltersJson = Db::getOne(
@@ -181,13 +327,16 @@ class Filters
     /**
      * Сохраняет текущие значения фильтров в таблицу user_filter
      * @param array $notDefaultValues
-     * @throws \Exception
      */
     private function saveAsCurrent(array $notDefaultValues)
     {
-        // Сначала сохраним фильтры в таблице user_filter (таблица со знаениями текущих фильтров)
-        $query = "REPLACE INTO user_filter (CreatedBy,TableName,FiltersJSON) VALUES (@i, @s, @s)";
-        Db::query($query, User::getId(), $this->tableName, json_encode($notDefaultValues));
+        try {
+            // Сначала сохраним фильтры в таблице user_filter (таблица со знаениями текущих фильтров)
+            $query = "REPLACE INTO user_filter (CreatedBy,TableName,FiltersJSON) VALUES (@i, @s, @s)";
+            Db::query($query, User::getId(), $this->tableName, json_encode($notDefaultValues));
+        } catch (\Exception $e) {
+            ErrorHandler::reportException($e);
+        }
     }
 
     private function saveToHistory(array $notDefaultValues)
@@ -231,7 +380,7 @@ class Filters
             'TableID' => $this->tableId,
             'FiltersJSON' => $filtersJson,
             'Description' => implode(', ', $descriptions),
-            'FilterValuesMD5' => md5($filtersJson)
+            'FilterValuesMD5' => md5($filtersJson),
         ];
 
         // REPLACE будет происходить по уникальному полю FilterValuesMD5
@@ -369,7 +518,16 @@ class Filters
         // Также подготовим массив в котором сохраним все ключи ($templateKey) упоминавшиеся в пользовательских настройках
         $usedTemplatesHash = [];
         $colIndex = 0;
-        foreach ($userLayout as $userCol) {
+
+        foreach ($sourceLayout as $colNum => $col) {
+
+            $userCol = $userLayout[$colNum] ?? [];
+            if (!$userCol) {
+                // Пустая колонка задана у пользователя - сохраним ее для сброса сортировки в JS
+                $resultLayout[$colIndex] = [];
+                continue;
+            }
+
             if (!is_array($userCol)) {
                 // Какой-то странный элемент сохранён в базе в json - не массив, пропускаем
                 continue;
@@ -391,6 +549,28 @@ class Filters
             $colIndex++;
         }
 
+//        foreach ($userLayout as $userCol) {
+//            if (!is_array($userCol)) {
+//                // Какой-то странный элемент сохранён в базе в json - не массив, пропускаем
+//                continue;
+//            }
+//
+//            foreach ($userCol as $templateKey) {
+//                // Проверим, то что сохранено в пользовательских настройках в базе ещё актуально?
+//                // Существует ли такой $templateKey в плоском массиве $flatArray?
+//                if (isset($flatArray[$templateKey])) {
+//                    $templateVal = $flatArray[$templateKey];
+//                    $resultLayout[$colIndex][$templateKey] = $templateVal;
+//
+//                    // Сохраним использованный валидный ключ в отдельный массив, чтобы в конце быстро найти все новые поля
+//                    $usedTemplatesHash[$templateKey] = true;
+//                }
+//            }
+//
+//            // Переходим к наполнению следующей колонки
+//            $colIndex++;
+//        }
+
         // Теперь в последнюю колонку добавим все поля, которых нет в пользовательских настройках,
         // но которые упоминались в исходном $templateArray
         // Оба массива $flatArray и $usedTemplatesHash являются плоскими
@@ -408,13 +588,12 @@ class Filters
         return $resultLayout;
     }
 
-    private function getFieldsForJs(string $userResetDefaultsJson, array $doNotReset): array
+    private function getFieldsForJs(string $userResetDefaultsJson): array
     {
         $userResetDefaults = json_decode($userResetDefaultsJson, true);
         if (!is_array($userResetDefaults)) {
             $userResetDefaults = [];
         }
-        $doNotResetHash = array_flip($doNotReset);
         $fieldsForJs = [];
         foreach ($this->fieldset as $field) {
 
@@ -423,8 +602,8 @@ class Filters
             $fieldsForJs[$fieldKey] = [
                 'name' => $field->getName(),
                 'def' => $userResetDefaults[$fieldKey] ?? $field->default,
-                'donotreset' => isset($doNotResetHash[$fieldKey]),
-                'type' => $field->getType()
+                'donotreset' => $field->filterDoNotReset,
+                'type' => $field->getType(),
             ];
         }
 
@@ -445,11 +624,10 @@ class Filters
     /**
      * @param bool $allowLayoutChange
      * @param array $filtersLayout - это массив настроек заданный внутри метода $this->initFilters(), он имеет не совсем верную стуктуру с числовыми ключами
-     * @param array $doNotReset
      * @return string
      * @throws \Exception
      */
-    public function getHtml(bool $allowLayoutChange, array $filtersLayout, array $doNotReset): string
+    public function getHtml(bool $allowLayoutChange, array $filtersLayout): string
     {
         if ($this->fieldset->isEmpty()) {
             return '';
@@ -500,7 +678,7 @@ class Filters
                 "SELECT ID, Sort, Invisible, Defaults 
                 FROM user_filter_settings 
                 WHERE TableID = {$this->tableId} 
-                   AND CreatedBy = " . (int)User::getId()
+                   AND CreatedBy = " . User::getId()
             );
 
             if ($settings) {
@@ -538,7 +716,7 @@ class Filters
         $content .= '</tr></table>';
 
         $userResetDefaultsJson = $settings['Defaults'] ?? '';
-        $fieldsForJs = $this->getFieldsForJs($userResetDefaultsJson, $doNotReset);
+        $fieldsForJs = $this->getFieldsForJs($userResetDefaultsJson);
 
         $fieldsAttr = ' data-fields="' . htmlspecialchars(json_encode($fieldsForJs)) . '"';
         $defaultLayoutAttr = $defaultLayoutForJs ? ' data-defaultlayout="' . htmlspecialchars(json_encode($defaultLayoutForJs)) . '"' : '';
@@ -574,7 +752,7 @@ class Filters
                 if ($field->filterNot) {
                     $notField = $this->fieldset->getField('Not' . $field->key);
                     if ($notField) {
-                        $html .= '<div>' . Template::html($notField->key) .' ' .Template::label($notField->key) . '</div>';
+                        $html .= '<div>' . Template::html($notField->key) . ' ' . Template::label($notField->key) . '</div>';
                     }
                 }
 
@@ -592,7 +770,6 @@ class Filters
                 && $fieldFrom->filterFromUntil
                 && ($fieldUntil->getType() === 'Date' || $fieldUntil->getType() === 'DateTime')
                 && $fieldUntil->filterFromUntil) {
-
 
                 $title = Template::title($fieldFrom->key);
                 $label = Template::label($fieldFrom->key);
@@ -635,11 +812,14 @@ class Filters
 
             // В массиве с настройками колонок фильтров данный фильтр был описан просто функцией
             $html = call_user_func($templateVal, $tdata);
-            return $this->getFilterLiHtml($templateKey, $isInvisible, $title, $label, $html);
+            if ($html) {
+                return $this->getFilterLiHtml($templateKey, $isInvisible, $title, $label, $html);
+            }
 
         }
 
-        return '<span class=bad>No template for ' . htmlspecialchars($templateKey) . '</span>';
+        //  Какое-то неизвестное поле фильтров - ничего не выводим
+        return '';
     }
 
     private function getFilterLiHtml($templateKey, $isInvisible, $title, $label, $html)
@@ -661,7 +841,7 @@ class Filters
         $textSettings = $isLangRu ? 'Настройка фильтров' : 'Filters layout';
         $textReset = $isLangRu ? 'СБРОС' : 'RESET';
         return '<li class="filters__buttons">
-                <button class="btn waves-effect btn-filter" type="submit">' . Img::iconSearch() . '</button>
+                <button class="btn waves-effect btn-filter" type="submit">' . Ico::search() . '</button>
                 <button class="btn-flat waves-effect filters-reset" type="button">' . $textReset . '</button>
                 <nobr><div><div class="filters__buttonsicons">
                     <span class="btn-flat waves-effect toggle-tooltip filters-history" title="' . $textHistory . '"><i class="fa fa-history"></i></span>

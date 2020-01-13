@@ -9,6 +9,7 @@ use Light\Css;
 use Light\Db;
 use Light\HomeBase\HomeBlocksPage;
 use Light\Js;
+use Light\Misc;
 use Light\ModuleRegister;
 use Light\Request;
 use Light\Response;
@@ -80,7 +81,7 @@ class UserModule
         $out = [];
         foreach (ApplicationAbstract::$app->getSpecialAccessList() as $specialAccessInfo) {
 
-            if ($specialAccessInfo[0] === $moduleKey) {
+            if (Misc::getModule($specialAccessInfo[0]) === $moduleKey) {
                 $out[] = [
                     'accessKey' => $specialAccessInfo[1],
                     'description' => $specialAccessInfo[2]

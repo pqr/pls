@@ -2,6 +2,7 @@
 
 namespace Light\Module\CurrencyRate;
 
+use Light\Currency;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\ObjAbstract;
@@ -23,13 +24,13 @@ class CurrencyRateObj extends ObjAbstract
                 'name' => 'Date',
                 'default' => date('Y-m-d'),
                 'sqlSelectMandatory' => true,
-                'editMandatory' => true
+                'editMandatory' => true,
             ]),
 
             F::createFloat('RateToRUB', [
                 'name' => 'Rate to RUB',
                 'editMandatory' => true,
-                'precision' => 4
+                'precision' => 4,
             ])
 
         );
@@ -38,5 +39,26 @@ class CurrencyRateObj extends ObjAbstract
     public function getDescriptionHtml()
     {
         return $this->_data['CurrencyISO'] . ' on ' . $this->getFieldHtml('ValidDate');
+    }
+
+    public function insertDb(array $fieldsData, $dbLogMsg = '')
+    {
+        $id = parent::insertDb($fieldsData, $dbLogMsg);
+        Currency::updateCurrencyRateTodayAfterSend();
+        return $id;
+    }
+
+    public function updateDb(array $fieldsData, $dbLogMsg = '')
+    {
+        $affectedRows = parent::updateDb($fieldsData, $dbLogMsg);
+        if ($affectedRows) {
+            Currency::updateCurrencyRateTodayAfterSend();
+        }
+    }
+
+    public function deleteDb($dbLogMsg = '')
+    {
+        parent::deleteDb($dbLogMsg);
+        Currency::updateCurrencyRateTodayAfterSend();
     }
 }

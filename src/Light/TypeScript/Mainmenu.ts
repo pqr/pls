@@ -1,6 +1,8 @@
-import {getOppositeString, loadSortableJs, setUserParam, toastError} from "./Light";
+import {loadSortableJs, matchWithOpposite, setUserParam, toastError} from "./Light";
 
 declare var Sortable: any;
+
+const PARAM_PINNED = 'Mainmenu_pinned';
 
 // Метод вызывается, когда сервере отправляет диалог с настройками меню на клиент
 // и там же происходит вызов Response::sendHeaderJsEval('Light.mainmenu.initMenuSettingsDialog()');
@@ -30,7 +32,7 @@ export function settingsDialogSubmit(dialog: any) {
         .join(',');
     $.post('?a=Core&ps=MainmenuSettings', {favorites: modulesComaSeparated})
         .done((newFavoritesHtml: string) => {
-            document.querySelector('.Mainmenu-Favorites')!.innerHTML = newFavoritesHtml;
+            document.querySelector('.MainmenuFavorites')!.innerHTML = newFavoritesHtml;
             dialog.close();
         })
         .fail(() => {
@@ -39,12 +41,39 @@ export function settingsDialogSubmit(dialog: any) {
         })
 }
 
+export function showMenu() {
+    $(".MasterLayout-Mainmenu").addClass("MasterLayout-Mainmenu_shown");
+    $(".MasterLayout-BurgerBtn").addClass("display-none");
+
+    // Когда пользователь открывает меню, добавим фокус в Autolaunch
+    $(".MainmenuSearch").focus();
+}
+
+export function hideMenu() {
+    $(".MasterLayout-Mainmenu").removeClass("MasterLayout-Mainmenu_shown");
+    $(".MasterLayout-BurgerBtn").removeClass("display-none");
+}
+
+export function pinMenu() {
+    $(".MasterLayout").removeClass("MasterLayout_mainmenu_unpinned");
+}
+
+export function unpinMenu() {
+    $(".MasterLayout").addClass("MasterLayout_mainmenu_unpinned");
+}
+
+export function isPinned(): boolean {
+    return !$(".MasterLayout").hasClass("MasterLayout_mainmenu_unpinned");
+}
+
+export function isShown(): boolean {
+    return $(".MasterLayout-Mainmenu").hasClass("MasterLayout-Mainmenu_shown")
+}
+
 $(function () {
     //Навесим обработчики на пункты меню
-    const $mainmenu: JQuery = $("#mainmenu");
-
-    const $sectionheads = $mainmenu.find(".mainmenu__sectionhead");
-    const $uls = $mainmenu.find(".mainmenu__section");
+    const $sectionheads = $(".MainmenuSectionHead");
+    const $uls = $(".MainmenuSection");
 
     function getUlStatus($ul: JQuery) {
         return $ul.attr("data-status");
@@ -67,7 +96,7 @@ $(function () {
     });
 
     //$("ul[data-status=closed]").hide();
-    $mainmenu.on("click", ".mainmenu__sectionhead", function (this: HTMLElement) {
+    $sectionheads.on("click", function (this: HTMLElement) {
         const $clikedHeader: JQuery = $(this);
         const sectionText: string = $clikedHeader.attr("data-name")!;
         const $ul: JQuery = $clikedHeader.next("ul");
@@ -78,10 +107,6 @@ $(function () {
     });
 
     const $body: JQuery = $("body");
-    const $layout: JQuery = $("#global-layout");
-    const $menu: JQuery = $(".global-menu");
-    const $menuBut: JQuery = $(".hideshow-menu-button");
-    const $pinBut: JQuery = $(".pin-menu-button");
 
     $body.on("click", ".march8", function () {
         $body.append(
@@ -101,92 +126,38 @@ $(function () {
         }
     });
 
-    const showMenu = function () {
-        $menu.addClass("global-menu-show");
-        $menuBut.addClass("display-none");
+    $(".MasterLayout-BurgerBtn").on("click", showMenu);
 
-        // Когда пользователь открывает меню, добавим фокус в Autolaunch
-        $("#mainmenu__search").focus();
-    };
-
-    const hideMenu = function () {
-        $menu.removeClass("global-menu-show");
-        $menuBut.removeClass("display-none");
-    };
-
-    $menuBut.on("click", showMenu);
-
-    $body.on("click", (e: JQuery.Event) => {
-        if (
-            $menu.hasClass("global-menu-show") &&
-            !$(e.target).closest(".hideshow-menu-button").length &&
-            !$(e.target).closest(".global-menu").length
+    $body.on("click", (e: any) => {
+        // Скрыть отображаемое меню при клике куда-то в body вне этого самого меню
+        if (!isPinned() && isShown() &&
+            !$(e.target).closest(".MasterLayout-BurgerBtn").length &&
+            !$(e.target).closest(".MasterLayout-Mainmenu").length
         ) {
             hideMenu();
         }
     });
 
-    $pinBut.on("click", () => {
-        if ($layout.hasClass("global-menu-unfix")) {
-            $layout.removeClass("global-menu-unfix");
-            setUserParam("global-menu-unfix", "0");
+    $(".MainmenuPinBtn").on("click", () => {
+        if (isPinned()) {
+            unpinMenu();
+            setUserParam(PARAM_PINNED, "0");
         } else {
-            $layout.addClass("global-menu-unfix");
-            setUserParam("global-menu-unfix", "1");
+            pinMenu();
+            setUserParam(PARAM_PINNED, "1");
+
         }
     });
 
-    let fileuploadInited = false;
-    $("#mainmenu__avatar").on("click", function () {
-        if (!fileuploadInited) {
-            let script = document.createElement("script");
-            script.src = "lightpublic/js/fileupload.min.js";
-            script.type = "text/javascript";
-            script.async = true;
-            script.onload = () => {
-                $("#mainmenu__avatarinputfile").fileupload({
-                    url: "index.php?a=Core&ps=UploadUserAvatar",
-                    dataType: "json",
-                    sequentialUploads: true,
-                    disableImageResize: /Android(?!.*Chrome)|Opera/.test(window.navigator && navigator.userAgent),
-                    imageMaxWidth: 800,
-                    imageMaxHeight: 800,
-                    imageCrop: true,
-                    done: function (_: any, data: any) {
-                        if (data.result.error) {
-                            toastError(data.result.text);
-                        } else {
-                            const newSrc = `index.php?a=Core&ps=GetUserAvatar&time=${Date.now()}`;
-                            $("#mainmenu__avatar")
-                                .find("img")
-                                .attr("src", newSrc);
-                        }
-                    }
-                });
-
-                fileuploadInited = true;
-
-                document.getElementById("mainmenu__avatarinputfile")!.click();
-            };
-
-            document.getElementsByTagName("head")[0].appendChild(script);
-        } else {
-            document.getElementById("mainmenu__avatarinputfile")!.click();
-        }
-    });
-
-    $("#mainmenu__search").on("keyup", function (this: HTMLInputElement) {
-        const filterValue = this.value.toLowerCase().trim();
-        const $items = $mainmenu.find(".mainmenu__li");
+    $(".MainmenuSearch").on("keyup", function (this: HTMLInputElement) {
+        const filterValue = this.value.trim();
+        const $items = $(".MeinmenuItem");
         if (filterValue === "") {
             // Отображаем всё как и раньше
             $items.removeClass("display-none");
             $uls.removeClass("display-none");
             $sectionheads.removeClass("display-none");
         } else {
-            // Подготовим строку в друго раскладке
-            const filterValueOpposite = getOppositeString(filterValue);
-
             // Скрываем строки в меню, в тексте которых не встречается искомая строка
             $items.each(function (this: HTMLLIElement) {
                 const $item = $(this);
@@ -194,15 +165,9 @@ $(function () {
                 const text = $item.text();
                 const title = $item.attr("title");
                 const href = $item.find('a').attr('href');
-                const matched =
-                    text.toLowerCase().indexOf(filterValue) !== -1 ||
-                    text.toLowerCase().indexOf(filterValueOpposite) !== -1 ||
-                    (title &&
-                        (title.toLowerCase().indexOf(filterValue) !== -1 ||
-                            title.toLowerCase().indexOf(filterValueOpposite) !== -1)) ||
-                    (href &&
-                        (href.toLowerCase().indexOf(filterValue) !== -1
-                            || href.toLowerCase().indexOf(filterValueOpposite) !== -1));
+                const matched = matchWithOpposite(text, filterValue)
+                || matchWithOpposite(title, filterValue)
+                || matchWithOpposite(href, filterValue);
 
                 // Если нет текстовых совпадений в тексте пункта меню или в его title, то скрываем этот пункт меню
                 $item.toggleClass("display-none", !matched);

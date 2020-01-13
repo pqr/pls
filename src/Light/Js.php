@@ -5,6 +5,7 @@ namespace Light;
 class Js
 {
     public static $select2 = false;
+    public static $choices = false;
     public static $angularJs = false;
     public static $react = false;
     public static $preact = false;
@@ -17,6 +18,7 @@ class Js
     public static function reset()
     {
         self::$select2 = false;
+        self::$choices = false;
         self::$angularJs = false;
         self::$react = false;
         self::$preact = false;
@@ -49,6 +51,9 @@ class Js
         ];
         if (self::$select2) {
             $out[] = 'lightpublic/js/select2.min.js';
+        }
+        if (self::$choices) {
+            $out[] = 'lightpublic/js/choices.min.js';
         }
         $out[] = 'lightpublic/js/build/lightbuild.js';
         if (self::$angularJs) {

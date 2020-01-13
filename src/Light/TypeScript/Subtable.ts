@@ -202,6 +202,8 @@ export class Subtable {
                     this.setFieldValue(rowNum, fieldKey, val);
                 });
             });
+
+            $node.focus();
         });
 
         $div.find(".change-all-string").on("click", e => {

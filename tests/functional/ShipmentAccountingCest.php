@@ -3,7 +3,7 @@
 namespace tests\functional;
 
 use Light\Codeception\ModuleCestAbstract;
-use Light\Codeception\ModuleCestWithMultipleUpdateTrait;
+use Light\Codeception\ModuleCestWithMassUpdateTrait;
 
 class ShipmentAccountingCest
 {

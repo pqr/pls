@@ -1,0 +1,33 @@
+.CalendarDiv {
+    margin-top: 50px;
+}
+
+.fc-event {
+    font-size: 12px !important;
+}
+.fc-event.good, .fc-event.good:active, .fc-event.good:hover {
+    background-color: #468847;
+    border-color: #468847;
+    color: white;
+}
+.fc-event.warning, .fc-event.warning:active, .fc-event.warning:hover {
+    background-color: #cd853f;
+    border-color: #cd853f;
+    color: white;
+}
+
+.fc-event.info, .fc-event.info:active, .fc-event.info:hover {
+    background-color: #00acff;
+    border-color: #00acff;
+    color: white;
+}
+
+.fc-event.bad, .fc-event.bad:active, .fc-event.bad:hover {
+    background-color: #b94a48;
+    border-color: #b94a48;
+    color: white;
+}
+
+.fc-event:hover {
+    text-decoration: underline !important;
+}

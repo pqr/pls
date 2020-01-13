@@ -3,6 +3,7 @@
 namespace Light;
 
 use Light\Module\Core\Core;
+use Light\Module\Reportmenu\Reportmenu;
 
 class Link
 {
@@ -20,6 +21,7 @@ class Link
     public $isBlank = false;
     public $isAjax = false;
     public $isPost = false;
+    public $dataPost = [];
     public $hash = '';
     public $isAbsolute = false;
     public $params = [];
@@ -38,7 +40,7 @@ class Link
 
     public static function create(?string $module = '', ?string $innerHtml = '')
     {
-        return (new self((string)$module, (string)$innerHtml));
+        return new self((string)$module, (string)$innerHtml);
     }
 
     public static function userDialog(
@@ -48,8 +50,8 @@ class Link
         string $mailBody = ''
     ): Link {
         $link = Link::create(Core::class, $innerHtml)
+            ->proceedStatic('ShowUserDialog')
             ->params([
-                'ps' => 'ShowUserDialog',
                 'UserID' => $userId,
             ])
             ->ajax();
@@ -64,12 +66,18 @@ class Link
         return $link;
     }
 
+    public static function report(string $reportClass, string $innerHtml = '')
+    {
+        return Link::create(Reportmenu::class, $innerHtml)
+            ->params(['class' => Misc::getClass($reportClass)]);
+    }
+
     /**
      * Обычно адрес ссылки формируется на основе $module и $params,
      * но если задать url напрямую, то он будет иметь приоритет.
      * Удобно для ссылок на внешние ресурсы.
-     * @var string $externalUrl
      * @return Link
+     * @var string $externalUrl
      */
     public function externalUrl(string $externalUrl)
     {
@@ -101,6 +109,12 @@ class Link
         return $this;
     }
 
+    public function xls()
+    {
+        $this->params(['xls' => 1]);
+        return $this;
+    }
+
     public function post(bool $isPost = true)
     {
         $this->isPost = $isPost;
@@ -109,7 +123,7 @@ class Link
 
     public function dataPost(array $dataPost)
     {
-        $this->attrs(['data-post' => json_encode($dataPost)]);
+        $this->dataPost = array_merge($this->dataPost, $dataPost);
         return $this;
     }
 
@@ -137,6 +151,12 @@ class Link
         return $this;
     }
 
+    public function proceedStatic(string $funcName)
+    {
+        $this->params['ps'] = $funcName;
+        return $this;
+    }
+
     public function massaction(string $massaction)
     {
         $this->params['p'] = 'massaction';
@@ -151,8 +171,10 @@ class Link
      * @param int $findId ID строки, которую нужно подсветить
      * @return Link
      */
-    public function findId(string $tableName, int $findId)
+    public function findId($tableName, int $findId)
     {
+        // В качестве имени таблицы можно передать имя класса Subtable - вырежем из него последнюю часть
+        $tableName = Misc::getClass($tableName);
         $param = "{$tableName}_findid";
         $this->params[$param] = $findId;
 
@@ -169,6 +191,9 @@ class Link
      */
     public function findIdAssoc(string $tableName, array $keyVal)
     {
+        // На всякий случай обернём в вызов Misc::getClass()
+        // если сюда был передан полный класс с неймспейсами, то нам нужно взять только последнюю часть - название класса
+        $tableName = Misc::getClass($tableName);
         $param = "{$tableName}_findid";
         $values = [];
         foreach ($keyVal as $key => $val) {
@@ -179,9 +204,12 @@ class Link
         return $this;
     }
 
-    public function addNew()
+    public function addNew($initialData = [])
     {
         $this->params['addnew'] = 1;
+        if ($initialData) {
+            $this->params['initialData'] = json_encode($initialData);
+        }
         return $this;
     }
 
@@ -197,14 +225,29 @@ class Link
         return $this;
     }
 
+    public function log(int $id)
+    {
+        $this->params['logid'] = $id;
+        return $this;
+    }
+
     public function func(string $func)
     {
         $this->params['func'] = $func;
         return $this;
     }
 
-    public function funcDialog()
+    public function action(string $actionClass)
     {
+        $this->params['action'] = Misc::getClass($actionClass);
+        return $this;
+    }
+
+    public function viewDialog(int $id = null)
+    {
+        if ($id) {
+            $this->params['id'] = $id;
+        }
         $this->params['func'] = 'Dialog';
         $this->isAjax = true;
         return $this;
@@ -217,6 +260,18 @@ class Link
             ->func('FilePreview')
             ->params(['file' => $file])
             ->blank();
+    }
+
+    public function downloadExampleFile(string $file)
+    {
+        $this->proceedStatic('DownloadExampleFile')
+            ->params(['file' => $file]);
+
+        if ($this->innerHtml === '') {
+            $this->innerHtml = $file;
+        }
+
+        return $this;
     }
 
     public function filters(array $filters)
@@ -263,7 +318,7 @@ class Link
                 $href .= '&' . http_build_query($this->params);
             }
 
-            if ($this->filters) {
+            if ($this->filters && !$this->isPost) {
                 $href .= '&filterValues=' . htmlspecialchars(json_encode($this->filters));
             }
         }
@@ -291,6 +346,14 @@ class Link
             }
         }
 
+        if ($this->filters && $this->isPost) {
+            $this->dataPost(['filterValues' => json_encode($this->filters)]);
+        }
+
+        if ($this->dataPost) {
+            $attributesText .= ' data-post="' . htmlspecialchars(json_encode($this->dataPost)) . '"';
+        }
+
         return '<a href="' . $href . '"'
             . ($this->title ? ' title="' . htmlspecialchars($this->title) . '"' : '')
             . ($this->cssClass ? ' class="' . implode(' ', $this->cssClass) . '"' : '')
@@ -307,11 +370,11 @@ class Link
     }
 
     /**
-     * @deprecated
-     * Добавляет к уже существующим urlParams дополнительные
      * @param string|array|null $currentUrlParams уже существующие urlParams
      * @param string|array|null $additionalParams дополниьельные urlParams, которые нужно добавить у уже существующим
      * @return array
+     * @deprecated
+     * Добавляет к уже существующим urlParams дополнительные
      */
     public static function mergeUrlParams($currentUrlParams, $additionalParams)
     {
@@ -409,26 +472,6 @@ class Link
     /**
      * @deprecated
      */
-    public static function moduleEdit(
-        $innerHtml,
-        $id,
-        $urlParams = null,
-        $module = null,
-        $title = null,
-        $tagParams = null,
-        $blank = false
-    ) {
-        if ($urlParams) {
-            $urlParams = self::mergeUrlParams(['editid' => $id], $urlParams);
-        } else {
-            $urlParams = ['editid' => $id];
-        }
-        return self::module($innerHtml, $urlParams, $module, $title, $tagParams, $blank);
-    }
-
-    /**
-     * @deprecated
-     */
     public static function module(
         $innerHtml,
         $urlParams = null,
@@ -456,14 +499,6 @@ class Link
         }
 
         return '<a href="' . $url . '"' . $title . $tagParams . $blank . '>' . $innerHtml . '</a>';
-    }
-
-    /**
-     * @deprecated
-     */
-    public static function moduleBlank($innerHtml, $urlParams = null, $module = null, $title = null, $tagParams = null)
-    {
-        return self::module($innerHtml, $urlParams, $module, $title, $tagParams, true);
     }
 
     /**

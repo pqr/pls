@@ -43,6 +43,7 @@ class TemplaterExcel extends TemplaterAbstract
     public function writeData(array $data)
     {
         $this->xlsWriter->replaceData($data, $this->fieldset, $this->tableOpts);
+        $this->xlsWriter->clearPlaceholders();
         $this->xlsWriter->getSpreadsheet()->getActiveSheet()->setTitle($this->titleExcelSheet);
     }
 

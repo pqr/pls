@@ -1,3 +1,8 @@
+<?php
+
+use Light\Mainmenu;
+
+?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
@@ -31,7 +36,7 @@
                 src="https://rum.okmeter.ru/static/js/rum_inline.js?okmRUMkey=<?= Light\Config::$okmeterKey ?>"></script>
     <?php endif; ?>
 
-    <?php if (\Light\Config::$rollbar && isset(\Light\Config::$rollbar['access_token_js'])): ?>
+    <?php if (!empty(\Light\Config::$rollbar['access_token_js'])): ?>
         <script>
             var _rollbarConfig = {
                 accessToken: "<?= \Light\Config::$rollbar['access_token_js'] ?>",
@@ -55,14 +60,18 @@
 
         </script>
         <script src="lightpublic/js/rollbar.umd.min.js"></script>
-    <?php elseif (\Light\Config::$sentry): ?>
-        <script src="lightpublic/js/raven.min.js"></script>
+    <?php elseif (!empty(\Light\Config::$sentry['dns'])): ?>
+        <script src="lightpublic/js/sentry.min.js"></script>
         <script>
-            Raven.config("<?= \Light\Config::$sentry['dns_js'] ?>").install();
-            Raven.setRelease("<?= \Light\ApplicationAbstract::getVersion() ?>");
-            Raven.setUserContext({
+            Sentry.init({
+                dsn: "<?= \Light\Config::$sentry['dns'] ?>",
+                release: "<?= \Light\ApplicationAbstract::getVersion() ?>",
+                environment: "<?= \Light\Config::$sentry['options']['environment'] ?? 'production' ?>",
+            });
+            Sentry.setUser({
                 id: <?= \Light\User::getId(); ?>,
-                username: <?= json_encode(\Light\User::getLogin()); ?>
+                username: <?= json_encode(\Light\User::getLogin()); ?>,
+                email: <?= json_encode(\Light\User::getEmail()); ?>
             });
         </script>
     <?php endif; ?>
@@ -84,13 +93,13 @@
 </script>
 
 <?php if (\Light\Response::isMainmenuEnabled()): ?>
-<div class="yui3-g <?= \Light\User::getParam("global-menu-unfix") ? 'global-menu-unfix' : '' ?>" id="global-layout">
+<div class="yui3-g MasterLayout <?= Mainmenu::isPinned() ? '' : 'MasterLayout_mainmenu_unpinned' ?>" id="global-layout">
 
-    <div class="hideshow-menu-button">
+    <div class="MasterLayout-BurgerBtn">
         <i class="fa fa-bars fa-2x"></i>
     </div>
 
-    <div class="yui3-u global-menu" id="global-menu">
+    <div class="yui3-u MasterLayout-Mainmenu">
         <?= \Light\Mainmenu::getMainmenuHtml() ?>
     </div>
     <div class="yui3-u" id="global-content">

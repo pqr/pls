@@ -2,11 +2,11 @@
 
 namespace Light\Field;
 
-use Light\A;
+use Light\Config;
 use Light\Css;
 use Light\Db;
 use Light\Js;
-use Light\Response;
+use Light\User;
 
 /**
  * @method $this setAny(bool $value)
@@ -18,12 +18,16 @@ use Light\Response;
  * @method $this setAddNewPlaceholder(string $value)
  * @method $this setSelect2(bool $value)
  * @method $this setSelect2ajax(bool $value)
+ * @method $this setSelect2closeOnSelect(bool $value)
+ * @method $this setChoices(bool $value)
  * @method $this setParentFieldKeys(string | array $value)
  * @method $this setParentFieldKeysMandatory(string | array $value)
  * @method $this setRelations(string | callable $value)
  * @method $this setMultiple(bool $value)
  * @method $this setMultipleSqlWhereOperator(string $value)
  * @method $this setMultipleViewSeparator(string $value)
+ * @method $this setMultipleSqlWhereOnMultiple(bool $isOnMultiple)
+ * @method $this setAvatar(bool $value)
  *
  * @method bool getAny()
  * @method string getAnyText()
@@ -33,12 +37,15 @@ use Light\Response;
  * @method string getAddNewPlaceholder()
  * @method bool getSelect2()
  * @method bool getSelect2ajax()
+ * @method bool getSelect2closeOnSelect()
  * @method string|array getParentFieldKeys()
  * @method string|array getParentFieldKeysMandatory()
  * @method string|callable getRaltions()
  * @method bool getMultiple()
  * @method string getMultipleSqlWhereOperator()
  * @method string getMultipleViewSeparator()
+ * @method bool getMultipleSqlWhereOnMultiple()
+ * @method bool getAvatar()
  */
 class FieldSelect extends FieldOptionsAbstract
 {
@@ -47,6 +54,7 @@ class FieldSelect extends FieldOptionsAbstract
 
     public $empty = true;
     public $emptyText = '';
+    public $emptyCssClass = 'skipp';
 
     public $addNew = false;
     public $addNewTable;
@@ -54,8 +62,13 @@ class FieldSelect extends FieldOptionsAbstract
 
     public $select2 = false;
     public $select2ajax = false;
+    public $select2closeOnSelect = true;
     public $select2ajaxMin = 1;
+
+    public $choices = false;
+
     public $multiple = false;
+
 
     /**
      * @var string каким образом выводить несколько значений в режиме view? Здесь можно указать запятую, например
@@ -66,6 +79,12 @@ class FieldSelect extends FieldOptionsAbstract
      * @var string 'OR' или 'AND' - поле multiple, то какую логиу применять в фильтрах (в sqlWhere)?
      */
     public $multipleSqlWhereOperator = "OR";
+
+    /**
+     * @var bool Если установлено в true, то подразумевается что поле само по себе является multiple и содержит заначения
+     * которые записаны в VARCHAR разделённые вертикальной чертой |
+     */
+    public $multipleSqlWhereOnMultiple = false;
 
     /**
      * @var string|array здесь может быть указано одно поле или несколько в массиве
@@ -90,12 +109,21 @@ class FieldSelect extends FieldOptionsAbstract
      */
     public $relations;
 
+    /**
+     * Есть поставить true и поле само по себе является select2, то к каждой опции будет добавлена картинка аватарки
+     * @var bool
+     */
+    public $avatar = false;
+
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
 
         $this->default = '%';
         $this->editWidth = 'auto';
+
+        $this->addNewPlaceholder = Config::$lang === 'ru' ? 'Добавить значение' : 'Enter new value';
+        $this->anyText = Config::$lang === 'ru' ? '...любой...' : '...any...';
     }
 
     protected function getEditCssClass($value, array $data)
@@ -110,6 +138,15 @@ class FieldSelect extends FieldOptionsAbstract
             if ($this->select2ajax) {
                 $cssClass .= ' select2-ajax';
             }
+
+            if ($this->avatar) {
+                $cssClass .= ' select2-with-avatar';
+            }
+
+        } elseif ($this->choices) {
+
+            $cssClass .= ' select-choices';
+
         }
 
         if ($this->addNew) {
@@ -124,6 +161,7 @@ class FieldSelect extends FieldOptionsAbstract
         $editTagParams = (string)parent::getEditTagParams($value, $data);
 
         if ($this->select2) {
+
             if ($this->parentFieldKeys) {
                 $parentFieldKeys = $this->parentFieldKeys;
                 if (is_array($parentFieldKeys)) {
@@ -137,7 +175,15 @@ class FieldSelect extends FieldOptionsAbstract
             }
 
             if ($this->select2ajax && $this->select2ajaxMin > 1) {
-                $editTagParams = ' data-minimum-input-length=' . $this->select2ajaxMin;
+                $editTagParams .= ' data-minimum-input-length=' . $this->select2ajaxMin;
+            }
+
+            $editTagParams .= ' data-select2-closeOnSelect=' . ($this->select2closeOnSelect ? '1' : '0');
+
+        } elseif ($this->choices) {
+
+            if ($this->multiple) {
+                $editTagParams .= ' multiple size=1';
             }
         }
 
@@ -147,7 +193,7 @@ class FieldSelect extends FieldOptionsAbstract
     protected function getHtmlInner($value, array $data, $forTable)
     {
         if (!$this->multiple) {
-            $option = $this->getOption($value);
+            $option = $this->getOption($value, self::MODE_VIEW);
             return $this->getOptionHtml($option, $value, $forTable);
         }
 
@@ -164,6 +210,17 @@ class FieldSelect extends FieldOptionsAbstract
             $outHtml .= ' ' . $this->uom;
         }
         return $outHtml;
+    }
+
+    protected function getOptionHtml($option, $originalValue, $forTable)
+    {
+        if ($this->avatar && $originalValue && is_numeric($originalValue)) {
+            if (!is_array($option)) {
+                $option = ['text' => $option];
+            }
+            $option['img'] = User::avatarImgSrc($originalValue);
+        }
+        return parent::getOptionHtml($option, $originalValue, $forTable);
     }
 
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
@@ -221,6 +278,10 @@ class FieldSelect extends FieldOptionsAbstract
             // Это поле требует подключения библиотки select2 на стороне клиента
             Js::$select2 = true;
             Css::$select2 = true;
+        } elseif ($this->choices) {
+            // Это поле требует подключения библиотки Choices на стороне клиента
+            Js::$choices = true;
+            Css::$choices = true;
         }
 
         $tdata = $this->getHtmlInputTplData($value, $data, $idPrefix);
@@ -238,7 +299,7 @@ class FieldSelect extends FieldOptionsAbstract
 
         if ($this->empty && !$this->multiple) {
             $selectedAttr = $this->isOptionSelected('', $selectedValue) ? ' selected=""' : '';
-            $outHtml .= '<option value=""' . $selectedAttr . '>' . $this->emptyText . '</option>';
+            $outHtml .= '<option value=""' . $selectedAttr . ' class="' . $this->emptyCssClass . '">' . $this->emptyText . '</option>';
         }
 
         $optgroups = [];
@@ -249,6 +310,7 @@ class FieldSelect extends FieldOptionsAbstract
             $cssClass = '';
             $disabled = false;
             $icon = '';
+            $img = '';
             $title = '';
 
             if (is_array($option)) {
@@ -276,6 +338,10 @@ class FieldSelect extends FieldOptionsAbstract
                     $icon = $option['icon'];
                 }
 
+                if (isset($option['img'])) {
+                    $img = $option['img'];
+                }
+
                 $text = $option['Name'] ?? $option['text'] ?? $optionValue;
 
             } else {
@@ -284,11 +350,16 @@ class FieldSelect extends FieldOptionsAbstract
 
             }
 
+            if (!$img && $this->avatar && $optionValue && is_numeric($optionValue)) {
+                $img = User::avatarImgSrc($optionValue);
+            }
+
             $optionHtml = '<option value="' . htmlspecialchars($optionValue) . '"'
                 . ($selected ? ' selected=""' : '')
                 . ($cssClass !== '' ? ' class="' . $cssClass . '"' : '')
                 . ($disabled ? ' disabled=""' : '')
                 . ($icon !== '' ? ' data-icon="' . $icon . '"' : '')
+                . ($img !== '' ? ' data-img="' . $img . '"' : '')
                 . ($title !== '' ? ' title="' . htmlspecialchars($title) . '"' : '')
                 . '>'
                 . htmlspecialchars($text)
@@ -419,289 +490,28 @@ class FieldSelect extends FieldOptionsAbstract
             // После добавления нового значения в базу очистим кеширующее поле _cacheEvaluatedOptions, чтобы при записи
             // логов все значения снова подтянулись из базы, включая только что вставленное
             $this->evaluatedOptions = null;
+
+        } elseif ($this->select2 && $this->multiple && $value === null) {
+
+            // Если функция предка определила значение как NULL - значит его не было в POST запросе
+            // Однако, если это Select2 и Multiple - значит пользователь стёр все варианты и реально нам нужно
+            // не null значение а пустое значение
+            $value = '';
         }
 
         return $value;
 
     }
 
-    public function proceedSelect2ajax()
+    protected function convertToNullIfNeeded($value)
     {
-        $options = $this->getEvaluatedOptions();
-
-        if (isset($_GET['loadOptionIds'])) {
-            // От клиента пришел запрос на загрузку одной конкретной опции
-            // обычно это происходит, когда в фильтрах вызывается ранее сохранённый набор фильтров
-            $ids = array_filter(explode(',', $_GET['loadOptionIds']));
-            $returnOptions = [];
-            foreach ($ids as $id) {
-                if (isset($options[$id])) {
-                    $returnOptions[$id] = $options[$id];
-                }
-            }
-            Response::json([
-                'results' => $this->getSelect2ajaxResultsArray($returnOptions),
-            ]);
-            return;
+        if ($this->select2 && $this->multiple) {
+            return $value;
         }
-
-        $parentFieldValuesFromAjax = $_GET['parentFieldValues'] ?? [];
-        if ($parentFieldValuesFromAjax) {
-            // Вместе с ajax запросом пришли какие-то значения parent полей
-            // используем их, чтобы уменьшить массив валидных опций
-            $options = $this->filterChildOptions($options, $parentFieldValuesFromAjax);
-        }
-
-        if (isset($_GET['updateCurrentChildValue'])) {
-            // Это на самом деле не запрос на получение всех возможных опций
-            // а запрос проверка - валидно ли текущее child значение в условиях новых parent значений?
-            $currentChildValue = $_GET['updateCurrentChildValue'];
-            $availableOptionsCount = count($options);
-
-            if ($availableOptionsCount === 1
-                && ($currentChildValue === '' || !isset($options[$currentChildValue]))
-            ) {
-                // Текущее значение в выпадающем списке на экране пользователя - пусто
-                // либо текущее значение не присуствует среди допустимых значений
-                // при этом допустимых значений всего ровно одно - используем его!
-                // Если среди отфильтрованных $options осталось только одно возможное значение - именно его и нужно выбрать
-                $theOnlyOption = reset($options);
-                $theOnlyOptionValue = key($options);
-                Response::json([
-                    'action' => 'change',
-                    'id' => $theOnlyOptionValue,
-                    'text' => $this->getOptionText($theOnlyOption, $theOnlyOptionValue),
-                ]);
-                return;
-            }
-
-            // Если же текущее значение child выпадающего списка на экране пользователя не пусто, то нужно понять
-            // является ли оно допустимым?
-            if ($currentChildValue === '' || isset($options[$currentChildValue])) {
-                // Да, текущее значение допустимо
-                Response::json([
-                    'action' => 'dontchange',
-                ]);
-                return;
-            }
-
-            // Текущее значение не допустимо, нужно отправить инструкцию на сборс на пустой вариант
-            Response::json([
-                'action' => 'reset',
-            ]);
-            return;
-        }
-
-        $searchTerm = $_GET['term'] ?? '';
-        if ($searchTerm) {
-            // Вместе с ajax запросом пришел параметр поиска по подстроке - отфильтруем по этой строке
-            $options = $this->filterBySearchTerm($options, $searchTerm);
-        }
-
-
-        // Если дошли до этого места, значит мы работаем в режиме "показать все значения в выпадающем списке при раскрытии"
-        // Соберём все полученные $options по optgroups
-        $noOptgroup = [];
-        $optgroups = [];
-        $inactiveGroup = [];
-        foreach ($options as $optionValue => $option) {
-
-            if (is_array($option) && isset($option['Active']) && !$option['Active']) {
-                // эта запись неактивна
-                $inactiveGroup[$optionValue] = $option;
-                continue;
-            }
-
-            if (is_array($option) && isset($option['optgroup']) && $option['optgroup'] !== '') {
-                $optgroup = $option['optgroup'];
-                $optgroups[$optgroup][$optionValue] = $option;
-                continue;
-            }
-
-            $noOptgroup[$optionValue] = $option;
-        }
-
-        // Теперь добавляем всё в финальный массив $results
-        // https://select2.org/data-sources/formats
-        $results = [];
-        if ($this->any && !$this->multiple) {
-            $results[] = ['id' => '%', 'text' => $this->anyText];
-        }
-        if ($this->empty && !$this->multiple) {
-            $results[] = ['id' => '', 'text' => $this->emptyText];
-        }
-
-        // Сначала записываем все опции БЕЗ группы
-        if ($noOptgroup) {
-            $results = array_merge($results, $this->getSelect2ajaxResultsArray($noOptgroup));
-        }
-
-        // Затем перебираем все группы
-        foreach ($optgroups as $optgroup => $options) {
-            $results[] = [
-                'text' => $optgroup,
-                'children' => $this->getSelect2ajaxResultsArray($options),
-            ];
-        }
-
-        // В самом конце добавляем группу Inactive
-        if ($inactiveGroup) {
-            $results[] = [
-                'text' => 'Inactive',
-                'children' => $this->getSelect2ajaxResultsArray($inactiveGroup),
-            ];
-        }
-
-        Response::json(['results' => $results]);
+        return parent::convertToNullIfNeeded($value);
     }
 
-    /**
-     * По полученному из ajax запроса массиву $parentFieldValuesFromAjax отфильтруем опции текущего FieldSelect
-     * (который является child)
-     *
-     * @param array $options
-     * @param array $parentFieldValuesFromAjax
-     * @return array
-     */
-    private function filterChildOptions(array $options, array $parentFieldValuesFromAjax): array
-    {
-        $relations = $this->relations;
-        if (!$relations) {
-            // Для этого поля не заданы соответсвеия parent-child, возвращаем входящий массив как есть без фильтрации
-            return $options;
-        }
-
-        // Проверим пришедший вместе с ajax запросом массив $parentFields - есть ли в нём не пустые значения?
-        $parentFieldValuesFromAjax = array_filter($parentFieldValuesFromAjax, function ($parentValue) {
-            $parentValue = (string)$parentValue;
-            return $parentValue !== '' && $parentValue !== '%' && $parentValue !== '0' && $parentValue !== '||';
-        });
-
-        if ($this->parentFieldKeysMandatory) {
-            $parentFieldKeysMandatory = is_string($this->parentFieldKeysMandatory)
-                ? [$this->parentFieldKeysMandatory]
-                : $this->parentFieldKeysMandatory;
-            // Для данного поля определены некоторые parent поля, которые должны быть обязательно переданы
-            // Проверим, все ли обязательные parent поля переданы с этим запросом?
-            $fieldKeysDiff = array_diff($parentFieldKeysMandatory, array_keys($parentFieldValuesFromAjax));
-            if ($fieldKeysDiff) {
-                // Какие-то из обязательных полей указанных в $this->parentFieldKeysMandatory не переданы в запросе
-                // тогда выведем пользователю пустой массив
-                return [];
-            }
-        }
-
-        if (!$parentFieldValuesFromAjax) {
-            // Пришедшие от клиента по ajax значени parent полей все пустые, значит нет смысла фильтровать опции
-            // текущиего child поля, возвращаем входящий массив как есть без фильтрации
-            return $options;
-        }
-
-        // Расшифруем параметр $relations, записанный в настройках текщущего поля
-        // - это может быть функция
-        // - или sql запрос
-        // - или готовый массив
-        $relationsByCurrentFieldKey = null;
-        if (is_callable($relations)) {
-            // Пользователь определил метод, который возвращает массив связей - вызовем этот метод
-            $relations = $relations($options, $parentFieldValuesFromAjax, $this);
-        } elseif (is_string($relations)) {
-            // Этот Relations в форме запроса - выполним запрос!
-            $relations = Db::getAll($relations);
-        }
-
-        // Переформатируем массив relations так, чтобы в качестве ключей были значения относящиеся к текущему полю
-        // Например, изначально массив $relations выглядел так:
-        // $relations = [['CustomerAccountID' => 1, 'CustomerID' => 15], ['CustomerAccountID' => 1, 'CustomerID' => 16]]
-        // После группировки по CustomerAccountID получим удобную для поиска структуру:
-        // $relationsByCurrentFieldKey = [1 => [['CustomerID' => 15], ['CustomerID' => 16]]]
-        $relationsByCurrentFieldKey = A::groupBy($relations, $this->key);
-
-        $filteredOptions = [];
-
-        foreach ($options as $optionValue => $option) {
-
-            // Если заданы какие-то связи с родительскими полями, то нужно проверить текущий option - подходит ли он?
-            if (!isset($relationsByCurrentFieldKey[$optionValue])) {
-                // Текущее значение option вообще не отображено в массиве relations - значит для этого option
-                // нет вообще удовлетворительной комбинации родительских полей
-                continue;
-            }
-
-            // Проверим, удовлетворяет ли текущий optionValue массиву связям с родительскими полями?
-            $relationsForThisChildValue = $relationsByCurrentFieldKey[$optionValue];
-            if (!$this->isParentChildPass($relationsForThisChildValue, $parentFieldValuesFromAjax)) {
-                // Текуща опция не проходит по условиям связи с родительскими полями
-                continue;
-            }
-
-            $filteredOptions[$optionValue] = $option;
-        }
-
-        return $filteredOptions;
-
-    }
-
-    private function filterBySearchTerm(array $options, string $searchTerm): array
-    {
-        $out = [];
-        foreach ($options as $optionValue => $option) {
-            $optionText = $this->getOptionText($option, $optionValue);
-            if (mb_stripos($optionText, $searchTerm) !== false) {
-                $out[$optionValue] = $option;
-            }
-        }
-        return $out;
-    }
-
-    /**
-     * Проходит ли текущий элемент проверку по массиву связей parent-child?
-     * @param array $relationsForThisChildValue
-     * @param array $parentFieldValuesFromAjax
-     * @return bool
-     */
-    private function isParentChildPass(array $relationsForThisChildValue, array $parentFieldValuesFromAjax): bool
-    {
-        // Вернём true, если хотя бы одна комбинация из массива $relations соответсвует значениям родительских полей
-        // пришедших по ajax
-        return A::some($relationsForThisChildValue, function ($relation) use ($parentFieldValuesFromAjax) {
-            // Удовлетворяет ли текущая комбинация $relation загруженная из базы тем значениям $parentFieldValues,
-            // которые пришли по ajax?
-            foreach ($relation as $relationParentFieldKey => $relationParentFieldValue) {
-                // Проверяем только те поля, которые реально пришли с ajax запросом
-                if (isset($parentFieldValuesFromAjax[$relationParentFieldKey])) {
-                    $valueFromAjax = $parentFieldValuesFromAjax[$relationParentFieldKey];
-                    if (strpos($valueFromAjax, '|') !== false) {
-                        $multipleValuesFromAjax = array_filter(explode('|', $valueFromAjax));
-                        if (!in_array($relationParentFieldValue, $multipleValuesFromAjax)) {
-                            // Текущая комбинация relations загруженная из базы провалила проверку, попробуем в цикле найти следующую
-                            return false;
-                        }
-                    } elseif ($valueFromAjax != $relationParentFieldValue) {
-                        // Текущая комбинация relations загруженная из базы провалила проверку, попробуем в цикле найти следующую
-                        return false;
-                    }
-                }
-            }
-
-            // Проверку по всем родительcким полям прошли успешно!
-            return true;
-        });
-    }
-
-    private function getSelect2ajaxResultsArray(array $options)
-    {
-        $results = [];
-        foreach ($options as $optionValue => $option) {
-            $results[] = [
-                'id' => $optionValue,
-                'text' => $this->getOptionText($option, $optionValue),
-            ];
-        }
-        return $results;
-    }
-
-    protected function getSqlWhereInner($value)
+    protected function getSqlWhereInner($value): string
     {
         if ($this->multiple && strpos($value, '|') !== false) {
             $values = $this->parsePipeSeparatedValue($value);
@@ -710,7 +520,13 @@ class FieldSelect extends FieldOptionsAbstract
             }
             $sql = [];
             foreach ($values as $singleValue) {
-                $sql[] = str_replace("{value}", Db::esc($singleValue), parent::getSqlWhereInner($singleValue));
+                if ($this->multipleSqlWhereOnMultiple) {
+                    // Это multiple фильтр который применяется на поле, которое само по себе является multiple
+                    // т.е. значения в этом поле являются VARCHAR с разделителем вертикальной чертой
+                    $sql[] = "{fieldKey} LIKE '%|" . Db::esc($singleValue) . "|%'";
+                } else {
+                    $sql[] = str_replace("{value}", Db::esc($singleValue), parent::getSqlWhereInner($singleValue));
+                }
             }
             return implode(" " . $this->multipleSqlWhereOperator . " ", $sql);
         }
@@ -724,12 +540,18 @@ class FieldSelect extends FieldOptionsAbstract
         if (is_array($this->prefetchedOptions)) {
             // Если удалось загрузить массив каких-то опций, т.е. options был не статический array или callback,
             // то дозаполним prefetchedOptions типовыми пустыми значениями
-            $this->prefetchedOptions['0'] = $this->emptyText;
-            $this->prefetchedOptions[''] = $this->emptyText;
-            $this->prefetchedOptions[null] = $this->emptyText;
-            $this->prefetchedOptions['%'] = $this->anyText;
+            $this->prefetchedOptions += $this->getStandartEmptyOptionsForView();
         }
     }
 
-
+    protected function getStandartEmptyOptionsForView(): array
+    {
+        $emptyOption = ['text' => $this->emptyText, 'cssClass' => $this->emptyCssClass];
+        return [
+            '0' => $emptyOption,
+            '' => $emptyOption,
+            null => $emptyOption,
+            '%' => ['text' => $this->anyText, 'cssClass' => $this->emptyCssClass],
+        ];
+    }
 }

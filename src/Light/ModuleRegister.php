@@ -26,6 +26,11 @@ class ModuleRegister
             'order' => -1,
             'section' => '',
         ],
+        'UserVacation' => [
+            'name' => 'График работы',
+            'order' => 79,
+            'section' => '',
+        ],
         'Reportmenu' => [
             'name' => 'Reports',
             'order' => 80,
@@ -44,6 +49,11 @@ class ModuleRegister
         'UserModule' => [
             'name' => 'Users',
             'order' => 100,
+            'section' => 'User Management',
+        ],
+        'UserAccess' => [
+            'name' => 'User Access',
+            'order' => 101,
             'section' => 'User Management',
         ],
         'ProductionCalendar' => [
@@ -118,6 +128,9 @@ class ModuleRegister
 
     public static function setDefaultModule(string $defaultModule)
     {
+        // Приводим к короткому имени класса
+        $defaultModule = Misc::getModule($defaultModule);
+
         static::$defaultModule = $defaultModule;
     }
 
@@ -138,7 +151,7 @@ class ModuleRegister
     {
         return array_filter(
             self::getModulesKeys(),
-            function ($module) {
+            static function ($module) {
                 return !isset(self::$hiddenModules[$module]);
             }
         );
@@ -146,26 +159,41 @@ class ModuleRegister
 
     public static function isModuleExists(string $module): bool
     {
+        // Приводим к короткому имени класса
+        $module = Misc::getModule($module);
+
         return isset(self::$modules[$module]);
     }
 
     public static function isModuleCore(string $module): bool
     {
+        // Приводим к короткому имени класса
+        $module = Misc::getModule($module);
+
         return isset(self::$coreModules[$module]);
     }
 
     public static function getModuleName(string $module): string
     {
+        // Приводим к короткому имени класса
+        $module = Misc::getModule($module);
+
         return self::$modules[$module]['name'] ?? '';
     }
 
     public static function getModuleTitle(string $module): string
     {
+        // Приводим к короткому имени класса
+        $module = Misc::getModule($module);
+
         return self::$titles[$module] ?? '';
     }
 
     public static function getModuleSection(string $module): string
     {
+        // Приводим к короткому имени класса
+        $module = Misc::getModule($module);
+
         return self::$modules[$module]['section'] ?? '';
     }
 
@@ -173,6 +201,9 @@ class ModuleRegister
     {
         static $autoorder = 0;
         $autoorder++;
+
+        // Приводим к короткому имени класса
+        $module = Misc::getModule($module);
 
         self::$modules[$module] = [
             'name' => $name,
@@ -191,22 +222,34 @@ class ModuleRegister
 
     public static function setTitle(string $module, string $title)
     {
+        // Приводим к короткому имени класса
+        $module = Misc::getModule($module);
+
         self::$titles[$module] = $title;
     }
 
-    public static function removeModule(string $modue)
+    public static function removeModule(string $module)
     {
-        unset(self::$modules[$modue]);
+        // Приводим к короткому имени класса
+        $module = Misc::getModule($module);
+
+        unset(self::$modules[$module]);
     }
 
     public static function hasBadge(string $module): bool
     {
+        // Приводим к короткому имени класса
+        $module = Misc::getModule($module);
+
         return isset(self::$withBadges[$module]);
     }
 
     public static function getModuleClass(string $module): string
     {
         static $moduleClass = [];
+
+        // Приводим к короткому имени класса
+        $module = Misc::getModule($module);
 
         if (!isset($moduleClass[$module])) {
 

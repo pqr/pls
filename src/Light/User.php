@@ -2,6 +2,8 @@
 
 namespace Light;
 
+use Light\Module\Core\Core;
+
 class User
 {
     /** @var User */
@@ -49,7 +51,8 @@ class User
 
     }
 
-    public static function resetCache() {
+    public static function resetCache()
+    {
         self::$usersCache = [];
     }
 
@@ -104,6 +107,16 @@ class User
         }
 
         self::$current = self::getUserById($userId);
+
+        ErrorHandler::setUser(self::getId(), self::getName(), self::getEmail());
+
+        if (extension_loaded('newrelic')) {
+            // https://docs.newrelic.com/docs/agents/php-agent/php-agent-api/newrelic_add_custom_parameter
+            // Record custom data about this web transaction
+            newrelic_add_custom_parameter('user', User::getName());
+            newrelic_add_custom_parameter('user_id', User::getId());
+        }
+
         return true;
     }
 
@@ -178,6 +191,15 @@ class User
         );
     }
 
+    public static function getUserIdsByRole(string $role): array
+    {
+        return Db::getCol(
+            "SELECT ID
+            FROM `user`
+            WHERE Active = 1
+                AND " . self::hasResponsibleRoleSql($role)
+        );
+    }
 
     /**
      * @desc проверяет, залогинен ли пользователь
@@ -193,7 +215,7 @@ class User
         return (bool)(self::getUserById($userId)->data['Active'] ?? false);
     }
 
-    private static function getAccess(string $module = null, int $userId = null): int
+    public static function getAccess(string $module = null, int $userId = null): int
     {
         try {
 
@@ -297,23 +319,27 @@ class User
 
     public static function setParam(string $name, $value, int $userId = null)
     {
-        //Если стока типа bool, преобразуем значения в текст
+        // Если стока типа bool, преобразуем значения в текст
         if ($value === true) {
             $value = '1';
         } elseif ($value === false) {
             $value = '0';
         }
 
-        Db::insertRow(['Name' => $name, 'Value' => $value, 'UserID' => $userId ?? self::getId()], 'user_param', true);
+        $data = [
+            'UserID' => $userId ?? self::getId(),
+            'Name' => $name,
+            'Value' => $value,
+        ];
+
+        // Используем insert on duplicate key update (обновляем Value)
+        Db::insertRow($data, 'user_param', false, false, ['Value']);
 
         return $value;
     }
 
-    public static function encryptPassword(string $password, $salt = null)
+    public static function encryptPassword(string $password, $salt = '')
     {
-        if ($salt === null) {
-            $salt = Misc::uniqid('salt');
-        }
         return $salt . md5($password . $salt);
     }
 
@@ -325,5 +351,42 @@ class User
     public static function getEmailAccountId(): ?int
     {
         return Db::getOne("SELECT ID FROM emailaccount WHERE Username = @s", User::getEmail());
+    }
+
+    public static function avatarImgHtml(int $userId = null): string
+    {
+        return '<img class="avatar" src="' . self::avatarImgSrc($userId ?? self::getId()) . '">';
+    }
+
+    public static function hasAvatar(int $userId = null): bool
+    {
+        return file_exists(self::avatarFilepath($userId ?? self::getId()));
+    }
+
+    public static function avatarImgWithNameHtml(int $userId = null, string $innerHtml = null): string
+    {
+        $userId = $userId ?? self::getId();
+        $innerHtml = $innerHtml ?? htmlspecialchars(self::getName());
+        return '<div class="AvatarWithUsername">' . self::avatarImgHtml($userId) . ' ' . $innerHtml . '</div>';
+    }
+
+    public static function avatarFilepath(int $userId = null): string
+    {
+        $relative = FilesFolder::getRelativeModule('User', $userId ?? self::getId());
+        return FilesFolder::getAbsolute("$relative/Avatar.jpg");
+    }
+
+    public static function avatarImgSrc(int $userId = null): string
+    {
+        $userId = $userId ?? self::getId();
+        if (self::hasAvatar($userId)) {
+            $avatarFilepathAbs = self::avatarFilepath($userId);
+            $mtime = filemtime($avatarFilepathAbs);
+            return Link::create(Core::class)
+                ->proceedStatic('GetUserAvatar')
+                ->params(['UserID' => $userId, 'nouserrefreshtime' => 1, 'mtime' => $mtime])
+                ->getHref();
+        }
+        return "lightpublic/i/user.png";
     }
 }

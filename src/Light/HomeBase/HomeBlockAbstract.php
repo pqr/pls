@@ -3,6 +3,7 @@
 namespace Light\HomeBase;
 
 use Light\Db;
+use Light\Link;
 use Light\Metric;
 use Light\Misc;
 use Light\Request;
@@ -92,11 +93,11 @@ abstract class HomeBlockAbstract extends Table
     /**
      * Метод для переопределеняи в классах потомках
      * @param int $userId
-     * @return string
+     * @return Link|null
      */
-    protected function getViewAllLink(int $userId)
+    protected function getViewAllLink(int $userId): ?Link
     {
-        return '';
+        return null;
     }
 
     /**
@@ -145,7 +146,7 @@ abstract class HomeBlockAbstract extends Table
             'description' => self::getDescription(),
             'informationFor' => self::getInformationFrom(),
             'table' => $this->getHtmlTable(),
-            'viewAllLink' => $this->getViewAllLink($this->userId),
+            'viewAllLink' => (string)$this->getViewAllLink($this->userId),
         ];
         return Template::parseTpl('homeblock.tpl.php', $tdata + ['cssClass' => $cssClass]);
     }

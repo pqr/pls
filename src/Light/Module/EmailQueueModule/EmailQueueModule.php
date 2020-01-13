@@ -34,7 +34,11 @@ class EmailQueueModule extends ModuleAbstract
                     return $value ? 'bad' : '';
                 },
             ]),
-            F::createSelect('EmailAccountID', ['name' => 'From', 'options' => "SELECT ID, Username FROM emailaccount"]),
+            F::createString('CustomFrom', ['name' => 'Custom From']),
+            F::createSelect('EmailAccountID', [
+                'name' => 'Email Account',
+                'options' => "SELECT ID, Username FROM emailaccount",
+            ]),
             F::createText('To'),
             F::createText('Cc'),
             F::createText('Bcc'),
@@ -61,7 +65,7 @@ class EmailQueueModule extends ModuleAbstract
     {
         $body = $this->_obj['Body'];
         if ($this->_obj['ContentType'] !== 'text/html') {
-            $body = nl2br($body);
+            $body = '<pre>' . nl2br(htmlspecialchars($body)) . '</pre>';
         }
         print $body;
         ApplicationAbstract::terminate();

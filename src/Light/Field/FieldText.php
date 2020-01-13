@@ -19,6 +19,7 @@ class FieldText extends FieldAbstract
         $this->default = '';
         $this->tableWidthExcel = 50;
         $this->editWidth = 'default';
+        $this->filterOperator = self::FILTER_LIKE;
     }
 
     protected function getHtmlInner($value, array $data, $forTable)
@@ -81,12 +82,7 @@ class FieldText extends FieldAbstract
         return $value;
     }
 
-    public function getSqlWhereInner($filterValue)
-    {
-        return "{fieldKey} LIKE '%{value}%'";
-    }
-
-    public static function isEmpty($value): bool
+    public static function empty($value): bool
     {
         return trim($value) === '';
     }

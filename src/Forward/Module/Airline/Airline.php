@@ -47,9 +47,8 @@ class Airline extends ModuleAbstract
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
-        $this->addFilterName(F::TYPE_STRING, [
+        $this->addFilterText(['Name', 'DigitalCode', 'AlphaCode'], [
             'name' => 'Name / Code',
-            'sqlWhere' => "Name LIKE '%{value}%' OR DigitalCode = '{value}' OR AlphaCode = '{value}'"
         ]);
     }
 

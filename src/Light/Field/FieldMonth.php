@@ -4,7 +4,7 @@ namespace Light\Field;
 
 use Light\Config;
 use Light\Db;
-use Light\Misc;
+use Light\Translate;
 
 /**
  * @method string getAllYear()
@@ -37,21 +37,19 @@ class FieldMonth extends FieldInputAbstract
 
     public function getHtmlInner($value, array $data, $forTable)
     {
-        if (!$value) {
-            $out = '';
-        } elseif (0 === strpos($value, '0000-00-00')) {
-            $out = '';
-        } else {
-            try {
-                if (Config::$lang === 'ru') {
-                    $out = Misc::getRusMonthNameYear($value, true);
-                } else {
-                    $date = new \DateTime($value);
-                    $out = $date->format("M'y");
-                }
-            } catch (\Exception $e) {
-                $out = '';
+        if (self::empty($value)) {
+            return '';
+        }
+
+        try {
+            if (Config::$lang === 'ru') {
+                $out = Translate::monthYearRu($value, true);
+            } else {
+                $date = new \DateTime($value);
+                $out = $date->format("M'y");
             }
+        } catch (\Exception $e) {
+            $out = '';
         }
 
         return $out;
@@ -59,15 +57,11 @@ class FieldMonth extends FieldInputAbstract
 
     public function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
-        if (!$value) {
-            $out = '';
-        } elseif (0 === strpos($value, '0000-00-00')) {
-            $out = '';
-        } else {
-            $out = substr($value, 0, 7);
+        if (self::empty($value)) {
+            return '';
         }
 
-        return $out;
+        return substr($value, 0, 7);
     }
 
     protected function getEditTagParams($value, array $data)
@@ -89,7 +83,7 @@ class FieldMonth extends FieldInputAbstract
 
     public static function beautify($value)
     {
-        if (!$value || $value === '0000-00-00') {
+        if (self::empty($value)) {
             return '';
         }
         if (strpos($value, '-') !== false) {
@@ -120,7 +114,7 @@ class FieldMonth extends FieldInputAbstract
         return $value;
     }
 
-    protected function getSqlWhereInner($value)
+    protected function getSqlWhereInner($value): string
     {
         return self::getSqlWhereStatic('{fieldKey}', $value);
     }
@@ -186,7 +180,7 @@ class FieldMonth extends FieldInputAbstract
         return $year . '-' . $month . '-01';
     }
 
-    public static function isEmpty($value): bool
+    public static function empty($value): bool
     {
         return !$value || $value === '0000-00-00';
     }

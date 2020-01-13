@@ -3,6 +3,8 @@
 namespace Light;
 
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldAbstract;
+use Light\ModuleBase\ModuleAbstract;
 use Light\SubtableBase\Subtable;
 
 class Template
@@ -116,7 +118,7 @@ class Template
         self::$tdata = $tdata;
     }
 
-    public static function control($title, $label, $html)
+    public static function control(string $title, string $label, string $html): string
     {
         return "<tr{$title}><th>{$label}</th><td>{$html}</td></tr>";
     }
@@ -126,13 +128,27 @@ class Template
         return static::c($fieldKey, true);
     }
 
-    public static function c($fieldKey, $h3 = false)
+    public static function c($fieldKey, $h3 = false): string
     {
-        if (!isset(static::$tdata['_fieldset'][$fieldKey])) {
+        /** @var FieldAbstract $field */
+        $field = static::$tdata['_fieldset'][$fieldKey];
+        if (!$field) {
             $title = '';
             $label = htmlspecialchars($fieldKey);
             $html = '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
             return static::control($title, $label, $html);
+        }
+
+        if (!$field->hasMode(F::MODE_VIEW | F::MODE_EDIT)) {
+            // Если для поря не предусмотрен режим вывода в карточке AddNew/View/Edit,
+            // то ничего не выводим (метод t::с() используется исключительно в этих режимах)
+            return '';
+        }
+
+        // Сразу проверяем права доступа на просмотр, чтобы в случае отсутвия этих прав вообще не выводить контрол
+        $data = static::$tdata['_data'] ?? [];
+        if (!$field->checkAccessFunction($data)) {
+            return '';
         }
 
         $title = static::title($fieldKey);
@@ -143,11 +159,25 @@ class Template
 
     public static function amountWithCurrency($fieldKey, $currencyKey = null)
     {
-        if (!isset(static::$tdata['_fieldset'][$fieldKey])) {
+        /** @var FieldAbstract $field */
+        $field = static::$tdata['_fieldset'][$fieldKey];
+        if (!$field) {
             $title = '';
             $label = htmlspecialchars($fieldKey);
             $html = '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
             return static::control($title, $label, $html);
+        }
+
+        if (!$field->hasMode(F::MODE_VIEW | F::MODE_EDIT)) {
+            // Если для поря не предусмотрен режим вывода в карточке AddNew/View/Edit,
+            // то ничего не выводим (метод t::amountWithCurrency() используется исключительно в этих режимах)
+            return '';
+        }
+
+        // Сразу проверяем права доступа на просмотр, чтобы в случае отсутвия этих прав вообще не выводить контрол
+        $data = static::$tdata['_data'] ?? [];
+        if (!$field->checkAccessFunction($data)) {
+            return '';
         }
 
         $title = static::title($fieldKey);
@@ -169,6 +199,30 @@ class Template
     public static function value($fieldKey)
     {
         return static::$tdata['_data'][$fieldKey] ?? null;
+    }
+
+    public static function empty($fieldKey): bool
+    {
+        /** @var F $field */
+        $field = static::$tdata['_fieldset'][$fieldKey];
+        if (!$field) {
+            // Самого поля почему-то нет в fieldset - не можем проверить на пустоту, вернём false (т.е. empty)
+            return true;
+        }
+
+        // Узнаем empty или нет благодаря методу определённому для данного типа поля FieldAbstract::empty
+        $value = self::value($fieldKey);
+        return $field::empty($value);
+    }
+
+    public static function notEmpty($fieldKey): bool
+    {
+        return !self::empty($fieldKey);
+    }
+
+    public static function showNotEmpty($fieldKey)
+    {
+        return self::isStateAddNewOrEdit() || self::notEmpty($fieldKey);
     }
 
     public static function title($fieldKey)
@@ -219,7 +273,6 @@ class Template
 
         $data = static::$tdata['_data'];
         $value = static::$tdata['_data'][$fieldKey];
-
         return $field->getText($value, $data);
     }
 
@@ -232,20 +285,12 @@ class Template
         }
 
         $mode = static::$tdata['_mode'];
-        $data = static::$tdata['_data'] ?? [];
-        $value = $data[$fieldKey] ?? null;
-        if ($mode === F::MODE_EDIT && $field->hasMode(F::MODE_EDIT) && $field->checkEditAccessFunction($data)) {
+        if ($mode === F::MODE_EDIT) {
             // Преобразуем поле в элемент ввода
-            $html = $field->getHtmlInput($value, $data) . ' ' . $field->uom;
-        } else {
-            // Преобразуем поле в текстовый элемент для просмотра
-            $html = $field->getHtml($value, $data);
-            if ($html === '') {
-                $html = '&nbsp;';
-            }
+            return self::htmlInput($fieldKey);
         }
 
-        return $html;
+        return self::htmlView($fieldKey);
     }
 
     public static function htmlView($fieldKey)
@@ -259,7 +304,6 @@ class Template
         $data = static::$tdata['_data'] ?? [];
         $value = $data[$fieldKey] ?? null;
 
-        //Преобразуем поле в текстовый элемент для просмотра
         $html = $field->getHtml($value, $data);
         if ($html === '') {
             $html = '&nbsp;';
@@ -276,9 +320,16 @@ class Template
             return '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
         }
 
-        $data = static::$tdata['_data'];
-        $value = static::$tdata['_data'][$fieldKey];
-        return $field->getHtmlInput($value, $data) . ' ' . $field->uom;
+        $data = static::$tdata['_data'] ?? [];
+        $value = $data[$fieldKey] ?? null;
+        // Заранее проверяем наличие нужного MODE и editAccessFunction, чтобы в случае отказа не получить пустую строку
+        // а перейти к выводу self::htmlView($fieldKey);
+        if ($field->hasMode(F::MODE_EDIT) && $field->checkEditAccessFunction($data)) {
+            return $field->getHtmlInput($value, $data) . ' ' . $field->uom;
+        }
+
+        // Если доступа на редактирование нет, выводим в режиме просмотра
+        return self::htmlView($fieldKey);
     }
 
     public static function uom($fieldKey)
@@ -301,6 +352,51 @@ class Template
     public static function _state()
     {
         return static::$tdata['_state'] ?? null;
+    }
+
+    public static function isStateAddNew()
+    {
+        return self::_state() === ModuleAbstract::STATE_ADDNEW;
+    }
+
+    public static function isStateView()
+    {
+        return self::_state() === ModuleAbstract::STATE_VIEW;
+    }
+
+    public static function isStateEdit()
+    {
+        return self::_state() === ModuleAbstract::STATE_EDIT;
+    }
+
+    public static function isStateAddNewOrEdit()
+    {
+        return self::isStateAddNew() || self::isStateEdit();
+    }
+
+    public static function showHideWhen(string $fieldKey, $showWhenFieldValue = null): string
+    {
+        $out = ' data-showhide-when-fieldkey="' . $fieldKey . '"';
+        if ($showWhenFieldValue !== null) {
+            $out .= ' data-showhide-when-fieldvalue="' . htmlspecialchars(json_encode($showWhenFieldValue)) . '"';
+        }
+
+        if ($showWhenFieldValue === null) {
+            $show = !empty(self::value($fieldKey));
+        } else {
+            $currentaValue = self::value($fieldKey);
+            if (is_array($showWhenFieldValue)) {
+                $show = in_array($currentaValue, $showWhenFieldValue);
+            } else {
+                $show = $currentaValue == $showWhenFieldValue;
+            }
+        }
+
+        if (!$show) {
+            $out .= ' style="display: none"';
+        }
+
+        return $out;
     }
 
     public static function _id()
@@ -331,7 +427,9 @@ class Template
         $state = static::$tdata['_state'];
 
         if ($state === 'view' || $readonly) {
-            $html = $subtableObj->getHtmlView();
+            // Отключаем автоподстройку ширины колонок в случае если таблица используется только для чтения
+            $adjustFieldsWidth = !$readonly;
+            $html = $subtableObj->getHtmlView($adjustFieldsWidth);
         } else {
             $html = $subtableObj->getHtmlEdit();
         }
@@ -339,7 +437,7 @@ class Template
         return $html;
     }
 
-    public static function issetSubtable($subtableName)
+    public static function issetSubtable(string $subtableName)
     {
         $subtableName = Misc::getClass($subtableName);
         return isset(static::$tdata['_subtables'][$subtableName]);
@@ -350,28 +448,35 @@ class Template
         $subtableName = Misc::getClass($subtableName);
         /** @var Subtable $subtableObj */
         $subtableObj = static::$tdata['_subtables'][$subtableName]['obj'];
-        return $subtableObj->getDataCount() === 0;
+        return $subtableObj->getSubtableDataCount() === 0;
     }
 
-    public static function subtableCount($subtableName)
+    public static function subtableCount(string $subtableName)
     {
         $subtableName = Misc::getClass($subtableName);
         /** @var Subtable $subtableObj */
         $subtableObj = static::$tdata['_subtables'][$subtableName]['obj'];
-        return '<span class="' . $subtableName . '-subtable-count-span">' . $subtableObj->getDataCount() . '</span>';
+        return '<span class="' . $subtableName . '-subtable-count-span">' . $subtableObj->getSubtableDataCount() . '</span>';
     }
 
-    public static function subtable($subtableName)
+    public static function subtable(string $subtableName): string
     {
         $subtableName = Misc::getClass($subtableName);
         /** @var Subtable $subtableObj */
         $subtableObj = static::$tdata['_subtables'][$subtableName]['obj'];
-        $title = $subtableObj->getTextSubtableTitle();
+
+        // Сначала сформируем HTML всей подтаблицы, а лишь затем будем вызывать subtableCount()
+        // чтобы не делать два раза loadData() внутри подтаблицы
+        $subtableHtml = static::subtableHtml($subtableName);
+
         $html = '<div class="subtableblock">';
+
+        $title = $subtableObj->getTextSubtableTitle();
         if ($title) {
             $html .= '<h2>' . $title . ' (' . static::subtableCount($subtableName) . ')</h2>';
         }
-        $html .= static::subtableHtml($subtableName)
+
+        $html .= $subtableHtml
             . '</div>';
 
         return $html;

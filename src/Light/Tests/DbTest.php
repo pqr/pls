@@ -1,41 +1,33 @@
 <?php
 namespace Light\Tests;
 
-use Light\Config;
 use Light\Db;
 use PHPUnit\Framework\TestCase;
 
 class DbTest extends TestCase
 {
-    public static function setUpBeforeClass()
-    {
-        //Инициализируем singleton объект базы
-        Db::connect();
-        Config::$sqlErrorThrowException = true;
-    }
-
     public function testParse()
     {
-        $query = " @n ";
-        $query .= " @n_WithComment ";
-        $query .= " @s ";
-        $query .= " @s_WithComment ";
-        $query .= " @i ";
-        $query .= " @i_WithComment ";
-        $query .= " @f ";
-        $query .= " @f_WithComment ";
-        $query .= " @a ";
-        $query .= " @a_WithComment ";
-        $query .= " @u ";
-        $query .= " @u_WithComment ";
-        $query .= " @p ";
-        $query .= " @p_WithComment ";
-        $query .= " @l ";
-        $query .= " @l_WithComment ";
-        $query .= " @l1 ";
-        $query .= " @l1_WithComment ";
-        $query .= " @l2 ";
-        $query .= " @l2_WithComment ";
+        $query = " @n \n";
+        $query .= " @n_WithComment \n";
+        $query .= " @s \n";
+        $query .= " @s_WithComment \n";
+        $query .= " @i \n";
+        $query .= " @i_WithComment \n";
+        $query .= " @f \n";
+        $query .= " @f_WithComment \n";
+        $query .= " @a \n";
+        $query .= " @a_WithComment \n";
+        $query .= " @u \n";
+        $query .= " @u_WithComment \n";
+        $query .= " @p \n";
+        $query .= " @p_WithComment \n";
+        $query .= " @l \n";
+        $query .= " @l_WithComment \n";
+        $query .= " @l1 \n";
+        $query .= " @l1_WithComment \n";
+        $query .= " @l2 \n";
+        $query .= " @l2_WithComment \n";
 
         $actual = Db::parse(
             $query,
@@ -61,24 +53,26 @@ class DbTest extends TestCase
             'like right with comment'
         );
 
-        $expected = " `table1`.`field1` ";
-        $expected .= " `table2`.`field2` ";
-        $expected .= " 'some\\\"string' ";
-        $expected .= " 'another\\\\string' ";
-        $expected .= " 123 ";
-        $expected .= " 123 ";
-        $expected .= " 0.55 ";
-        $expected .= " 0.99 ";
-        $expected .= " 'a','1','str\\\"in\\\\array' ";
-        $expected .= " 'b','2','another\\\"@str\\'in\\\\array' ";
-        $expected .= " `table1`.`field1`='value1',`db2`.`table2`.`field2`='value2' ";
-        $expected .= " `field3`='val\\\"ue\\\\3'  part as is  part as\"is\\again ";
-        $expected .= " '%like full%' ";
-        $expected .= " '%like full with comment%' ";
-        $expected .= " '%like left' ";
-        $expected .= " '%like left with comment' ";
-        $expected .= " 'like right%' ";
-        $expected .= " 'like right with comment%' ";
+        $expected = " `table1`.`field1` \n";
+        $expected .= " `table2`.`field2` \n";
+        $expected .= " 'some\\\"string' \n";
+        $expected .= " 'another\\\\string' \n";
+        $expected .= " 123 \n";
+        $expected .= " 123 \n";
+        $expected .= " 0.55 \n";
+        $expected .= " 0.99 \n";
+        $expected .= " 'a',1,'str\\\"in\\\\array' \n";
+        $expected .= " 'b',2,'another\\\"@str\\'in\\\\array' \n";
+        $expected .= " `table1`.`field1`='value1',`db2`.`table2`.`field2`='value2' \n";
+        $expected .= " `field3`='val\\\"ue\\\\3' \n";
+        $expected .= " part as is \n";
+        $expected .= " part as\"is\\again \n";
+        $expected .= " '%like full%' \n";
+        $expected .= " '%like full with comment%' \n";
+        $expected .= " '%like left' \n";
+        $expected .= " '%like left with comment' \n";
+        $expected .= " 'like right%' \n";
+        $expected .= " 'like right with comment%' \n";
 
         self::assertEquals($expected, $actual);
 
@@ -98,4 +92,3 @@ class DbTest extends TestCase
         Db::parse("@i @s", 1);
     }
 }
- 

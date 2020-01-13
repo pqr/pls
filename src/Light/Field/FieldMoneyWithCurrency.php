@@ -4,6 +4,7 @@ namespace Light\Field;
 
 use Light\Db;
 use Light\Field\CommonFields as CF;
+use Light\Misc;
 
 class FieldMoneyWithCurrency extends FieldMoney
 {
@@ -42,16 +43,7 @@ class FieldMoneyWithCurrency extends FieldMoney
     {
         $lines = explode("\n", $value);
 
-        $amountPerCurrency = [];
-        foreach ($lines as $amountWithCurrency) {
-            [$currencyIso, $amount] = FieldMoneyWithCurrency::getAsTouple($amountWithCurrency);
-            if (!isset($amountPerCurrency[$currencyIso])) {
-                $amountPerCurrency[$currencyIso] = $amount;
-            } else {
-                $amountPerCurrency[$currencyIso] += $amount;
-            }
-        }
-        ksort($amountPerCurrency);
+        $amountPerCurrency = Misc::calcAmountPerCurrency($lines);
 
         if (count($amountPerCurrency) === 1) {
             // Для оптимизации, в большенстве случаев валюта всего одна, сразу возвращаем
@@ -68,9 +60,9 @@ class FieldMoneyWithCurrency extends FieldMoney
         return implode("\n", $outLines);
     }
 
-    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeOverflow300 = false)
+    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeViewMaxWidth = false)
     {
-        $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeOverflow300);
+        $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeViewMaxWidth);
 
         if ($value) {
             $parts = explode(' ', $value);
@@ -106,12 +98,7 @@ class FieldMoneyWithCurrency extends FieldMoney
             return '';
         }
 
-        $outHtml = FieldMoney::beautify($amount, $this->short, $currencyIso, $this->useSymbol);
-        if (!$forTable) {
-            $outHtml = '<span class="MoneyView">' . $outHtml . '</span>';
-        }
-
-        return $outHtml;
+        return FieldMoney::beautify($amount, $this->short, $currencyIso, $this->useSymbol);
     }
 
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
@@ -126,7 +113,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         return $value;
     }
 
-    public static function getAsTouple($value)
+    public static function getAsTouple($value): array
     {
         $amount = 0;
         $currencyIso = '';
@@ -137,6 +124,28 @@ class FieldMoneyWithCurrency extends FieldMoney
         }
 
         return [$currencyIso, $amount];
+    }
+
+    public static function getAmount($value): float
+    {
+        $amount = 0;
+
+        if ($value != '' && ($pos = strpos($value, ' ')) !== false) {
+            $amount = (double)substr($value, $pos + 1);
+        }
+
+        return $amount;
+    }
+
+    public static function getCurrency($value): float
+    {
+        $amount = 0;
+
+        if ($value != '' && ($pos = strpos($value, ' ')) !== false) {
+            $amount = (double)substr($value, 0, $pos);
+        }
+
+        return $amount;
     }
 
     protected function getHtmlInputInner($value, array $data, $idPrefix)
@@ -191,12 +200,13 @@ class FieldMoneyWithCurrency extends FieldMoney
      * @param bool $short
      * @param null $currencyIso не используется
      * @param bool $useSymbol
+     * @param int $decimals
      * @return string
      */
-    public static function beautify($value, $short = false, $currencyIso = null, $useSymbol = false)
+    public static function beautify($value, $short = false, $currencyIso = null, $useSymbol = false, int $decimals = 2)
     {
         [$currencyIso, $amount] = self::getAsTouple($value);
-        return FieldMoney::beautify($amount, $short, $currencyIso, $useSymbol);
+        return FieldMoney::beautify($amount, $short, $currencyIso, $useSymbol, $decimals);
     }
 
     public static function parseFromDb($dbValue)
@@ -219,4 +229,16 @@ class FieldMoneyWithCurrency extends FieldMoney
 
         return self::createMoneyWithCurrency($fieldMoney->key, $params + $sourceParams);
     }
+
+    public static function empty($value): bool
+    {
+        if (!$value) {
+            return true;
+        }
+
+        $amount = self::getAsTouple($value)[1];
+        return FieldMoney::empty($amount);
+    }
+
+
 }

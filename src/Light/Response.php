@@ -2,6 +2,10 @@
 
 namespace Light;
 
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\Response as PSR7Response;
+use Psr\Http\Message\ResponseInterface;
+
 class Response
 {
     private static $pageTitle = '';
@@ -13,7 +17,10 @@ class Response
     private static $isRedirected = false;
     private static $headers = [];
 
-    public static function reset()
+    /** @var ResponseInterface */
+    public static $psr7;
+
+    public static function new()
     {
         self::$pageTitle = '';
         self::$masterTemplate = 'Master.tpl.php';
@@ -23,16 +30,58 @@ class Response
         self::$printMainmenu = true;
         self::$isRedirected = false;
         self::$headers = [];
+
+        self::$psr7 = new PSR7Response();
     }
 
-    public static function header($header)
+    /**
+     * @param $header
+     * @deprecated use Response::withHeader($name, $value)
+     */
+    public static function header($header): void
     {
-        self::$headers[] = $header;
+        if (strpos($header, ':') !== false) {
+            [$name, $value] = explode(':', $header, 2);
+            self::withHeader($name, $value);
+        }
     }
 
-    public static function getHeaders()
+    public static function withStatus(int $code, $reasonPhrase = ''): void
     {
-        return self::$headers;
+        self::$psr7 = self::$psr7->withStatus($code, $reasonPhrase);
+    }
+
+    /**
+     * @param string $name
+     * @param string|string[] $value
+     */
+    public static function withHeader(string $name, $value): void
+    {
+        self::$psr7 = self::$psr7->withHeader($name, $value);
+    }
+
+    public static function renderMasterTemplate(string $content): void
+    {
+        $body = Template::parseTpl(
+            self::$masterTemplate,
+            ['output' => $content]
+        );
+
+        self::withBodyString($body);
+    }
+
+    public static function withBodyString($body): void
+    {
+        $psr17Factory = new Psr17Factory();
+        $responseBody = $psr17Factory->createStream((string)$body);
+        self::$psr7 = self::$psr7->withBody($responseBody);
+    }
+
+    public static function withJson($data): void
+    {
+        self::withHeader('Content-type', 'application/json');
+        $string = Misc::json($data);
+        self::withBodyString($string);
     }
 
     /**
@@ -41,31 +90,27 @@ class Response
      * @param array $params
      * @param bool $blank
      */
-    public static function redirect(string $module, array $params = [], $blank = false)
+    public static function redirect(string $module, array $params = [], $blank = false): void
     {
         $url = Link::create($module)->params($params)->getHref();
         self::redirectUrl($url, $blank);
     }
 
-    public static function redirectToFilesFolder(string $relative)
+    public static function redirectToFilesFolder(string $relative): void
     {
         $url = FilesFolder::getUrl($relative);
         self::redirectUrl($url);
     }
 
-    public static function redirectUrl($url, $blank = false)
+    public static function redirectUrl($url, $blank = false): void
     {
         self::$isRedirected = true;
         if (Request::isAjax()) {
-            Response::header('HTTP/1.1 200');
-            if ($blank) {
-                Response::header('x-light-redirect-blank: ' . $url);
-            } else {
-                Response::header('x-light-redirect: ' . $url);
-            }
+            $headerName = $blank ? 'x-light-redirect-blank' : 'x-light-redirect';
         } else {
-            Response::header('Location: ' . $url);
+            $headerName = 'Location';
         }
+        Response::withHeader($headerName, $url);
         ApplicationAbstract::terminate();
     }
 
@@ -74,62 +119,71 @@ class Response
         array $params = null,
         array $postData = null,
         $blank = false
-    ) {
+    ): void {
         self::$isRedirected = true;
         $link = Link::create($module);
         if ($params) {
             $link->params($params);
         }
         $url = $link->getHref();
+
         if (Request::isAjax()) {
-            Response::header('x-light-redirect-post: ' . $url);
-            print json_encode($postData);
+
+            Response::withHeader('x-light-redirect-post', $url);
+            Response::withJson($postData);
+
         } else {
-            print '<form action="' . $url . '" method="post"' . ($blank ? ' target="_blank"' : '') . ' id="redirectpost">';
-            print Template::csrfHidden();
+
+            $formHtml = '<form action="' . $url . '" method="post"' . ($blank ? ' target="_blank"' : '') . ' id="redirectpost">';
+            $formHtml .= Template::csrfHidden();
             foreach ($postData as $key => $val) {
-                print '<input type="hidden" name="' . $key . '" value="' . htmlspecialchars($val) . '">';
+                $formHtml .= '<input type="hidden" name="' . $key . '" value="' . htmlspecialchars($val) . '">';
             }
-            print '</form>';
-            print '<script>document.getElementById("redirectpost").submit();</script>';
+            $formHtml .= '</form>';
+            $formHtml .= '<script>document.getElementById("redirectpost").submit();</script>';
+
+            Response::withBodyString($formHtml);
+
         }
         ApplicationAbstract::terminate();
     }
 
-    public static function redirectToList(string $module, array $filters = null)
+    public static function redirectToList(string $module, array $filters = null): void
     {
         $postData = [];
         if ($filters) {
-            $postData['filterValues'] = json_encode($filters);
+            $postData['filterValues'] = Misc::json($filters);
         }
         self::redirectWithPost($module, null, $postData);
     }
 
-    public static function sendHeaderJsReload()
+    public static function sendHeaderJsReload(): void
     {
         self::$isRedirected = true;
         Response::sendHeaderJsEval('location.reload()');
     }
 
-    public static function sendHeaderJsReloadTable($tableName, array $additionalData = [])
+    public static function sendHeaderJsReloadTable($tableName, array $additionalData = []): void
     {
-        $reloadDataJs = $additionalData ? json_encode($additionalData) : '';
-        Response::sendHeaderJsEval('Light.table.get(' . json_encode($tableName) . ').reload(' . $reloadDataJs . ')');
+        $reloadDataJs = $additionalData ? Misc::json($additionalData) : '';
+        Response::sendHeaderJsEval('Light.table.get(' . Misc::json($tableName) . ').reload(' . $reloadDataJs . ')');
     }
 
-    public static function isRedirected()
+    public static function isRedirected(): bool
     {
         return self::$isRedirected;
     }
 
-    public static function abort($status, $msg = null)
+    public static function abort($status, $msg = null): void
     {
-        Response::header('HTTP/1.1 ' . $status);
-        print $msg;
+        self::withStatus($status);
+        if ($msg) {
+            self::withBodyString($msg);
+        }
         ApplicationAbstract::terminate();
     }
 
-    public static function sendErrorMsg($msg)
+    public static function sendErrorMsg($msg): void
     {
         if (Request::isAjax()) {
             Response::showDialog($msg);
@@ -139,41 +193,40 @@ class Response
         }
     }
 
-    public static function json($data, $status = null)
+    public static function json($data, $status = null): void
     {
         if ($status !== null) {
-            Response::header('HTTP/1.1 ' . $status);
+            self::withStatus($status);
         }
-        Response::header("Content-type: application/json");
-        print json_encode($data, JSON_UNESCAPED_UNICODE);
+        Response::withJson($data);
         ApplicationAbstract::terminate();
     }
 
-    public static function sendHeaderFlashMsg($type, $msg)
+    public static function sendHeaderFlashMsg($type, $msg): void
     {
         $messages = [['type' => $type, 'msg' => $msg]];
-        Response::header('x-light-flashmsg: ' . json_encode($messages));
+        Response::withHeader('x-light-flashmsg', Misc::json($messages));
     }
 
-    public static function sendToast(string $type, string $msg)
+    public static function sendToast(string $type, string $msg): void
     {
         $messages = [['type' => $type, 'msg' => $msg]];
-        Response::header('x-light-toastmsg: ' . json_encode($messages));
+        Response::withHeader('x-light-toastmsg', Misc::json($messages));
     }
 
-    public static function sendToastMessagess(array $messages)
+    public static function sendToastMessagess(array $messages): void
     {
-        Response::header('x-light-toastmsg: ' . json_encode($messages));
+        Response::withHeader('x-light-toastmsg', Misc::json($messages));
     }
 
-    public static function sendFlashMssagesInBody(array $messages)
+    public static function sendFlashMssagesInBody(array $messages): void
     {
-        Response::header('x-light-flashmsg-body: yes');
-        print json_encode($messages);
+        Response::withHeader('x-light-flashmsg-body', 'yes');
+        Response::withJson($messages);
         ApplicationAbstract::terminate();
     }
 
-    public static function sendHeaderJsEval($jsCode)
+    public static function sendHeaderJsEval($jsCode): void
     {
         Response::header('x-light-jseval: ' . $jsCode);
     }
@@ -187,9 +240,11 @@ class Response
         $width = null,
         $height = null,
         $top = null,
-        $afterClose = null
-    ) {
-        Response::header('x-light-showdialog: showdialog');
+        $afterClose = null,
+        $afterOpen = null
+    ): void {
+
+        Response::withHeader('x-light-showdialog', 'showdialog');
 
         $dialogOptions = [];
         if ($buttonOkText !== null) {
@@ -216,45 +271,44 @@ class Response
         if ($afterClose !== null) {
             $dialogOptions['afterClose'] = $afterClose;
         }
+        if ($afterOpen !== null) {
+            $dialogOptions['afterOpen'] = $afterOpen;
+        }
 
-        print json_encode([
+        self::withJson([
             'html' => $html,
             'dialogOptions' => $dialogOptions,
         ]);
+
         ApplicationAbstract::terminate();
     }
 
-    public static function haveMasterTemplate()
+    public static function haveMasterTemplate(): bool
     {
         return (bool)self::$masterTemplate;
     }
 
-    public static function setMasterTemplate($masterTemplate)
+    public static function setMasterTemplate(?string $masterTemplate): void
     {
         self::$masterTemplate = $masterTemplate;
     }
 
-    public static function getMasterTemplate()
-    {
-        return self::$masterTemplate;
-    }
-
-    public static function disableMainmenu()
+    public static function disableMainmenu(): void
     {
         self::$printMainmenu = false;
     }
 
-    public static function isMainmenuEnabled()
+    public static function isMainmenuEnabled(): bool
     {
         return self::$printMainmenu;
     }
 
-    public static function setPageTitle($title)
+    public static function setPageTitle($title): void
     {
         self::$pageTitle = strip_tags($title);
     }
 
-    public static function getFullTitle()
+    public static function getFullTitle(): string
     {
         $title = Config::$title;
 
@@ -273,32 +327,32 @@ class Response
         return $title;
     }
 
-    public static function setPageHeadHtml($txt)
+    public static function setPageHeadHtml($txt): void
     {
         self::$pageHeadHtml = $txt;
     }
 
-    public static function setPageHeadRightHtml($rightHtml)
+    public static function setPageHeadRightHtml($rightHtml): void
     {
         self::$pageHeadRightHtml = $rightHtml;
     }
 
-    public static function getPageHeadHtml()
+    public static function getPageHeadHtml(): string
     {
         return self::$pageHeadHtml;
     }
 
-    public static function getPageHeadRightHtml()
+    public static function getPageHeadRightHtml(): string
     {
         return self::$pageHeadRightHtml;
     }
 
-    public static function addJsData(array $jsdata)
+    public static function addJsData(array $jsdata): void
     {
         self::$jsdata = array_merge(self::$jsdata, $jsdata);
     }
 
-    public static function getJsData()
+    public static function getJsData(): array
     {
         return self::$jsdata;
     }
@@ -351,14 +405,12 @@ class Response
                 $contentType = 'text/plain';
         }
 
-        Response::header('Content-Type: ' . $contentType);
-        Response::header('Content-Length: ' . strlen($content));
-        Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($downloadFilename)));
-        Response::header('Cache-Control: max-age=0');
+        Response::withHeader('Content-Type', $contentType);
+        Response::withHeader('Content-Disposition',
+            'attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($downloadFilename)));
+        Response::withHeader('Cache-Control', 'max-age=0');
 
-        print $content;
-
-        Response::setMasterTemplate(null);
+        Response::withBodyString($content);
     }
 
     public static function streamFileFromFilesystem(
@@ -374,15 +426,19 @@ class Response
         $contentType = finfo_file($finfo, $filepathAbs);
         finfo_close($finfo);
 
-        Response::header('Content-Type: ' . $contentType);
-        Response::header('Content-Length: ' . filesize($filepathAbs));
+        Response::withHeader('Content-Type', $contentType);
+
+        $contentDisposition = '';
         if (!$preview) {
-            Response::header('Content-Disposition: attachment;filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($downloadFilename)));
+            $contentDisposition .= 'attachment;';
         }
-        Response::header('Cache-Control: max-age=0');
+        $contentDisposition .= 'filename*=UTF-8\'\'' . rawurlencode(File::getValidFilename($downloadFilename));
+        Response::withHeader('Content-Disposition', $contentDisposition);
 
-        readfile($filepathAbs);
+        Response::withHeader('Cache-Control', 'max-age=0');
 
-        Response::setMasterTemplate(null);
+        $psr17Factory = new Psr17Factory();
+        $responseBody = $psr17Factory->createStreamFromFile($filepathAbs);
+        self::$psr7 = self::$psr7->withBody($responseBody);
     }
 }

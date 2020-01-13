@@ -63,8 +63,8 @@ namespace CostSheet {
         $(".cs-vinvoice-btn").addClass("display-none");
 
         //Отобразим ссылки Copy и Fill from Quotation
-        $("#cs-copy-btn").removeClass("display-none");
-        $("#cs-fillquotation-btn").removeClass("display-none");
+        $(".cs-copy-btn").removeClass("display-none");
+        $(".cs-fillquotation-btn").removeClass("display-none");
 
         //Отобразим ссылки Search Airfreight Rate и Copy to Selling
         $("#search-airfreightrate-link").removeClass("display-none");
@@ -126,8 +126,8 @@ namespace CostSheet {
         $(".cs-vinvoice-btn").removeClass("display-none");
 
         //Скроем ссылки Copy и Quotation / Standart Rate
-        $("#cs-copy-btn").addClass("display-none");
-        $("#cs-fillquotation-btn").addClass("display-none");
+        $(".cs-copy-btn").addClass("display-none");
+        $(".cs-fillquotation-btn").addClass("display-none");
 
         //Скроем ссылки Search Airfreight Rate и Copy to Selling
         $("#search-airfreightrate-link").addClass("display-none");
@@ -158,7 +158,7 @@ namespace CostSheet {
             "index.php?a=VInvoice&addnew=1&fromCostSheet=" + shipmentId + "&csLineIds=" + checkedValues;
     });
 
-    $("#cs-copy-btn").on("click", function(e) {
+    $(".cs-copy-btn").on("click", function(e) {
         e.preventDefault();
 
         var bodyHtml =
@@ -437,7 +437,7 @@ namespace CostSheet {
             $(".total-selected").css("visibility", "hidden");
         });
 
-    $("#cs-fillquotation-btn").on("click", function(e) {
+    $(".cs-fillquotation-btn").on("click", function(e) {
         e.preventDefault();
 
         //Отобразим диалог для ввода номера котировки из которой заполнить

@@ -13,19 +13,9 @@ use Light\Timer;
 use Light\XlsWriter;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 
-/**
- * @method getTableDataCount()
- */
 trait TableExcelExportable
 {
     public $allowExportToExcel = true;
-
-    /**
-     * @return Fieldset|F[]
-     */
-    abstract public function getFieldsetShowed();
-
-    abstract public function getTableData();
 
     protected function getTableExcelMaxRows()
     {

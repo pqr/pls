@@ -6,6 +6,8 @@ namespace Light\Module\UserSettings;
 
 use Light\Config;
 use Light\Db;
+use Light\Ico;
+use Light\Js;
 use Light\Misc;
 use Light\Module\UserModule\UserModule;
 use Light\ModuleBase\SettingsPageAbstract;
@@ -14,10 +16,17 @@ use Light\Field\FieldAbstract as F;
 use Light\Response;
 use Light\Session;
 use Light\SimpleObj;
+use Light\Translate;
 use Light\User;
 
 class UserSettings extends SettingsPageAbstract
 {
+    public function __invoke()
+    {
+        Js::addLight('UserSettings.js');
+
+        parent::__invoke();
+    }
     public function __construct()
     {
         $this->addFields(
@@ -87,7 +96,7 @@ class UserSettings extends SettingsPageAbstract
                 'options' => function () {
                     $options = [];
                     for ($m = 1; $m <= 12; $m++) {
-                        $text = Config::$lang === 'ru' ? Misc::getRusMonthName($m) : (new \DateTime(date('Y') . "-$m-01"))->format('M');
+                        $text = Config::$lang === 'ru' ? Translate::monthRu($m) : (new \DateTime(date('Y') . "-$m-01"))->format('M');
                         $options[$m] = $text;
                     }
                     return $options;
@@ -123,5 +132,13 @@ class UserSettings extends SettingsPageAbstract
         $obj->setMasterModuleForDbLog(UserModule::class);
         $obj->setId(User::getId());
         $obj->updateDb($dataFromRequest, 'Обновление из экрана настроек пользователя');
+    }
+
+    protected function getTemplateData(): array
+    {
+        $tdata = parent::getTemplateData();
+        $avatar = User::avatarImgHtml(User::getId());
+        $tdata['Avatar'] = $avatar;
+        return $tdata;
     }
 }

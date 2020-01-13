@@ -13,8 +13,10 @@ class FieldWeek extends FieldInputAbstract
         $this->tableWidthExcel = 14;
     }
 
-    private function getAsTouple($value)
+    public static function getAsTouple($value)
     {
+        $value = trim($value);
+
         $week = '';
         $year = '';
 
@@ -22,7 +24,7 @@ class FieldWeek extends FieldInputAbstract
 
             [$year, $week] = explode('-', $value);
 
-            // intval уберёт лидирующий ноль у номера недели
+            // int уберёт лидирующий ноль у номера недели
             $week = (int)$week;
             $year = (int)$year;
 
@@ -45,7 +47,7 @@ class FieldWeek extends FieldInputAbstract
     protected function getHtmlInner($value, array $data, $forTable)
     {
         $outHtml = '';
-        [$week, $year] = $this->getAsTouple($value);
+        [$week, $year] = self::getAsTouple($value);
         if ($week || $year) {
             $outHtml = $week . '<span class="week-year">\'' . $year . '</span>';
 
@@ -64,7 +66,7 @@ class FieldWeek extends FieldInputAbstract
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         $out = '';
-        list($week, $year) = $this->getAsTouple($value);
+        [$week, $year] = self::getAsTouple($value);
         if ($week || $year) {
             $out = $week . "'" . $year;
         }
@@ -74,7 +76,7 @@ class FieldWeek extends FieldInputAbstract
 
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
-        [$week, $year] = $this->getAsTouple($value);
+        [$week, $year] = self::getAsTouple($value);
 
         $params = $this->initialParams;
 
@@ -157,13 +159,8 @@ class FieldWeek extends FieldInputAbstract
 
     public function allowSqlWhereValue($value)
     {
-        $value = trim($value);
-        if (strpos($value, '-') === false) {
-            return false;
-        }
-
-        [$year, $week] = explode('-', $value);
-        return ($year !== '' && $year !== '0000') || ($week !== '' && $week !== '00');
+        [$week, $year] = self::getAsTouple($value);
+        return $week || $year;
     }
 
     /**
@@ -171,10 +168,10 @@ class FieldWeek extends FieldInputAbstract
      * @param string $value
      * @return string
      */
-    public function getSqlWhereInner($value)
+    public function getSqlWhereInner($value): string
     {
-        [$year, $week] = explode('-', $value);
-        if ($week !== '' && $week !== '00') {
+        [$week, $year] = self::getAsTouple($value);
+        if ($week) {
             // Неделя задана точно, используем полное совпадение
             $sqlWhere = "{fieldKey} = '{value}'";
         } else {
@@ -185,7 +182,7 @@ class FieldWeek extends FieldInputAbstract
         return $sqlWhere;
     }
 
-    public static function isEmpty($value): bool
+    public static function empty($value): bool
     {
         return $value === '0000-00' || $value === null;
     }

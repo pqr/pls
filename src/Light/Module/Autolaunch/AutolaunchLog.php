@@ -33,6 +33,8 @@ class AutolaunchLog extends Table
 
         $this->className = $className;
 
+        $this->allowTablePrintHeadBlock = true;
+
         $params = ['class' => $className];
         $this->tableLinkUrlParams = $params;
         $this->tableReloadUrl = Link::create(Autolaunch::class)->params($params)->getHref();

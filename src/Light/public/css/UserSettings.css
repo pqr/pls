@@ -1,0 +1,14 @@
+.UserSettingsAvatar {
+    padding-left: 1em;
+    cursor: pointer;
+}
+
+#UserSettingsAvatarInputfile {
+    display: none;
+}
+
+.UserSettingsAvatar .avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50px;
+}

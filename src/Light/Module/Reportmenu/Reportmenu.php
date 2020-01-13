@@ -8,9 +8,10 @@ use Light\Db;
 use Light\DbLog;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
-use Light\Img;
+use Light\Ico;
 use Light\Js;
 use Light\Link;
+use Light\ModuleBase\MassactionUtils;
 use Light\ModuleRegister;
 use Light\Response;
 use Light\Session;
@@ -96,7 +97,7 @@ class Reportmenu
 
     private function getReportImageHtml(string $reportClass): string
     {
-        return Img::png('Reportmenu/' . $reportClass);
+        return '<img src="i/Reportmenu/' . $reportClass . '.png">';
     }
 
     /**
@@ -117,7 +118,7 @@ class Reportmenu
             $manageAccessLink = '';
             if ($hasWriteAcess) {
                 $manageAccessText = Config::$lang === 'ru' ? 'Доступ' : 'Access';
-                $innerHtml = Img::icon('fa-user-plus') . " $manageAccessText";
+                $innerHtml = Ico::i('fa-user-plus', 'fas') . " $manageAccessText";
                 $manageAccessLink = Link::create(Reportmenu::class, $innerHtml)
                     ->params($params + ['p' => 'AccessDialog'])
                     ->ajax()
@@ -153,12 +154,33 @@ class Reportmenu
 
     }
 
+    public function proceedMassaction()
+    {
+        if (isset($_GET['class'])) {
+
+            // Нам нужно определить, правильное ли имя класса было передано в ссылке?
+            $reportFullClass = PROJECT_NAMESPACE . "\\Reportmenu\\" . $_GET["class"];
+
+            // Создадим объект отчёта и запустим его!
+            /** @var $reportObj ReportAbstract */
+            $reportObj = new $reportFullClass;
+            $reportObj->proceedMassaction();
+
+        } else {
+
+            MassactionUtils::sendErrorDialog('No class');
+
+        }
+    }
+
     public function __invoke()
     {
         if (isset($_GET['class'])) {
 
             // Нам нужно определить, правильное ли имя класса было передано в ссылке?
             $reportFullClass = PROJECT_NAMESPACE . "\\Reportmenu\\" . $_GET["class"];
+
+            Js::addLight('ReportmenuClass.js');
 
             //Создадим объект отчёта и запустим его!
             /** @var $reportObj ReportAbstract */
@@ -189,7 +211,7 @@ class Reportmenu
                 . '<input type="text" placeholder="' . $filterPlaceholder . '" id="reportmenu-filter-input" style="padding: 5px">';
             if (User::hasWriteAccess()) {
                 $auditText = $this->getAuditText();
-                $innerHtml = Img::icon('fa-user-circle') . " $auditText";
+                $innerHtml = Ico::i('fa-user-circle', 'far') . " $auditText";
                 print Link::create($module, $innerHtml)
                     ->params(['p' => 'AccessAudit'])
                     ->btnFlat()
@@ -289,7 +311,7 @@ class Reportmenu
 
             $tableData[] = [
                 'UserName' => $user['Name'],
-                'Reports' => implode('<br>', $reportsLinksForThisUser)
+                'Reports' => implode('<br>', $reportsLinksForThisUser),
             ];
         }
 
@@ -313,14 +335,14 @@ class Reportmenu
                 'name' => Config::$lang === 'ru' ? 'Пользователи' : 'Users',
                 'editWidth' => 'default',
                 'empty' => false,
-                'options' => $usersOptions
+                'options' => $usersOptions,
             ]),
 
             F::createSelect2Multiple('GroupIDs', [
                 'name' => Config::$lang === 'ru' ? 'Группы' : 'Groups',
                 'editWidth' => 'default',
                 'empty' => false,
-                'options' => "usergroup|OrderID"
+                'options' => "usergroup|OrderID",
             ])
         );
     }

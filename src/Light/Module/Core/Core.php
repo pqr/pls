@@ -6,24 +6,27 @@ use Carbon\Carbon;
 use League\Csv\Reader;
 use Light\ApplicationAbstract;
 use Light\Config;
-use Light\Field\FieldAbstract;
-use Light\Fieldset;
-use Light\File;
-use Light\LogerCsv;
 use Light\Currency;
 use Light\Db;
 use Light\DbLog;
+use Light\Field\FieldAbstract;
 use Light\Field\FieldDate;
+use Light\Fieldset;
+use Light\File;
 use Light\FilesFolder;
+use Light\Ico;
+use Light\Link;
 use Light\LoggerCsv;
 use Light\Mainmenu;
 use Light\Metric;
 use Light\Misc;
 use Light\Module\UserSettings\UserSettings;
+use Light\Module\UserVacation\UserVacation;
+use Light\Module\UserVacation\UserVacationFields;
 use Light\ModuleRegister;
-use function Light\reportException;
 use Light\Request;
 use Light\Response;
+use Light\Table;
 use Light\Table\TableUserParamsRepository;
 use Light\Template;
 use Light\Traits\TableLayoutable;
@@ -42,12 +45,25 @@ class Core
 
     public static function proceedUserparam()
     {
-        if (Request::getMehod() === 'POST') {
-            //Распечатаем сохранённое в базе значение - возможно, оно ещё понадобится для js клиента
-            print User::setParam((string)$_POST['param'], $_POST['value']);
-        } else {
-            print User::getParam((string)$_GET['param']);
+        if (!isset($_REQUEST['param'])) {
+            Response::abort(400);
+            return;
         }
+
+        $param = (string)$_REQUEST['param'];
+
+        if (Request::getMehod() === 'POST') {
+
+            if (!isset($_POST['value'])) {
+                Response::abort(400);
+                return;
+            }
+
+            User::setParam($param, $_POST['value']);
+        }
+
+        // Распечатаем сохранённое в базе значение - возможно, оно ещё понадобится для js клиента
+        print User::getParam($param);
 
         ApplicationAbstract::terminate();
     }
@@ -200,8 +216,10 @@ class Core
 
     public static function proceedMetric()
     {
-        $payload = $_POST['Payload'] ?? '';
-        Metric::record($_POST['ActionType'], $_POST['TimeMs'], $payload);
+        if (isset($_POST['ActionType'])) {
+            $payload = $_POST['Payload'] ?? '';
+            Metric::record($_POST['ActionType'], $_POST['TimeMs'], $payload);
+        }
     }
 
     /**
@@ -335,7 +353,7 @@ class Core
                     . '<a href="#" data-filtersjson="' . htmlspecialchars($filtersJson) . '">'
                     . htmlspecialchars($name)
                     . '</a>'
-                    . '<a href="#" class="del-link"><i class="fa fa-trash-o"></i></a>'
+                    . '<a href="#" class="del-link">' . Ico::delete() . '</a>'
                     . '</li>';
             }
             $html .= '</ul>';
@@ -477,7 +495,7 @@ class Core
             File::fs()->mkdir($dir);
         } catch (\Exception $e) {
             Response::json(['error' => true, 'text' => $e->getMessage()], 500);
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             return;
         }
 
@@ -502,7 +520,21 @@ class Core
     public static function proceedGetUserAvatar()
     {
         $userId = $_GET['UserID'] ?? User::getId();
-        Mainmenu::streamUserAvatar($userId);
+
+        if (User::hasAvatar($userId)) {
+            $avatarFileAbs = User::avatarFilepath($userId);
+            // Кэшируем изображение навечно, т.к. в url есть признак времени изменения файла (см getUserAvatarImgTag)
+            // https://www.mnot.net/cache_docs/
+            Response::header('Content-Type: image/jpg');
+            Response::header('Cache-Control: public, max-age=31556926');
+            Response::header('Expires: Sun, 17-Jan-2038 19:14:07 GMT');
+            Response::header('Pragma: ');
+            readfile($avatarFileAbs);
+            ApplicationAbstract::terminate();
+            return;
+        }
+
+        Response::redirectUrl('lightpublic/i/user.png');
     }
 
     public static function proceedGetUserPhoto()
@@ -595,6 +627,22 @@ class Core
             return;
         }
         $tdata = $fieldset->getTplData($user, FieldAbstract::MODE_VIEW);
+
+        $lastRefresh = Db::getOne("SELECT LastRefreshDateTime FROM user_visit WHERE UserID = @i", $userId);
+        if ($lastRefresh) {
+            $tdata['Idle'] = (new Carbon($lastRefresh))->locale('ru')->diffForHumans();
+        }
+
+        $tdata['UserVacationsHtml'] = static::getUserDialogVacationsHtml($userId);
+        $tdata['UserDialogAdditionalHtml'] = static::getUserDialogAdditionalHtml($userId);
+        if (User::getId() == $userId && User::hasWriteAccess(UserSettings::class)) {
+            $tdata['UserSettingsLink'] = Link::create(UserSettings::class,
+                'Редактировать информацию о себе ' . Ico::externalLink())
+                ->cssClass('note')
+                ->blank()
+                ->getHtml();
+        }
+
         $html = Template::parseTpl('UserDialog.tpl.php', $tdata);
         Response::showDialog($html);
     }
@@ -602,5 +650,58 @@ class Core
     protected static function getUserDialogFieldset(): Fieldset
     {
         return (new UserSettings())->getFieldset();
+    }
+
+    protected static function getUserDialogVacationsHtml(int $userId): string
+    {
+        $table = new Table();
+        $table->tableSticky = false;
+        $table->addFields(
+            UserVacationFields::vacationType(),
+            UserVacationFields::validFrom(),
+            UserVacationFields::validUntil(),
+            UserVacationFields::days(),
+            UserVacationFields::availableRemote(),
+            UserVacationFields::availableMobile(),
+            UserVacationFields::comments()
+        );
+        $table->getFieldset()->setParam('ajax', false);
+
+        $data = Db::getAll(
+            "SELECT {$table->getFieldset()->getSqlSelect()}
+             FROM uservacation
+             WHERE ValidUntil >= CURDATE()
+                AND UserID = $userId
+             ORDER BY ValidFrom"
+        );
+
+        if (!$data) {
+            return '';
+        }
+
+        $table->setTableData($data);
+
+        $outHtml = '<p style="margin-top: 20px"><strong>График работы</strong>';
+        if (User::hasWriteAccess(UserVacation::class)) {
+            $outHtml .= ' <small style="margin-left: 10px">' . Link::create(UserVacation::class,
+                    'Редактировать график работы ' . Ico::externalLink())
+                    ->cssClass('note')
+                    ->blank()
+                . '</small>';
+        }
+        $outHtml .= '</p>'
+            . $table->getHtmlTable();
+
+        return $outHtml;
+    }
+
+    /**
+     * Для переопределения в классах потомках, если нужно добавить ещё какой-то html код в карточку пользователя
+     * @param int $userId
+     * @return string
+     */
+    protected static function getUserDialogAdditionalHtml(int $userId): string
+    {
+        return '';
     }
 }

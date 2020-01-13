@@ -7,34 +7,13 @@ trait PipeSeparatedIdsTrait
 
     public $oneLine = false;
 
-    /** @return array */
-    abstract protected function getEvaluatedOptions();
-
-    /**
-     * @param $option
-     * @param $originalValue
-     * @param bool $forTable
-     * @return string
-     */
-    abstract protected function getOptionHtml($option, $originalValue, $forTable);
-
-    /**
-     * @param $option
-     * @param $originalValue
-     * @return string
-     */
-    abstract protected function getOptionText($option, $originalValue);
-
-    /** @return string */
-    abstract public function getKey();
-
     public static function parseValue($value)
     {
         $valueArr = explode('|', $value);
         //уберём пустые значения
         $valueArr = array_filter($valueArr);
 
-        return $valueArr;
+        return array_values($valueArr);
     }
 
     protected function isOptionSelected($optionValue, $selectedValue)
@@ -84,7 +63,7 @@ trait PipeSeparatedIdsTrait
         return implode(', ', $outArr);
     }
 
-    public static function isEmpty($value): bool
+    public static function empty($value): bool
     {
         if (!$value) {
             return false;

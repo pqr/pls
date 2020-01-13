@@ -1,14 +1,16 @@
 server {
-    listen 8000;
-    listen [::]:8000 ipv6only=on;
-
-    if ($http_x_forwarded_proto = "http") {
-       rewrite ^(.*)$ https://$http_host$1;
-    }
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name 2.forwardlog.net;
 
     sendfile on;
     tcp_nopush on;
     client_max_body_size 0;
+    client_header_buffer_size 1k;
+    large_client_header_buffers 4 8k;
+
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
 
     gzip_min_length 1100;
     gzip_types text/plain text/css application/json text/xml application/xml application/xml+rss text/javascript;
@@ -16,11 +18,14 @@ server {
 	root {{ project_dir_flowerbase }}/public;
 	index index.php index.html index.htm;
 
-	# Make site accessible from http://localhost/
-	server_name localhost;
+    access_log on;
 
-    location / {
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+	location / {
         try_files $uri $uri/ =404;
+        add_header  X-Robots-Tag "noindex, nofollow, nosnippet, noarchive";
     }
 
     location ~ \.php$ {
@@ -33,35 +38,18 @@ server {
         fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME $request_filename;
         include fastcgi_params;
-    }
 
-    location /status {
-        fastcgi_pass unix:/run/php/php{{ php_version }}-fpm.sock;
-        fastcgi_index index.php;
-        include fastcgi_params;
-    }
-
-    location ~ /\.hg {
-        deny all;
+        add_header  X-Robots-Tag "noindex, nofollow, nosnippet, noarchive";
     }
 
     location ~ /\.git {
         deny all;
     }
 
-    location ~ /templates {
-         deny all;
-    }
-
-    location ~ webpack.config {
-         deny all;
-    }
-
-    location ~ package.json {
-         deny all;
-    }
-
     location ~ \.(js|css)$ {
          expires max;
     }
+
+    ssl_certificate /etc/letsencrypt/live/2.forwardlog.net/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/2.forwardlog.net/privkey.pem; # managed by Certbot
 }

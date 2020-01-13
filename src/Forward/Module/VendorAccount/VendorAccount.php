@@ -5,7 +5,7 @@ namespace Forward\Module\VendorAccount;
 use Forward\Application;
 use Forward\Classes\Constant;
 use Forward\Module\VendorAccount\Subtables\Vendors;
-use Light\Img;
+use Light\Ico;
 use Light\Link;
 use Light\ModuleBase\ModuleAbstract;
 use Light\User;
@@ -22,15 +22,15 @@ class VendorAccount extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(Vendors::class);
+        $this->addSubtable(Vendors::class);
     }
 
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
-        $this->addFilterName();
+        $this->addFilterText(['Name', 'OneCName']);
     }
 
     protected function initViewSubmenu()
@@ -59,7 +59,7 @@ class VendorAccount extends ModuleAbstract
 
             $url = "mailto:$mailto?subject=" . rawurlencode($subject) . "&body=" . rawurlencode($body);
             $this->addSubmenuLink(
-                Link::create(null, Img::iconMailBlue() . ' Email в бухгалтерию')
+                Link::create(null, Ico::mailBlue() . ' Email в бухгалтерию')
                     ->externalUrl($url)
             );
         }

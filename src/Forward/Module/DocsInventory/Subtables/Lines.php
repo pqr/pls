@@ -49,8 +49,7 @@ class Lines extends Subtable
 
                     [$id, $name] = explode('|', $value);
                     return Link::create(CInvoice::class, htmlspecialchars($name))
-                        ->view($id)
-                        ->funcDialog()
+                        ->viewDialog($id)
                         ->getHtml();
                 },
                 'getExcelFunction' => function ($value, array $data, $out) {

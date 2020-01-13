@@ -1,8 +1,8 @@
-(function() {
+(function () {
     "use strict";
 
-    var hideEmptyBlock = function() {
-        $("div.reportmenu > div > div").each(function() {
+    function hideEmptyBlock() {
+        $("div.reportmenu > div > div").each(function () {
             var $div = $(this);
             var $parent = $div.parent();
             if ($div.text().trim() === "" || $div.children("div:not(.display-none)").length === 0) {
@@ -11,24 +11,30 @@
                 $parent.removeClass("display-none");
             }
         });
-    };
+    }
 
     hideEmptyBlock();
 
     var $blocks = $(".reportblock");
 
+    function showAll() {
+        $blocks.removeClass('display-none');
+        hideEmptyBlock();
+    }
+
     $("#reportmenu-filter-input")
         .focus()
-        .on("keyup", function() {
-            var filterLower = this.value.toLowerCase();
-            var filterLowerOpposite = Light.getOppositeString(filterLower);
-            $blocks.each(function() {
-                var $block = $(this);
-                var blockTextLower = $block.text().toLowerCase();
-                var hide =
-                    blockTextLower.indexOf(filterLower) === -1 && blockTextLower.indexOf(filterLowerOpposite) === -1;
-                $block.toggleClass("display-none", hide);
-            });
-            hideEmptyBlock();
+        .on("keyup", function () {
+            var filterValue = this.value.trim();
+            if (filterValue === '') {
+                showAll();
+            } else {
+                $blocks.each(function () {
+                    var $block = $(this);
+                    var hide = !Light.matchWithOpposite($block.text(), filterValue);
+                    $block.toggleClass("display-none", hide);
+                });
+                hideEmptyBlock();
+            }
         });
 })();

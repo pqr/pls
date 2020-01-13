@@ -2,11 +2,11 @@
   "config" : {
     "optimize-autoloader": true,
     "platform": {
-      "php": "7.2"
+      "php": "7.3"
     }
   },
   "require": {
-    "php": "7.2.*",
+    "php": "7.3.*",
     "ext-gd": "*",
     "ext-mbstring": "*",
     "ext-curl": "*",
@@ -26,13 +26,22 @@
     "mtdowling/cron-expression": "@stable",
     "guzzlehttp/guzzle": "@stable",
     "studio-42/elfinder": "@stable",
-    "mobiledetect/mobiledetectlib": "@stable",
     "sentry/sentry": "@stable",
     "phpoffice/phpspreadsheet": "^1.0",
     "symfony/process": "^4.2",
     "symfony/filesystem": "^4.2",
-    "mpdf/mpdf": "^7.1",
-    "league/csv": "^9.0"
+    "mpdf/mpdf": "dev-test",
+    "league/csv": "^9.1",
+    "nyholm/psr7": "^1.2",
+    "nyholm/psr7-server": "^0.4.1",
+    "laminas/laminas-httphandlerrunner": "^1.1"
+  },
+  "require-dev": {
+    "codeception/codeception": "^4.0",
+    "codeception/module-phpbrowser": "^1.0.0",
+    "codeception/module-rest": "^1.0.0",
+    "codeception/module-asserts": "^1.0.0",
+    "phpunit/phpunit": "^8"
   },
   "autoload": {
     "psr-4": {
@@ -40,13 +49,14 @@
       "Light\\": "src/Light/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "tests\\Forward\\": "tests/unit/Forward/"
+    }
+  },
   "scripts": {
     "test": [
       "vendor/bin/codecept run functional --skip-group pdf"
     ]
-  },
-  "require-dev": {
-    "codeception/codeception": "^2.4",
-    "phpunit/phpunit": "^7"
   }
 }

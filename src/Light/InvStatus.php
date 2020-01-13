@@ -14,7 +14,8 @@ class InvStatus
     // Part Cleared/Cleared
     const PAYMENT_ON_CHEKCING = 24;
     const PAYMENT_CONFIRMED = 23;
-    const PAYMENT_SENT_TO_BANK = 25;
+    const PAYMENT_SENT = 26;
+    const PAYMENT_EXECUTED = 25;
     const PARTCLEARED = 21;
     const CLEARED = 22;
 
@@ -101,7 +102,12 @@ class InvStatus
             'cssClass' => 'invstatus23',
             'Active' => 0
         ],
-        self::PAYMENT_SENT_TO_BANK => [
+        self::PAYMENT_SENT => [
+            'text' => 'Направлено Поручение в Банк',
+            'cssClass' => 'invstatus26',
+            'Active' => 0
+        ],
+        self::PAYMENT_EXECUTED => [
             'text' => 'Поручение Банком исполнено',
             'cssClass' => 'invstatus25',
             'Active' => 0
@@ -198,7 +204,7 @@ class InvStatus
         $title = ' title="' . htmlspecialchars($title) . '"';
 
         if ($status === self::DRAFT) {
-            return "<i class=\"fa fa-question-circle-o $iconColorClass\"$title></i>";
+            return "<i class=\"far fa-question-circle $iconColorClass\"$title></i>";
         }
 
         if ($status === self::OPEN) {
@@ -221,7 +227,11 @@ class InvStatus
             return "<i class=\"$iconColorClass\"$title></i>";
         }
 
-        if ($status === self::PAYMENT_SENT_TO_BANK) {
+        if ($status === self::PAYMENT_SENT) {
+            return "<i class=\"nobr $iconColorClass\"$title><i></i><i></i></i>";
+        }
+
+        if ($status === self::PAYMENT_EXECUTED) {
             return "<i class=\"$iconColorClass\"$title></i>";
         }
 
@@ -229,10 +239,8 @@ class InvStatus
             return "<i class=\"$iconColorClass\"$title></i>";
         }
 
-
-
         if ($status === self::PARTCLEARED) {
-            return "<span class=\"nobr $iconColorClass\"$title><i></i><i></i></span>";
+            return "<span class=\"nobr $iconColorClass\"$title></span>";
         }
 
         if ($status === self::CREDITNOTED) {

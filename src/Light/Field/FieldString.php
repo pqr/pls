@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Field;
 
 class FieldString extends FieldInputAbstract
@@ -7,6 +8,7 @@ class FieldString extends FieldInputAbstract
     {
         parent::initDefaultParams();
         $this->editWidth = 'default';
+        $this->filterOperator = self::FILTER_LIKE;
     }
 
     protected function getHtmlInner($value, array $data, $forTable)
@@ -33,22 +35,22 @@ class FieldString extends FieldInputAbstract
         return $value;
     }
 
-    public function getSqlWhereInner($filterValue)
+    public function getSqlWhereInner($filterValue): string
     {
         $maxLength = (int)$this->editMaxLength;
-        if ($maxLength && mb_strlen($filterValue) === $maxLength) {
+        if (!$this->filterMany && $maxLength && mb_strlen($filterValue) === $maxLength) {
             // Если длина строки совпадает с максимально заданной длиной, используем строгое сравнение
             // Удобно для IATA кодов, например
-            $sqlWhere = "{fieldKey} = '{value}'";
-        } else {
-            //Длина строки не чёткая - сравнение тоже не чёткое
-            $sqlWhere = "{fieldKey} LIKE '%{value}%'";
+            return "{fieldKey} = '{value}'";
         }
 
-        return $sqlWhere;
+        // Длина строки не чёткая
+        // либо для этого поля установлен флаг filterMany (что включает достаточно сложный алгоритм)
+        // тогда используем стандартную схему сравнения описанную в FieldAbstract
+        return parent::getSqlWhereInner($filterValue);
     }
 
-    public static function isEmpty($value): bool
+    public static function empty($value): bool
     {
         return trim($value) === '';
     }

@@ -37,7 +37,7 @@ class ModuleAbstractLog extends Table
     {
         parent::__construct(Request::getModule() . 'Log');
 
-        $this->tableReloadUrl = Link::create(Request::getModule())->params(['logid' => $masterId])->getHref();
+        $this->tableReloadUrl = Link::create(Request::getModule())->log($masterId)->getHref();
         $this->allowFiltersLayoutChange = false;
 
         $this->_moduleId = (int)Db::getOne(

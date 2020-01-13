@@ -9,9 +9,8 @@ use Light\Misc;
 use Light\ModuleBase\Massactions\MassactionCollectPdfs;
 use Light\ModuleBase\Massactions\MassactionDelete;
 use Light\ModuleBase\Massactions\MassactionDownloadAsZip;
-use Light\ModuleBase\Massactions\MassactionMultipleUpdate;
 use Light\ModuleBase\Massactions\MassactionUpload;
-use function Light\reportException;
+use Light\ModuleBase\Massactions\MassUpdate;
 
 /**
  * Этот trait безусловно подключается к ModuleAbstract.
@@ -19,7 +18,7 @@ use function Light\reportException;
  */
 trait MassactionsTrait
 {
-    use MassactionMultipleUpdate, MassactionCollectPdfs, MassactionDelete, MassactionUpload, MassactionDownloadAsZip;
+    use MassactionCollectPdfs, MassactionDelete, MassactionUpload;
 
     protected $massactions = [];
 
@@ -31,22 +30,54 @@ trait MassactionsTrait
     {
     }
 
+    protected function addMassactionMassUpdate()
+    {
+        if ($this->allowEdit) {
+            $this->addMassaction(new MassUpdate($this->_obj));
+        }
+    }
+
+    protected function addMassactionDownloadZip($text = '', array $options = [])
+    {
+        $this->addMassaction(new MassactionDownloadAsZip($text, $options));
+    }
+
     /**
      * @param string $action уникальный ключ этого massaction
      * @param string $text текст отображаемый в выпадающем списке
      * @param string $cssClass класс которым подсветить элемент в выпадающем списке
      * @param string $optgroup
-     * @param string|null $class
      * @param bool $blank открывать при сабмите в новом окне браузера
+     * @param array $options
      */
     protected function addMassaction(
-        string $action,
-        string $text,
+        $action,
+        string $text = '',
         string $cssClass = '',
         string $optgroup = '',
-        string $class = null,
-        bool $blank = false
+        bool $blank = false,
+        array $options = []
     ) {
+        if ($action instanceof MassactionAbstract) {
+            // Особый случай, когда в качестве Massaction передан готовый объект
+            /** @var MassactionAbstract $action */
+            if (!$action->hasAccess()) {
+                return;
+            }
+            $cssClass = $action->cssClass;
+            if ($action->blank) {
+                $cssClass = trim($cssClass . ' massaction-target-blank');
+            }
+            $this->massactions[$action->getKey()] = [
+                'instance' => $action,
+                'text' => $action->text,
+                'cssClass' => $cssClass,
+                'optgroup' => $action->optgroup,
+            ];
+            return;
+        }
+
+
         //Если передан флаг blank, значит нужно откывать новое окно браузера при сабмите massaction
         //Это происходит в js окружении, поэтому нужно как-то передать информацию в js окружение, что данный massaction
         //следует открывать в новом окне. Используем для этого css class
@@ -54,18 +85,11 @@ trait MassactionsTrait
             $cssClass = trim($cssClass . ' massaction-target-blank');
         }
 
-        if (!$class && strpos($action, PROJECT_NAMESPACE . '\\') === 0) {
-            // В качестве имени $action может передаваться fully qualified class name
-            // это удобно для избежания опечаток.
-            // Сохраним указатель на этот класс в свойстве "class"
-            $class = $action;
-        }
-
         $this->massactions[$action] = [
             'text' => $text,
             'cssClass' => $cssClass,
             'optgroup' => $optgroup,
-            'class' => $class,
+            'options' => $options,
         ];
     }
 
@@ -86,23 +110,24 @@ trait MassactionsTrait
 
         // На этот массив наложим банальный SQL WHERE, который проверяет на чтение
         try {
-
-            $accessSqlWhere = $this->getAccessSqlWhere();
-            if ($accessSqlWhere) {
-                $ids = Db::getCol(
-                    "SELECT ID 
+            if (method_exists($this, 'getAccessSqlWhere')) {
+                $accessSqlWhere = $this->getAccessSqlWhere();
+                if ($accessSqlWhere) {
+                    $ids = Db::getCol(
+                        "SELECT ID 
                     FROM {$this->getDbTable()} 
                     WHERE $accessSqlWhere 
                         AND ID IN (@a)"
-                    , $ids
-                );
+                        , $ids
+                    );
+                }
             }
 
             return $ids;
 
         } catch (\Exception $e) {
 
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             return [];
 
         }
@@ -145,11 +170,11 @@ trait MassactionsTrait
             throw new \InvalidArgumentException("Unknown massaction $action");
         }
 
-        $class = $this->massactions[$action]['class'];
-        if ($class) {
+        $actionParams = $this->massactions[$action];
+        if (isset($actionParams['instance'])) {
             // Если внутри Massaction определён какой-то калсс для запуска - инициализируем и запустим его!
             /** @var MassactionAbstract $massactionObj */
-            $massactionObj = new $class;
+            $massactionObj = $actionParams['instance'];
             $massactionObj($ids);
 
         } else {
@@ -161,7 +186,8 @@ trait MassactionsTrait
                 throw new \BadMethodCallException("Unknown function $handler in class " . get_class($this));
             }
 
-            $this->{$handler}($ids);
+            $options = $this->massactions[$action]['options'];
+            $this->{$handler}($ids, $options);
 
         }
     }
