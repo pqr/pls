@@ -3,7 +3,8 @@
 
 namespace Light\ModuleBase;
 
-use Light\Img;
+use Light\Config;
+use Light\Ico;
 use Light\Link;
 use Light\ObjAbstract;
 use Light\SubtableBase\Subtable;
@@ -35,8 +36,11 @@ trait CopyModesTrait
      * @param string|array $fieldsKeys
      * @param string|array $subtables
      */
-    final protected function addCopyMode($name = 'Copy', $fieldsKeys = 'all', $subtables = 'all')
+    final protected function addCopyMode($name = '', $fieldsKeys = 'all', $subtables = 'all')
     {
+        if (!$name) {
+            $name = Config::$lang === 'ru' ? 'Копировать' : 'Copy';
+        }
         $this->copyModes[$name] = ['fieldKeys' => $fieldsKeys, 'subtables' => $subtables];
     }
 
@@ -54,7 +58,7 @@ trait CopyModesTrait
         foreach ($this->copyModes as $name => $_) {
             $link = clone $linkBase;
             $links[] = $link
-                ->innerHtml(Img::iconCopy() . ' ' . $name)
+                ->innerHtml(Ico::copy() . ' ' . $name)
                 ->params(['copymode' => $name]);
         }
 
@@ -119,7 +123,8 @@ trait CopyModesTrait
         }
     }
 
-    protected function getDataForCopySubtable(Subtable $sourceSubtable): array {
+    protected function getDataForCopySubtable(Subtable $sourceSubtable): array
+    {
         // Копируем данные в подтаблицу текущего объекта
         // Метод $sourceSubtable->getData() возвращает массив где ключи - это ID в базе
         // чтобы добавить данные в $subtable нам не нужны ключи в виде ID, нам нужны ключи от 0 до N

@@ -116,7 +116,7 @@ class CitadeleCurrencyLoader extends AutolaunchAbstract
 
         $this->_msgBuff->addHtml($logTable->getHtmlTable());
 
-        $msg = $inserted . ' new currency rate' . Misc::getSSuffix($inserted) . ' added';
+        $msg = $inserted . ' new currency rates added';
         if ($inserted) {
             $this->_msgBuffShort->addSuccess($msg);
         } else {
@@ -125,13 +125,13 @@ class CitadeleCurrencyLoader extends AutolaunchAbstract
 
         if ($updated > 0) {
             $this->_msgBuffShort->addSuccess(
-                $updated . ' currency rate' . Misc::getSSuffix($updated) . ' updated'
+                $updated . ' currency rates updated'
             );
         }
 
         if ($notChanged > 0) {
             $this->_msgBuffShort->addSkipp(
-                $notChanged . ' currency rate' . Misc::getSSuffix($updated) . ' not changed'
+                $notChanged . ' currency rates not changed'
             );
         }
     }

@@ -39,7 +39,7 @@ class File
 
         } catch (\Exception $e) {
 
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             return false;
 
         }
@@ -65,7 +65,7 @@ class File
 
         } catch (\Exception $e) {
 
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             return false;
 
         }
@@ -101,9 +101,11 @@ class File
 
             ApplicationAbstract::onAfterSend(function () use ($tmpDir) {
                 try {
-                    File::fs()->remove($tmpDir);
+                    if (is_dir($tmpDir)) {
+                        File::fs()->remove($tmpDir);
+                    }
                 } catch (\Exception $e) {
-                    reportException($e);
+                    \Light\ErrorHandler::reportException($e);
                 }
             });
 
@@ -111,7 +113,7 @@ class File
 
         } catch (\Exception $e) {
 
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
 
             return '';
         }

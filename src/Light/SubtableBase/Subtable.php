@@ -3,21 +3,24 @@
 namespace Light\SubtableBase;
 
 use Light\ApplicationAbstract;
+use Light\ChangeDetector\ChangeDetector;
 use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
+use Light\Field\FieldColor;
 use Light\Field\FieldFloat;
 use Light\Field\FieldMoney;
 use Light\Field\FieldMoneyWithCurrency;
 use Light\Field\FieldText;
 use Light\FilesFolder;
-use Light\Img;
+use Light\Ico;
 use Light\Misc;
 use Light\Msg;
 use Light\ObjAbstract;
 use Light\Request;
 use Light\Response;
+use Light\SimpleObj;
 use Light\Table;
 use Light\Template;
 use Light\Traits\TableExcelExportable;
@@ -105,10 +108,16 @@ abstract class Subtable extends Table
 
     /**
      * Ассоциативный массив с данными по всем строкам в формате ID => [данные строки]
-     * Он отличается от массива $this->tableData тем, что ключи $this->_data - это ID элементов в базе
+     * Он отличается от массива $this->tableData тем, что ключи $this->subtableData - это ID элементов в базе
      * @var array
      */
     protected $subtableData;
+
+    /**
+     * Заполняется в момент второй загрузки данных (в момент второго вызова loadData() - сохраняется копия оригинальных данных)
+     * @var array
+     */
+    protected $subtableOldData;
 
     /**
      * Дополнительные данные, которые ещё не существую в базе, которые пользователь класса хочет добавить динамически
@@ -155,7 +164,9 @@ abstract class Subtable extends Table
 
         // Для подтаблиц по умолчанию делаем сортировку по возрастанию ID
         // (в TableSortable trait этот параметр строит как 'ID DESC', но для подтаблиц удобнее 'ID ASC')
-        $this->tableDefaultOrderBy = 'ID';
+        if (!$this->tableDefaultOrderBy) {
+            $this->tableDefaultOrderBy = 'ID';
+        }
 
         if (!$this->textAddLink) {
             $this->textAddLink = Config::$lang === 'ru' ? 'Добавить строку' : 'Add Line';
@@ -165,6 +176,11 @@ abstract class Subtable extends Table
         if ($masterModule) {
             $this->_obj->setMasterModuleForDbLog($masterModule);
         }
+
+        if ($this->_obj instanceof SimpleObj) {
+            $masterFieldKey = $this->getMasterFieldKey();
+            $this->_obj->setMasterFieldKey($masterFieldKey);
+        }
     }
 
     /**
@@ -172,14 +188,7 @@ abstract class Subtable extends Table
      */
     protected function getMasterModule()
     {
-        //Массив неймспейсов будет выглять так: <ProjectNamespace>\Module\<ModuleNamespace>\Subtables\ClassName
-        $namespaces = explode('\\', get_class($this));
-        //Имя модуля таким образом находится в элементе с индексом 2
-        if (isset($namespaces[2])) {
-            return $namespaces[2];
-        }
-
-        return '';
+        return Misc::getModule($this);
     }
 
     /**
@@ -189,6 +198,11 @@ abstract class Subtable extends Table
     public function setMasterObj(ObjAbstract $masterObj)
     {
         $this->_masterObj = $masterObj;
+    }
+
+    public function getMasterObj(): ObjAbstract
+    {
+        return $this->_masterObj;
     }
 
     protected function adjustFieldsWidth()
@@ -278,14 +292,18 @@ abstract class Subtable extends Table
 
         //Существует два массива с ключами полей, которые нужно добавить в мастер-модуль
         $arrays = ['Groupconcat' => $this->groupconcatFieldKeys, 'Cache' => $this->_cacheFieldsKeys];
-        foreach ($arrays as $type => $fieldKeys) {
+        foreach ($arrays as $groupconcatOrCache => $fieldKeys) {
             /** @var array $fieldKeys */
             foreach ($fieldKeys as $fieldKey) {
                 if ($this->hasField($fieldKey)) {
 
                     $field = $this->getField($fieldKey);
                     //Новый ключ будет начинаться либо с Cache, либо с Groupconcat (переменная $fieldsType)
-                    $newKey = $this->getCacheFieldKey($type, $field->key);
+                    $newKey = $this->getCacheFieldKey($groupconcatOrCache, $field->key, F::MODE_LIST);
+
+                    if (!$newKey) {
+                        continue;
+                    }
 
                     /** @var $newField \Light\Field\FieldAbstract */
                     $newField = $field->getClone($newKey);
@@ -338,7 +356,7 @@ abstract class Subtable extends Table
                     );
 
                     //Для Groupconcat полей нужно обязательно добавить sqlSelect параметр!
-                    if ($type === 'Groupconcat') {
+                    if ($groupconcatOrCache === 'Groupconcat') {
                         $sqlSelect = "SELECT GROUP_CONCAT(";
                         if ($this->_cacheOnlyUniqueValues) {
                             $sqlSelect .= "DISTINCT ";
@@ -368,20 +386,12 @@ abstract class Subtable extends Table
     /**
      * @return string внешний ключ связывающий с мастер-объектом
      */
-    protected function getMasterFieldKey()
+    protected function getMasterFieldKey(): string
     {
-        if ($this->_masterFieldKey === null) {
-            //<projectNamespace>\Module\<moduleNamespace>\Sutables\<subtableClass>
-            $class = get_class($this);
-            $class = explode('\\', $class);
-            $masterModule = $class[2];
-            $this->_masterFieldKey = $masterModule . 'ID';
-        }
-
-        return $this->_masterFieldKey;
+        return $this->getMasterModule() . 'ID';
     }
 
-    protected function getMasterFieldValue()
+    protected function getMasterFieldValue(): int
     {
         return $this->_masterObj->getId();
     }
@@ -423,7 +433,19 @@ abstract class Subtable extends Table
 
     public function loadData()
     {
+        if ($this->subtableData !== null && $this->subtableOldData === null) {
+            // Данные ранее уже загружались но только один один раз (т.к. массив oldData ещё пуст)
+            // В этом случае наполним массив oldData начальными данными
+            $this->subtableOldData = $this->subtableData;
+        }
+
         $this->subtableData = [];
+
+        if (!$this->_masterObj->getId()) {
+            // Если мастер объект сам по себе ещё не сохранён в базе, у нас нет masterId, по которому можно было бы
+            // загрузить данные подтаблицы
+            return;
+        }
 
         $query = $this->getDataQuery();
         $data = Db::getAll($query);
@@ -431,33 +453,40 @@ abstract class Subtable extends Table
             $id = $row['ID'];
             $this->subtableData[$id] = $row;
         }
+    }
 
-        if ($this->_state == self::STATE_VIEW && $data && $this->folders && $this->folderModule) {
+    public function initFolderStatuses()
+    {
+        if ($this->subtableData && $this->folders && $this->folderModule) {
             // Загрузим специальный массив с закешированным состоянием непустых папок
-            $folderIds = array_filter(array_column($data, $this->folderIdFieldKey));
+            $folderIds = array_filter(array_column($this->subtableData, $this->folderIdFieldKey));
             if ($folderIds) {
                 FilesFolder::loadFoldersStatus($this->folderModule, $folderIds);
             }
         }
-
-        //Скопируем все данные в таблицу
-        //Массив $this->_data в качестве ключей имеет ID записей в базе
-        //Массив $this->tableData специально приводим к виду последовательно пронумерованного
-        $this->updateTableDataFromSubtableData();
     }
 
-    private function updateTableDataFromSubtableData()
+    /**
+     * Копирует данные из внутреннего массива $this->subtableData в $this->tableData
+     * при этом ключи в $this->tableData идут по порядку от 0
+     * Также в конец $this->tableData добавляются данные из массива $this->subtableDataAdditional
+     *
+     * Этот метод вызывается только в тех случаях, когда реально нужно отобразить подтаблицу (в режиме Vie/Edit/Excel)
+     */
+    public function copySubtableDataToTableData()
     {
-        //Скопируем все данные в таблицу
-        //Массив $this->_data в качестве ключей имеет ID записей в базе
-        //Массив $this->tableData специально приводим к виду последовательно пронумерованного
-        $this->tableData = array_values($this->subtableData);
+        if ($this->subtableData) {
+            $this->tableData = array_values($this->subtableData);
+        } else {
+            $this->tableData = [];
+        }
+
         if (is_array($this->subtableDataAdditional)) {
             $this->tableData = array_merge($this->tableData, array_values($this->subtableDataAdditional));
         }
     }
 
-    public function getDataCount()
+    public function getSubtableDataCount()
     {
         if ($this->subtableData === null) {
             $this->loadData();
@@ -472,7 +501,6 @@ abstract class Subtable extends Table
     public function setSubtableData(array $data)
     {
         $this->subtableData = $data;
-        $this->updateTableDataFromSubtableData();
     }
 
     public function getSubtableData()
@@ -483,11 +511,23 @@ abstract class Subtable extends Table
         return $this->subtableData;
     }
 
+    public function hasSubtableOldData(): bool
+    {
+        return $this->subtableOldData !== null;
+    }
+
+    public function getSubtableOldData(): array
+    {
+        return $this->subtableOldData ?? [];
+    }
+
     protected function getHtmlTableCell(array $rowDataCalculated, int $rowNum, F $field, array $fullLinkParams): string
     {
         if ($this->isStateEdit()
-            && ($field->hasMode(F::MODE_EDIT) && $field->checkEditAccessFunction($rowDataCalculated)
-                || $field->getType() === 'Color')
+            && (
+                ($field->hasMode(F::MODE_EDIT) && $field->checkEditAccessFunction($rowDataCalculated))
+                || $field instanceof FieldColor
+            )
         ) {
             $value = $rowDataCalculated[$field->key] ?? '';
             return (string)$this->getHtmlInput($field, $rowNum, $value, $rowDataCalculated);
@@ -532,8 +572,6 @@ abstract class Subtable extends Table
 
     protected function getHtmlTableTrTotal(array $allFields, array $dataCalculated)
     {
-
-
         $outHtml = parent::getHtmlTableTrTotal($allFields, $dataCalculated);
         return str_replace('tr class="total"', 'tr class="total" id="' . $this->getTableName() . '-subtable-tr-total"',
             $outHtml);
@@ -667,7 +705,7 @@ abstract class Subtable extends Table
             'modes' => F::MODE_READONLY,
             'tableWidthHtml' => 20,
             'tableOrderBy' => '',
-            'tableAlign' => 'center'
+            'tableAlign' => 'center',
         ];
 
         if ($this->allowDelete && $this->isStateEdit()) {
@@ -730,12 +768,12 @@ abstract class Subtable extends Table
 
     private function getHtmlSortable()
     {
-        return '<span class="subtable-sort-link">' . Img::icon('fa-bars') . '</span>';
+        return '<span class="subtable-sort-link">' . Ico::i('fa-bars') . '</span>';
     }
 
     private function getHtmlCopy()
     {
-        return '<a href="#" class="subtable-copy-link">' . Img::icon('fa-copy') . '</a>';
+        return '<a href="#" class="subtable-copy-link">' . Ico::copy() . '</a>';
     }
 
     /**
@@ -768,7 +806,6 @@ abstract class Subtable extends Table
         $this->subtableLayoutView = $fieldsKeysString;
     }
 
-
     public function setEditLayout($fieldsKeysString)
     {
         $this->subtableLayoutEdit = $fieldsKeysString;
@@ -776,17 +813,18 @@ abstract class Subtable extends Table
 
     protected function initEditLayout()
     {
-        //В режиме редактирования необходимо зафиксировать набор полей, вне зависимости от текущих настроек пользователя Table Layout Settins
+        // В режиме редактирования необходимо зафиксировать набор полей,
+        // вне зависимости от текущих настроек пользователя Table Layout Settins
         if (!$this->subtableLayoutEdit) {
-            //Если в конструкторе этот набор полей не был определён, выведем в таблицу все возможные поля
-            //Для начала получим имена всех полей, которые могут выводиться в таблицу
+            // Если в конструкторе этот набор полей не был определён, выведем в таблицу все возможные поля
+            // Для начала получим имена всех полей, которые могут выводиться в таблицу
             $this->subtableLayoutEdit = $this->getAllFieldsLayout(F::MODE_VIEW);
         }
 
         $this->setTableFieldsShow($this->subtableLayoutEdit);
     }
 
-    public function getHtmlView()
+    public function getHtmlView($adjustFieldsWidth = true)
     {
         $this->_state = self::STATE_VIEW;
 
@@ -796,10 +834,15 @@ abstract class Subtable extends Table
         $this->initSortable();
         $this->initViewLayout();
 
-        // Автоматически подгоняет ширину полей в зависимости от типа
-        $this->adjustFieldsWidth();
+        if ($adjustFieldsWidth) {
+            // Автоматически подгоняет ширину полей в зависимости от типа
+            $this->adjustFieldsWidth();
+        }
 
         $this->loadData();
+
+        $this->initFolderStatuses();
+        $this->copySubtableDataToTableData();
 
         return '<div class="subtable-div" data-subtablename="' . htmlspecialchars($this->getTableName()) . '">'
             . $this->getHtmlTable()
@@ -821,6 +864,7 @@ abstract class Subtable extends Table
         $this->initSortable();
         $this->initViewLayout();
         $this->loadData();
+        $this->copySubtableDataToTableData();
         $this->sendExcel();
     }
 
@@ -841,6 +885,9 @@ abstract class Subtable extends Table
         $this->adjustFieldsWidth();
 
         $this->loadData();
+
+        $this->initFolderStatuses();
+        $this->copySubtableDataToTableData();
 
         //Сформируем массив из ID строк, его нужно записать в input hidden name="<subtablename>[ids]"
         $ids = [];
@@ -884,7 +931,7 @@ abstract class Subtable extends Table
             'allowPaste' => $this->allowPaste,
             'textAddLink' => $this->textAddLink,
             'fieldsJson' => json_encode($this->getJsFieldsArray()),
-            'orderManual' => $this->allowOrderManual
+            'orderManual' => $this->allowOrderManual,
         ];
 
         return $tdata;
@@ -936,6 +983,8 @@ abstract class Subtable extends Table
         }
 
         $this->loadData();
+        $this->copySubtableDataToTableData();
+
         $oldData = $this->subtableData;
 
         if (!$this->_obj->getMasterIdForDbLog()) {
@@ -949,7 +998,7 @@ abstract class Subtable extends Table
                 $id = $this->getRowIdFromPost($rowNum, $dataFromRequest);
                 if ($id && isset($this->subtableData[$id])) {
                     // Если ID существует среди текущих данных, удалим объект
-                    $this->proceedDeleteRow($id);
+                    $this->proceedDeleteRow($id, $msgBuff);
                     // Удалим непосредсвенно из массива Data
                     unset($this->subtableData[$id]);
                 }
@@ -962,7 +1011,7 @@ abstract class Subtable extends Table
         foreach ($notDeletedDataFromReqeust as $notDeletedData) {
             $id = (int)$notDeletedData['ID'];
             $rowDataFromRequest = $notDeletedData['fieldsData'];
-            $affectedRows += $this->proceedSubmitRow($id, $rowDataFromRequest);
+            $affectedRows += $this->proceedSubmitRow($id, $rowDataFromRequest, $msgBuff);
         }
 
         //Загружаем сохранённые данные
@@ -986,11 +1035,12 @@ abstract class Subtable extends Table
 
     /**
      * @param int $id - может быть 0, если это новая строка
-     * @param $rowDataFromRequest
+     * @param array $rowDataFromRequest
+     * @param Msg $msgBuff
      * @return int
      * @throws \Exception
      */
-    protected function proceedSubmitRow(int $id, array $rowDataFromRequest)
+    protected function proceedSubmitRow(int $id, array $rowDataFromRequest, Msg $msgBuff)
     {
         $obj = clone $this->_obj;
 
@@ -1009,14 +1059,17 @@ abstract class Subtable extends Table
 
         if ($obj->getId()) {
             // Если объект загрузился из базы успешно, значит обновим
-            return $obj->updateDb($fieldsData, 'Updated in subtable');
+            $affectedRows = $obj->updateDb($fieldsData, 'Updated in subtable');
+        } else {
+            // Если же в базе не было такого объекта, то вставим новый
+            $obj->insertDb($fieldsData, 'in subtable');
+            $affectedRows = 1;
         }
 
-        // Если же в базе не было такого объекта, то вставим новый
-        $obj->insertDb($fieldsData, 'in subtable');
+        $obj->afterSubmit($msgBuff);
 
         // Возвращаем affected rows
-        return 1;
+        return $affectedRows;
     }
 
     /**
@@ -1032,8 +1085,7 @@ abstract class Subtable extends Table
         $affectedRows,
         array $oldData,
         Msg $msgBuff
-    )
-    {
+    ) {
     }
 
     //Кеширующая переменная
@@ -1049,7 +1101,7 @@ abstract class Subtable extends Table
             $this->_delRows = [];
             //сожержит номера строк через запятую, которые были удалены
             if (isset($dataFromRequest['delrows']) && $dataFromRequest['delrows'] !== '') {
-                $delRowsIds = explode(',', $dataFromRequest['delrows']);
+                $delRowsIds = array_values(array_map('intval', explode(',', $dataFromRequest['delrows'])));
                 $this->_delRows = array_combine($delRowsIds, $delRowsIds);
             }
         }
@@ -1078,11 +1130,10 @@ abstract class Subtable extends Table
             /* специальное скрытое поле содержит ID всех элементов через запятую в порядке следования строк
             в HTML таблице. Если разделить эту строку через запятые, получим массив <строка в таблице> => <ID в базе>
             Новые строки, которые добавляются в HTML таблицу через JS будут отображены в конце с нулевым ID */
-            $ids = $dataFromRequest['ids'];
-            if ($ids !== '') {
-                $this->_rowsIds = explode(',', $ids);
-            } else {
+            if ($dataFromRequest['ids'] === '') {
                 $this->_rowsIds = [];
+            } else {
+                $this->_rowsIds = array_values(array_map('intval', explode(',', $dataFromRequest['ids'])));
             }
         }
         return $this->_rowsIds;
@@ -1100,6 +1151,7 @@ abstract class Subtable extends Table
         $obj->setId($id);
         if ($obj->loadData()) {
             $obj->deleteDb('from subtable');
+            $obj->afterDelete(new Msg());
         }
     }
 
@@ -1112,9 +1164,14 @@ abstract class Subtable extends Table
         $this->subtableData = [];
     }
 
+    public function getDataFromPost(): ?array
+    {
+        return $_POST[$this->getTableName() . 'Subtable'] ?? null;
+    }
+
     public function getNotDeletedDataFromReqeust(array $dataFromRequest = null)
     {
-        $dataFromRequest = $dataFromRequest ?? $_POST[$this->getTableName() . 'Subtable'] ?? null;
+        $dataFromRequest = $dataFromRequest ?? $this->getDataFromPost();
         if (!$dataFromRequest) {
             return [];
         }
@@ -1133,7 +1190,7 @@ abstract class Subtable extends Table
             $notDeletedData[] = [
                 'ID' => $id,
                 'fieldsData' => $this->getRowDataFromPost($rowNum, $dataFromRequest),
-                'rowNum' => $rowNum
+                'rowNum' => $rowNum,
             ];
         }
 
@@ -1162,7 +1219,11 @@ abstract class Subtable extends Table
         foreach ($this->_cacheFieldsKeys as $fieldKey) {
 
             //Имя поля в мастер-таблице имеет префикс 'Cache' . $this->getTableName()
-            $cacheFieldKey = $this->getCacheFieldKey('Cache', $fieldKey);
+            $cacheFieldKey = $this->getCacheFieldKey('Cache', $fieldKey, F::MODE_SUBMIT);
+
+            if (!$cacheFieldKey) {
+                continue;
+            }
 
             if (count($this->subtableData)) {
                 $values = [];
@@ -1196,7 +1257,7 @@ abstract class Subtable extends Table
         }
     }
 
-    protected function getCacheFieldKey($prefix, $fieldKey)
+    protected function getCacheFieldKey($prefix, $fieldKey, $fieldMode = null)
     {
         return $prefix . $this->getTableName() . $fieldKey;
     }
@@ -1218,18 +1279,58 @@ abstract class Subtable extends Table
         //Автоматически подгоняет ширину полей в зависимости от типа
         $this->adjustFieldsWidth();
 
+        if (isset($_GET['renderRowForAjax']) && $_GET['renderRowForAjax'] === $this->getTableName()) {
+            // Рендерим одну строку при изменении какого-то поля по ajax
+            $this->proceedRenderRowForAjax();
+            return;
+        }
+
         $this->loadData();
+        $this->initFolderStatuses();
+        $this->copySubtableDataToTableData();
 
         print $this->getHtmlTableForAjax();
         ApplicationAbstract::terminate();
     }
 
+    public function proceedRenderRowForAjax()
+    {
+        $id = (int)$_GET['rowId'];
+        if (!$id) {
+            Response::abort(400);
+            return;
+        }
+
+        $this->subtableData = [];
+
+        $query = $this->getDataQuery();
+        $data = Db::getAll($query);
+        $foundRow = null;
+        foreach ($data as $row) {
+            if ($row['ID'] == $id) {
+                $foundRow = $row;
+                break;
+            }
+        }
+        if (!$foundRow) {
+            Response::abort(404);
+            return;
+        }
+
+        $this->subtableData[$id] = $foundRow;
+        $this->initFolderStatuses();
+        $this->copySubtableDataToTableData();
+
+        print $this->getHtmlTableTrForAjax();
+    }
+
     /**
      * Изменение поля через ajax
+     * @param Msg $msgBuff
      * @return int affectedRows
      * @throws \Exception
      */
-    public function proceedChangeField(): int
+    public function proceedChangeField(Msg $msgBuff): int
     {
         $fieldKey = $_REQUEST['fieldKey'];
         $field = $this->_obj->getFieldset()->getField($fieldKey);
@@ -1269,7 +1370,10 @@ abstract class Subtable extends Table
         }
 
         $this->_obj->setMasterIdForDbLog($this->_masterObj->getId());
+
         $affectedRows = $this->_obj->updateDb([$fieldKey => $normilizedValue]);
+
+        $this->_obj->afterSubmit($msgBuff);
 
         // Если определена мастер-таблица в которой нужно обновить некоторые кешируюище поля и определны эти поля - обновим кеш!
         if ($this->_cacheFieldsKeys && in_array($fieldKey, $this->_cacheFieldsKeys)) {
@@ -1326,5 +1430,238 @@ abstract class Subtable extends Table
         }
 
         return $html;
+    }
+
+    /**
+     * Возвращает true, если объект был только что создан (insertDb()) или в процессе updateDb() изменилось значение
+     * этого поля
+     * @param int $id
+     * @param string $fieldKey
+     * @return bool
+     */
+    public function isChanged(int $id, string $fieldKey): bool
+    {
+        if ($this->subtableOldData === null) {
+            // Подтаблица загружалась всего один раз - значит никаких изменений и не было
+            // (не было submit)
+            return false;
+        }
+
+        $newRowData = $this->subtableData[$id] ?? [];
+        $oldRowData = $this->subtableOldData[$id] ?? [];
+        return ChangeDetector::isChanged($fieldKey, $newRowData, $oldRowData);
+    }
+
+    public function isChangedTo(int $id, string $fieldKey, $expectedValue): bool
+    {
+        if ($this->subtableOldData === null) {
+            // Подтаблица загружалась всего один раз - значит никаких изменений и не было
+            // (не было submit)
+            return false;
+        }
+
+        $newRowData = $this->subtableData[$id] ?? [];
+        $oldRowData = $this->subtableOldData[$id] ?? [];
+        return ChangeDetector::isChangedTo($fieldKey, $newRowData, $oldRowData, $expectedValue);
+    }
+
+    public function isChangedFrom(int $id, string $fieldKey, $expectedOldValue): bool
+    {
+        if ($this->subtableOldData === null) {
+            // Подтаблица загружалась всего один раз - значит никаких изменений и не было
+            // (не было submit)
+            return false;
+        }
+
+        $newRowData = $this->subtableData[$id] ?? [];
+        $oldRowData = $this->subtableOldData[$id] ?? [];
+        return ChangeDetector::isChangedFrom($fieldKey, $newRowData, $oldRowData, $expectedOldValue);
+    }
+
+    public function isChangedToInSomeRow(string $fieldKey, $expectedValue): bool
+    {
+        if ($this->subtableOldData === null) {
+            // Подтаблица загружалась всего один раз - значит никаких изменений и не было
+            // (не было submit)
+            return false;
+        }
+
+        foreach ($this->subtableData as $id => $newRowData) {
+            $oldRowData = $this->subtableOldData[$id] ?? [];
+            $isChanged = ChangeDetector::isChangedTo($fieldKey, $newRowData, $oldRowData, $expectedValue);
+            if ($isChanged) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function isChangedFromInSomeRow(string $fieldKey, $expectedOldValue): bool
+    {
+        if ($this->subtableOldData === null) {
+            // Подтаблица загружалась всего один раз - значит никаких изменений и не было
+            // (не было submit)
+            return false;
+        }
+
+        foreach ($this->subtableData as $id => $newRowData) {
+            $oldRowData = $this->subtableOldData[$id] ?? [];
+            $isChanged = ChangeDetector::isChangedFrom($fieldKey, $newRowData, $oldRowData, $expectedOldValue);
+            if ($isChanged) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function isJustInserted(int $id): bool
+    {
+        if ($this->subtableOldData === null) {
+            // Подтаблица загружалась всего один раз - значит никаких изменений и не было
+            // (не было submit)
+            return false;
+        }
+
+        return isset($this->subtableData[$id]) && !isset($this->subtableOldData[$id]);
+    }
+
+    /**
+     * Возвращает true, если поле было изменено в процессе updateDb()
+     * Но при вставке нового объекта через insertDb() этот метод всегда будет возвращать false
+     * @param int $id
+     * @param string $fieldKey
+     * @return bool
+     */
+    public function isUpdated(int $id, string $fieldKey): bool
+    {
+        if ($this->subtableOldData === null) {
+            // Подтаблица загружалась всего один раз - значит никаких изменений и не было
+            // (не было submit)
+            return false;
+        }
+
+        if ($this->isJustInserted($id)) {
+            return false;
+        }
+
+        return $this->isChanged($id, $fieldKey);
+    }
+
+    /**
+     * Возвращает true, если поле изменило своё значение с пустого на заполненное
+     * @param int $id
+     * @param string $fieldKey
+     * @return bool
+     */
+    public function isFilled(int $id, string $fieldKey): bool
+    {
+        if ($this->subtableOldData === null) {
+            // Подтаблица загружалась всего один раз - значит никаких изменений и не было
+            // (не было submit)
+            return false;
+        }
+
+        if (!$this->hasField($fieldKey)) {
+            // Пользователь ошибся в имени поля
+            return false;
+        }
+
+        // Методу isFilled требуется объект самого поля, чтобы применить функцию $field::empty(...)
+        $field = $this->getField($fieldKey);
+
+        $newRowData = $this->subtableData[$id] ?? [];
+        $oldRowData = $this->subtableOldData[$id] ?? [];
+
+        return ChangeDetector::isFilled($fieldKey, $newRowData, $oldRowData, $field);
+    }
+
+    /**
+     * Возвращает true, если поле изменило своё значение с заполненного на пустое
+     * @param int $id
+     * @param string $fieldKey
+     * @return bool
+     */
+    public function isCleared(int $id, string $fieldKey): bool
+    {
+        if ($this->subtableOldData === null) {
+            // Подтаблица загружалась всего один раз - значит никаких изменений и не было
+            // (не было submit)
+            return false;
+        }
+
+        if (!$this->hasField($fieldKey)) {
+            // Пользователь ошибся в имени поля
+            return false;
+        }
+
+        // Методу isFilled требуется объект самого поля, чтобы применить функцию $field::empty(...)
+        $field = $this->getField($fieldKey);
+
+        $newRowData = $this->subtableData[$id] ?? [];
+        $oldRowData = $this->subtableOldData[$id] ?? [];
+
+        return ChangeDetector::isCleared($fieldKey, $newRowData, $oldRowData, $field);
+    }
+
+    /**
+     * @param int $id
+     * @param string $fieldKey
+     * @return bool
+     */
+    public function isFieldEmpty(int $id, string $fieldKey): bool
+    {
+        if (!$this->hasField($fieldKey)) {
+            return true;
+        }
+
+        $rowData = $this->subtableData[$id] ?? [];
+        if (!array_key_exists($fieldKey, $this->subtableData)) {
+            return false;
+        }
+
+        $field = $this->getField($fieldKey);
+        return $field::empty($rowData[$fieldKey]);
+    }
+
+    public function getFieldValue(int $id, string $fieldKey)
+    {
+        return $this->subtableData[$id][$fieldKey] ?? null;
+    }
+
+    public function getOldFieldValue(int $id, string $fieldKey)
+    {
+        return $this->subtableOldData[$id][$fieldKey] ?? null;
+    }
+
+    public function hasInsertedRows(): bool
+    {
+        if ($this->subtableOldData === null) {
+            // Подтаблица загружалась всего один раз - значит никаких изменений и не было
+            // (не было submit)
+            return false;
+        }
+
+        $ids = array_keys($this->subtableData);
+        $oldIds = array_keys($this->subtableOldData);
+
+        // Если есть какие-то id, которых не было раньше - значит были вставлены новые строки
+        return (bool)array_diff($ids, $oldIds);
+    }
+
+    public function hasDeletedRows(): bool
+    {
+        if ($this->subtableOldData === null) {
+            // Подтаблица загружалась всего один раз - значит никаких изменений и не было
+            // (не было submit)
+            return false;
+        }
+
+        $ids = array_keys($this->subtableData);
+        $oldIds = array_keys($this->subtableOldData);
+
+        // Если среди старых строк есть какие-то id, которых нет сейчас - значит некоторые строки были удалены
+        return (bool)array_diff($oldIds, $ids);
     }
 }

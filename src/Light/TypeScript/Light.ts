@@ -1,5 +1,6 @@
 import * as _ from "lodash";
-import { initSelect2 } from "./Select2";
+import {initSelect2} from "./Select2";
+import {initChoices} from "./Choices";
 
 declare var window: any;
 
@@ -32,7 +33,7 @@ export function getLang() {
 export const isLangRu = window["_lightLang"] === "ru";
 
 function initSelectChild($root: JQuery) {
-    $root.find("select.select-child").each(function(this: HTMLSelectElement) {
+    $root.find("select.select-child").each(function (this: HTMLSelectElement) {
         const $child = $(this);
         const initChildValue = <string>$child.val();
         const childFieldKey = $child.attr("data-ownfieldkey")!;
@@ -52,10 +53,10 @@ function initSelectChild($root: JQuery) {
         );
 
         // элемент от которого зависит данный select должен находиться в той же форме
-        let $form = $child.closest("form");
+        let $form = $child.closest("form") as JQuery<HTMLElement>;
         if ($form.length === 0) {
             // Форма не найдена, тогда поиск будем делать в body
-            $form = $(document.body);
+            $form = $(document.body) as JQuery<HTMLElement>;
         }
 
         // В самом начале загрузки страницы добавить в массив relations ещё один объект - объект содержащий текущие
@@ -68,7 +69,7 @@ function initSelectChild($root: JQuery) {
         );
         relations.push(additionalRelation);
 
-        const onParentChange = function(initialRender: boolean) {
+        const onParentChange = function (initialRender: boolean) {
             const lastChildValue = <string>$child.val();
 
             // Узнаем значения всех родительских полей
@@ -92,8 +93,8 @@ function initSelectChild($root: JQuery) {
                 // Если попали в этот else, значит в каком-то parent что-то выбрно - нужно отобразить не все возможные
                 // значения, а лишь некоторые
                 const validOptionValues = _(relations)
-                    // Теперь отфильтруем из массива relations только те кортежи, в которых значения для родительских элементов
-                    // удовлетворяют значениям parentValues
+                // Теперь отфильтруем из массива relations только те кортежи, в которых значения для родительских элементов
+                // удовлетворяют значениям parentValues
                     .filter(parentValues)
                     // Из полученного массива (сосотящего из объектов) выберем только колонку со значением
                     // для текущего поля
@@ -104,7 +105,7 @@ function initSelectChild($root: JQuery) {
                 // Заполним его исходными элементами
                 $tmp.html(childOriginalHtml);
                 // Пройдём по всем option внутри клона и удалим ненужные
-                $("option", $tmp).each(function(this: HTMLOptionElement) {
+                $("option", $tmp).each(function (this: HTMLOptionElement) {
                     if (
                         this.value !== "%" &&
                         this.value !== "" &&
@@ -164,7 +165,7 @@ function initSelectChild($root: JQuery) {
 let sortablejsLoaded = false;
 
 export function loadSortableJs() {
-    return new Promise(function(resolve) {
+    return new Promise(function (resolve) {
         if (sortablejsLoaded) {
             // Если Sortable.min.js уже был загружен, то мгновенно резолвим промис и выходим
             resolve();
@@ -201,15 +202,15 @@ function rerenderTabsIndicator($root: JQuery) {
     $root
         .find("ul.tabs")
         .not(".nojs")
-        .each(function(this: HTMLUListElement) {
+        .each(function (this: HTMLUListElement) {
             const $ul = $(this);
             const activeHash = "#" + $ul.attr("data-active");
 
             // Анимируем индикатор
-            const { left, width, backgroundColor } = calcTabsIndicatorCss($ul.find(`a[href="${activeHash}"]`));
+            const {left, width, backgroundColor} = calcTabsIndicatorCss($ul.find(`a[href="${activeHash}"]`));
             $ul.children(".indicator")
-                .css({ backgroundColor })
-                .animate({ left, width });
+                .css({backgroundColor})
+                .animate({left, width});
         });
 }
 
@@ -217,7 +218,7 @@ function initTabs($root: JQuery) {
     $root
         .find("ul.tabs")
         .not(".nojs")
-        .each(function(this: HTMLUListElement) {
+        .each(function (this: HTMLUListElement) {
             const $ul = $(this);
             let activeHash: string;
 
@@ -251,7 +252,7 @@ function initTabs($root: JQuery) {
                 }
 
                 // Всем слоям присавиваем свойство minHeight равное максимально найденной высоте
-                $div.css({ minHeight: maxHeight });
+                $div.css({minHeight: maxHeight});
             });
 
             // Создадим плавающий индикатор под табами
@@ -259,7 +260,7 @@ function initTabs($root: JQuery) {
                 .appendTo($ul)
                 .css(<JQuery.PlainObject>calcTabsIndicatorCss($ul.find(`a[href="${activeHash}"]`)));
 
-            $ul.on("click", "a", function(this: HTMLAnchorElement, e: any) {
+            $ul.on("click", "a", function (this: HTMLAnchorElement, e: any) {
                 e.preventDefault();
                 const $a = $(this);
 
@@ -270,8 +271,8 @@ function initTabs($root: JQuery) {
                 $currentDiv.show();
 
                 // Анимируем индикатор
-                const { left, width, backgroundColor } = calcTabsIndicatorCss($a);
-                $indicator.css({ backgroundColor }).animate({ left, width });
+                const {left, width, backgroundColor} = calcTabsIndicatorCss($a);
+                $indicator.css({backgroundColor}).animate({left, width});
 
                 $ul.trigger("tabs:activate", activeHash);
 
@@ -305,7 +306,7 @@ export function showFlashMessagess(messagess: Array<{ type: string; msg: string 
             .append(
                 messagess
                     .map(
-                        ({ type, msg }) => `<div class="alert alert-${type === "error" ? "danger" : type}">${msg}</div>`
+                        ({type, msg}) => `<div class="alert alert-${type === "error" ? "danger" : type}">${msg}</div>`
                     )
                     .join("")
             )
@@ -329,7 +330,7 @@ export function toast(type: string, msg: string): void {
     // Create toast
     const $toast = $("<div></div>")
         .addClass("toast alert-" + type)
-        .css({ top: "35px", opacity: 0 })
+        .css({top: "35px", opacity: 0})
         .html(msg)
         .appendTo($toastContainer)
         .animate({
@@ -338,7 +339,7 @@ export function toast(type: string, msg: string): void {
         });
 
     setTimeout(() => {
-        $toast.animate({ marginTop: "-40px", opacity: 0 }, 400, () => $toast.remove());
+        $toast.animate({marginTop: "-40px", opacity: 0}, 400, () => $toast.remove());
     }, 4000);
 }
 
@@ -440,11 +441,27 @@ $(document)
 //Навесим стандартные делегаты на весь документ
 const $body = $(document.body);
 
-$body.on("focus", "input[type=text].input-date:not(.hasDatepicker)", function(this: HTMLInputElement) {
-    $(this).datepicker();
+$body.on("focus", "input[type=text].input-date:not(.hasDatepicker)", function (this: HTMLInputElement) {
+    const $input = $(this);
+    const options: any = {
+        beforeShow: function () {
+            if (document.body.style.overflow === "hidden") {
+                // https://github.com/fengyuanchen/datepicker/issues/121#issuecomment-390213418
+                // Применяем фикс прыгающего виджета выбора даты в диалоговых окнах
+                setTimeout(function () {
+                    console.log('tix');
+                    $('#ui-datepicker-div').css({
+                        'top': $input.offset()!.top - $(window).scrollTop()! + $input.height()! + 8
+                    });
+                });
+            }
+        }
+    };
+    $input.datepicker(options);
+
 });
 
-$body.on("change", "input[type=date]", function(this: HTMLInputElement) {
+$body.on("change", "input[type=date]", function (this: HTMLInputElement) {
     $(this).toggleClass("empty-date", this.value === "");
 });
 
@@ -457,7 +474,7 @@ $body.on("change", "input[type=date]", function(this: HTMLInputElement) {
  * @param {JQuery} $root
  */
 function fallbackInputTypeDate($root: JQuery) {
-    $root.find("input[type=date]").each(function(this: HTMLInputElement) {
+    $root.find("input[type=date]").each(function (this: HTMLInputElement) {
         if (this.type !== "date") {
             this.setAttribute("type", "text");
             if (this.value !== "") {
@@ -469,7 +486,15 @@ function fallbackInputTypeDate($root: JQuery) {
     });
 }
 
-$body.on("focus", "input[type=text].input-datetime:not(.hasDatepicker)", function(this: HTMLInputElement) {
+export function initInputMask($root: JQuery) {
+    if ($root.is("input[data-inputmask]")) {
+        $root.inputmask();
+    } else {
+        $root.find("input[data-inputmask]").inputmask();
+    }
+}
+
+$body.on("focus", "input[type=text].input-datetime:not(.hasDatepicker)", function (this: HTMLInputElement) {
     const $input = $(this);
     ($input as any).datetimepicker({
         timepickerHrs: true,
@@ -485,12 +510,12 @@ $body.on("focus", "input[type=text].input-datetime:not(.hasDatepicker)", functio
 });
 
 // Проверим, есть ли в документе элементы SelectAddNew
-$body.on("change keyup", "select.select-addnew", function(this: HTMLSelectElement) {
+$body.on("change keyup", "select.select-addnew", function (this: HTMLSelectElement) {
     $("#" + this.id + "New").toggleClass("display-none", this.value !== "+");
 });
 
 // Логируем все клики по ссылкам mailto: чтобы собрать статистику, какие ссылки реально используются
-$body.on("click", "a[href^='mailto:']", function(this: HTMLAnchorElement) {
+$body.on("click", "a[href^='mailto:']", function (this: HTMLAnchorElement) {
     $.post("?a=Core&ps=Metric", {
         ActionType: "mailto",
         TimeMs: 0,
@@ -498,7 +523,7 @@ $body.on("click", "a[href^='mailto:']", function(this: HTMLAnchorElement) {
     });
 });
 
-$body.on("keypress", "input.input-int", function(this: HTMLInputElement, e: any) {
+$body.on("keypress", "input.input-int", function (this: HTMLInputElement, e: any) {
     const code = e.which;
     //Опием разрешенные зачения и возьмём отрицание - если отрицание true - нужно предотвратить вставку
     if (
@@ -521,7 +546,7 @@ $body.on("keypress", "input.input-int", function(this: HTMLInputElement, e: any)
         }
     }
 });
-$body.on("keypress", "input.input-float", function(this: HTMLInputElement, e: any) {
+$body.on("keypress", "input.input-float", function (this: HTMLInputElement, e: any) {
     const code = e.which;
     //Опием разрешенные зачения и возьмём отрицание - если отрицание true - нужно предотвратить вставку
     if (
@@ -548,13 +573,22 @@ $body.on("keypress", "input.input-float", function(this: HTMLInputElement, e: an
     }
 });
 
-$body.on("click", "a.showhide", function(this: HTMLAnchorElement, e: JQuery.Event) {
+$body.on("click", "a.showhide", function (this: HTMLAnchorElement, e: JQuery.Event) {
     e.preventDefault();
     const $link = $(this);
 
     // Сначала пытаемся найти полный текст слева от ссылки
-    const $full = $link.siblings(".truncated-full");
-    const $part = $link.siblings(".truncated-part");
+    let $full = $link.siblings(".truncated-full");
+    let $part = $link.siblings(".truncated-part");
+
+    // если не удалось найти поищем в соседней ссылке ajax-input
+    if (!$full.length || !$part.length) {
+        const $linkAjax = $link.siblings(".ajax-input");
+        if ($linkAjax.length) {
+            $full = $linkAjax.find(".truncated-full");
+            $part = $linkAjax.find(".truncated-part");
+        }
+    }
 
     let newFullTextState: "showed" | "hidden";
     newFullTextState = $full.hasClass("display-none") ? "showed" : "hidden";
@@ -571,7 +605,7 @@ $body.on("click", "a.showhide", function(this: HTMLAnchorElement, e: JQuery.Even
     }
 });
 
-$body.on("click", 'a[href$="#ajax"], a[href$="#ajax-post"]', function(this: HTMLAnchorElement, e: any) {
+$body.on("click", 'a[href$="#ajax"], a[href$="#ajax-post"]', function (this: HTMLAnchorElement, e: any) {
     if (this.hash !== "#ajax-post" && (e.ctrlKey || e.shiftKey || e.metaKey)) {
         // Если это не POST ссылка (т.е. ссылка для обычного GET запроса)
         // и пользователь зажал Ctrl или Shift - значит пользователь хочет открыть ссылку в новом окне
@@ -598,10 +632,10 @@ $body.on("click", 'a[href$="#ajax"], a[href$="#ajax-post"]', function(this: HTML
         $icon.addClass("visibility-hidden");
         $newImg = $("<img>")
             .prop("src", "lightpublic/i/circle.gif")
-            .css({ position: "absolute", marginTop: 3, marginLeft: 3 });
+            .css({position: "absolute", marginTop: 3, marginLeft: 3});
         $link.prepend($newImg);
     }
-    const ajaxSettings: { [key: string]: any } = { method: this.hash === "#ajax-post" ? "post" : "get" };
+    const ajaxSettings: { [key: string]: any } = {method: this.hash === "#ajax-post" ? "post" : "get"};
 
     // Если у ссылки был атрибут post-data, додавим данные к post запросу (в атрибуте должен лежать json)
     const postDataAttr = this.getAttribute("data-post");
@@ -624,7 +658,7 @@ $body.on("click", 'a[href$="#ajax"], a[href$="#ajax-post"]', function(this: HTML
         }
     });
 });
-$body.on("click", 'a[href$="#post"], a[data-post]:not([href$="#ajax-post"])', function(
+$body.on("click", 'a[href$="#post"], a[data-post]:not([href$="#ajax-post"])', function (
     this: HTMLAnchorElement,
     e: JQuery.Event
 ) {
@@ -633,7 +667,8 @@ $body.on("click", 'a[href$="#post"], a[data-post]:not([href$="#ajax-post"])', fu
     const $form = $("<form></form>")
         .attr({
             method: "post",
-            action: this.href
+            action: this.href,
+            target: this.target || ''
         })
         .append(`<input type="hidden" name="csrf_token" value="${(window as any)._lightCsrfToken}">`);
 
@@ -664,7 +699,7 @@ interface AcParams {
 }
 
 //Новый подход к Autocomplete: любое поле может быть Autocomplete, если у него поередлён атрибут data-ac
-$body.on("focus", "input[data-ac], textarea[data-ac]", function(this: HTMLInputElement) {
+$body.on("focus", "input[data-ac], textarea[data-ac]", function (this: HTMLInputElement) {
     const $input = $(this);
     //Проверим, что у этого элемента ещё нет дата-атрибута ui-autocomplete
     if ($input.data("ui-autocomplete")) {
@@ -678,8 +713,8 @@ $body.on("focus", "input[data-ac], textarea[data-ac]", function(this: HTMLInputE
     if (acParams.sourceJsFunction) {
         const sourceFn = eval(acParams.sourceJsFunction);
         config.source = (request: any, responseCallback: any) => {
-            const url = sourceFn() + "&term=" + encodeURIComponent(request.term);
-            $.ajax(url, { dataType: "json", success: responseCallback });
+            const url = sourceFn($input) + "&term=" + encodeURIComponent(request.term);
+            $.ajax(url, {dataType: "json", success: responseCallback});
         };
     } else if (acParams.source) {
         if (acParams.source.substring(0, 1) === "?") {
@@ -693,7 +728,7 @@ $body.on("focus", "input[data-ac], textarea[data-ac]", function(this: HTMLInputE
 
     if (acParams.onSelectJsFunction) {
         const selectFn = eval(acParams.onSelectJsFunction);
-        config.select = function(this: any, _: any, ui: any) {
+        config.select = function (this: any, _: any, ui: any) {
             selectFn.call(this, ui.item);
         };
     }
@@ -712,11 +747,11 @@ $body.on("focus", "input[data-ac], textarea[data-ac]", function(this: HTMLInputE
     if (acParams.resultFormatterJsFunction) {
         //Хак для изменения форматирования вывода подсказок: патчим метод _renderItem в виджете
         const resultFormatterFn = eval(acParams.resultFormatterJsFunction);
-        (<{ _renderItem: any }>$input.data("ui-autocomplete"))._renderItem = function(this: any, ul: any, item: any) {
+        (<{ _renderItem: any }>$input.data("ui-autocomplete"))._renderItem = function (this: any, ul: any, item: any) {
             return (
                 $("<li>")
-                    //.data("item.autocomplete", item)
-                    /* вызываем определённый пользователем метод resultFormatterFn в scope = $(inputEl) */
+                //.data("item.autocomplete", item)
+                /* вызываем определённый пользователем метод resultFormatterFn в scope = $(inputEl) */
                     .append("<div>" + resultFormatterFn.call(this.element, item) + "</div>")
                     .appendTo(ul)
             );
@@ -724,7 +759,7 @@ $body.on("focus", "input[data-ac], textarea[data-ac]", function(this: HTMLInputE
     }
 });
 
-$body.on("submit", "form", function(this: HTMLFormElement, e: JQuery.Event) {
+$body.on("submit", "form", function (this: HTMLFormElement, e: JQuery.Event) {
     if (!this.action) {
         // Если у этой формы нет атрибута action, занчит это какая-то хитрая форма, которая обратабывается
         // исключительно javascript кодом, не будем её трогать
@@ -733,7 +768,11 @@ $body.on("submit", "form", function(this: HTMLFormElement, e: JQuery.Event) {
 
     const $form = $(this);
     const $formSaveButtons = $form.find(".btn-save, button[type=submit], input[type=submit]");
-    $formSaveButtons.prop("disabled", true);
+
+    if (this.action.indexOf('&xls=1') === -1) {
+        // Если эта форма НЕ генерирует xls, то блокируем кнопку отправки, чтобы избежать повторной отправки
+        $formSaveButtons.prop("disabled", true);
+    }
 
     if (this.action.substr(-5, 5) === "#ajax" && $form.closest(".lightdialog__content").length === 0) {
         // action этой формы оканчивается на #ajax - это признак того, что форму нужно отрпавить ajax запросом
@@ -765,7 +804,7 @@ $body.on("submit", "form", function(this: HTMLFormElement, e: JQuery.Event) {
 });
 
 function initNextPrevLinkKeypress(keys: string) {
-    listener.simple_combo(keys, function(e: KeyboardEvent) {
+    listener.simple_combo(keys, function (e: KeyboardEvent) {
         const targetTag = (<Element>e.target).tagName.toLowerCase();
         if (targetTag !== "input" && targetTag !== "textarea") {
             const selector = keys === "ctrl right" ? ".next-link" : ".prev-link";
@@ -784,11 +823,11 @@ initNextPrevLinkKeypress("ctrl right");
 initNextPrevLinkKeypress("ctrl left");
 
 export function setUserParam(name: string, value: string, successCallback?: (confirmedValue: string) => void) {
-    $.post("index.php?a=Core&ps=userparam", { param: name, value: value }, successCallback || null, "text");
+    $.post("index.php?a=Core&ps=userparam", {param: name, value: value}, successCallback || null, "text");
 }
 
 export function getUserParam(name: string, successCallback: (value: string) => void) {
-    $.get("index.php?a=Core&ps=userparam", { param: name }, successCallback, "text");
+    $.get("index.php?a=Core&ps=userparam", {param: name}, successCallback, "text");
 }
 
 export function getModule() {
@@ -871,6 +910,7 @@ export function myParseFloat(value: any): number {
     }
 
     if (typeof value === "string") {
+        value = stripTags(value);
         value = parseFloat(value.replace(",", ".").replace(/\s/g, ""));
     }
 
@@ -999,7 +1039,7 @@ export function getBeautyDate(date: any, fullyear: boolean = true): string {
  * Принимает объект типа Date или строку DD.MM.YYYY и возвращает строку в формате MySQL 'YYYY-MM-DD';
  */
 export function getMySQLDate(date: any): string {
-    if (date === null || (typeof date === "string" && (date == "" || date == "0000-00-00"))) {
+    if (date === undefined || date === null || (typeof date === "string" && (date == "" || date == "0000-00-00"))) {
         return "";
     }
 
@@ -1043,6 +1083,12 @@ export function htmlspecialchars(html: string): string {
     const div = document.createElement("div");
     div.appendChild(document.createTextNode(html));
     return div.innerHTML;
+}
+
+export function stripTags(html: string): string {
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return div.innerText;
 }
 
 let __rootCounter = 0;
@@ -1268,7 +1314,7 @@ export function setNodeValue($node: JQuery, newValue: any, type?: string, trigge
 
         case "CheckboxSet":
             //Пройдём по всем чекбоксам внутри этого набора (node - это NodeList) и отметим те, которые упоминаются в newValue
-            $node.each(function(this: HTMLInputElement) {
+            $node.each(function (this: HTMLInputElement) {
                 const cbValue = this.value;
                 if (newValue.indexOf("|" + cbValue + "|") !== -1) {
                     $node.prop("checked", true);
@@ -1333,10 +1379,15 @@ export function setNodeValue($node: JQuery, newValue: any, type?: string, trigge
 
         case "Select":
         case "SelectChild":
-            const select2widget: any = ($node.get(0) as any).select2widget;
+            const selectEl = $node.get(0) as any;
+            const select2widget: any = selectEl.select2widget;
+            const choicesWidget: any = selectEl.choicesWidget;
             if (select2widget) {
                 // Это особый select2 описанный в Select2.ts
-                select2widget.change(newValue);
+                select2widget.change(newValue.toString());
+            } else if (choicesWidget) {
+                // Это особый choices описанный в Choices.ts
+                choicesWidget.change(newValue.toString());
             } else {
                 if ($node.attr("multiple")) {
                     const parts = newValue.toString().split("|").filter((n: string) => n !== "");
@@ -1370,7 +1421,7 @@ export function onNodeChange(
     handler: (newValue: string | number, $node: JQuery) => void,
     type?: string
 ) {
-    const changeHandlerWrapper = function() {
+    const changeHandlerWrapper = function () {
         const newValue = getNodeValue($node, type);
         handler(newValue, $node);
     };
@@ -1378,9 +1429,6 @@ export function onNodeChange(
     switch (type) {
         case "Checkbox":
         case "CheckboxSet":
-            $node.on("click", changeHandlerWrapper);
-            break;
-
         case "Select2Multiple":
         case "Select2ChildMultiple":
             $node.on("change", changeHandlerWrapper);
@@ -1450,11 +1498,11 @@ export function getMoneyWithCurrencyAsTouple(value: string): [string, number] {
 }
 
 export function postMetric(actionType: string, timeMs: number, payload: string | Object) {
-    $.post("?a=Core&ps=Metric", { ActionType: actionType, TimeMs: timeMs, Payload: payload });
+    $.post("?a=Core&ps=Metric", {ActionType: actionType, TimeMs: timeMs, Payload: payload});
 }
 
 export function iconExcel() {
-    return '<i class="fa fa-file-excel-o"></i>';
+    return '<i class="fa fa-file-excel"></i>';
 }
 
 export function iconFolderFull() {
@@ -1552,12 +1600,36 @@ export function getOppositeString(str: string): string {
         .join("");
 }
 
+export function matchWithOpposite(source: string | undefined, searchString: string | undefined): boolean {
+    if (!source || !searchString) {
+        return false;
+    }
+    const sourceLower = source.toLowerCase();
+    const searchStringLower = searchString.toLowerCase();
+
+    if (sourceLower.indexOf(searchStringLower) !== -1) {
+        // Внутри source строки присуствует искомая searchString
+        return true;
+    }
+
+    // Если обычным поиском найти не удалось, попробуем сменить раскладку для searchString
+    const searchStringOppositeLower = getOppositeString(searchStringLower);
+    if (sourceLower.indexOf(searchStringOppositeLower) !== -1) {
+        // Внутри source строки присуствует искомая searchString с изменённой раскладкой
+        return true;
+    }
+
+    return false;
+}
+
 export function addStandardListeners($root: JQuery) {
     initSelectChild($root);
     initSelect2($root);
+    initChoices($root);
     initTabs($root);
     initTooltip($root);
     fallbackInputTypeDate($root);
+    initInputMask($root);
 }
 
 export function getVatAmount(amount: number, vatPercent: number) {

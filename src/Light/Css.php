@@ -4,6 +4,7 @@ namespace Light;
 class Css
 {
     public static $select2 = false;
+    public static $choices = false;
 
     private static $lightFiles = [];
     private static $projectFiles = [];
@@ -22,7 +23,10 @@ class Css
 
     public static function add(string $file)
     {
-        self::$projectFiles[] = "css/$file";
+        if (strpos($file, '//') !== 0) {
+            $file = "css/$file";
+        }
+        self::$projectFiles[] = $file;
     }
 
     public static function getSources(): array
@@ -32,6 +36,9 @@ class Css
         ];
         if (self::$select2) {
             $out[] = 'lightpublic/css/select2.min.css';
+        }
+        if (self::$choices) {
+            $out[] = 'lightpublic/css/choices.min.css';
         }
 
         $out = array_merge($out, self::$lightFiles, ['css/general.css'], self::$projectFiles);

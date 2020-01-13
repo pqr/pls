@@ -11,7 +11,6 @@ use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\Link;
 use Light\ModuleRegister;
-use function Light\reportException;
 use Light\Request;
 use Light\Response;
 use Light\Session;
@@ -33,7 +32,7 @@ class SettingsPageAbstract
     {
         // Отображение в режиме View
         $this->loadData();
-        $tdata = $this->getFieldset()->getTplData($this->data, F::MODE_EDIT);
+        $tdata = $this->getTemplateData();
         $template = $this->getTemplate();
         $formInnerHtml = Template::parseTpl($template, $tdata);
 
@@ -58,7 +57,13 @@ class SettingsPageAbstract
         print '<button type="submit" class="waves-effect btn btn-save bgcolor-btn-primary" title="Ctrl + S">';
         print Config::$lang === 'ru' ? 'Сохранить' : 'Save';
         print '</button>';
+        print '</div>';
         print '</form>';
+    }
+
+    protected function getTemplateData(): array
+    {
+        return $this->getFieldset()->getTplData($this->data, F::MODE_EDIT);
     }
 
     protected function getPageTitle()
@@ -127,7 +132,7 @@ class SettingsPageAbstract
 
             $msg = Config::$lang === 'ru' ? 'Не удалось сохранить' : 'Error while saving';
             Session::flashError($msg . ' ' . $e->getMessage());
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             Response::abort(500);
 
         }

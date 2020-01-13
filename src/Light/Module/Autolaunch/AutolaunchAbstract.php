@@ -3,13 +3,12 @@
 namespace Light\Module\Autolaunch;
 
 use Light\Db;
+use Light\ErrorHandler;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\File;
 use Light\Metric;
-use Light\Misc;
 use Light\Msg;
-use function Light\reportException;
 use Light\Timer;
 use Light\Traits\FieldsetAwareTrait;
 use Light\Traits\SubmoduleTrait;
@@ -76,13 +75,21 @@ abstract class AutolaunchAbstract
 
     private function saveLogToDb($workTime)
     {
-        $fieldsData = [
-            'ShortMessage' => $this->_msgBuffShort->getHtml(),
-            'WorkTime' => $workTime,
-        ];
+        try {
 
-        Db::updateRow($fieldsData, 'log_autolaunch', $this->_logId);
-        Db::insertRow(['ID' => $this->_logId, 'Report' => $this->_msgBuff->getHtml()], 'log_autolaunch_text');
+            $fieldsData = [
+                'ShortMessage' => $this->_msgBuffShort->getHtml(),
+                'WorkTime' => $workTime,
+            ];
+
+            Db::updateRow($fieldsData, 'log_autolaunch', $this->_logId);
+            Db::insertRow(['ID' => $this->_logId, 'Report' => $this->_msgBuff->getHtml()], 'log_autolaunch_text');
+
+        } catch (\Exception $e) {
+
+            ErrorHandler::reportException($e);
+
+        }
     }
 
     private function saveLogToFile($workTime)
@@ -105,7 +112,7 @@ abstract class AutolaunchAbstract
         try {
             File::fs()->dumpFile($filepathAbs, $report);
         } catch (\Exception $e) {
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
         }
     }
 
@@ -180,7 +187,7 @@ abstract class AutolaunchAbstract
             try {
                 $this->run($params);
             } catch (\Throwable $e) {
-                $this->_msgBuff->addError($e->getMessage());
+                $this->_msgBuff->addError(htmlspecialchars($e->getMessage()));
             }
         }
 

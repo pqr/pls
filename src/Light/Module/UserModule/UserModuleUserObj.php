@@ -2,9 +2,9 @@
 namespace Light\Module\UserModule;
 
 use Light\ApplicationAbstract;
-use Light\ObjAbstract;
-use Light\Field\FieldAbstract as F;
 use Light\Field\CommonFields as CF;
+use Light\Field\FieldAbstract as F;
+use Light\ObjAbstract;
 
 class UserModuleUserObj extends ObjAbstract
 {
@@ -47,5 +47,15 @@ class UserModuleUserObj extends ObjAbstract
             F::createText('ModuleAccessJSON'),
             F::createText('SpecialAccessJSON')
         );
+    }
+
+    public function getMasterFieldKey(): string
+    {
+        return 'ID';
+    }
+
+    public function getMasterModuleForDbLog(): string
+    {
+        return 'UserModule';
     }
 }

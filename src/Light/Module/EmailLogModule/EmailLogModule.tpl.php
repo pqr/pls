@@ -5,6 +5,7 @@
             <table class="form">
                 <?= t::c('SentDateTime') ?>
                 <?= t::c('From') ?>
+                <?= t::c('EmailAccountID') ?>
                 <?= t::c('To') ?>
                 <?= t::c('Cc') ?>
                 <?= t::c('Bcc') ?>

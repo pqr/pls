@@ -29,7 +29,7 @@ use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
 use Light\File;
 use Light\FilesFolder;
-use Light\Img;
+use Light\Ico;
 use Light\ModuleBase\MassactionUtils;
 use Light\Msg;
 use Light\ObjAbstract;
@@ -44,10 +44,10 @@ class CInvoice extends InvoiceModuleAbstract
     protected $textSaveBtn = 'Customer Invoice';
     public $tableLayoutDefault = 'Name|CustomerAccountID|Amount|CurrencyISO|DocType|StatusIco|DocDate|DueDate|Overdue|Comments';
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(Lines::class);
-        $this->registerSubtableReadonly(CPayments::class);
+        $this->addSubtable(Lines::class);
+        $this->addSubtableReadonly(CPayments::class);
     }
 
     protected function initMassactions()
@@ -56,7 +56,7 @@ class CInvoice extends InvoiceModuleAbstract
             $this->addMassaction('CreateCPayment', 'Create Customer Payments', 'invcleared');
         }
 
-        $this->addMassactionMultipleUpdate();
+        $this->addMassactionMassUpdate();
     }
 
     protected function initPrintForms()
@@ -411,7 +411,7 @@ class CInvoice extends InvoiceModuleAbstract
     protected function initViewSubmenu()
     {
         if (Constant::isOneCCompany($this->_obj['CompanyID'])) {
-            $this->addSubmenuLinkViewFunc(Img::iconUpload() . ' Отправить в 1С', 'SendOneC')
+            $this->addSubmenuLinkViewFunc(Ico::uploadCloud() . ' Отправить в 1С', 'SendOneC')
                 ->post();
         }
     }

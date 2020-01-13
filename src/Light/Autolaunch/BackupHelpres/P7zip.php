@@ -37,6 +37,12 @@ class P7zip
         return $this;
     }
 
+    public function inputDir(string $dir)
+    {
+        $this->inputFilepath = "$dir/*";
+        return $this;
+    }
+
     public function fromStdin(string $innerFilename)
     {
         $this->fromStdinInnerFilename = $innerFilename;

@@ -1,28 +1,27 @@
 <?php
+
 namespace Light\Codeception;
 
-use Codeception\Lib\Connector\Universal;
-
+use Codeception\Lib\Connector\Shared\PhpSuperGlobalsConverter;
+use Light\ApplicationAbstract;
 use Light\Css;
 use Light\Js;
 use Light\User;
 use Symfony\Component\BrowserKit\Request;
 use Symfony\Component\BrowserKit\Response;
+use Symfony\Component\BrowserKit\AbstractBrowser;
 
-class LightConnector extends Universal
+class LightConnector extends AbstractBrowser
 {
+    use PhpSuperGlobalsConverter;
+
     /**
      * @param Request $request
      * @return Response
+     * @throws \Throwable
      */
     public function doRequest($request)
     {
-        if ($this->mockedResponse) {
-            $response = $this->mockedResponse;
-            $this->mockedResponse = null;
-            return $response;
-        }
-
         $_COOKIE = $request->getCookies();
         $_SERVER = $request->getServer();
         $_FILES = $this->remapFiles($request->getFiles());
@@ -56,18 +55,15 @@ class LightConnector extends Universal
         // Выставляем значения по умолчанияю во все статические переменные
         // внутри объекта Response (важно для функциональных тестов)
         User::resetCache();
-        \Light\Request::reset();
-        \Light\Response::reset();
+        \Light\Request::fromGlobals();
+        \Light\Response::new();
         Js::reset();
         Css::reset();
 
-        try {
-            $appClass = PROJECT_NAMESPACE .'\\Application';
-            $app = new $appClass;
-            $app();
-        } catch (TestResponseException $e) {
-            $content = $e->getMessage();
-        }
+        $appClass = PROJECT_NAMESPACE . '\\Application';
+        /** @var ApplicationAbstract $app */
+        $app = new $appClass;
+        $psr7Response = $app->handleHttpRequest(\Light\Request::$psr7);
 
         $_SESSION = [];
         $_FILES = [];
@@ -76,26 +72,7 @@ class LightConnector extends Universal
         $_COOKIE = [];
         $_REQUEST = [];
 
-        $headers = [];
-        $status = 200;
-        $php_headers = \Light\Response::getHeaders();
-        foreach ($php_headers as $value) {
-            if (strpos($value, 'HTTP/1.1 ') === 0) {
-                $status = substr($value,9, 3);
-            }
-            // Get the header name
-            $parts = explode(':', $value);
-            if (count($parts) > 1) {
-                $name = trim(array_shift($parts));
-                // Build the header hash map
-                $headers[$name] = trim(implode(':', $parts));
-            }
-        }
-        $headers['Content-type'] = isset($headers['Content-type'])
-            ? $headers['Content-type']
-            : "text/html; charset=UTF-8";
-
-        $response = new Response($content, $status, $headers);
+        $response = new Response($psr7Response->getBody(), $psr7Response->getStatusCode(), $psr7Response->getHeaders());
         return $response;
     }
 

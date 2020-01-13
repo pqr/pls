@@ -22,11 +22,11 @@ class Vendor extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(Responsibles::class);
-        $this->registerSubtable(VendorAccounts::class);
-        $this->registerSubtable(Contacts::class);
+        $this->addSubtable(Responsibles::class);
+        $this->addSubtable(VendorAccounts::class);
+        $this->addSubtable(Contacts::class);
     }
 
     protected function initFilters()
@@ -40,7 +40,7 @@ class Vendor extends ModuleAbstract
             'isTrucker' => 'Trucker',
         ];
 
-        $this->addFilterName(F::TYPE_STRING);
+        $this->addFilterText('Name');
 
         $this->addFilters(
 

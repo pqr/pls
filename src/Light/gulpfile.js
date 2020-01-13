@@ -4,16 +4,18 @@ var gulp = require('gulp'),
     concat = require('gulp-concat'),
     plumber = require('gulp-plumber'),
     rename = require("gulp-rename");
-
+/*
 gulp.task('vendorsjs', function () {
 
     var allSrc = [
         'node_modules/jquery/dist/jquery.min.js',
         'node_modules/keypress.js/keypress-2.1.5.min.js',
         'node_modules/dayjs/dayjs.min.js',
+        'node_modules/inputmask/dist/min/inputmask/inputmask.min.js',
+        'node_modules/inputmask/dist/min/inputmask/jquery.inputmask.min.js',
         'public/js/jquery-ui.min.js',
         'public/js/tooltip.js',
-        'public/js/lodash.custom.min.js'
+        'public/js/lodash.custom.min.js',
     ];
     var toUglifyFilter = gulpFilter(
         [
@@ -62,6 +64,17 @@ gulp.task('select2', function () {
     gulp.src('node_modules/select2/dist/js/select2.min.js')
         .pipe(gulp.dest('public/js'));
     gulp.src('node_modules/select2/dist/css/select2.min.css')
+        .pipe(gulp.dest('public/css'));
+});
+
+gulp.task('fullcalendar', function () {
+    "use strict";
+    gulp.src(['node_modules/@fullcalendar/core/main.min.js', 'node_modules/@fullcalendar/daygrid/main.min.js'])
+        .pipe(concat('fullcalendar.min.js'))
+        .pipe(gulp.dest('public/js'));
+
+    gulp.src(['node_modules/@fullcalendar/core/main.min.css', 'node_modules/@fullcalendar/daygrid/main.min.css'])
+        .pipe(concat('fullcalendar.min.css'))
         .pipe(gulp.dest('public/css'));
 });
 
@@ -160,12 +173,15 @@ gulp.task('fontawesome', function() {
     return gulp.src('node_modules/font-awesome/fonts/*')
         .pipe(gulp.dest('public/fonts'));
 });
-
+*/
 gulp.task('buildcss', function () {
+
+    gulp.src('node_modules/@fortawesome/fontawesome-free/webfonts/*')
+        .pipe(gulp.dest('public/webfonts'));
 
     var allSrc = [
         'public/css/jquery-ui.min.css',
-        'node_modules/font-awesome/css/font-awesome.min.css',
+        'node_modules/@fortawesome/fontawesome-free/css/all.min.css',
         'public/css/Light.css',
         'public/css/InvStatus.css',
         'public/css/Table.css'
@@ -179,11 +195,16 @@ gulp.task('buildcss', function () {
 });
 
 gulp.task('watch', function () {
-    gulp.watch(['public/css/Light.css', 'public/css/Table.css'], ['buildcss']);
+    gulp.watch(['public/css/Light.css', 'public/css/Table.css'], gulp.series('buildcss'));
 });
 
-gulp.task('buildjs', ['vendorsjs', 'rollbar', 'select2', 'sortablejs', 'fileupload', 'react', 'mobx', 'preact']);
+/*
+gulp.task('buildjs', ['vendorsjs', 'rollbar', 'select2', 'fullcalendar', 'sortablejs', 'fileupload', 'react', 'mobx', 'preact']);
 
 gulp.task('default', ['buildjs', 'buildcss', 'fontawesome']);
 
-gulp.task('dev', ['watch', 'buildcss']);
+gulp.task('dev', gulp.series('buildcss', function (done) {
+    done();
+}));
+
+ */

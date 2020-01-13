@@ -6,6 +6,7 @@ use Light\Db;
 use Light\Field\FieldAbstract;
 use Light\Field\FieldCheckbox;
 use Light\Field\FieldDate;
+use Light\Field\FieldSelect;
 use Light\File;
 use Light\FilesFolder;
 use Light\ModuleBase\ModuleAbstract;
@@ -264,15 +265,33 @@ abstract class ModuleCestAbstract
         $testObjId = $this->getTestObjId();
         $I->wantTo("Change field via ajax");
         $module = $this->getModule();
-        $url = "?a=$module&id=$testObjId&func=ChangeField&fieldKey=$fieldKey";
+        $url = "?a=$module&id=$testObjId&action=AjaxChangeField&fieldKey=$fieldKey";
 
         $oldValue = Db::getOne("SELECT {$field->key} FROM {$this->getDbTable()} WHERE ID = $testObjId");
         if ($field instanceof FieldDate) {
+
             $newValue = date('Y-m-d');
+
         } elseif ($field instanceof FieldCheckbox) {
+
             $newValue = !$oldValue;
+
+        } elseif ($field instanceof FieldSelect) {
+
+            $newValue = $oldValue;
+            $options = $field->getEvaluatedOptions();
+            foreach($options as $key => $option) {
+                // Ищем какую-то поцию, которая не совпадает с $oldValue
+                if ($key != $oldValue) {
+                    $newValue = $key;
+                    break;
+                }
+            }
+
         } else {
+
             $newValue = "NEW$oldValue";
+
         }
 
         $I->expect("Send post request to change field $fieldKey");

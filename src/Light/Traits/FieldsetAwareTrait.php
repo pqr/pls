@@ -55,8 +55,8 @@ trait FieldsetAwareTrait
         return $this->getFieldset()->getDataFromRequest($request);
     }
 
-    public function getSqlSelect(array $fieldsShow = null)
+    public function getSqlSelect(array $fieldsShow = null, string $table = null)
     {
-        return $this->getFieldset()->getSqlSelect($fieldsShow);
+        return $this->getFieldset()->getSqlSelect($fieldsShow, $table);
     }
 }

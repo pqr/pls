@@ -23,13 +23,20 @@ trait BadgesTrait
 
             $text = $badge->title . ': <strong>' . $badge->counter . '</strong>';
             $cssClass = 'alert-badge alert-' . $badge->type;
-            if ($badge->listFilters) {
+            if ($badge->listFilters || $badge->urlParams) {
 
-                // Если есть параметр listFilters, то оборачиваем в ссылку
-                $text = Link::create($module, $text)
-                    ->filters($badge->listFilters)
-                    ->cssClass($cssClass)
-                    ->getHtml();
+                // Если есть параметр listFilters или urlParams, то оборачиваем в ссылку
+                $link = Link::create($module, $text)->cssClass($cssClass);
+
+                if ($badge->listFilters) {
+                    $link->filters($badge->listFilters);
+                }
+
+                if ($badge->urlParams) {
+                    $link->params($badge->urlParams);
+                }
+
+                $text = $link->getHtml();
 
             } else {
 

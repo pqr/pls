@@ -7,6 +7,7 @@ use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
 use Light\Field\FieldMoney;
 use Light\Field\FieldMoneyWithCurrency;
+use Light\SubtableBase\Subtable;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -44,7 +45,7 @@ class XlsWriter
         ],
         'alignment' => [
             'vertical' => Alignment::VERTICAL_CENTER,
-            'wrap' => true,
+            'wrapText' => true,
         ],
     ];
 
@@ -209,7 +210,7 @@ class XlsWriter
 
                     $cellValue = $sheet->getCellByColumnAndRow($currentCol, $currentRow)->getValue();
                     // Проверим, есть ли внутри ячейки что-то связанное с процентамии (типа %fieldKey%)
-                    preg_match_all("/%([\\w\\d]+)%/", $cellValue, $matches);
+                    $matches = $this->mathcAllPlaceholders((string)$cellValue);
                     if (!isset($matches[1][0])) {
                         // Внутри текущей ячейки нет никаких паттернов для замены
                         continue;
@@ -224,6 +225,11 @@ class XlsWriter
 
                             $value = $data[$placeholder];
                             if ($value instanceof Table) {
+
+                                if ($value instanceof Subtable) {
+                                    // Для подтаблиц сделаем дополнительное действие - скопируем данные в tableData
+                                    $value->copySubtableDataToTableData();
+                                }
                                 // Если текщий плейсхолдер ссылается на объект таблицы в массиве $data,
                                 // то вставляем как таблицу специальным методом insertTable
                                 $table = $value;
@@ -306,6 +312,48 @@ class XlsWriter
         $this->spreadsheet->setActiveSheetIndex($rememberActiveSheetIndex);
     }
 
+    public function clearPlaceholders()
+    {
+        $count = $this->spreadsheet->getSheetCount();
+        for ($sheetIndex = 0; $sheetIndex < $count; $sheetIndex++) {
+            $sheet = $this->spreadsheet->getSheet($sheetIndex);
+
+            //Пройдёмся по всем ячейкам
+            $highestRow = $sheet->getHighestRow(); // e.g. 10
+            $highestColumn = $sheet->getHighestColumn(); // e.g 'F'
+
+            $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn); // e.g. 5
+
+            for ($currentRow = 1; $currentRow <= $highestRow; $currentRow++) {
+                for ($currentCol = 1; $currentCol <= $highestColumnIndex; $currentCol++) {
+
+                    $cellValue = $sheet->getCellByColumnAndRow($currentCol, $currentRow)->getValue();
+                    // Проверим, есть ли внутри ячейки что-то связанное с процентамии (типа %fieldKey%)
+                    $matches = $this->mathcAllPlaceholders((string)$cellValue);
+
+                    if (!isset($matches[1][0])) {
+                        // Внутри текущей ячейки нет никаких паттернов для замены
+                        continue;
+                    }
+
+                    $newCellValue = $cellValue;
+                    foreach ($matches[1] as $fieldKey) {
+                        $newCellValue = str_replace("%$fieldKey%", '', $newCellValue);
+                    }
+
+                    // Результат последовательно замены плейсхолдеров на значения из $data запишем в итоге в ячейку
+                    $sheet->setCellValueByColumnAndRow($currentCol, $currentRow, $newCellValue);
+                }
+            }
+        }
+    }
+
+    private function mathcAllPlaceholders(string $cellValue): array
+    {
+        preg_match_all("/%([\\w]+)%/", $cellValue, $matches);
+        return $matches;
+    }
+
     /**
      * Вставляет таблицу по указанным координатам, добавляя новые строки (раздвигая шаблон по вертикали)
      *
@@ -313,10 +361,12 @@ class XlsWriter
      * @param int $row
      * @param Table $table
      * @param int $tableOpts битовая маска опция для таблицы
+     * @param bool $insertRows вставлять ли новые строки в Excel лист, чтобы уместить таблицу? Иногда, когда таблица пишется в конец,
+     * нет смысла вставлять новые строки
      * @return int число новых вставленных строк в шаблон
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
-    public function insertTable(int $col, int $row, Table $table, $tableOpts = 0): int
+    public function insertTable(int $col, int $row, Table $table, $tableOpts = 0, $insertRows = true): int
     {
         $sheet = $this->spreadsheet->getActiveSheet();
         //Очистим ячейку от названия таблицы
@@ -344,23 +394,25 @@ class XlsWriter
                 $dataTotal = [];
             }
 
-            // Подготовим пустые строки под таблицу
-            // Вставлять строки будем между текущей строкой (на которой обнаружили плейсхолдер) и следующей
-            // таким образом на вновь вставленных строках будет скопирован стиль строки с плейсхолдером
-            // Как минимум нужно вставить число строк на основе данных, минус одна (одна строка будет переиспользована)
-            $insertedRows = $numRows - 1;
-            // Если нужо вывести заголовок, это ещё плюс одна строка
-            if ($tableOpts & self::TABLES_WITH_HEADER) {
-                $insertedRows++;
-            }
-            // Если есть строка total, это ещё +1
-            if ($tableOpts & self::TABLES_WITH_TOTAL && $dataTotal) {
-                $insertedRows++;
-            }
-            // Если накопилось какое-то число строк для вставки, то сделаем эту вставку новых пустых строк
-            // куда позже будут записаны данные таблицы
-            if ($insertedRows) {
-                $sheet->insertNewRowBefore($row + 1, $insertedRows);
+            if ($insertRows) {
+                // Подготовим пустые строки под таблицу
+                // Вставлять строки будем между текущей строкой (на которой обнаружили плейсхолдер) и следующей
+                // таким образом на вновь вставленных строках будет скопирован стиль строки с плейсхолдером
+                // Как минимум нужно вставить число строк на основе данных, минус одна (одна строка будет переиспользована)
+                $insertedRows = $numRows - 1;
+                // Если нужо вывести заголовок, это ещё плюс одна строка
+                if ($tableOpts & self::TABLES_WITH_HEADER) {
+                    $insertedRows++;
+                }
+                // Если есть строка total, это ещё +1
+                if ($tableOpts & self::TABLES_WITH_TOTAL && $dataTotal) {
+                    $insertedRows++;
+                }
+                // Если накопилось какое-то число строк для вставки, то сделаем эту вставку новых пустых строк
+                // куда позже будут записаны данные таблицы
+                if ($insertedRows) {
+                    $sheet->insertNewRowBefore($row + 1, $insertedRows);
+                }
             }
 
             // Записываем данные таблицы
@@ -432,8 +484,7 @@ class XlsWriter
 
         // Обернём заголовки в жирный и отцентрируем по вертикали
         $ws->getStyleByColumnAndRow($col, $row, count($fieldset) + $col - 1, $row)
-            ->applyFromArray(self::STYLE_HEADER)
-            ->getAlignment()->setWrapText(1);
+            ->applyFromArray(self::STYLE_HEADER);
 
 
         if ($tableOpts & self::FREEZE_PANES) {

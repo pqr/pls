@@ -54,11 +54,11 @@ class VInvoice extends InvoiceModuleAbstract
         $this->getField('Status')->setParam('options', $statusOptions);
     }
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(Responsibles::class);
-        $this->registerSubtable(Lines::class);
-        $this->registerSubtableReadonly(VPayments::class);
+        $this->addSubtable(Responsibles::class);
+        $this->addSubtable(Lines::class);
+        $this->addSubtableReadonly(VPayments::class);
     }
 
     protected function initMassactions()
@@ -71,7 +71,7 @@ class VInvoice extends InvoiceModuleAbstract
             $this->addMassaction('CreateVendorPayment', 'Create Vendor Payment', 'invcleared');
         }
 
-        $this->addMassaction('Download', 'Скачать файлы единым zip архивом', '', '', null, true);
+        $this->addMassaction('Download', 'Скачать файлы единым zip архивом', '', '',  true);
     }
 
     protected function initCssJs()
@@ -318,8 +318,7 @@ class VInvoice extends InvoiceModuleAbstract
         }
 
         MassactionUtils::sendSuccessDialog(
-            $updated . ' Vendor Invoice' . Misc::getSSuffix($updated)
-            . ' ' . Misc::getWasWereVerb($updated) . ' updated'
+            $updated . ' Vendor Invoices have been updated'
         );
     }
 

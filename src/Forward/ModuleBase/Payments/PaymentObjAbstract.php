@@ -3,7 +3,7 @@
 namespace Forward\ModuleBase\Payments;
 
 use Forward\Classes\Finance;
-use Forward\Classes\Traits\FirstLetterTrait;
+use Light\Traits\FirstLetterTrait;
 use Forward\Module\CInvoice\CInvoiceObj;
 use Forward\Module\VInvoice\VInvoiceObj;
 use Light\Db;

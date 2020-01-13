@@ -3,17 +3,21 @@
 namespace Light\Field;
 
 use Light\Db;
+use Light\Ico;
 use Light\Link;
+use Light\User;
 
 /**
  * @method $this setLinkModule(string $module)
  * @method $this setLinkModuleDialog(bool $value)
  * @method $this setLinkModuleForTable(bool $value)
+ * @method $this setHtmlspecialchars(bool $value)
  *
  * @method string|array|callable getOptions() //возвращает значение параметра options, не путать с методом getEvaluatedOptions()
  * @method string getLinkModule()
  * @method bool getLinkModuleDialog()
  * @method bool getLinkModuleForTable()
+ * @method bool getHtmlspecialchars()
  */
 abstract class FieldOptionsAbstract extends FieldAbstract
 {
@@ -21,7 +25,10 @@ abstract class FieldOptionsAbstract extends FieldAbstract
     //и тот же запрос, то нет смысла делать одинаковый запрос к базе несколько раз
     private static $queryCache;
 
-    protected $evaluatedOptions;
+    protected $evaluatedOptions = [
+        self::MODE_VIEW => null,
+        self::MODE_EDIT => null,
+    ];
     protected $prefetchedOptions;
 
     /**
@@ -48,6 +55,9 @@ abstract class FieldOptionsAbstract extends FieldAbstract
     // Ссылка linkModule должна должна работать даже в режиме таблицы
     public $linkModuleForTable = false;
 
+    // Экранировать ли текст опций
+    public $htmlspecialchars = true;
+
     /**
      * @param string|array|callable $options
      * @return $this
@@ -57,7 +67,31 @@ abstract class FieldOptionsAbstract extends FieldAbstract
         $this->options = $options;
 
         // При установке новых опций сбрасываем вычеселенный ранее кеширующий массив (если он, конечно, вычислялся)
-        $this->evaluatedOptions = null;
+        $this->evaluatedOptions = [
+            self::MODE_VIEW => null,
+            self::MODE_EDIT => null,
+        ];
+
+        $this->prefetchedOptions = null;
+
+        return $this;
+    }
+
+    /**
+     * @param string $optionsView
+     * @return $this
+     */
+    public function setOptionsView($optionsView)
+    {
+        $this->optionsView = $optionsView;
+
+        // При установке новых опций сбрасываем вычеселенный ранее кеширующий массив (если он, конечно, вычислялся)
+        $this->evaluatedOptions = [
+            self::MODE_VIEW => null,
+            self::MODE_EDIT => null,
+        ];
+
+        $this->prefetchedOptions = null;
 
         return $this;
     }
@@ -117,26 +151,31 @@ abstract class FieldOptionsAbstract extends FieldAbstract
             $dbtable = substr($dbtable, 0, $pipePos);
         }
 
-        $this->prefetchedOptions = Db::getAssoc("SELECT ID, Name FROM " . Db::quote($dbtable) . " WHERE ID IN (@a)",
-            $ids);
+        $this->prefetchedOptions = Db::getAssoc(
+            "SELECT ID, Name FROM " . Db::quote($dbtable) . " WHERE ID IN (@a)"
+            , $ids
+        );
 
     }
 
     /**
      * Возвращает текстовое значение для полей типа Select на основе индекса $value
      * Ищет значение в массиве $this->options
-     * @param string $value
+     * @param string|int|null $value
+     * @param int $mode
      * @return string
      */
-    public function getOption($value)
+    public function getOption($value, int $mode = self::MODE_EDIT)
     {
-        if (isset($this->prefetchedOptions[$value])) {
-            return $this->prefetchedOptions[$value];
-        }
+        if (is_int($value) || is_string($value)) {
+            if (is_array($this->prefetchedOptions) && array_key_exists($value, $this->prefetchedOptions)) {
+                return $this->prefetchedOptions[$value];
+            }
 
-        $evaluatedOptions = $this->getEvaluatedOptions();
-        if (isset($evaluatedOptions[$value])) {
-            return $evaluatedOptions[$value];
+            $evaluatedOptions = $this->getEvaluatedOptions($mode);
+            if (is_array($evaluatedOptions) && array_key_exists($value, $evaluatedOptions)) {
+                return $evaluatedOptions[$value];
+            }
         }
 
         // Если такой опции нет ни в prefetchedOptions, ни в evaluatedOptions(), то возвращаем исходное value
@@ -144,74 +183,95 @@ abstract class FieldOptionsAbstract extends FieldAbstract
         return $value ?: '';
     }
 
-    public function getEvaluatedOptions(): array
+    public function getEvaluatedOptions(int $mode = self::MODE_EDIT): array
     {
-        if ($this->evaluatedOptions === null) {
-            $this->evaluatedOptions = [];
-            $options = $this->options;
-            if ($options !== null) {
-                if (is_array($options)) {
-                    $this->evaluatedOptions = $options;
-                } elseif (is_callable($options)) {
-                    $this->evaluatedOptions = $options($this);
-                } elseif (is_string($options)) {
-
-                    if (isset(self::$queryCache[$options])) {
-
-                        $this->evaluatedOptions = self::$queryCache[$options];
-
-                    } else {
-
-                        //Это может быть имя таблицы или полноценный sql запрос SELECT ID, Name FROM ...
-                        //Можно определить по наличию пробела
-                        if (strpos($options, ' ') === false) {
-                            //Пробела нет, значит это имя таблицы
-                            //Здесь также может быть вертикальная черта, после которой указывается поле для сортировки
-                            //Например: usergroup|OrderID
-                            $parts = explode('|', $options);
-                            $query = "SELECT ID, Name FROM @n ORDER BY @n";
-                            $tableName = $parts[0];
-                            $orderBy = $parts[1] ?? 'Name';
-                            $this->evaluatedOptions = Db::getAssoc($query, $tableName, $orderBy);
-
-                        } else {
-
-                            //В переменной options лежит строка с sql запросом
-                            $this->evaluatedOptions = Db::getAssoc($options);
-                        }
-
-                        //Запомним в статическом кеше запросов, чтобы не повторять однаковые запросы для разных полей
-                        self::$queryCache[$options] = $this->evaluatedOptions;
-                    }
-                }
-            }
+        if ($this->evaluatedOptions[$mode] !== null) {
+            return $this->evaluatedOptions[$mode];
         }
-        return $this->evaluatedOptions;
+
+        $options = $this->options;
+        if ($mode !== self::MODE_EDIT && $this->optionsView) {
+            // Если отображение в режиме view и задан параметр optionsView - то используем его
+            $options = $this->optionsView;
+        }
+
+        $this->evaluatedOptions[$mode] = [];
+
+        if (is_array($options)) {
+            $this->evaluatedOptions[$mode] = $options;
+        } elseif (is_callable($options)) {
+            $this->evaluatedOptions[$mode] = $options($this);
+        } elseif (is_string($options)) {
+            $this->evaluatedOptions[$mode] = $this->getOptionsFromDb($options);
+        }
+
+        return $this->evaluatedOptions[$mode];
+    }
+
+    private function getOptionsFromDb(string $optionsAsString): array
+    {
+        if (isset(self::$queryCache[$optionsAsString])) {
+            return self::$queryCache[$optionsAsString];
+        }
+
+        // Это может быть имя таблицы или полноценный sql запрос SELECT ID, Name FROM ...
+        // Можно определить по наличию пробела
+        if (strpos($optionsAsString, ' ') === false) {
+            //Пробела нет, значит это имя таблицы
+            //Здесь также может быть вертикальная черта, после которой указывается поле для сортировки
+            //Например: usergroup|OrderID
+            $parts = explode('|', $optionsAsString);
+            $query = "SELECT ID, Name FROM @n ORDER BY @n";
+            $tableName = $parts[0];
+            $orderBy = $parts[1] ?? 'Name';
+            $result = Db::getAssoc($query, $tableName, $orderBy);
+            self::$queryCache[$optionsAsString] = $result;
+            return $result;
+
+        }
+
+        // В переменной options лежит строка с sql запросом
+        $result = Db::getAssoc($optionsAsString);
+        self::$queryCache[$optionsAsString] = $result;
+        return $result;
     }
 
     protected function getOptionHtml($option, $originalValue, $forTable)
     {
-        $text = $this->getOptionText($option, $originalValue);
-        $outHtml = htmlspecialchars($text);
+        $outHtml = $this->getOptionText($option, $originalValue);
+        if ($this->htmlspecialchars) {
+            $outHtml = htmlspecialchars($outHtml);
+        }
+        if (!empty($option['icon'])) {
+            $outHtml = Ico::i($option['icon']) . ' ' . $outHtml;
+        }
+        if (!empty($option['img'])) {
+            $outHtml = '<img src="' . $option['img'] . '" class="select2-option-avatar"> ' . $outHtml;
+        }
 
-        if ((!$forTable || $this->linkModuleForTable) && $this->linkModule) {
+        if ((!$forTable || $this->linkModuleForTable) && $this->linkModule && (int)$originalValue && User::hasReadAccess($this->linkModule)) {
             $link = Link::create($this->linkModule, $outHtml)
                 ->view((int)$originalValue);
 
             if ($this->linkModuleDialog) {
-                $link->funcDialog();
+                $link->viewDialog();
             }
             $outHtml = $link->getHtml();
         }
 
-        if (is_array($option) && isset($option['cssClass'])) {
-            $outHtml = '<span class="' . $option['cssClass'] . '">' . $outHtml . '</span>';
+        $cssClass = $option['cssClass'] ?? '';
+        if (!empty($option['img'])) {
+            $cssClass .= ' select2-option-with-avatar';
+        }
+
+        if ($cssClass) {
+            $outHtml = '<span class="' . $cssClass . '">' . $outHtml . '</span>';
         }
 
         return $outHtml;
     }
 
-    protected function getOptionText($option, $originalValue)
+    public function getOptionText($option, $originalValue)
     {
         if (is_array($option)) {
 
@@ -224,9 +284,13 @@ abstract class FieldOptionsAbstract extends FieldAbstract
             }
 
         } else {
-            //Иногда значение - это и есть процент, например при выборе единици измерения
-            //$text = ($option == '%') ? '' : $option;
+            // Иногда значение - это и есть процент, например при выборе единици измерения
+            // $text = ($option == '%') ? '' : $option;
             $text = $option;
+        }
+
+        if (!$this->htmlspecialchars) {
+            $text = strip_tags($text);
         }
 
         return $text;

@@ -26,13 +26,13 @@ class DbLog
         //Накапливаем сообщения в буфере. Реальную запись в базу будем делать при завершении приложения в register_shutdown_function
         //Для этого в самом начале работы приложения был вызван метод register_shutdown_function('DbLog::flush');
         self::$_buffer[] = [
-            'masterModule' => $masterModule,
+            'masterModule' => Misc::getModule($masterModule),
             'masterId' => $masterId,
             'tableName' => $tableName,
             'recordId' => $recordId,
             'fieldKey' => $fieldKey,
             'fieldDescription' => $fieldDescription,
-            'textData' => $textData
+            'textData' => $textData,
         ];
     }
 
@@ -92,7 +92,7 @@ class DbLog
         $queryArr = [];
 
         foreach (self::$_buffer as $index => $item) {
-            if ($item['textData']) {
+            if (!empty($item['textData'])) {
 
                 $dbLogId = $dblogIds[$index];
                 $textData = $item['textData'];
@@ -103,6 +103,7 @@ class DbLog
                 $oldValueFormated = isset($textData['OldValueFormated']) ? Db::escString($textData['OldValueFormated']) : 'NULL';
                 $newValueFormated = isset($textData['NewValueFormated']) ? Db::escString($textData['NewValueFormated']) : 'NULL';
                 $objectDescription = isset($textData['ObjectDescription']) ? Db::escString($textData['ObjectDescription']) : 'NULL';
+
 
                 $queryArr[] = "($dbLogId, $text, $oldValue, $newValue, $oldValueFormated, $newValueFormated, $objectDescription)";
 
@@ -128,7 +129,7 @@ class DbLog
         // чтобы позже можно было получить объединённую картину по всем сделанным за раз измененениям
         Db::insertRow([
             'CreatedBy' => User::getId(),
-            'DbLogIDs' => implode(',', $dblogIds)
+            'DbLogIDs' => implode(',', $dblogIds),
         ], 'dblog_trace');
 
         Db::commit();
@@ -156,6 +157,7 @@ class DbLog
         if ($modules === null) {
             $modules = Db::getAssoc("SELECT LOWER(ModuleName), ID FROM dblog_module");
         }
+        $moduleName = Misc::getModule($moduleName);
         $moduleNameLower = strtolower($moduleName);
 
         if (!isset($modules[$moduleNameLower])) {
@@ -200,7 +202,7 @@ class DbLog
 
             $fieldsPerTable[$tableId][$fieldKey] = [
                 'ID' => Db::insertRow($fieldData, 'dblog_field', true),
-                'FieldDescription' => $fieldDescription
+                'FieldDescription' => $fieldDescription,
             ];
 
         } else {

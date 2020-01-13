@@ -6,7 +6,7 @@ use Light\Config;
 use Light\Db;
 use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
-use Light\Img;
+use Light\Ico;
 use Light\Js;
 use Light\ModuleBase\ModuleAbstract;
 use Light\Response;
@@ -73,11 +73,11 @@ class Deleted extends ModuleAbstract
     public function initViewSubmenu()
     {
         $textRestore = Config::$lang === 'ru' ? 'Восстановить' : 'Restore';
-        $this->addSubmenuLinkViewFunc(Img::icon('fa-undo icon-green') . " $textRestore", 'Restore')
+        $this->addSubmenuLinkViewFunc(Ico::i('fa-undo icon-green', 'fas') . " $textRestore", 'Restore')
             ->post();
 
         $textFindRelated = Config::$lang === 'ru' ? 'Найти удалённые одновременно' : 'Find deleted the same time';
-        $this->addSubmenuLinkViewFunc(Img::iconSearch() . " $textFindRelated", 'FindRelations');
+        $this->addSubmenuLinkViewFunc(Ico::search() . " $textFindRelated", 'FindRelations');
     }
 
     public function viewGetFindRelations()

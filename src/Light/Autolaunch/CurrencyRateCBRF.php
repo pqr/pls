@@ -2,13 +2,14 @@
 
 namespace Light\Autolaunch;
 
+use Light\Currency;
+use Light\Dates;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
 use Light\Misc;
 use Light\Module\Autolaunch\AutolaunchAbstract;
 use Light\Module\CurrencyRate\CurrencyRateObj;
-use function Light\reportException;
 
 class CurrencyRateCBRF extends AutolaunchAbstract
 {
@@ -41,11 +42,11 @@ class CurrencyRateCBRF extends AutolaunchAbstract
         $isSuccess = $this->loadRates($dateTimeRequest);
         if (!$isSuccess
             && $dateTimeRequest->format('Y-m-d') === date('Y-m-d')
-            && Misc::isWorkingDay(date('Y-m-d'))
+            && Dates::isWorkingDay(date('Y-m-d'))
         ) {
             // Были запрошены курсы на сегодняшний день, и это рабочий день, но курсов почему-то нет!
             // сообщим в rollbar
-            reportException(new \Exception($this->_msgBuff->getText()));
+            \Light\ErrorHandler::reportException(new \Exception($this->_msgBuff->getText()));
         }
     }
 
@@ -131,9 +132,11 @@ class CurrencyRateCBRF extends AutolaunchAbstract
             $rateObj = new CurrencyRateObj();
 
             //Попробуем найти этот курс в базе по набору ключевых полей
-            $id = Db::getOne("SELECT ID FROM currencyrate WHERE CurrencyISO = @s AND ValidDate = @s"
+            $id = Db::getOne(
+                "SELECT ID FROM currencyrate WHERE CurrencyISO = @s AND ValidDate = @s"
                 , $currencyIso
-                , $realDate);
+                , $realDate
+            );
 
             if ($id) {
 
@@ -153,6 +156,8 @@ class CurrencyRateCBRF extends AutolaunchAbstract
 
             $this->_msgBuff->addInfo($currencyIso . ' ' . $rateInfo['RateToRUB']);
         }
+
+        Currency::updateCurrencyRateTodayAfterSend();
 
         $this->_msgBuff->addEmptyLine();
 

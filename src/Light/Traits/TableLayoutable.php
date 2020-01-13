@@ -4,9 +4,8 @@ namespace Light\Traits;
 
 use Light\Config;
 use Light\Db;
-use Light\Field\FieldAbstract as F;
 use Light\Field\FieldAbstract;
-use Light\Fieldset;
+use Light\Field\FieldAbstract as F;
 use Light\Response;
 use Light\Table\TableUserParamsRepository;
 use Light\Template;
@@ -19,16 +18,6 @@ trait TableLayoutable
     public $allowTableLayouts = true;
 
     private static $isLayoutDailogPrinted = false;
-
-    abstract public function setTableFieldsShow($fieldsKeysString);
-
-    /** @return Fieldset|F[] */
-    abstract public function getFieldset();
-
-    /** @return Fieldset|F[] */
-    abstract public function getFieldsetShowed();
-
-    abstract public function getTableName();
 
     protected function initLayoutable()
     {

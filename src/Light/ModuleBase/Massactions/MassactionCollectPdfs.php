@@ -32,31 +32,23 @@ trait MassactionCollectPdfs
 
     protected function massactionCollectPdfs(array $ids)
     {
-        try {
+        [$destFolderRelative, $successCount, $errorFiles] = $this->collectPdfFilesToTmpDir($ids);
 
-            [$destFolderRelative, $successCount, $errorFiles] = $this->collectPdfFilesToTmpDir($ids);
+        $msg = Config::$lang === 'ru' ? 'Копируем файлы в папку' : 'Copying to directory';
+        $outHtml = $msg . ' ' . FilesFolder::getLinkWithIcon($destFolderRelative, $destFolderRelative);
+        $outHtml .= '<br>';
 
-            $msg = Config::$lang === 'ru' ? 'Копируем файлы в папку' : 'Copying to directory';
-            $outHtml = $msg . ' ' . FilesFolder::getLinkWithIcon($destFolderRelative, $destFolderRelative);
-            $outHtml .= '<br>';
-
-            if ($errorFiles) {
-                $errorFilesHtml = Html::getTruncatedList($errorFiles, 'file');
-                $msg = Config::$lang === 'ru' ? 'Не удалось скопировать' : 'Unable to copy';
-                $outHtml .= "<br>$msg <strong>" . count($errorFiles) . "</strong>:<br>$errorFilesHtml";
-            }
-
-            $msg = Config::$lang === 'ru' ? 'Успешно скопировано' : 'Success';
-            $outHtml .= "<br>$msg: $successCount";
-
-            MassactionUtils::sendSuccessDialog($outHtml, false);
-
-        } catch (\Throwable $e) {
-
-            $msg = Config::$lang === 'ru' ? 'Не удалось скопировать файлы' : 'Can\'t copy files';
-            $msg .= ': ' . $e->getMessage();
-            MassactionUtils::sendErrorDialog($msg);
+        if ($errorFiles) {
+            $errorFilesHtml = Html::getTruncatedList($errorFiles, 'file');
+            $msg = Config::$lang === 'ru' ? 'Не удалось скопировать' : 'Unable to copy';
+            $outHtml .= "<br>$msg <strong>" . count($errorFiles) . "</strong>:<br>$errorFilesHtml";
         }
+
+        $msg = Config::$lang === 'ru' ? 'Успешно скопировано' : 'Success';
+        $outHtml .= "<br>$msg: $successCount";
+
+        MassactionUtils::sendSuccessDialog($outHtml, false);
+
     }
 
     /**

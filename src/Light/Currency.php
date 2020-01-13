@@ -16,7 +16,7 @@ class Currency
      */
     private static function getValidDate($date)
     {
-        if (!$date || $date === '0000-00-00') {
+        if (FieldDate::empty($date)) {
             return date('Y-m-d');
         }
 
@@ -33,44 +33,77 @@ class Currency
         return self::$currencies;
     }
 
+    /**
+     * Эта функция использует статический кеширующий массив self::$rates
+     * Если в нём нет данных и запрос на текущий день (date('Y-m-d')),
+     * то загружает из таблицы currencyrate_today
+     * Если и там не найдено, то делает запрос к оригинальной таблице currencyrate
+     * @param $date
+     * @return array
+     */
     private static function getRates($date): array
     {
         $date = self::getValidDate($date);
         if (!isset(self::$rates[$date])) {
 
-            $queryArr = [];
-
-            foreach (self::getCurrencies() as $currencyIso => $_) {
-                $queryArr[] = Db::parse(
-                    "(SELECT CurrencyISO, RateToRUB, ValidDate
-                  FROM currencyrate
-                  WHERE CurrencyISO = @s
-                      AND ValidDate <= @s
-                  ORDER BY ValidDate DESC LIMIT 0, 1)",
-                    $currencyIso,
-                    $date
-                );
+            $ratesFromDb = null;
+            if ($date === date('Y-m-d')) {
+                // Если запрос на текущий день, то используем оптимизированную таблицу currencyrate_today
+                $ratesFromDb = self::getRatesFromDbToday();
             }
 
-            $query = implode(' UNION ', $queryArr);
-
-            $ratesFromDb = Db::getAssoc($query);
+            if (!$ratesFromDb) {
+                // Если запрос был не на текущий день или на текущий день не удалось загрузить
+                // то используем оригинальную таблицу currencyrate
+                $ratesFromDb = self::getRatesFromDb($date);
+            }
 
             self::$rates[$date] = [];
 
             // Запишем все загруженные курсы во внутренний кеширующий массив
-            foreach ($ratesFromDb as $currencyIso => $rateInfo) {
-                if ($rateInfo['RateToRUB'] > 0) {
-                    self::$rates[$date][$currencyIso] = new CurrencyRate(
-                        $currencyIso,
-                        $rateInfo['RateToRUB'],
-                        $rateInfo['ValidDate']
+            foreach ($ratesFromDb as $rate) {
+                if ($rate['RateToRUB'] > 0) {
+                    self::$rates[$date][$rate['CurrencyISO']] = new CurrencyRate(
+                        $rate['CurrencyISO'],
+                        $rate['RateToRUB'],
+                        $rate['ValidDate']
                     );
                 }
             }
         }
 
         return self::$rates[$date];
+    }
+
+    private static function getRatesFromDbToday(): array
+    {
+        return Db::getAll("SELECT CurrencyISO, RateToRUB, ValidDate FROM currencyrate_today");
+    }
+
+    /**
+     * Всегда выполняет запрос к таблице currencyrate
+     * @param string $date
+     * @return array
+     */
+    private static function getRatesFromDb(string $date): array
+    {
+        $queryArr = [];
+
+        foreach (self::getCurrencies() as $currencyIso => $_) {
+            $queryArr[] = Db::parse(
+                "(SELECT CurrencyISO, RateToRUB, ValidDate
+                  FROM currencyrate
+                  WHERE CurrencyISO = @s
+                      AND ValidDate <= @s
+                  ORDER BY ValidDate DESC LIMIT 0, 1)",
+                $currencyIso,
+                $date
+            );
+        }
+
+        $query = implode(' UNION ', $queryArr);
+
+        return Db::getAll($query);
     }
 
     /**
@@ -188,5 +221,22 @@ class Currency
         Response::addJsData([
             'CurrencyRates' => self::getRates(date('Y-m-d')),
         ]);
+    }
+
+    public static function updateCurrencyRateTodayAfterSend()
+    {
+        static $updateRegistered = false;
+        if ($updateRegistered) {
+            return;
+        }
+        ApplicationAbstract::onAfterSend(function () {
+            $today = date('Y-m-d');
+            // Сбрасываешь статически php-кэширующий массив, чтобы выполнились
+            // реальные запросы к таблице currencyrate
+            $rates = self::getRatesFromDb($today);
+            $onDuplicateUpdateFieldKeys = ['RateToRub', 'ValidDate'];
+            Db::insertRows($rates, 'currencyrate_today', false, false, $onDuplicateUpdateFieldKeys);
+        });
+        $updateRegistered = true;
     }
 }

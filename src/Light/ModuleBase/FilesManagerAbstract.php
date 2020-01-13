@@ -308,6 +308,13 @@ class FilesManagerAbstract
         $obj = clone $this->obj;
         $obj->setId($id);
         $fieldsData = $obj->getDataFromRequest($dataFromPost);
+
+        // Оставим только те поля, у которых есть F::MODE_SUBMIT
+        $fieldsData = $obj->filterDataByModeSubmit($fieldsData);
+
+        // Проверим по оставшимся полям функцию editAccessFunction
+        $fieldsData = $obj->filterDataByEditAccessFunction($fieldsData);
+
         $affectedRows = $obj->updateDb($fieldsData, 'Обновление из диалога');
         $this->afterSubmit($obj);
         return $affectedRows;

@@ -2,6 +2,7 @@
 
 namespace Light;
 
+use Basis\Classes\Stamp\ImageOperators;
 use Symfony\Component\Process\Process;
 
 class Pdf
@@ -77,7 +78,7 @@ class Pdf
             if ($msgBuff) {
                 $msgBuff->addError($e->getMessage());
             }
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             return false;
         }
 
@@ -100,7 +101,7 @@ class Pdf
             if ($msgBuff) {
                 $msgBuff->addError($e->getMessage());
             }
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             return false;
         }
 
@@ -109,6 +110,10 @@ class Pdf
 
     public static function getCmdPdfFromHtmlStdin(string $targetFile, bool $landscape = false): string
     {
+        if (!Config::$wkhtmltopdfPath) {
+            throw new \Exception('Config::$wkhtmltopdfPath not set');
+        }
+
         // Путь к исполняемому файлу wkhtmltopd должен быть в конфиге
         $cmd = '"' . Config::$wkhtmltopdfPath . '"';
 
@@ -217,7 +222,7 @@ class Pdf
 
         // Чтобы не было проблем с исходными файлами и русскими буквами в них, скопируем все исходные файлы
         // в отдельную временную папку
-        $tmpDir = File::mkdirTmp(self::CONCAT_TMPDIR_PREFIX);
+        $tmpDir = File::mkdirTmp(self::CONCAT_TMPDIR_PREFIX . time());
         if (!$tmpDir) {
             if ($msgBuff) {
                 $msg = Config::$lang === 'ru'
@@ -232,7 +237,15 @@ class Pdf
         $i = 0;
         foreach ($srcFilepaths as $filepath) {
             $tmpFilepath = "$tmpDir/{$i}.pdf";
-            $successCopy = File::copy($filepath, $tmpFilepath);
+
+            $srcExt = strtolower(pathinfo($filepath, PATHINFO_EXTENSION));
+            if ($srcExt !== 'pdf') {
+                // Исходный файл не PDF - попобуем сконвернировать его в PDF с помощью imagemagic
+                $successCopy = ImageOperators::imagemagic($filepath, $tmpFilepath, ['compress' => 'jpeg'], $msgBuff);
+            } else {
+                // Исходный файл является pdf файлом - просто копируем его под новым именем во временную директорию
+                $successCopy = File::copy($filepath, $tmpFilepath);
+            }
             if ($successCopy) {
                 // Успешно скопированные файлы накапливаем в массив
                 $tmpFiles[] = $tmpFilepath;
@@ -269,7 +282,7 @@ class Pdf
 
         } catch (\Exception $e) {
 
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             if ($msgBuff) {
                 $msgBuff->addError($e->getMessage());
             }

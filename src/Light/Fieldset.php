@@ -4,8 +4,7 @@ namespace Light;
 
 use Light\Field\CommonFields;
 use Light\Field\FieldAbstract as F;
-use Light\Field\FieldFloat;
-use Light\Field\FieldNumberAbstract;
+use Light\Field\FieldSelect;
 
 class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 {
@@ -139,9 +138,9 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     /**
      * Для имплементации \ArrayAccess
      * @param string $fieldKey
-     * @return \Light\Field\FieldAbstract
+     * @return F|null
      */
-    public function offsetGet($fieldKey)
+    public function offsetGet($fieldKey): ?F
     {
         return $this->_fields[$fieldKey] ?? null;
     }
@@ -156,7 +155,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
         return $this;
     }
 
-    public function isEmpty()
+    public function isEmpty(): bool
     {
         return count($this) === 0;
     }
@@ -206,7 +205,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     }
 
     /**
-     * @param \Light\Field\FieldAbstract $field
+     * @param F $field
      * @param bool $clone
      * @return FieldSet
      */
@@ -387,9 +386,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
         foreach ($this->_fields as $field) {
             $value = $rowData[$field->key] ?? null;
             $value = $this->parseFieldValueFromDb($field, $value);
-            if ($field->calcFunction) {
-                $value = $field->getCalculatedValue($value, $rowData, $forTable);
-            }
+            $value = $field->getCalculatedValue($value, $rowData, $forTable);
             $rowData[$field->key] = $value;
         }
 
@@ -460,7 +457,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
         // Эта функция должна возвращать данные по всем полям, которые были объявлены в Fieldset как MODE_EDIT (или MODE_MULTIPLEUPDATE) И MODE_SUBMIT
         foreach ($this->_fields as $field) {
-            /** @var \Light\Field\FieldAbstract $field */
+            /** @var F $field */
             $value = $field->getDataFromRequest($request);
             if ($value !== null) {
                 if (is_array($value)) {
@@ -503,14 +500,15 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * @param array $fieldsShow
      * @return string
      */
-    public function getSqlSelect(array $fieldsShow = null)
+    public function getSqlSelect(array $fieldsShow = null, string $table = null)
     {
         if ($fieldsShow === null) {
             $fieldsShow = $this->getKeys();
         }
 
         //Сначала добавим в массив $selectFieldsArr все обязательные поля
-        $selectFieldsArr = $this->filterByParams(['sqlSelectMandatory' => true])->getKeys();
+        $selectFieldKeys = $this->filterByParams(['sqlSelectMandatory' => true])->getKeys();
+        $selectFieldsArr = array_combine($selectFieldKeys, $selectFieldKeys);
 
         //Пройдём по всему массиву, проверим зависимости, добавим зависимые поля
         foreach ($fieldsShow as $fieldKey) {
@@ -521,22 +519,41 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
         $sqlArr = [];
 
         foreach ($selectFieldsArr as $fieldKey) {
-            /** @var $field \Light\Field\FieldAbstract */
-            $field = $this[$fieldKey];
-            $sqlSelect = $field->getSqlSelect();
-            if ($sqlSelect) {
-                $sqlArr[$fieldKey] = '(' . $sqlSelect . ') AS ' . Db::quote($fieldKey);
-            } elseif ($sqlSelect === null) {
-                //Если параметр совсем не инициализирован, по умолчанию считаем, что нужно просто вывести поле
-                //Альтернативный варинат: пользователь может указать sqlSelect = false, тогда поле не будет
-                //включено в SQL запрос
-                $sqlArr[$fieldKey] = Db::quote($fieldKey);
+
+            if (!$fieldKey) {
+                continue;
             }
+
+            // Возможно, это поле нужно загружать из базы как-то по особенному, если задан параметр sqlSelect?
+            $sqlSelect = null;
+            if ($this->hasField($fieldKey)) {
+
+                /** @var F $field */
+                $field = $this[$fieldKey];
+                $sqlSelect = $field->getEvalueatedSqlSelect($table);
+
+            } else {
+
+                $sqlSelect = Db::quote($fieldKey);
+                if ($table) {
+                    $sqlSelect = Db::quote($table) . '.' . $sqlSelect;
+                }
+
+            }
+
+            if ($sqlSelect) {
+                $sqlArr[$fieldKey] = $sqlSelect;
+            }
+
         }
 
         if (!isset($sqlArr['ID'])) {
-            //Обязательно добавляем поле ID В число полей для запроса
-            $sqlArr['ID'] = 'ID';
+            // Обязательно добавляем поле ID В число полей для запроса
+            $sqlSelect = 'ID';
+            if ($table) {
+                $sqlSelect = Db::quote($table) . '.' . $sqlSelect;
+            }
+            $sqlArr['ID'] = $sqlSelect;
         }
 
         return implode(', ', $sqlArr);
@@ -547,22 +564,35 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * @param string $fieldKey
      * @param array $selectFieldsArr
      */
-    private function makeSelectFieldsArr($fieldKey, array &$selectFieldsArr)
+    private function makeSelectFieldsArr(string $fieldKey, array &$selectFieldsArr)
     {
-        //Если запрашиваемое поле существует в текущем Fieldset и ещё не добавлено в $currentFieldsShow, добавим его!
-        //Проверка !isset($selectFieldsArr[$fieldKey]) избавляет от циклических ссылок
-        if (isset($this[$fieldKey]) && !isset($selectFieldsArr[$fieldKey])) {
+        if (!$fieldKey) {
+            return;
+        }
+
+        // Если запрашиваемое поле существует в текущем Fieldset и ещё не добавлено в $currentFieldsShow, добавим его!
+        // Проверка !isset($selectFieldsArr[$fieldKey]) избавляет от циклических ссылок
+        if (!isset($selectFieldsArr[$fieldKey])) {
+
+            // Сразу добавляем ключ в результирующий массив.
+            // Это поле на самом деле может и не существовать в Fieldset, но оно очевидно должно существовать
+            // в базе данных в запрашиваемой таблице
             $selectFieldsArr[$fieldKey] = $fieldKey;
 
-            //Проверим от каких полей зависит данное поле $fieldKey
-            /** @var $field \Light\Field\FieldAbstract */
-            $field = $this[$fieldKey];
-            $requires = $field->getSqlSelectRequires();
-            if ($requires) {
-                //Если параметр $sqlSelectRequires был задан одной строкой, превратим его в массив из этой строки
-                $requires = (array)$requires;
-                foreach ($requires as $reqFieldKey) {
-                    $this->makeSelectFieldsArr($reqFieldKey, $selectFieldsArr);
+            if (isset($this[$fieldKey])) {
+                // Если это реальное поле существующее в Fieldset,
+                // то проверим от каких полей зависит данное поле $fieldKey
+                /** @var F $field */
+                $field = $this[$fieldKey];
+                $requires = $field->getSqlSelectRequires();
+                if ($requires) {
+                    //Если параметр $sqlSelectRequires был задан одной строкой, превратим его в массив из этой строки
+                    $requires = (array)$requires;
+                    foreach ($requires as $reqFieldKey) {
+                        if ($reqFieldKey) {
+                            $this->makeSelectFieldsArr($reqFieldKey, $selectFieldsArr);
+                        }
+                    }
                 }
             }
         }
@@ -586,19 +616,14 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
             return '1';
         }
 
-        return '(' . implode(' AND ', $sqlWhere) . ')';
+        return '((' . implode(') AND (', $sqlWhere) . '))';
     }
 
     public function validateMandatory(array $dataFromRequest, array $currentObjData = [])
     {
-        $defaultMsg = Config::$lang === 'ru' ? 'Не заполнено' : 'Empty';
         $errors = [];
         // Проверим заполненность остальных полей, помеченных как editMandatory
         foreach ($this->_fields as $field) {
-            if (!$field->editMandatory) {
-                continue;
-            }
-
             if (!$field->hasMode(F::MODE_SUBMIT)) {
                 continue;
             }
@@ -607,23 +632,10 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
                 continue;
             }
 
-            /** @var $field \Light\Field\FieldAbstract */
-            if (!isset($dataFromRequest[$field->key])
-                || $dataFromRequest[$field->key] === ''
-                || ($field instanceof FieldNumberAbstract && $dataFromRequest[$field->key] === 0)
-                || ($field instanceof FieldFloat && $dataFromRequest[$field->key] === 0.0)
-            ) {
-
-                // Стандартные сообщения для пользователя могут быть заданы внтури параметра editMandatory
-                $msg = is_string($field->editMandatory) ? $field->editMandatory : "$defaultMsg {$field->getName()}";
-
-                // Первую букву сообщения сделаем заглавной, чтобы придерживаться единого стиля
-                $firstChar = mb_substr($msg, 0, 1);
-                $firstChar = mb_strtoupper($firstChar);
-                $msg = $firstChar . mb_substr($msg, 1);
-
+            $errMsg = $field->validate($dataFromRequest, $currentObjData);
+            if ($errMsg !== null) {
                 $errors[] = [
-                    'msg' => $msg,
+                    'msg' => $errMsg,
                     'fieldKey' => $field->key,
                 ];
             }
@@ -644,7 +656,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     {
         $fields = [];
         foreach ($this->_fields as $field) {
-            /** @var $field \Light\Field\FieldAbstract */
+            /** @var F $field */
             $fields[$field->key] = ['type' => $field->getType()];
         }
 
@@ -654,5 +666,20 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     public function jsonSerialize()
     {
         return $this->_fields;
+    }
+
+    public function proceedSelect2ajax(string $fieldKey): ?array
+    {
+        if (substr($fieldKey, -2) === '[]') {
+            $fieldKey = substr($fieldKey, 0, -2);
+        }
+
+        $field = $this->getField($fieldKey);
+        if (!$field || !($field instanceof FieldSelect)) {
+            return null;
+        }
+
+        $select2ajaxController = new Select2ajaxController();
+        return $select2ajaxController->proceed($field, Request::$psr7);
     }
 }

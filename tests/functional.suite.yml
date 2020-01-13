@@ -4,6 +4,7 @@
 # Emulate web requests and make application process them
 # Include one of framework modules (Symfony2, Yii2, Laravel5) to use it
 
+bootstrap: _bootstrap.php
 class_name: FunctionalTester
 modules:
     enabled:

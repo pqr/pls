@@ -20,6 +20,7 @@ abstract class FieldInputAbstract extends FieldAbstract
     public $editMaxLength;
     public $inputType;
     public $inputPattern; // можно задавать regex выражения, например [0-9]* http://htmlbook.ru/html/input/pattern
+    public $mask; // можно задавать маску https://github.com/RobinHerbots/Inputmask#via-data-inputmask-attribute
 
     protected function initDefaultParams()
     {
@@ -45,6 +46,9 @@ abstract class FieldInputAbstract extends FieldAbstract
         }
         if ($this->inputPattern) {
             $outHtml .= ' pattern="' . $this->inputPattern . '"';
+        }
+        if ($this->mask) {
+            $outHtml .= ' data-inputmask="' . $this->mask . '"';
         }
 
         $outHtml .= $tdata['cssClass'] . $tdata['tagParams'] . $tdata['title'] . '>';

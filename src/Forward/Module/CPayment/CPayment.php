@@ -15,9 +15,9 @@ class CPayment extends PaymentModuleAbstract
     protected $textSaveBtn = 'Customer Payment';
     public $tableLayoutDefault = 'CompanyID|Name|CustomerID|PaymentDate|Amount|CurrencyISO|Comments';
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(CInvoices::class);
+        $this->addSubtable(CInvoices::class);
     }
 
     protected function initFilters()
@@ -64,13 +64,5 @@ class CPayment extends PaymentModuleAbstract
     protected function getAccessSqlWhere(): string
     {
         return BuAccess::getSqlWhereCustomerId() . " AND " . CustomerAccess::getSqlWhere();
-    }
-
-    protected function hasWriteAccessAjaxChangeField(F $field): bool
-    {
-        if ($field->key === 'PrintedDate') {
-            return true;
-        }
-        return parent::hasWriteAccessAjaxChangeField($field);
     }
 }

@@ -2,7 +2,6 @@
 
 namespace Light\Module\Logviewer;
 
-use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Db;
 use Light\Field\CommonFields;
@@ -26,6 +25,8 @@ class Logviewer extends Table
     protected $_state;
 
     protected $_queryTime = 0;
+
+    public $allowTablePrintHeadBlock = true;
 
     public $tableReloadUrl = "?a=Logviewer";
     public $tableFieldsShow = [
@@ -57,57 +58,57 @@ class Logviewer extends Table
             F::createSelect('ModuleID', [
                     'name' => 'Module',
                     'tableWidthExcel' => 15,
-                    'options' => "SELECT ID, ModuleName FROM dblog_module"
+                    'options' => "SELECT ID, ModuleName FROM dblog_module",
                 ]
             ),
 
             F::createInt('MasterID', [
                 'name' => 'Master ID',
-                'tableAlign' => 'left'
+                'tableAlign' => 'left',
             ]),
 
             F::createSelect('TableID', [
                 'name' => 'Table',
                 'tableWidthExcel' => 15,
-                'options' => "SELECT ID, TableName FROM dblog_table"
+                'options' => "SELECT ID, TableName FROM dblog_table",
             ]),
 
             F::createInt('RecordID', [
                 'name' => 'Record ID',
-                'tableAlign' => 'left'
+                'tableAlign' => 'left',
             ]),
 
             F::createSelect('FieldID', [
                 'name' => 'Field',
                 'tableWidthExcel' => 30,
-                'options' => "SELECT ID, FieldDescription FROM dblog_field"
+                'options' => "SELECT ID, FieldDescription FROM dblog_field",
             ]),
 
             F::createHtml('OldValueFormated', [
                 'name' => 'Old Value',
                 F::PARAM_TEXTTRUNCATE => F::TEXTTRUNCATE_PART,
                 'getExcelFunction' => $formatExcel,
-                'sqlSelect' => ''
+                'sqlSelect' => '',
             ]),
 
             F::createHtml('NewValueFormated', [
                 'name' => 'New Value',
                 F::PARAM_TEXTTRUNCATE => F::TEXTTRUNCATE_PART,
                 'getExcelFunction' => $formatExcel,
-                'sqlSelect' => ''
+                'sqlSelect' => '',
             ]),
 
             F::createHtml('Text', [
                 'name' => 'Message',
                 'tableWidthExcel' => 80,
                 'getExcelFunction' => $formatExcel,
-                'sqlSelect' => ''
+                'sqlSelect' => '',
             ]),
 
             F::createHtml('ObjectDescription', [
                 'name' => 'Object Description',
                 'getExcelFunction' => $formatExcel,
-                'sqlSelect' => ''
+                'sqlSelect' => '',
             ])
 
         );
@@ -131,7 +132,7 @@ class Logviewer extends Table
                 'name' => Config::$lang === 'ru' ? 'Текст' : 'Text',
                 'sqlWhere' => "ID in (SELECT dblogID FROM dblog_text WHERE (Text LIKE '%{value}%'
                                             OR OldValueFormated LIKE '%{value}%'
-                                            OR NewValueFormated LIKE '%{value}%'))"
+                                            OR NewValueFormated LIKE '%{value}%'))",
             ]),
 
             CommonFields::filterMasterId(),
@@ -148,13 +149,13 @@ class Logviewer extends Table
                 'ModuleID',
                 'TableID',
                 'FieldID',
-                'FilterName'
+                'FilterName',
             ],
             [
                 'CreatedDateTime',
                 'MasterID',
-                'RecordID'
-            ]
+                'RecordID',
+            ],
         ];
     }
 
@@ -170,81 +171,60 @@ class Logviewer extends Table
         //Это значительно ускорит запрос, т.к. сортировка сначала LIMIT будут производиться на лёгком наборе ID
         //При выборке остальных колонок объём данных будет уже меньше за счёт ограниченного набора WHERE ID IN (...)
 
-        $queryIds = "SELECT ID";
+        $queryIds = "SELECT ID FROM dblog";
 
-        $dblogTable = 'dblog';
-        $database = $this->getFilterValue('Database');
-        if ($database == 'archive') {
-            $archiveDb = ApplicationAbstract::getParam('ArchiveDatabase');
-            if ($archiveDb) {
-                $dblogTable = $archiveDb . '.dblog';
-            }
-        }
-        $queryIds .= " FROM " . $dblogTable;
-
-        $sqlWhere = $this->getFiltersSqlWhere();
-        if ($sqlWhere) {
-            $queryIds .= " WHERE $sqlWhere";
-        }
-
+        $queryIds = $this->getDataQueryWithFiltersWhere($queryIds);
         $queryIds .= " ORDER BY ID DESC";
+        $queryIds = $this->getDataQueryWithLimits($queryIds, $this->isListExcelAction());
 
-        if ($this->isListExcelAction()) {
-            $queryIds .= ' LIMIT ' . $this->getTableExcelMaxRows();
-        } else {
-            $page = $this->getTablePage();
-            $rowsPerPage = $this->getTableRowsPerPage();
-            $queryIds .= ' LIMIT ' . ($page - 1) * $rowsPerPage . ', ' . $rowsPerPage;
+        $ids = Db::getCol($queryIds);
+        $this->_queryTime += Db::getLastQueryTime();
+
+        if (!$ids) {
+            return;
         }
 
-        //Получим все ID из базы
+        //Сразу посчитаем общее количество строк, если это не режим экспорта в Excel
+        if (!$this->isListExcelAction()) {
+            $foundRows = 9999;
+            $this->setTableTotalRecordsFound($foundRows);
+        }
+
+        $idsString = implode(',', $ids);
+
+        //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->tableData
+        $query = "SELECT ";
+
+        $selectFieldKeys = $this->getFieldsetShowed()->getKeys();
+
+        $query .= $this->getSqlSelect($selectFieldKeys);
+
+        $query .= " FROM dblog";
+        $query .= " WHERE ID IN (" . $idsString . ")";
+        $query .= " ORDER BY ID DESC";
+
         $timer = new Timer();
-        $ids = Db::getCol($queryIds);
+        $this->tableData = Db::getAll($query);
         $this->_queryTime += $timer->get();
 
-        if ($ids) {
-
-            //Сразу посчитаем общее количество строк, если это не режим экспорта в Excel
-            if (!$this->isListExcelAction()) {
-                $foundRows = 9999;
-                $this->setTableTotalRecordsFound($foundRows);
-            }
-
-            $idsString = implode(',', $ids);
-
-            //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->tableData
-            $query = "SELECT ";
-
-            $selectFieldKeys = $this->getFieldsetShowed()->getKeys();
-
-            $query .= $this->getSqlSelect($selectFieldKeys);
-
-            $query .= " FROM " . $dblogTable;
-            $query .= " WHERE ID IN (" . $idsString . ")";
-            $query .= " ORDER BY ID DESC";
-
-            $timer = new Timer();
-            $this->tableData = Db::getAll($query);
-            $this->_queryTime += $timer->get();
-
-            //Теперь сделаем третий запрос, который выбирает данные из dblog_text
-            $query = "SELECT dblogID, NewValueFormated, OldValueFormated, Text, ObjectDescription
+        // Теперь сделаем третий запрос, который выбирает данные из dblog_text
+        $query = "SELECT dblogID, NewValueFormated, OldValueFormated, Text, ObjectDescription
                       FROM dblog_text
                       WHERE dblogID IN (" . $idsString . ")
                       ORDER BY dblogID DESC";
-            $txtData = Db::getAssoc($query);
-            foreach ($this->tableData as &$rowData) {
-                if (isset($txtData[$rowData['ID']])) {
-                    $rowData += $txtData[$rowData['ID']];
-                }
+        $txtData = Db::getAssoc($query);
+        foreach ($this->tableData as &$rowData) {
+            if (isset($txtData[$rowData['ID']])) {
+                $rowData += $txtData[$rowData['ID']];
             }
-            unset($rowData);
         }
+        unset($rowData);
+
     }
 
     public function __invoke()
     {
-        if (isset($_GET['xls'])) {
+        if (Request::isXls()) {
             $this->_state = self::STATE_EXCEL;
         } else {
             $this->_state = self::STATE_LIST;

@@ -1,7 +1,7 @@
 <?php
 namespace Forward\ModuleBase\Payments\Subtables;
 
-use Forward\Classes\Traits\FirstLetterTrait;
+use Light\Traits\FirstLetterTrait;
 use Forward\Field\PaymentInvoiceFields;
 use Light\ObjAbstract;
 

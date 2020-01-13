@@ -6,23 +6,17 @@ use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
-use Light\Field\FieldDate;
-use Light\Field\FieldMonth;
 use Light\Field\FieldSelect;
-use Light\Field\FieldSelect2ChildMultiple;
-use Light\Field\FieldSelect2Multiple;
-use Light\Field\FieldText;
 use Light\Fieldset;
 use Light\Filters;
+use Light\FiltersBuilderInterface;
+use Light\Misc;
 use Light\Response;
 
 trait TableFilterable
 {
     /** @var Filters */
     protected $filters;
-
-    /** @var array некоторым фильтрам можно запретить сбрасываение по кнопке Reset */
-    protected $filtersDoNotReset = [];
 
     /** @var bool выключает возможность пользовательской настройки */
     protected $allowFiltersLayoutChange = true;
@@ -40,39 +34,35 @@ trait TableFilterable
     protected $filtersLayout = [];
 
     /**
-     * Контракт на метод getTableName, который описан в классе Table к которому должен подключаться этот Trait
-     * @return string
-     */
-    abstract public function getTableName();
-
-    /**
      * Метод для переопределяни классов потомков
      * Добавлять фильтры можно вызовом $this->addFilters(...) или $this->addFilter(...)
      */
     protected function initFilters()
     {
-    }
-
-    /**
-     * Удобный метод на замену старому setFiltersFieldset
-     * В этот метод нет необходимости передавать целый объект Fieldset внутри которого описаны поля с фильтрами
-     * Сюда можно передать переменное число параметров - сами объекты Field
-     * или обычный массив из объектов Field
-     * @param F[] $fields
-     */
-    public function addFilters(...$fields)
-    {
-        if (count($fields) !== 0) {
-            if (is_array($fields[0]) && count($fields) === 1) {
-                $filtersArr = $fields[0];
-            } else {
-                $filtersArr = $fields;
-            }
-
-            foreach ($filtersArr as $filterField) {
-                $this->addFilter($filterField);
+        // Реализация по умолчанию будет искать файл с таким же именем, что текущий класс,
+        // с добавлением слова Filter в конце
+        // Если объект не задан явно, попробуем найти соответсвующий класс рядом с текущим файлом модуля
+        $tableClass = get_class($this);
+        if (strpos($tableClass, 'class@anonymous') !== 0) {
+            $filtersClass = $tableClass . 'Filters';
+            if (Misc::classExists($filtersClass)) {
+                $interfaces = class_implements($filtersClass);
+                if (in_array(FiltersBuilderInterface::class, $interfaces)) {
+                    call_user_func($filtersClass . '::init', $this->filters);
+                    $this->filtersLayout = call_user_func($filtersClass . '::getLayout');
+                }
             }
         }
+    }
+
+    public function addFilters(...$fields)
+    {
+        $this->filters->addFilters($fields);
+    }
+
+    public function addFilter(F $field)
+    {
+        $this->filters->add($field);
     }
 
     protected function getFiltersFieldset(): Fieldset
@@ -82,132 +72,17 @@ trait TableFilterable
 
     protected function hasFilters(): bool
     {
-        return !$this->getFiltersFieldset()->isEmpty();
-    }
-
-    protected function addFilter(F $field)
-    {
-        //В зависимости от типа поля, навесим доп параметры
-        if ($field instanceof FieldSelect2Multiple || $field instanceof FieldSelect2ChildMultiple) {
-
-            if (!isset($field->initialParams['any'])) {
-                $field->any = false;
-            }
-            if (!isset($field->initialParams['empty'])) {
-                $field->empty = false;
-            }
-            if (!isset($field->initialParams['default'])) {
-                $field->default = '%';
-            }
-
-            // Принудильено отключаем возможность добавления новых элементов в выпадающий список для фильтров
-            $field->addNew = false;
-
-        } elseif ($field instanceof FieldSelect) {
-
-            if (!isset($field->initialParams['any'])) {
-                $field->any = true;
-            }
-            if (!isset($field->initialParams['empty'])) {
-                $field->empty = false;
-            }
-            if (!isset($field->initialParams['default'])) {
-                $field->default = '%';
-            }
-
-            // Принудительно отключаем возможность добавления новых элементов в выпадающий список для фильтров
-            $field->addNew = false;
-
-        } elseif ($field instanceof FieldMonth) {
-
-            if (!isset($field->initialParams['allYear'])) {
-                $field->allYear = true;
-            }
-
-        } elseif ($field instanceof FieldText) {
-
-            if (!isset($field->initialParams['title'])) {
-                $field->title = 'Multiple values separated by comma or new line';
-            }
-            if (!isset($field->initialParams['rows'])) {
-                $field->rows = 2;
-            }
-
-        } elseif ($field->isAutocomplete()) {
-
-            //Если это поле с виджетом Autocomplete, то нужно сделать его readonly, чтобы после сабмита фильтров
-            //новое значение не запоминалось в базу
-            $field->acReadonly = true;
-
-        } /*elseif ($field instanceof FieldCheckbox) {
-
-            //Чекбоксы нужно превратить в выпадающие списки yes/no
-            $params = $field->getUserDefinedParams();
-            $params['any'] = true;
-            $params['default'] = '%';
-            $field = new FieldYesNo($field->key, $params);
-
-        }*/
-
-        // Обязательно проставим режим редактирования
-        $field->setModes(F::MODE_ALL);
-
-        $this->filters->addField($field);
-
-        if ($field->filterNot) {
-            $this->filters->addField(F::createCheckbox(
-                'Not' . $field->key, [
-                'name' => Config::$lang === 'ru' ? 'Кроме выбранных выше' : 'Except selected',
-                'sqlWhere' => ''
-            ]));
-        }
+        return $this->filters && !$this->getFiltersFieldset()->isEmpty();
     }
 
     /**
-     * Добавляет в фильтры один из наиболее частных и стандартных полей для фильтров: FilterName
-     * @param string $type
+     * @param string|array $fieldKeys
      * @param array $params
-     * @param bool $synonyms
      * @return $this
      */
-    public function addFilterName(string $type = F::TYPE_STRING, array $params = [], bool $synonyms = false)
+    public function addFilterText($fieldKeys, array $params = [])
     {
-        if (!isset($params['name'])) {
-            $params['name'] = Config::$lang === 'ru' ? 'Поиск по тексту' : 'Search Text';
-        }
-
-        if (!isset($params['sqlWhere'])) {
-            $params['sqlWhere'] = "Name LIKE '%{value}%'";
-            if ($synonyms) {
-                $params['sqlWhere'] .= " OR Synonyms LIKE '%{value}%'";
-            }
-        }
-
-        $this->addFilter(F::create('FilterName', $type, $params));
-
-        return $this;
-    }
-
-    public function addFilterNameComaSeparated(
-        array $params = [],
-        $sqlVarName = 'Name',
-        $normalStrLen = 0,
-        $fullLike = false,
-        $isIntField = false
-    ) {
-        if (!isset($params['name'])) {
-            $params['name'] = Config::$lang === 'ru' ? 'Номера' : 'Text';
-        }
-
-        if (!isset($params['sqlWhere'])) {
-            $params['sqlWhere'] = function ($filterValue) use ($sqlVarName, $normalStrLen, $fullLike, $isIntField) {
-                return Db::getSqlWhereSeparatedByComa($filterValue, $sqlVarName, $normalStrLen, $fullLike, $isIntField);
-            };
-        }
-
-        $fieldKey = 'Filter' . $sqlVarName;
-        $this->addFilter(F::createText($fieldKey, $params));
-
+        $this->filters->addManyText($fieldKeys, $params);
         return $this;
     }
 
@@ -219,25 +94,7 @@ trait TableFilterable
      */
     public function addFiltersDatesFromUntil($field, array $params = [])
     {
-        // Первым параметром может быть передано готовое поле (FieldAbstract) со всеми настройами
-        // а может быть передан только ключ (string)
-        if ($field instanceof F) {
-            $fieldKey = $field->key;
-            $baseField = $field;
-        } else {
-            // первый параметр это не целое поле, а всего лишь ключ (string)
-            $fieldKey = $field;
-            $baseField = new FieldDate('tmp');
-        }
-
-        $params['filterFromUntil'] = true;
-
-        // Добавим фильтр From
-        $this->addFilter($baseField->getClone($fieldKey . 'From', $params));
-
-        // Добавим фильтр Until
-        $this->addFilter($baseField->getClone($fieldKey . 'Until', $params));
-
+        $this->filters->addDatesFromUntil($field, $params);
         return $this;
     }
 
@@ -252,6 +109,7 @@ trait TableFilterable
      * @param int $yearFrom
      * @param int $yearTill
      * @return FieldSelect
+     * @deprecated use addFilterYear2()
      */
     public function addFilterYear(
         string $tableName = null,
@@ -268,7 +126,7 @@ trait TableFilterable
                           FROM " . Db::quote($tableName) . " WHERE " . $dateField . " != '0000-00-00'";
                 $yearFrom = Db::getOne($query);
             } else {
-                $yearFrom = date('Y');
+                $yearFrom = (int)date('Y');
             }
         }
 
@@ -280,7 +138,7 @@ trait TableFilterable
                           FROM " . Db::quote($tableName);
                 $yearTill = Db::getOne($query);
             } else {
-                $yearTill = date('Y');
+                $yearTill = (int)date('Y');
             }
         }
 
@@ -293,7 +151,7 @@ trait TableFilterable
             'default' => date('Y'),
             'options' => $options,
             'empty' => false,
-            'any' => false
+            'any' => false,
         ]);
 
         if ($dateField) {
@@ -303,6 +161,12 @@ trait TableFilterable
         $this->addFilter($filterYear);
 
         return $filterYear;
+    }
+
+    public function addFilterYear2(string $fieldKey, string $filterFieldKey, int $yearFrom, int $yearUntill = null, array $params = [])
+    {
+        $this->filters->addYear($fieldKey, $filterFieldKey, $yearFrom, $yearUntill, $params);
+        return $this;
     }
 
     /**
@@ -366,7 +230,14 @@ trait TableFilterable
             return;
         }
 
-        $this->filters->loadAndSave();
+        // Если есть POST или GET параметр с новыми значениями фильтров, применим их!
+        if (isset($_REQUEST['filterValues'])) {
+            $this->filters->proceedFromRequestJson($_REQUEST['filterValues']);
+            return;
+        }
+
+        // Если в запросе не было новых значений фильтров, то загрузим текущие из базы данных
+        $this->filters->loadCurrentFromDb();
     }
 
     protected function proceedFiltersSelect2ajax()
@@ -377,25 +248,16 @@ trait TableFilterable
         // Это может быть multiple поле, в этом случае fieldKey на конце содержит '[]'
         $fieldKey = str_replace('[]', '', $fieldKey);
 
-        $field = $this->getFiltersFieldset()->getField($fieldKey);
-
-        if (!$field) {
-            Response::abort(400, "Unknown field $fieldKey");
-            return;
+        $res = $this->getFiltersFieldset()->proceedSelect2ajax($fieldKey);
+        if ($res === null) {
+            Response::abort(400, "Unknown field $fieldKey of field is not Select");
         }
-
-        if ($field->getType() !== F::TYPE_SELECT) {
-            Response::abort(400, "Field is not Select ($fieldKey)");
-            return;
-        }
-
-        /** @var FieldSelect $field */
-        $field->proceedSelect2ajax();
+        Response::json($res);
     }
 
     public function getFiltersHtml()
     {
-        return $this->filters->getHtml($this->allowFiltersLayoutChange, $this->filtersLayout, $this->filtersDoNotReset);
+        return $this->filters->getHtml($this->allowFiltersLayoutChange, $this->filtersLayout);
     }
 
     public function getFiltersSqlWhere()
@@ -406,6 +268,11 @@ trait TableFilterable
     public function getFilterSqlWhere(string $fieldKey)
     {
         return $this->filters->getFieldSqlWhere($fieldKey);
+    }
+
+    public function getDataQueryWithFiltersWhere(string $querySelect): string
+    {
+        return $querySelect . " WHERE " . $this->getFiltersSqlWhere();
     }
 
     protected function getFiltersHiddenInput()

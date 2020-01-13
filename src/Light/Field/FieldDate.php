@@ -47,24 +47,16 @@ class FieldDate extends FieldInputAbstract
         $this->tableWidthExcel = 14;
         $this->editMaxLength = 12;
         $this->tableWidthHtml = 79;
-
-        /*
-        if (Config::$useInputTypeDate || Request::isMobileOrTablet()) {
-            // Если в конфиге явно указано, что будем использовать input type=date
-            // или при использовании на мобильных устройствах
-            $this->inputType = 'date';
-        }
-        */
     }
 
-    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeOverflow300 = false)
+    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeViewMaxWidth = false)
     {
-        $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeOverflow300);
+        $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeViewMaxWidth);
 
-        if ($value
-            && $value != '0000-00-00'
-            && $value != self::UNTIL_FUTURE_NOTICE
-            && ($this->cssClassFuture || $this->cssClassPast || $this->cssClassToday)) {
+        if ($value != self::UNTIL_FUTURE_NOTICE
+            && ($this->cssClassFuture || $this->cssClassPast || $this->cssClassToday)
+            && !self::empty($value)
+        ) {
             $today = date('Y-m-d');
             if ($value > $today) {
                 $addCssClass = $this->cssClassFuture;
@@ -87,6 +79,11 @@ class FieldDate extends FieldInputAbstract
         return 'input-date ' . parent::getEditCssClass($value, $data);
     }
 
+    protected function getEditTagParams($value, array $data)
+    {
+        return parent::getEditTagParams($value, $data) . ' autocomplete="off"';
+    }
+
     protected function getHtmlInner($value, array $data, $forTable)
     {
         if ($value === self::UNTIL_FUTURE_NOTICE) {
@@ -98,23 +95,25 @@ class FieldDate extends FieldInputAbstract
 
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
-        if (!$value) {
-            $out = '';
-        } elseif (strpos($value, '0000-00-00') === 0) {
-            $out = '';
-        } else {
-            if ($this->groupconcat && $groupconcatLinesCount > 1) {
-                //Даты объеденённые через перевод строк не нужно переводить в нативный формат дат в Excel.
-                //Нужно записать прямым текстом
-                $out = FieldDate::beautify($value);
-            } else {
-                try {
-                    $date = new \DateTime($value);
-                    $out = Date::PHPToExcel($date);
-                } catch (\Exception $e) {
-                    $out = FieldDate::beautify($value);
-                }
-            }
+        if (self::empty($value)) {
+            return '';
+        }
+
+        if ($this->groupconcat && $groupconcatLinesCount > 1) {
+            // Даты объеденённые через перевод строк не нужно переводить в нативный формат дат в Excel.
+            // Нужно записать прямым текстом
+            return FieldDate::beautify($value);
+        }
+
+        if ($value === self::UNTIL_FUTURE_NOTICE) {
+            return FieldDate::beautify($value);
+        }
+
+        try {
+            $date = new \DateTime($value);
+            $out = Date::PHPToExcel($date);
+        } catch (\Exception $e) {
+            $out = FieldDate::beautify($value);
         }
 
         return $out;
@@ -122,9 +121,12 @@ class FieldDate extends FieldInputAbstract
 
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
-        if ($this->inputType !== 'date') {
+        if ($value === self::UNTIL_FUTURE_NOTICE) {
+            $value = '';
+        } elseif ($this->inputType !== 'date') {
             $value = FieldDate::beautify($value);
         }
+
         return parent::getHtmlInputInner($value, $data, $idPrefix);
     }
 
@@ -141,50 +143,53 @@ class FieldDate extends FieldInputAbstract
     public function allowSqlWhereValue($value)
     {
         $value = trim($value);
-        return $value !== '' && $value !== '0000-00-00';
+        return self::notEmpty($value);
     }
 
-    public function getSqlWhereInner($value)
+    public function getSqlWhereInner($value): string
     {
-        $sqlWhere = '';
-
         if ($this->filterFromUntil) {
-
-            //Одно из полей тандема "From ... until ..."
-            $dbKey = preg_replace('/(From|Until)$/', '', $this->getFilterFieldKey());
-            if (substr($this->key, -4) === 'From') {
-                if (strlen($value) === 10) {
-                    $value .= ' 00:00';
-                }
-                if ($this->asInterval) {
-                    $dbKey .= 'Until';
-                }
-                // $dbKeyQuoted = Db::quote($dbKey);
-                $sqlWhere = "$dbKey >= '" . Db::esc($value) . "'";
-            } elseif (substr($this->key, -5) === 'Until') {
-                if (strlen($value) === 10) {
-                    $value .= ' 23:59';
-                }
-                if ($this->asInterval) {
-                    $dbKey .= 'From';
-                }
-                //$dbKeyQuoted = Db::quote($dbKey);
-                $sqlWhere = "$dbKey <= '" . Db::esc($value) . "' AND $dbKey != '0000-00-00'";
-            }
-
-        } else {
-
-            //Обычная дата, проверяем на полное совпадение
-            $sqlWhere = "{fieldKey} = '{value}'";
-
+            // Одно из полей тандема "From ... until ..."
+            return $this->getSqlWhereFromUntil($value);
         }
 
-        return $sqlWhere;
+        // Обычная дата, проверяем на полное совпадение
+        return "{fieldKey} = '{value}'";
     }
 
-    public static function beautify($mysqlDate): string
+    private function getSqlWhereFromUntil($value): string
     {
-        if (!is_string($mysqlDate) || $mysqlDate === '' || $mysqlDate[0] === '0') {
+        // Одно из полей тандема "From ... until ..."
+        $dbKey = preg_replace('/(From|Until)$/', '', $this->getFilterFieldKeys()[0]);
+        if (substr($this->key, -4) === 'From') {
+            if (strlen($value) === 10) {
+                $value .= ' 00:00';
+            }
+            if ($this->asInterval) {
+                $dbKey .= 'Until';
+            }
+            // $dbKeyQuoted = Db::quote($dbKey);
+            return "$dbKey >= '" . Db::esc($value) . "'";
+        }
+
+        if (substr($this->key, -5) === 'Until') {
+            if (strlen($value) === 10) {
+                $value .= ' 23:59';
+            }
+            if ($this->asInterval) {
+                $dbKey .= 'From';
+            }
+            //$dbKeyQuoted = Db::quote($dbKey);
+            return "$dbKey <= '" . Db::esc($value) . "' AND $dbKey != '0000-00-00'";
+        }
+
+        return '';
+    }
+
+
+    public static function beautify($mysqlDate, string $format = null): string
+    {
+        if (self::empty($mysqlDate)) {
             return '';
         }
 
@@ -193,7 +198,10 @@ class FieldDate extends FieldInputAbstract
             return $mysqlDate;
         }
 
-        return date(Config::$defaultDateFormat, $timestamp) ?: '';
+        if (!$format) {
+            $format = Config::$defaultDateFormat;
+        }
+        return date($format, $timestamp) ?: '';
     }
 
     /**
@@ -226,8 +234,13 @@ class FieldDate extends FieldInputAbstract
         return date('Y-m-d', $timestamp);
     }
 
-    public static function isEmpty($value): bool
+    public static function empty($value): bool
     {
-        return !$value || $value === '0000-00-00';
+        return !$value || $value === '0000-00-00' || !is_string($value);
+    }
+
+    public static function valueOrNull($value): ?string
+    {
+        return FieldDate::empty($value) ? null : $value;
     }
 }

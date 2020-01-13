@@ -4,12 +4,9 @@ namespace Light\Autolaunch;
 
 use Light\Db;
 use Light\DbLog;
-use Light\Mailer;
 use Light\MailSender;
 use Light\Module\Autolaunch\AutolaunchAbstract;
-use Light\Msg;
 use Light\Timer;
-use function Light\reportException;
 
 class Email extends AutolaunchAbstract
 {
@@ -32,13 +29,13 @@ class Email extends AutolaunchAbstract
         $count = $this->maxLoops;
         while ($count--) {
 
-            $record = $this->pickOneRecord($pid, $alreadyDoneIds);
-            if (!$record) {
+            $queueId = $this->pickOneRecord($pid, $alreadyDoneIds);
+            if (!$queueId) {
                 // Следующей записи для обработки не нашлось, прерываем цикл
                 break;
             }
 
-            $sent = $this->proceedOneRecord($record);
+            $sent = $this->proceedOneRecord($queueId);
             if ($sent) {
                 $totalSent += $sent;
             } else {
@@ -47,7 +44,7 @@ class Email extends AutolaunchAbstract
             // Сбросим накопившийся буфер логов, чтобы не накопилось слишком много
             DbLog::flush();
 
-            $alreadyDoneIds[] = $record['ID'];
+            $alreadyDoneIds[] = $queueId;
 
             // Перед отправкой следующего письма сделаем задержку в 2 секунды
             sleep(2);

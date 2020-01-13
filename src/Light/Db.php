@@ -3,14 +3,13 @@
 namespace Light;
 
 use Light\Field\FieldDate;
-use Rollbar\Payload\Level;
-use Rollbar\Rollbar;
 
 class Db
 {
-    private static $_queriesCount = 0;
-    private static $_queriesTime = 0;
-    private static $_queriesLog = [];
+    private static $queriesCount = 0;
+    private static $queriesTime = 0;
+    private static $lastQueryTime = 0;
+    private static $queriesLog = [];
 
     /** @var \mysqli */
     public static $mysqli;
@@ -29,9 +28,10 @@ class Db
             die($e->getMessage());
         }
 
-        self::$_queriesCount = 0;
-        self::$_queriesTime = 0;
-        self::$_queriesLog = [];
+        self::$queriesCount = 0;
+        self::$queriesTime = 0;
+        self::$lastQueryTime = 0;
+        self::$queriesLog = [];
 
         self::$mysqli->set_charset('utf8');
         self::$mysqli->set_opt(MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
@@ -43,11 +43,11 @@ class Db
      * @param string $query
      * @param array $params
      * @return mixed|\mysqli_result
-     * @throws \Exception
+     * @throws \RuntimeException
      */
     public static function query($query, ...$params)
     {
-        self::$_queriesCount++;
+        self::$queriesCount++;
         $startTime = microtime(true);
 
         if (count($params) > 0 /*func_num_args() > 1*/) {
@@ -68,10 +68,12 @@ class Db
         $queryTime = microtime(true) - $startTime;
 
         if (Config::$debug || (isset($_COOKIE['sqllog']) && $_COOKIE['sqllog'])) {
-            self::$_queriesLog[] = [$queryTime, $query];
+            self::$queriesLog[] = [$queryTime, $query];
         }
 
-        self::$_queriesTime += $queryTime;
+        self::$queriesTime += $queryTime;
+        self::$lastQueryTime = $queryTime;
+
         return $res;
     }
 
@@ -148,31 +150,16 @@ class Db
      * Завершает работу скрипта с информацией об ошибке на экран пользователя
      * @param $query
      * @param $errMsg
-     * @throws \Exception
+     * @throws \RuntimeException
      */
     private static function riseError($query, $errMsg)
     {
         $msg = 'SQL error: ' . $query . "\n\n" . $errMsg;
 
+        ErrorHandler::reportSqlError($query, $errMsg);
+
         if (Config::$sqlErrorThrowException) {
-
-            throw new \Exception($msg);
-
-        }
-
-        if (Config::$rollbar) {
-
-            // Создаём Exception и отправяем его в логи rollbar - таким образом в логах будет backtrace!
-            Rollbar::log(Level::ERROR, new \Exception($msg));
-
-        } elseif (Config::$sentry && Config::$sentry['dns']) {
-
-            throw new \Exception($msg);
-
-        } else {
-
-            LoggerCsv::logSqlError($query, $errMsg);
-
+            throw new \RuntimeException($msg);
         }
 
         $msgHtml = 'SQL error: ' . $query . htmlspecialchars($errMsg);
@@ -377,18 +364,51 @@ class Db
         return self::$mysqli->real_escape_string($value);
     }
 
-    public static function insertRow(array $fieldValues, string $table, bool $replace = false, $ignore = false)
+    public static function getOnDuplicateQuery(array $onDuplicateUpdateFieldKeys): string
     {
+        if (!$onDuplicateUpdateFieldKeys) {
+            return '';
+        }
+        $parts = [];
+        foreach ($onDuplicateUpdateFieldKeys as $fieldKey) {
+            $parts[] = self::quote($fieldKey) . " = VALUES(" . self::quote($fieldKey) . ")";
+        }
+        return " ON DUPLICATE KEY UPDATE " . implode(', ', $parts);
+    }
+
+    public static function insertIgnoreRow(
+        array $fieldValues,
+        string $table
+    ) {
+        return self::insertRow($fieldValues, $table, false, true);
+    }
+
+    public static function insertRow(
+        array $fieldValues,
+        string $table,
+        bool $replace = false,
+        $ignore = false,
+        array $onDuplicateUpdateFieldKeys = []
+    ) {
         $fieldKeys = implode(',', array_map(__CLASS__ . '::quote', array_keys($fieldValues)));
 
         $query = ($replace ? 'REPLACE' : 'INSERT')
             . (!$replace && $ignore ? ' IGNORE' : '')
             . " INTO " . self::quote($table)
-            . " (" . $fieldKeys . ")"
+            . " ($fieldKeys)"
             . " VALUES (" . self::createIn($fieldValues) . ")";
+
+        if (!$replace && $onDuplicateUpdateFieldKeys) {
+            $query .= self::getOnDuplicateQuery($onDuplicateUpdateFieldKeys);
+        }
 
         self::query($query);
         return self::getInsertId();
+    }
+
+    public static function insertIgnoreRows(array $rows, $table)
+    {
+        return self::insertRows($rows, $table, false, true);
     }
 
     /**
@@ -397,11 +417,17 @@ class Db
      * @param string $table
      * @param bool $replace
      * @param bool $ignore
+     * @param array $onDuplicateUpdateFieldKeys
      * @return int
      * @throws \Exception
      */
-    public static function insertRows(array $rows, $table, $replace = false, $ignore = false)
-    {
+    public static function insertRows(
+        array $rows,
+        $table,
+        $replace = false,
+        $ignore = false,
+        array $onDuplicateUpdateFieldKeys = []
+    ) {
         if (!$rows) {
             return 0;
         }
@@ -418,6 +444,10 @@ class Db
                 return "(" . self::createIn($fieldValues) . ")";
             }, $rows));
 
+        if (!$replace && $onDuplicateUpdateFieldKeys) {
+            $query .= self::getOnDuplicateQuery($onDuplicateUpdateFieldKeys);
+        }
+
         self::query($query);
         return self::getAffectedRows();
     }
@@ -428,8 +458,8 @@ class Db
     }
 
     /**
-     * @param  array $fieldValues
-     * @param  string $table
+     * @param array $fieldValues
+     * @param string $table
      * @param  $id
      * @return int affected rows
      * @throws \Exception
@@ -521,22 +551,27 @@ class Db
         return self::insertRow($insertData, $tableName);
     }
 
-    public static function getQueriesCount()
+    public static function getQueriesCount(): int
     {
-        return self::$_queriesCount;
+        return self::$queriesCount;
     }
 
-    public static function getQueriesLog()
+    public static function getQueriesLog(): array
     {
-        return self::$_queriesLog;
+        return self::$queriesLog;
     }
 
-    public static function getQueriesTime()
+    public static function getQueriesTime(): int
     {
-        return self::$_queriesTime;
+        return self::$queriesTime;
     }
 
-    public static function explodeByComa(string $filterComaSeparated)
+    public static function getLastQueryTime(): int
+    {
+        return self::$lastQueryTime;
+    }
+
+    public static function explodeByComa(string $filterComaSeparated): array
     {
         $filterComaSeparated = str_replace(['"', "\r", "\n", ";"], ['', '', ',', ','], $filterComaSeparated);
         return array_map('trim', explode(',', $filterComaSeparated));
@@ -763,7 +798,8 @@ class Db
         foreach ($data as &$value) {
             if ($value === null) {
                 $value = 'NULL';
-            } else {
+            } elseif (!is_numeric($value) || strpos($value, "0") === 0) {
+                // Если это НЕ число или это чисно, но начинаетс с 0 - тогда оборачиваем в кавычки
                 $value = "'" . self::$mysqli->real_escape_string($value) . "'";
             }
         }
@@ -790,6 +826,27 @@ class Db
             $query[] = self::quote($key) . '=' . $sqlValue;
         }
         return implode(',', $query);
+    }
+
+    public static function getWhere(array $keyValues): string
+    {
+        $where = [];
+        foreach ($keyValues as $fieldKey => $value) {
+            $fieldSqlWhere = Db::quote($fieldKey);
+            if (is_int($value) || is_float($value)) {
+                $fieldSqlWhere .= ' = ' . $value;
+            } elseif (is_array($value)) {
+                $fieldSqlWhere .= Db::parse(' IN (@a)', $value);
+            } elseif ($value === null) {
+                $fieldSqlWhere .= " IS NULL";
+            } else {
+                $fieldSqlWhere .= " = " . Db::escString($value);
+            }
+
+            $where[] = $fieldSqlWhere;
+        }
+
+        return implode(' AND ', $where);
     }
 
 }

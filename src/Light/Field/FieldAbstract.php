@@ -2,8 +2,10 @@
 
 namespace Light\Field;
 
+use Light\Config;
 use Light\Db;
 use Light\Html;
+use Light\User;
 
 /**
  * @method $this setName(string $value)
@@ -25,7 +27,7 @@ use Light\Html;
  * @method $this setViewCssClass($stringOrCallable)
  * @method $this setViewTitle($stringOrCallable)
  * @method $this setViewTagParams($stringOrCallable)
- * @method $this setViewMaxWidth300(bool $value)
+ * @method $this setViewMaxWidth(bool $value)
  * @method $this setEditId(string $value)
  * @method $this setEditName(string $value)
  * @method $this setEditWidth(string $miniSmallMediumDefaultFull)
@@ -33,8 +35,9 @@ use Light\Html;
  * @method $this setEditCssClass($stringOrCallable)
  * @method $this setEditTitle($stringOrCallable)
  * @method $this setEditTagParams($stringOrCallable)
- * @method $this setEditMandatory($value)
+ * @method $this setEditMandatory($booleanOrStringOrCallable)
  * @method $this setEditAccessFunction($callable)
+ * @method $this setAccessFunction($callable)
  * @method $this setPlaceholder(string $value)
  * @method $this setNobr(bool $value)
  * @method $this setClickable(bool $value)
@@ -57,7 +60,8 @@ use Light\Html;
  * @method $this setAjax(bool $ajax)
  * @method $this setNullable(bool $nullable)
  * @method $this setFilterNot(bool $filterNot)
- * @method $this setFilterFieldKey(string $filterFieldKey)
+ * @method $this setFilterDoNotReset(bool $filterDoNotReset)
+ * @method $this setFilterFieldKeys(string|array $filterFieldKey)
  *
  * @method $this setAcReadonly(bool $value)
  * @method $this setAcSource(string $value)
@@ -67,6 +71,7 @@ use Light\Html;
  * @method $this setAcResultFormatterJsFunction(string $value)
  * @method $this setAcOnSelectJsFunction(string $value)
  * @method $this setAcFormatValueOnSaveFunction(string $value)
+ * @method $this setValidateFunction(callable $function)
  *
  * @method string getTitle()
  * @method int getModes()
@@ -76,13 +81,15 @@ use Light\Html;
  * @method bool getTotal()
  * @method bool getCopy()
  * @method string getTableOrderBy()
+ * @method string getTableOrderByForeignTable()
  * @method string getTableOrderByLikeFilter()
  * @method string getEditId()
  * @method string getEditName()
  * @method string getEditWidth()
  * @method string getEditAlign()
- * @method bool|string getEditMandatory()
+ * @method bool|string|callable getEditMandatory()
  * @method callable getEditAccessFunction()
+ * @method callable getAccessFunction()
  * @method string getPlaceholder()
  * @method bool getUpper()
  * @method callable getGetHtmlFunction()
@@ -94,28 +101,30 @@ use Light\Html;
  * @method string|array getSqlSelectRequires()
  * @method bool getChangeAll()
  * @method bool getFilterNot()
+ * @method bool getFilterDoNotReset()
  * @method bool getAjax()
  * @method bool getNullable()
+ * @method callable getValidateFunction()
  *
- * @method static FieldHtml createHtml(string $fieldKey, array $params = [])
- * @method static FieldCheckbox createCheckbox(string $fieldKey, array $params = [])
- * @method static FieldCheckboxSet createCheckboxSet(string $fieldKey, array $params = [])
- * @method static FieldString createString(string $fieldKey, array $params = [])
- * @method static FieldText createText(string $fieldKey, array $params = [])
- * @method static FieldDate createDate(string $fieldKey, array $params = [])
- * @method static FieldDateTime createDateTime(string $fieldKey, array $params = [])
- * @method static FieldColor createColor(string $fieldKey, array $params = [])
- * @method static FieldWeek createWeek(string $fieldKey, array $params = [])
- * @method static FieldInt createInt(string $fieldKey, array $params = [])
- * @method static FieldFloat createFloat(string $fieldKey, array $params = [])
- * @method static FieldMoney createMoney(string $fieldKey, array $params = [])
- * @method static FieldMoneyWithCurrency createMoneyWithCurrency(string $fieldKey, array $params = [])
- * @method static FieldSelect createSelect(string $fieldKey, array $params = [])
- * @method static FieldSelectChild createSelectChild(string $fieldKey, array $params = [])
- * @method static FieldSelect2Multiple createSelect2Multiple(string $fieldKey, array $params = [])
- * @method static FieldSelect2ChildMultiple createSelect2ChildMultiple(string $fieldKey, array $params = [])
- * @method static FieldYesNo createYesNo(string $fieldKey, array $params = [])
- * @method static FieldMonth createMonth(string $fieldKey, array $params = [])
+ * @method static FieldHtml createHtml(string $fieldKey, array|string $params = [])
+ * @method static FieldCheckbox createCheckbox(string $fieldKey, array|string $params = [])
+ * @method static FieldCheckboxSet createCheckboxSet(string $fieldKey, array|string $params = [])
+ * @method static FieldString createString(string $fieldKey, array|string $params = [])
+ * @method static FieldText createText(string $fieldKey, array|string $params = [])
+ * @method static FieldDate createDate(string $fieldKey, array|string $params = [])
+ * @method static FieldDateTime createDateTime(string $fieldKey, array|string $params = [])
+ * @method static FieldColor createColor(string $fieldKey, array|string $params = [])
+ * @method static FieldWeek createWeek(string $fieldKey, array|string $params = [])
+ * @method static FieldInt createInt(string $fieldKey, array|string $params = [])
+ * @method static FieldFloat createFloat(string $fieldKey, array|string $params = [])
+ * @method static FieldMoney createMoney(string $fieldKey, array|string $params = [])
+ * @method static FieldMoneyWithCurrency createMoneyWithCurrency(string $fieldKey, array|string $params = [])
+ * @method static FieldSelect createSelect(string $fieldKey, array|string $params = [])
+ * @method static FieldSelectChild createSelectChild(string $fieldKey, array|string $params = [])
+ * @method static FieldSelect2Multiple createSelect2Multiple(string $fieldKey, array|string $params = [])
+ * @method static FieldSelect2ChildMultiple createSelect2ChildMultiple(string $fieldKey, array|string $params = [])
+ * @method static FieldYesNo createYesNo(string $fieldKey, array|string $params = [])
+ * @method static FieldMonth createMonth(string $fieldKey, array|string $params = [])
  */
 abstract class FieldAbstract implements \JsonSerializable
 {
@@ -172,7 +181,9 @@ abstract class FieldAbstract implements \JsonSerializable
     const TEXTTRUNCATE_FULL = 'full';
     const TEXTTRUNCATE_PART = 'part';
     const TEXTTRUNCATE_LIST = 'list';
-    const PARAM_VIEWMAXWIDTH300 = 'viewMaxWidth300';
+
+    const FILTER_EQUAL = '=';
+    const FILTER_LIKE = 'LIKE';
 
     public $key;
 
@@ -242,6 +253,14 @@ abstract class FieldAbstract implements \JsonSerializable
      * @var string Имя поля в бд по которому сортировать (если не задано, используется key)
      */
     public $tableOrderBy;
+    /**
+     * @var string Можно указать внешнюю таблицу в которой будет использовано поле Name для сортировки
+     * Например, для поля CustomerAccountID можно указать следующую настройку:
+     * 'tableOrderByForeignTable' => 'customeraccount'
+     * В SQL запрос в этом случае попадёт:
+     * ORDER BY (SELECT Name FROM customeraccount WHERE ID = CustomerAccountID)
+     */
+    public $tableOrderByForeignTable;
 
     /**
      * @var string иногда в таблице хочется отфильтровать значения ровно в том порядке, как они указаны в множественном фильтре
@@ -286,13 +305,12 @@ abstract class FieldAbstract implements \JsonSerializable
      */
     public $viewTagParams;
 
-
     /**
-     * Ограничить ли ширину текста с помощью css класса overflow300?
+     * Ограничить ли ширину текста с помощью css класса overflow150 overflow300?
      * Если да, то в title автоматически будет добавлено полное значение текущей ячейки {value}
      * @var bool
      */
-    public $viewMaxWidth300 = false;
+    public $viewMaxWidth;
 
     /**
      * @var string атрибут id для html тега в режиме редактирования (если не задано, используется key)
@@ -331,9 +349,28 @@ abstract class FieldAbstract implements \JsonSerializable
     public $editTagParams;
 
     /**
-     * @var bool|string используется в ModuleAbstract::validateMandatory()
+     * @var bool|string|callable используется в ModuleAbstract::validateMandatory()
+     * Можно задать в виде функции function($value, array $dataFromRequest, ObjAbstract $currentObjData, FieldAbstract $field): boolean
      */
     public $editMandatory = false;
+
+    /**
+     * @var callable function(array $data): bool
+     *
+     * По умолчанию функция не определена, т.е. она не вызывается, а доступ на чтение поля определется
+     * исключительно полем modes. Но поле modes задаётся вне зависимости от данных текущего редактируемого объекта.
+     * Чтобы ограничить права доступа на основе данных текущего объекта, необходимо задать accessFunction.
+     *
+     * Работает следующим образом:
+     * Если поле modes содерит F::MODE_VIEW (в режиме View) или F::MODE_LIST (в режиме List) и accessFunction
+     *  функция определена, то она вызывается
+     * с полным набором данных текущего объекта, чтобы определить, есть ли у текущего пользователя права просмотра
+     *
+     * В режиме List, есть прав на просмотр поля нет, то значение поля ($value) присваивается равным null, чтобы
+     * в таблице ячейка была пустой.
+     * В режиме View, если используется вывод шаблона через t::c('FieldKey'), поле вообще не отображается на экране.
+     */
+    public $accessFunction;
 
     /**
      * @var callable function(array $data): bool
@@ -403,6 +440,18 @@ abstract class FieldAbstract implements \JsonSerializable
     public $groupconcatNobr = true;
 
     /**
+     * Имеет ли поле возможность ajax редактирования
+     * @var callable($value, array $data, $forTable)
+     */
+    public $groupconcatIsSpecialAjaxibleFunction;
+
+    /**
+     * Специальная функция ajaх редактирования
+     * @var callable($value, array $data, $forTable)
+     */
+    public $groupconcatSpecialAjaxSubmitFunction;
+
+    /**
      * @var callable($value, array $data, $forTable)
      */
     public $calcFunction;
@@ -426,6 +475,11 @@ abstract class FieldAbstract implements \JsonSerializable
      * @var callable ($request, $value) внутри обязательно проверять if ($value !== null)
      */
     public $getDataFromRequestFunction;
+
+    /**
+     * @var callable (array $dataFromRequest, F $field) - возвращает null, если всё впорядке, либо string сообщение об ошибке
+     */
+    public $validateFunction;
 
     /**
      * @var string|callable Если для изъятия из базы данных это поле нужно вычислить или следать подзапрос
@@ -457,9 +511,50 @@ abstract class FieldAbstract implements \JsonSerializable
     /**
      * Имя поля, которое подставлять в стандартное sqlWhere условие {fieldKey} = '{value}'
      * По умолчанию будет использовано значение $this->key
+     * @var string|array
+     */
+    public $filterFieldKeys;
+
+    /**
+     * Как формировать условие поиска? Чёткое равенство или LIKE '%{value}%'?
      * @var string
      */
-    public $filterFieldKey;
+    public $filterOperator = self::FILTER_EQUAL;
+
+    /**
+     * Нужно ли воспринимать данное поле как фильтр с возможностью ввода нескольких значений через запятую или перевод строки?
+     * @var bool
+     */
+    public $filterMany = false;
+
+    /**
+     * Если это filterMany и задана некая длина filterManyLength, то при совпадении длины поискового слова
+     * будет использован оператор раветснва
+     * Пример с номером контейнера, для котого задана длина filterManyLength=11
+     * Если ищем по полному номеру контейнера, то в итоговом sql будет сравнение ContainerName='MSKU1234567'
+     * В противном случае сработает поиск по подстроке ContainerName LIKE '%1234%'
+     *
+     * Если длина вообще не задана, то будет использован filterOperator
+     * @var null|int
+     */
+    public $filterManyLength;
+
+    /**
+     * Ожидается, что значение числовое, в этом случае sql запрос будет поддерживать поиск по интервалу
+     * номеров, например 1000-2000
+     * @var bool
+     */
+    public $filterManyNumeric = false;
+
+    /**
+     * @var bool добавить ли к фильтру галочку "исключая"?
+     */
+    public $filterNot = false;
+
+    /**
+     * @var bool сбрасывать ли значение фильтра при нажатии кнопки RESET (в js коде)
+     */
+    public $filterDoNotReset = false;
 
     /**
      * Автоматически обрезает длинный текст
@@ -500,11 +595,6 @@ abstract class FieldAbstract implements \JsonSerializable
     public $ajaxSuccessHandler;
 
     public $nullable = false;
-
-    /**
-     * @var bool добавить ли к фильтру галочку "исключая"?
-     */
-    public $filterNot = false;
 
     public $initialParams = [];
 
@@ -616,8 +706,25 @@ abstract class FieldAbstract implements \JsonSerializable
     }
 
     /**
-     * Проверяет $this->modes & self::MODE_EDITSUBMIT
-     * и результат вызова функции $this->editAccessFunction
+     * Вызывает $this->accessFunction (если задана), чтобы проверить, есть ли у пользователя доступ на просмотр
+     * этого поля на основе данных текущей записи (array $data)
+     * @param array $data
+     * @return bool
+     */
+    final public function checkAccessFunction(array $data)
+    {
+        $accessFunction = $this->accessFunction;
+        if (\is_callable($accessFunction)) {
+            // Для этого поля определена особая пользовательская фунция accessFunction - вызовем её
+            return $accessFunction($data);
+        }
+
+        return true;
+    }
+
+    /**
+     * Вызывает $this->editAccessFunction (если задана), чтобы проверить, есть ли у пользователя доступ на редактирование
+     * этого поля на основе данных текущей записи (array $data)
      * @param array $data
      * @return bool
      */
@@ -652,7 +759,7 @@ abstract class FieldAbstract implements \JsonSerializable
         $this->nameTable = $add($this->getNameTable());
         $this->nameTableSettings = $add($this->getNameTableSettings());
 
-        //Отдельный разговор с title
+        // Отдельный разговор с title
         if ($this->title) {
             $this->title = $add($this->title);
         }
@@ -660,13 +767,17 @@ abstract class FieldAbstract implements \JsonSerializable
 
     public function getHtml($value, array $data = [], $forTable = false, $forLog = false)
     {
+        if (!$this->checkAccessFunction($data)) {
+            return '';
+        }
+
         if ($this->groupconcat && $value) {
 
             $lines = explode("\n", $value);
-            //Если число линий больше 1 - будем рекурсивно обрабатывать каждую линию
+            // Если число линий больше 1 - будем рекурсивно обрабатывать каждую линию
             $groupconcatLinesCount = count($lines);
 
-            //Пройдём по всем линия и обернём их в $this->getHtmlOneLine(), получив на выходе $outLines
+            // Пройдём по всем линия и обернём их в $this->getHtmlOneLine(), получив на выходе $outLines
             $groupconcatRemoveEmpty = $this->groupconcatRemoveEmpty;
             $groupconcatNobr = $this->groupconcatNobr;
             $outLines = [];
@@ -676,12 +787,12 @@ abstract class FieldAbstract implements \JsonSerializable
 
                 // Проверим, если есть специальный флаг пропускать пустые линии и эта линия действительно пустая - пропустим её!
                 if ($groupconcatRemoveEmpty && trim(strip_tags($html)) === '') {
-                    //Не записываем эту строку в $outLines
+                    // Не записываем эту строку в $outLines
                     continue;
                 }
 
                 if ($html === '') {
-                    $html = '&nbsp;'; //Принудительно вставим пробел, чтобы строка не "схлопнулась" - это важно для groupconcat
+                    $html = '&nbsp;'; // Принудительно вставим пробел, чтобы строка не "схлопнулась" - это важно для groupconcat
                 }
 
                 if ($groupconcatNobr) {
@@ -744,7 +855,7 @@ abstract class FieldAbstract implements \JsonSerializable
 
         //Узнаем, есть ли какой-то класс, которым нужно обернуть полученное значение, если не для таблицы
         //Либо для таблицы, но это поле groupconcat, т.е. каждая строка должна быть обёрнута отдельно
-        if (!$forTable || $groupconcatLinesCount > 1) {
+        if ($value !== '' && (!$forTable || $groupconcatLinesCount > 1)) {
             $cssClass = $this->getViewCssClass($value, $data, $forTable);
             $title = $this->getViewTitle($value, $data, $forTable);
             $tagParams = $this->getViewTagParams($value, $data, $forTable);
@@ -777,7 +888,15 @@ abstract class FieldAbstract implements \JsonSerializable
     protected function ajaxify($value, array $data, $forTable, $outHtml)
     {
         if ($this->groupconcat) {
-            return $outHtml;
+            if ($this->groupconcatIsSpecialAjaxibleFunction && is_callable($this->groupconcatIsSpecialAjaxibleFunction)) {
+                $isSpecialAjaxibleFunction = $this->groupconcatIsSpecialAjaxibleFunction;
+                $isAjaxible = $isSpecialAjaxibleFunction($value, $data, $forTable);
+                if (!$isAjaxible) {
+                    return $outHtml;
+                }
+            } else {
+                return $outHtml;
+            }
         }
 
         if (!isset($data['ID']) || !$data['ID']) {
@@ -809,6 +928,10 @@ abstract class FieldAbstract implements \JsonSerializable
 
     public function getExcel($value, array $data = [])
     {
+        if (!$this->checkAccessFunction($data)) {
+            return '';
+        }
+
         if ($value !== null) {
             //Правильное оформление перевода строк
             $value = strip_tags(str_replace(["\r", "<br>", "<p>"], ['', "\n", "\n"], $value));
@@ -852,7 +975,7 @@ abstract class FieldAbstract implements \JsonSerializable
         return $value;
     }
 
-    final public function getCalculatedValue($value, array $data = [], $forTable = false)
+    public function getCalculatedValue($value, array $data = [], $forTable = false)
     {
         if (!$this->calcFunction) {
             return $value;
@@ -879,6 +1002,10 @@ abstract class FieldAbstract implements \JsonSerializable
 
     public function getHtmlInput($value, array $data = [], $idPrefix = null)
     {
+        if (!$this->checkEditAccessFunction($data)) {
+            return '';
+        }
+
         $outHtml = $this->getHtmlInputInner($value, $data, $idPrefix);
 
         $function = $this->getHtmlInputFunction;
@@ -903,7 +1030,7 @@ abstract class FieldAbstract implements \JsonSerializable
             'value' => $value,
             'editId' => $idPrefix . $this->editId,
             'type' => $this->getType(),
-            'editName' => $this->editName
+            'editName' => $this->editName,
         ];
     }
 
@@ -921,8 +1048,17 @@ abstract class FieldAbstract implements \JsonSerializable
         // Сохраним введённое значение в базуе, если это поле поддерживает виджет Autocomplete
         $this->saveAutocompleteValue($value);
 
-        if ($this->nullable && ($value === '' || (is_numeric($value) && $value == 0))) {
-            $value = null;
+        if ($this->nullable) {
+            $value = $this->convertToNullIfNeeded($value);
+        }
+
+        return $value;
+    }
+
+    protected function convertToNullIfNeeded($value)
+    {
+        if ($value === '' || (is_numeric($value) && $value == 0)) {
+            return null;
         }
 
         return $value;
@@ -934,7 +1070,7 @@ abstract class FieldAbstract implements \JsonSerializable
 
             $value = $request[$this->key];
 
-            if ($this->upper) {
+            if ($this->upper && is_string($value)) {
                 $value = mb_strtoupper($value, 'UTF-8');
             }
 
@@ -975,18 +1111,44 @@ abstract class FieldAbstract implements \JsonSerializable
      * @param string $value
      * @return string
      */
-    protected function getSqlWhereInner($value)
+    protected function getSqlWhereInner($value): string
     {
         if ($value === null) {
             return "{fieldKey} IS NULL";
         }
 
+        if ($this->filterMany) {
+            // Приведём параметры к классической функции Db::getSqlWhereSeparatedByComa();
+            $normalStrLen = $this->filterOperator === self::FILTER_LIKE ? 0 : -1;
+            $fullLike = $this->filterOperator === self::FILTER_LIKE;
+            if ($this->filterManyNumeric) {
+                $normalStrLen = -1; // ставим -1, чтобы включить строгое равенство
+                $fullLike = false;
+            }
+            if ($this->filterManyLength) {
+                $normalStrLen = $this->filterManyLength;
+                $fullLike = true;
+            }
+            $isIntField = $this->filterManyNumeric;
+            return Db::getSqlWhereSeparatedByComa($value, '{fieldKey}', $normalStrLen, $fullLike, $isIntField, '0');
+        }
+
+        if ($this->filterOperator === self::FILTER_LIKE) {
+            return "{fieldKey} LIKE '%{value}%'";
+        }
+
         return "{fieldKey} = '{value}'";
     }
 
-    protected function getFilterFieldKey(): string
+    protected function getFilterFieldKeys(): array
     {
-        return $this->filterFieldKey ?? $this->key;
+        if (is_array($this->filterFieldKeys)) {
+            return $this->filterFieldKeys;
+        }
+        if (is_string($this->filterFieldKeys)) {
+            return [$this->filterFieldKeys];
+        }
+        return [$this->key];
     }
 
     final public function getEvaluatedSqlWhere($value, array $filtersValues = [])
@@ -1016,12 +1178,23 @@ abstract class FieldAbstract implements \JsonSerializable
 
             //Если хоть какой-то запрос получился, проведём над ним последние операции
             if ($sqlWhere) {
-                $sqlWhere = str_replace(['{value}', '{fieldKey}'], [Db::esc($value), Db::quote($this->getFilterFieldKey())], $sqlWhere);
-                $sqlWhere = "($sqlWhere)";
 
+                $sqlWhere = str_replace('{value}', Db::esc($value), $sqlWhere);
+                // В параметре filterFieldKeys пользователь мог задать несколько ключей по которым искать
+                // нужно перебрать их все в цикле и сформировать OR запрос.
+                $filterFieldKeys = $this->getFilterFieldKeys();
+                $or = [];
+                foreach ($filterFieldKeys as $filterFieldKey) {
+                    $or[] = str_replace('{fieldKey}', Db::quote($filterFieldKey), $sqlWhere);
+                }
+                $or = array_unique($or);
+                $sqlWhere = '((' . implode(') OR (', $or) . '))';
+
+                // Проверим, возможно существует фильтр с профиксом 'Not' - это галачка, которая включает отрицание
+                // текущего фильтра. Если такая галочка проставлена, то нам нужно сделать отрицание текущего фильтра
                 $notFilterKey = 'Not' . $this->key;
                 if ($this->filterNot && !empty($filtersValues[$notFilterKey])) {
-                    $sqlWhere = "NOT $sqlWhere";
+                    $sqlWhere = "NOT ($sqlWhere)";
                 }
             }
         }
@@ -1094,7 +1267,7 @@ abstract class FieldAbstract implements \JsonSerializable
     public function getNameDbLog()
     {
         if ($this->nameDbLog === null) {
-            $this->nameDbLog = $this->getName();
+            $this->nameDbLog = strip_tags($this->getName());
         }
 
         return $this->nameDbLog;
@@ -1133,9 +1306,33 @@ abstract class FieldAbstract implements \JsonSerializable
         return $sqlSelect;
     }
 
+    public function getEvalueatedSqlSelect(string $table = null): string
+    {
+        $sqlSelect = $this->getSqlSelect();
+        if (!$sqlSelect && $sqlSelect !== null) {
+            // Задан какое-то пустое значение sqlSelect (пустая строка или false), но не null
+            // это значит текущее поле не должно выбираться из базы
+            return '';
+        }
+
+        if ($sqlSelect) {
+            // У поля был какой-то особый способ загрузки из базы - используем его
+            return '(' . $sqlSelect . ') AS ' . Db::quote($this->key);
+        }
+
+        // Если параметр совсем не инициализирован, по умолчанию считаем, что нужно просто вывести поле как $fieldKey
+        // Альтернативный варинат: пользователь может указать sqlSelect = false, тогда поле не будет
+        // включено в SQL запрос
+        $sqlSelect = Db::quote($this->key);
+        if ($table) {
+            $sqlSelect = Db::quote($table) . '.' . $sqlSelect;
+        }
+        return $sqlSelect;
+    }
+
     private $evaluatedViewCssClass = null;
 
-    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeOverflow300 = false)
+    public function getViewCssClass($value, array $data = [], $forTable = false, $excludeViewMaxWidth = false)
     {
         if ($this->evaluatedViewCssClass !== null) {
             return $this->evaluatedViewCssClass;
@@ -1146,8 +1343,8 @@ abstract class FieldAbstract implements \JsonSerializable
             $result .= ' nobr';
         }
 
-        if ($this->viewMaxWidth300 && !$excludeOverflow300) {
-            $result .= ' overflow300';
+        if ($this->viewMaxWidth && !$excludeViewMaxWidth) {
+            $result .= ' overflow' . $this->viewMaxWidth;
         }
 
         $viewCssClass = $this->viewCssClass;
@@ -1163,7 +1360,7 @@ abstract class FieldAbstract implements \JsonSerializable
             }
             // В случае когда viewCssClass не является определённой пользователем функцией
             // можем закешировать результат для данного поля раз и навсегда!
-            // Чтобы больше не проверять nobr, viewMaxWidth300 и не склеивать по кусочкам.
+            // Чтобы больше не проверять nobr, viewMaxWidth и не склеивать по кусочкам.
             $this->evaluatedViewCssClass = trim($result);
         }
 
@@ -1178,7 +1375,7 @@ abstract class FieldAbstract implements \JsonSerializable
         } else {
             $viewTitleText = (string)$viewTitle;
         }
-        if ($viewTitleText === '' && $this->viewMaxWidth300) {
+        if ($viewTitleText === '' && $this->viewMaxWidth) {
             $viewTitleText = $value;
         }
 
@@ -1324,12 +1521,86 @@ abstract class FieldAbstract implements \JsonSerializable
         return [
             'FieldKey' => $this->key,
             'Type' => $this->getType(),
-            'Params' => $this->initialParams
+            'Params' => $this->initialParams,
         ];
     }
 
-    public static function isEmpty($value): bool
+    public static function empty($value): bool
     {
         return !$value;
+    }
+
+    public static function notEmpty($value): bool
+    {
+        return !static::empty($value);
+    }
+
+    public static function fisrtNotEmpty(...$values): ?string
+    {
+        foreach ($values as $value) {
+            if (static::notEmpty($value)) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    public static function modesReadonlyIfNoAccess(string $specialAccess, $defaultModes = self::MODE_ALL): int
+    {
+        return User::hasSpecialAccess($specialAccess) ? $defaultModes : self::MODE_READONLY;
+    }
+
+    public static function modesNoneIfNoAccess(string $specialAccess, $defaultModes = self::MODE_ALL): int
+    {
+        return User::hasSpecialAccess($specialAccess) ? $defaultModes : 0;
+    }
+
+    public function validate(array $dataFromRequest, array $currentObjData): ?string
+    {
+        $value = $dataFromRequest[$this->key] ?? '';
+        $validateFunction = $this->validateFunction;
+        if (is_callable($validateFunction)) {
+            $errMsg = $validateFunction($value, $dataFromRequest, $currentObjData, $this);
+            if ($errMsg !== null) {
+                return $errMsg;
+            }
+        }
+
+        if (!$this->editMandatory) {
+            // Поле не является обязательным
+            return null;
+        }
+
+        if (!static::empty($value)) {
+            // Значение поля заполнено, нет смысла проверять дальше
+            return null;
+        }
+
+        $editMandatory = $this->editMandatory;
+        if (is_callable($editMandatory)) {
+            // Пользователь мог задать функцию, которая должна вернуть boolean | string чтобы обозначить
+            // является ли это поле в итоге обязательным?
+            $editMandatory = $editMandatory($value, $dataFromRequest, $currentObjData, $this);
+            if (!$editMandatory) {
+                // Поле не является обязательным
+                return null;
+            }
+        }
+
+        // Стандартные сообщения для пользователя могут быть заданы внтури параметра editMandatory
+        if (is_string($editMandatory)) {
+            $msg = $editMandatory;
+        } else {
+            $defaultMsg = Config::$lang === 'ru' ? 'Заполните поле' : 'Fill';
+            $msg = "$defaultMsg {$this->getName()}";
+        }
+
+        // Первую букву сообщения сделаем заглавной, чтобы придерживаться единого стиля
+        $firstChar = mb_substr($msg, 0, 1);
+        $firstChar = mb_strtoupper($firstChar);
+        $msg = $firstChar . mb_substr($msg, 1);
+
+        return $msg;
     }
 }

@@ -3,11 +3,11 @@
 namespace tests\functional;
 
 use Light\Codeception\ModuleCestAbstract;
-use Light\Codeception\ModuleCestWithMultipleUpdateTrait;
+use Light\Codeception\ModuleCestWithMassUpdateTrait;
 
 class ShipmentCest extends ModuleCestAbstract
 {
-    use ModuleCestWithMultipleUpdateTrait;
+    use ModuleCestWithMassUpdateTrait;
 
     /**
      * Переопределяем метод, чтобы не проверять в шапке наличие (ID: ...) - в модуле Shipment этого текста нет!

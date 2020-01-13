@@ -1,21 +1,39 @@
 <?php
+
 namespace Light;
 
-use Detection\MobileDetect;
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7Server\ServerRequestCreator;
+use Psr\Http\Message\ServerRequestInterface;
 
 class Request
 {
-    public static $detect;
-    private static $isMobileOrTablet;
+    /** @var ServerRequestInterface */
+    public static $psr7;
 
-    public static function reset()
+    public static function fromGlobals(): ServerRequestInterface
     {
-        self::$isMobileOrTablet = null;
+        $psr17Factory = new Psr17Factory();
+
+        $creator = new ServerRequestCreator(
+            $psr17Factory, // ServerRequestFactory
+            $psr17Factory, // UriFactory
+            $psr17Factory, // UploadedFileFactory
+            $psr17Factory  // StreamFactory
+        );
+
+        $serverRequest = $creator->fromGlobals();
+        self::$psr7 = $serverRequest;
+
+        return $serverRequest;
     }
 
     public static function getMehod()
     {
-        return $_SERVER["REQUEST_METHOD"] ?? '';
+        if (!self::$psr7) {
+            return null;
+        }
+        return self::$psr7->getMethod();
     }
 
     public static function isGet()
@@ -28,33 +46,35 @@ class Request
         return self::getMehod() === 'POST';
     }
 
-    public static function isAjax()
+    public static function getQueryParam(string $param)
     {
-        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
-    }
-
-    public static function isXls()
-    {
-        return isset($_GET['xls']);
-    }
-
-    public static function getModule()
-    {
-        return $_GET['a'] ?? '';
-    }
-
-    public static function isMobileOrTablet()
-    {
-        if (self::$isMobileOrTablet === null) {
-
-            if (!self::$detect) {
-                self::$detect = new MobileDetect();
-            }
-
-            self::$isMobileOrTablet = self::$detect->isMobile() || self::$detect->isTablet();
-
+        if (!self::$psr7) {
+            return null;
         }
+        return self::$psr7->getQueryParams()[$param] ?? null;
+    }
 
-        return self::$isMobileOrTablet;
+    public static function getServerParam(string $param)
+    {
+        if (!self::$psr7) {
+            return null;
+        }
+        return self::$psr7->getServerParams()[$param] ?? null;
+    }
+
+    public static function isAjax(): bool
+    {
+        $requestedWith = self::getServerParam('HTTP_X_REQUESTED_WITH');
+        return $requestedWith === 'XMLHttpRequest';
+    }
+
+    public static function isXls(): bool
+    {
+        return (bool)self::getQueryParam('xls');
+    }
+
+    public static function getModule(): string
+    {
+        return self::getQueryParam('a') ?? '';
     }
 }

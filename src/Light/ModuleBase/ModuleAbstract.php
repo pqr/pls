@@ -2,9 +2,12 @@
 
 namespace Light\ModuleBase;
 
+use InvalidArgumentException;
 use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Db;
+use Light\ElfinderPage;
+use Light\ErrorHandler;
 use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
@@ -15,17 +18,20 @@ use Light\Field\FieldOptionsAbstract;
 use Light\Field\FieldSelect;
 use Light\Fieldset;
 use Light\FilesFolder;
-use Light\Img;
+use Light\Ico;
 use Light\Intro\IntroManager;
 use Light\Js;
 use Light\Link;
 use Light\Metric;
 use Light\Misc;
+use Light\ModuleBase\Actions\ActionAbstract;
+use Light\ModuleBase\Actions\AjaxChangeField;
 use Light\ModuleRegister;
 use Light\Msg;
 use Light\ObjAbstract;
 use Light\Request;
 use Light\Response;
+use Light\Select2ajaxController;
 use Light\Session;
 use Light\SubtableBase\Subtable;
 use Light\Table;
@@ -39,7 +45,8 @@ use Light\Traits\TablePaginatable;
 use Light\Traits\TableSortable;
 use Light\Traits\TableWithFoldersTrait;
 use Light\User;
-use function Light\reportException;
+use PhpOffice\PhpSpreadsheet\Writer\Exception;
+use Throwable;
 
 abstract class ModuleAbstract extends Table
 {
@@ -58,7 +65,7 @@ abstract class ModuleAbstract extends Table
     const STATE_LIST_FUNC = 'list_func';
     const STATE_VIEW_ELFINDER = 'view_elfinder';
     const STATE_VIEW_FUNC = 'view_func';
-    const STATE_VIEW_CHANGE_FIELD = 'view_change_field';
+    const STATE_ACTION = 'action';
     const STATE_MULTIPLEUPDATESUBMIT = 'multiupdate';
     const STATE_SUBTABLE_RELOAD = 'subtable_reload';
     const STATE_SUBTABLE_EXCEL = 'subtable_excel';
@@ -72,11 +79,15 @@ abstract class ModuleAbstract extends Table
 
     public $allowTablePrintHeadBlock = true;
 
+    // Переопределяем значение в true, чтобы работала перезагрузка отдельных строк
+    // см метод proceedListRenderRowForAjax()
+    public $allowTableReloadRow = true;
+
     //Использовать ли выпадающий список с выбором действия после сохранения?
     protected $continmethod = false;
 
     // Текст, который будет выводиться на кнопке Save полсе слова "Сохранить"
-    // например, чтобы выводилось "Созранить Перевозку", нужно указать $this->textSaveBtn = "Перевозку"
+    // например, чтобы выводилось "Сохранить Перевозку", нужно указать $this->textSaveBtn = "Перевозку"
     protected $textSaveBtn = '';
 
     //Внутренние переменные состояния
@@ -85,6 +96,7 @@ abstract class ModuleAbstract extends Table
     protected $_state;
 
     protected $submenuLinks = [];
+    protected $listLinks = [];
 
     /**
      * @var array(SubtableName)
@@ -113,20 +125,25 @@ abstract class ModuleAbstract extends Table
             $this->folderModule = $module;
         }
 
-        $this->registerSubtables();
+        $this->initSubtables();
     }
 
     /**
      * Метод для переопределения в классах потомках
-     * В нём нужно вызывать $this->registerSubtable(className) или $this->registerSubtableReadonly(className)
+     * В нём нужно вызывать $this->addSubtable(className) или $this->addSubtableReadonly(className)
      */
-    protected function registerSubtables()
+    protected function initSubtables()
     {
     }
 
     protected function getModule()
     {
         return Misc::getModule($this) ?: Request::getModule();
+    }
+
+    protected function obj()
+    {
+        return $this->_obj;
     }
 
     /**
@@ -137,42 +154,36 @@ abstract class ModuleAbstract extends Table
      */
     public function __invoke()
     {
-        if (isset($_GET['select2ajax'])
-            && (!isset($_GET['fromFilters']) || $_GET['fromFilters'] === $this->getTableName())) {
-            $this->proceedSelect2ajax();
-            return;
+        if (Request::getQueryParam('select2ajax')
+            && (Request::getQueryParam('fromFilters') === null
+                || Request::getQueryParam('fromFilters') === $this->getTableName())) {
+            return $this->proceedSelect2ajax();
         }
 
         if (isset($_GET['addnew'])) {
-            $this->proceedAddNew();
-            return;
+            return $this->proceedAddNew();
         }
 
         if (isset($_GET['id'])) {
-            $this->proceedView();
-            return;
+            return $this->proceedView();
         }
         if (isset($_GET['editid'])) {
-            $this->proceedEdit();
-            return;
+            return $this->proceedEdit();
         }
 
         if (isset($_GET['logid'])) {
-            $this->proceedLog();
-            return;
+            return $this->proceedLog();
         }
 
         if (isset($_GET['submitid'])) {
-            $this->proceedSubmit();
-            return;
+            return $this->proceedSubmit();
         }
 
         if (isset($_GET['delid'])) {
-            $this->proceedDelete();
-            return;
+            return $this->proceedDelete();
         }
 
-        $this->proceedList();
+        return $this->proceedList();
     }
 
     protected function proceedAddNew()
@@ -194,6 +205,9 @@ abstract class ModuleAbstract extends Table
             $this->initDataForCopy($_GET['copymode'], (int)$_GET['copyfrom']);
         }
 
+        $initialData = $this->getInitialDataFromRequest();
+        $this->initDataFromGetParams($initialData);
+
         $module = $this->getModule();
         $moduleName = ModuleRegister::getModuleName($module);
 
@@ -213,6 +227,36 @@ abstract class ModuleAbstract extends Table
         ];
 
         Template::includeTpl('module/addnew.tpl.php', $tdata);
+    }
+
+    private function getInitialDataFromRequest(): array
+    {
+        $initialData = [];
+        if (isset($_GET['initialData'])) {
+            try {
+                $initialData = json_decode($_GET['initialData'], true, 512, JSON_THROW_ON_ERROR);
+                if (!is_array($initialData)) {
+                    $initialData = [];
+                }
+            } catch (\Exception $e) {
+                ErrorHandler::reportException($e);
+            }
+        }
+        return $initialData;
+    }
+
+    protected function initDataFromGetParams(array $initialData)
+    {
+        foreach ($initialData as $key => $val) {
+            if (is_array($val) && $this->hasSubtable($key)) {
+                // Это похоже на подтаблицу!
+                $subtable = $this->getSubtable($key);
+                $subtable->setSubtableDataAdditional($val);
+                continue;
+            }
+
+            $this->_obj->mergeData([$key => $val]);
+        }
     }
 
     protected function redirectToList()
@@ -300,12 +344,13 @@ abstract class ModuleAbstract extends Table
         if ($this->_state === self::STATE_VIEW && $this->hasField('Color')) {
             $this->getField('Color')->setParam(
                 'source',
-                Link::create($this->getModule())->view($this->_obj->getId())->func('changeField')->getHref()
+                Link::create($this->getModule())->view($this->_obj->getId())->action(AjaxChangeField::class)->getHref(),
             );
         }
 
         $fieldMode = $this->_state === self::STATE_VIEW ? F::MODE_VIEW : F::MODE_EDIT;
-        $filteredFieldset = $this->getFieldset()->filterByMode(F::MODE_VIEW | F::MODE_EDIT);
+        // $filteredFieldset = $this->getFieldset()->filterByMode(F::MODE_VIEW | F::MODE_EDIT);
+        $filteredFieldset = $this->getFieldset();
 
         $data = $this->_obj->getData();
         if ($this->_state === self::STATE_ADDNEW) {
@@ -315,7 +360,9 @@ abstract class ModuleAbstract extends Table
             $fieldsetWithoutCheckboxes = new Fieldset();
             foreach ($this->getFieldset() as $field) {
                 $type = $field->getType();
-                if ($type !== F::TYPE_CHECKBOX && $type !== F::TYPE_CHECKBOX_SET) {
+                if ($type !== F::TYPE_CHECKBOX
+                    && $type !== F::TYPE_CHECKBOX_SET
+                    && !($field instanceof FieldSelect && $field->multiple)) {
                     $fieldsetWithoutCheckboxes->addField($field);
                 }
             }
@@ -340,8 +387,9 @@ abstract class ModuleAbstract extends Table
         foreach ($this->subtables as $subtableClass => ['readonly' => $readonly]) {
             // В качестве ключа для шаблонизатора используем короткое имя класса подтаблицы (без неймспейсов)
             $subtableName = Misc::getClass($subtableClass);
+            $subtable = $this->getSubtable($subtableClass);
             $tdataSubtables[$subtableName] = [
-                'obj' => $this->getSubtable($subtableClass),
+                'obj' => $subtable,
                 'readonly' => $readonly,
             ];
         }
@@ -364,52 +412,66 @@ abstract class ModuleAbstract extends Table
         }
     }
 
-    private function getFormactionsHtml()
+    protected function getSaveBtnHtml(): string
     {
         // Кнопку "Save" специально делаем button type="button"
         // чтобы форма не отрпавлялась случайно при нажатии enter на лубом из полей
         $textSave = Config::$lang === 'ru' ? 'Сохранить' : 'Save';
-        $textCancel = Config::$lang === 'ru' ? 'Отмена' : 'Cancel';
-        $alertSaveButton = '';
-        if ($this->_alertSaveButton) {
-            [$text, $hidden, $icon, $color] = $this->_alertSaveButton;
-            $alertSaveButton = '<div class="alert-save-button ' . ($hidden ? 'display-none' : '') . '" style="color: ' . $color . ';"><i class="fa ' . $icon . '"></i> ' . $text . '</div>';
-        }
-
-        $contentHtml = '<div class="formactions_fixed">'
-            . $alertSaveButton
-            . '<button type="button" class="waves-effect btn btn-save bgcolor-btn-primary" title="Ctrl + S">'
+        return '<button type="button" class="waves-effect btn btn-save bgcolor-btn-primary" title="Ctrl + S">'
             . "$textSave {$this->textSaveBtn}"
-            . '</button>'
-            . '<a href="javascript: history.back()" class="btn-flat waves-effect cancel-link">'
+            . '</button>';
+    }
+
+    protected function getCancelBtnHtml(): string
+    {
+        $textCancel = Config::$lang === 'ru' ? 'Отмена' : 'Cancel';
+        return '<a href="javascript: history.back()" class="btn-flat waves-effect cancel-link">'
             . $textCancel
             . '</a>';
+    }
 
-        if ($this->continmethod) {
-
-            $continmetods = [
-                'list' => 'Back to list',
-                'view' => 'View this',
-                'edit' => 'Edit this',
-            ];
-
-            if ($this->allowAdd) {
-                $continmetods['addnew'] = 'Add new';
-            }
-
-            $continmethod = User::getParam($this->getModule() . '_continmethod') ?? 'view';
-
-            $contentHtml .= F::createSelect('_continmethod', [
-                'editWidth' => 'auto',
-                'empty' => false,
-                'options' => $continmetods,
-            ])->getHtmlInput($continmethod);
-
+    protected function getContinmethodHtml(): string
+    {
+        if (!$this->continmethod) {
+            return '';
         }
 
-        $contentHtml .= '</div>';
+        $continmetods = [
+            'list' => 'Back to list',
+            'view' => 'View this',
+            'edit' => 'Edit this',
+        ];
 
-        return $contentHtml;
+        if ($this->allowAdd) {
+            $continmetods['addnew'] = 'Add new';
+        }
+
+        $continmethod = User::getParam($this->getModule() . '_continmethod') ?? 'view';
+
+        return F::createSelect('_continmethod', [
+            'editWidth' => 'auto',
+            'empty' => false,
+            'options' => $continmetods,
+        ])->getHtmlInput($continmethod);
+    }
+
+    protected function getFormactionsAlertHtml(): string
+    {
+        if (!$this->_alertSaveButton) {
+            return '';
+        }
+        [$text, $hidden, $icon, $color] = $this->_alertSaveButton;
+        return '<div class="alert-save-button ' . ($hidden ? 'display-none' : '') . '" style="color: ' . $color . ';">' . Ico::i($icon) . ' ' . $text . '</div>';
+    }
+
+    private function getFormactionsHtml()
+    {
+        return '<div class="formactions_fixed">'
+            . $this->getFormactionsAlertHtml()
+            . $this->getSaveBtnHtml()
+            . $this->getCancelBtnHtml()
+            . $this->getContinmethodHtml()
+            . '</div>';
     }
 
     /**
@@ -420,30 +482,42 @@ abstract class ModuleAbstract extends Table
     {
         $id = (int)$_GET['id'];
         // Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
-        $this->loadObjAndCheck($id);
+        if (!$this->loadObjAndCheck($id)) {
+            // Внутри произошел redirect и метод loadObjAndCheck() вернул false
+            return null;
+        }
 
         // Проверим дополнительные GET параметры относящиеся к режиму просмотра
-        if (isset($_GET['subtable'])) {
+        if (Request::getQueryParam('subtable')) {
             // Методы работы с subtable
-            $this->proceedViewSubtable();
-        } elseif (isset($_GET['elfinder'])) {
+            return $this->proceedViewSubtable();
+        }
+
+        if (Request::getQueryParam('elfinder')) {
             // Отображаем окно с папкой (elfinder)
-            $this->proceedViewElfinder();
-        } elseif (isset($_GET['func'])) {
+            return $this->proceedViewElfinder();
+        }
+
+        if (Request::getQueryParam('func')) {
             // Попытка вызвать пользовательскую функцию из режима просмотра - это может быть ajax запрос или печать
             // документа или вывод в Excel особой формы
-            $this->proceedViewFunc();
-        } else {
-            $this->proceedViewPage();
+            return $this->proceedViewFunc();
         }
+
+        if (Request::getQueryParam('action')) {
+            return $this->proceedAction();
+        }
+
+        return $this->proceedViewPage();
     }
 
     /**
      * Загружает данные в объект $this->_obj, проверяет права доступа к нему у текущего пользователя
      * Если объект не найден или нет доступа, то перенаправляет на режим List
      * @param int $id
+     * @return bool
      */
-    protected function loadObjAndCheck(int $id)
+    protected function loadObjAndCheck(int $id): bool
     {
         $this->_obj->setId($id);
 
@@ -465,15 +539,17 @@ abstract class ModuleAbstract extends Table
         } catch (\Exception $e) {
 
             // Случилось что-то экстроординарное при загрузке объекта
-            reportException($e);
+            ErrorHandler::reportException($e);
             $errMsg = $e->getMessage();
         }
 
         if ($errMsg) {
             $this->flash->addError($errMsg);
             $this->redirectToList();
-            return;
+            return false;
         }
+
+        return true;
     }
 
     private function proceedViewSubtable()
@@ -486,50 +562,63 @@ abstract class ModuleAbstract extends Table
             $this->redirectToView();
         }
 
-        /** @var $subtable \Light\SubtableBase\Subtable */
+        /** @var $subtable Subtable */
         $subtable = $this->getSubtable($subtableClass);
 
-        // С подтаблицей можно осуществлять несколько действий
-        if (isset($_REQUEST['fieldKey'])) {
+        if (Request::isAjax()) {
 
-            if (!Request::isAjax()) {
-                // Изменение поля возможно только через ajax запросы
-                $this->redirectToView();
-            }
-            // Изменение какого-то поля через ajax
-            $fieldKey = $_REQUEST['fieldKey'];
-            $field = $subtable->getFieldset()->getField($fieldKey);
-            if (!$field) {
-                Response::abort(400, "Field not found");
+            if (isset($_REQUEST['fieldKey'])) {
+                $this->proceedViewSubtableChangeField($subtable);
+                return;
             }
 
-            if (!$this->hasWriteAccessAjaxChangeFieldSubtable($field)) {
-                Response::abort(403, 'Edit not allowed');
-            }
-
-            $oldData = [];
-            if (Request::isPost()) {
-                $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
-            }
-
-            $affectedRows = $subtable->proceedChangeField();
-
-            if (Request::isPost()) {
-                $this->_obj->afterSubmit($oldData, $this->flash);
-                $this->afterSubmit($this->_obj, [], $affectedRows, $oldData, $this->flash, false);
-            }
-
-
-        } elseif (Request::isAjax()) {
             // Перезагрузка через ajax при изменении Table Layout
             $subtable->proceedAjaxReload();
+
         } elseif (Request::isXls()) {
-            //Отправка Excel файла
+
+            // Отправка Excel файла
             $subtable->proceedExcel();
+
         } else {
-            //Не удалось определить действие с подтаблицей, сообщим об этом пользователю
+
+            // Не удалось определить действие с подтаблицей, сообщим об этом пользователю
             Session::flashError('Bad subtable request');
             $this->redirectToView();
+
+        }
+    }
+
+    protected function proceedViewSubtableChangeField(Subtable $subtable)
+    {
+        // Изменение какого-то поля через ajax
+        $fieldKey = $_REQUEST['fieldKey'];
+        $field = $subtable->getFieldset()->getField($fieldKey);
+        if (!$field) {
+            Response::abort(400, "Field not found");
+        }
+
+        if (!$this->hasWriteAccessAjaxChangeFieldSubtable($field)) {
+            Response::abort(403, 'Edit not allowed');
+        }
+
+        $oldData = [];
+        if (Request::isPost()) {
+            $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
+
+            // Загрузим данные подтаблиц внутрь самого obj, чтобы потом было удобно сравнивать
+            $this->_obj->loadSubtablesForChangeDetection();
+        }
+
+        $affectedRows = $subtable->proceedChangeField($this->flash);
+
+        if (Request::isPost()) {
+
+            // Загрузим обновлённые данные подтаблиц внутрь самого obj
+            $this->_obj->loadSubtablesForChangeDetection();
+
+            $this->_obj->afterSubmit($this->flash);
+            $this->afterSubmit($this->_obj, [], $affectedRows, $oldData, $this->flash, false);
         }
     }
 
@@ -560,85 +649,28 @@ abstract class ModuleAbstract extends Table
         // apt install zip
 
         if ($_GET['elfinder'] === 'dialog') {
-            $textFolder = Config::$lang === 'ru' ? 'Папка' : 'Folder';
             // Это первичный запрос на рендер каркаса диалога (пока без содержимого с файлами)
+            $textFolder = Config::$lang === 'ru' ? 'Папка' : 'Folder';
             $moduleName = ModuleRegister::getModuleName($this->getModule());
-            Template::includeTpl(LIGHT_DIR_LIGHT . '/templates/module/elfinderdialog.tpl.php', [
-                'module' => $module,
-                'id' => $id,
-                'title' => "$textFolder: $moduleName " . strip_tags($this->_obj->getDescriptionHtml()),
-            ]);
-            ApplicationAbstract::terminate();
+            $title = "$textFolder: $moduleName " . strip_tags($this->_obj->getDescriptionHtml());
+            $apiUrl = Link::create($module)->view($id)->params(['elfinder' => 'api'])->getHref();
+            ElfinderPage::renderPage($title, $apiUrl);
+            return;
+        }
+
+        $relative = $this->getFolderRelative($this->_obj->getData());
+        if (!$relative) {
+            Response::abort(404);
             return;
         }
 
         if ($_GET['elfinder'] === 'api') {
             // Пришел API запрос от окна с elfiner (это может быть API запрос на отображение списка файлов
             // или upload нового файла
-            $relative = $this->getFolderRelative($this->_obj->getData());
-            $opts = [
-                'locale' => "ru_RU.utf8",
-                'roots' => [
-                    [
-                        'driver' => 'LocalFileSystem',
-                        'encoding' => 'UTF-8',
-                        'locale' => "ru_RU.utf8",
-                        'mimeDetect' => 'internal',
-                        // если не установить internal, то будет использована функция finfo_file,
-                        // которая при обнаружении xls файла сбрасывает локаль в default заничеие ('C')
-                        // и дальше все файлы с русскими буквами не смогут быть обработаны с помощью basename
-                        // driver for accessing file system (REQUIRED)
-                        'path' => FilesFolder::getAbsolute($relative),
-                        'URL' => Link::create($module)->view($id)->params(['elfinder' => 'download'])->getHref() . '&file=',
-                        'quarantine' => LIGHT_DIR_TEMP . '/elfinder_quarantine',
-                        'tmbPath' => LIGHT_DIR_TEMP . '/elfinder_thumbnails',
-                        // URL to files (REQUIRED)
-                        'accessControl' => function ($attr, $path, $data, $volume) {
-                            if (strpos(basename($path), '.') === 0) {
-                                // Для путей начинающихся с .., если запрошен атрибут read или write - сразу вернём false
-                                if ($attr === 'read' || $attr === 'write') {
-                                    return false;
-                                }
-                            }
-
-                            // Если elfinder хочет проверить атрибут на запись, делегируем эту проверку в ModuleAbstract
-                            if ($attr === 'write') {
-                                return $this->hasWriteAccessRightToFolder($this->_obj);
-                            }
-
-                            // Возвращаем null - elfinder должен решить сам, что делать
-                            return null;
-
-                        },
-                    ],
-                ],
-                'bind' => [
-                    'mkdir mkfile rename duplicate upload rm paste' => function ($cmd, $result, $args, $elfinder) {
-
-                        /* @var \elFinder $elfinder */
-
-                        if (!empty($result['added'])) {
-                            foreach ($result['added'] as $file) {
-                                $mode = isset($file['mime']) && $file['mime'] === 'directory' ? 0777 : 0666;
-
-                                @chmod($elfinder->realpath($file['hash']), $mode);
-                            }
-                        }
-
-                        if (!empty($result['changed'])) {
-                            foreach ($result['changed'] as $file) {
-                                $mode = isset($file['mime']) && $file['mime'] === 'directory' ? 0777 : 0666;
-                                @chmod($elfinder->realpath($file['hash']), $mode);
-                            }
-                        }
-                    },
-                ],
-            ];
-
-            // run elFinder
-            $connector = new \elFinderConnector(new \elFinder($opts));
-            $connector->run();
-            ApplicationAbstract::terminate();
+            $path = FilesFolder::getAbsolute($relative);
+            $downloadUrl = Link::create($module)->view($id)->params(['elfinder' => 'download'])->getHref() . '&file=';
+            $hasWriteAccess = $this->hasWriteAccessRightToFolder($this->_obj);
+            ElfinderPage::proceedApi($path, $downloadUrl, $hasWriteAccess);
             return;
         }
 
@@ -647,11 +679,10 @@ abstract class ModuleAbstract extends Table
             // Проверим, чтобы в имени скачиваемого файла file не было ..
             $test = '/' . str_replace('\\', '/', $_GET['file']) . '/';
             if (strpos($test, '/../') !== false) {
-                throw new \InvalidArgumentException("file contains ..: " . $_GET['file']);
+                throw new InvalidArgumentException("file contains ..: " . $_GET['file']);
             }
 
             $file = trim($_GET['file'], '/');
-            $relative = $this->getFolderRelative($this->_obj->getData());
             FilesFolder::streamFile("$relative/$file");
             ApplicationAbstract::terminate();
             return;
@@ -680,6 +711,77 @@ abstract class ModuleAbstract extends Table
 
         // Метод найден, вызовем его!
         $this->{$method}();
+    }
+
+    protected function proceedAction()
+    {
+        $this->_state = self::STATE_ACTION;
+
+        $actionName = Request::getQueryParam('action');
+        if (!$actionName) {
+            $this->redirectWhenWrongAction();
+            return null;
+        }
+
+        $action = $this->createViewActionInstance($actionName);
+        if (!$action) {
+            Session::flashError('Unknown action ' . htmlspecialchars($actionName));
+            $this->redirectWhenWrongAction();
+            return null;
+        }
+
+        /** @var ActionAbstract $action */
+        if ($action->onlyAjax && !Request::isAjax()) {
+            $this->redirectWhenWrongAction();
+            return null;
+        }
+
+        if ($action->onlyPost && !Request::isPost()) {
+            $this->redirectWhenWrongAction();
+            return null;
+        }
+
+        if (!$action->hasAccess()) {
+            Session::flashError('No access to <strong>' . $action->getSubmenuHtml() . '</strong>');
+            $this->redirectWhenWrongAction();
+            return null;
+        }
+
+        $result = $action();
+
+        if ($action instanceof AjaxChangeField && Request::isPost()) {
+            $this->afterSubmit($this->_obj, [], $this->_obj->getAffectedRows(), [], $this->flash, false);
+        }
+
+        if (Request::isAjax()) {
+            Session::$showAsToast = true;
+        }
+
+        return $result;
+    }
+
+    protected function createViewActionInstance(string $actionName): ?ActionAbstract
+    {
+        $actionName = ucfirst($actionName);
+        $namespace = Misc::getNamespace($this);
+        // Сначала ищем класс в папке текущего модуля, потом в Light
+        $classNames = ["$namespace\\Actions\\$actionName", 'Light\\ModuleBase\\Actions\\' . $actionName];
+        $className = Misc::getFirstClassExists($classNames);
+        if (!$className) {
+            return null;
+        }
+
+        /** @var ActionAbstract $action */
+        return new $className($this->_obj, $this->flash);
+    }
+
+    private function redirectWhenWrongAction()
+    {
+        if ($this->_obj->getId()) {
+            $this->redirectToView();
+        } else {
+            $this->redirectToList();
+        }
     }
 
     protected function proceedViewPage()
@@ -720,18 +822,20 @@ abstract class ModuleAbstract extends Table
             'tabsmenuItems' => $this->getViewEditLogTabsmenuItems(),
             'submenuHtml' => $this->getSubmenuHtml(),
             'content' => $this->getViewEditContentHtml(),
+            'ajaxChangeFieldUrl' => $this->getAjaxChangeFieldUrl(),
         ];
 
-        Template::includeTpl('module/view.tpl.php', $tdata);
+        Template::includeTpl(__DIR__ . '/../templates/module/view.tpl.php', $tdata);
     }
 
     protected function prefetchSelectOptionsView()
     {
+        $objData = $this->_obj->getData();
         foreach ($this->getFieldset() as $field) {
             if ($field instanceof FieldOptionsAbstract && $field->hasMode(F::MODE_VIEW)) {
                 $fieldKey = $field->key;
-                if (isset($this->_obj[$fieldKey])) {
-                    $value = $this->_obj[$fieldKey];
+                if (array_key_exists($fieldKey, $objData)) {
+                    $value = $objData[$fieldKey];
                     $field->prefetchOptions([$value]);
                 }
             }
@@ -744,10 +848,10 @@ abstract class ModuleAbstract extends Table
             if ($field instanceof FieldOptionsAbstract && $field->hasMode(F::MODE_LOG)) {
                 $fieldKey = $field->key;
                 $values = [];
-                if (isset($oldData[$fieldKey])) {
+                if (array_key_exists($fieldKey, $oldData)) {
                     $values[] = $oldData[$fieldKey];
                 }
-                if (isset($newData[$fieldKey])) {
+                if (array_key_exists($fieldKey, $newData)) {
                     $values[] = $newData[$fieldKey];
                 }
                 if ($values) {
@@ -845,7 +949,7 @@ abstract class ModuleAbstract extends Table
         if ($this->allowLog && User::hasLogInPlaceAccess() && $this->hasLogAccessRightToObj($this->_obj)) {
             $out[] = [
                 'text' => 'Log ',
-                'url' => Link::create($module)->params(['logid' => $id] + $viewEditLogParams)->getHref(),
+                'url' => Link::create($module)->log($id)->params($viewEditLogParams)->getHref(),
                 'active' => $this->_state === self::STATE_LOG,
             ];
         }
@@ -875,7 +979,8 @@ abstract class ModuleAbstract extends Table
     {
         $links = [];
         if ($this->folders) {
-            $links[] = $this->fieldFolder()->getHtml('', $this->_obj->getData());
+            $objData = $this->_obj->getData();
+            $links[] = $this->fieldFolder()->getHtml('', $objData);
         }
 
         // Добавим ссылки на различные режимы копирования
@@ -893,13 +998,6 @@ abstract class ModuleAbstract extends Table
 
             // Добавим ссылки на печать
             $links = array_merge($links, $this->printFormsSubmenuLinks());
-
-            if (method_exists($this, 'emailDialogSubmenuItems')) {
-                // К этому модулю подключён EmailDialogTrait
-                /** @var EmailDialogTrait $moduleWithEmailDialog */
-                $moduleWithEmailDialog = $this;
-                $links = array_merge($links, $moduleWithEmailDialog->emailDialogSubmenuLinks());
-            }
         }
 
         // В конце добавим все ссылки определённые пользователем вручную
@@ -907,15 +1005,16 @@ abstract class ModuleAbstract extends Table
 
         $rightHtml = $this->getSubmenuCreatedLinkHtml();
 
-        return '<div class="submenu">' . implode('', $links) . $rightHtml . '</div>';
+        return '<div class="submenu"><div>' . implode('', $links) . '</div><div>' . $rightHtml . '</div></div>';
     }
 
-    private function getSubmenuCreatedLinkHtml(): string
+    protected function getSubmenuCreatedLinkHtml(): string
     {
+        $id = $this->_obj->getId();
         $created = Db::getRow(
             "SELECT u.Name, t.CreatedBy, t.CreatedDateTime
                  FROM user u JOIN {$this->getDbTable()} t ON u.ID = t.CreatedBy
-                 WHERE t.ID = " . $this->_obj->getId()
+                 WHERE t.ID = $id"
         );
         if (!$created) {
             return '';
@@ -943,7 +1042,10 @@ abstract class ModuleAbstract extends Table
     {
         $id = (int)$_GET['editid'];
         // Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
-        $this->loadObjAndCheck($id);
+        if (!$this->loadObjAndCheck($id)) {
+            // Внутри произошел redirect и метод loadObjAndCheck() вернул false
+            return null;
+        }
 
         $this->_state = self::STATE_EDIT;
 
@@ -963,6 +1065,7 @@ abstract class ModuleAbstract extends Table
         $this->initEditJsData();
         $this->addModuleSessionNextPrevLinks($this->_obj->getId(), 'editid');
         $this->initEditSubmenu();
+        $this->initEditFlash();
         $this->initEdit();
 
         $tdata = [
@@ -973,9 +1076,10 @@ abstract class ModuleAbstract extends Table
             'content' => $this->getViewEditContentHtml(),
             'formactions' => $this->getFormactionsHtml(),
             'fields' => $this->getFieldsForFormJs(),
+            'ajaxChangeFieldUrl' => $this->getAjaxChangeFieldUrl(),
         ];
 
-        Template::includeTpl('module/edit.tpl.php', $tdata);
+        Template::includeTpl(__DIR__ . '/../templates/module/edit.tpl.php', $tdata);
     }
 
     protected function getEditFromActionUrl()
@@ -986,37 +1090,34 @@ abstract class ModuleAbstract extends Table
         return Link::create($this->getModule())->params($formActionUrlParams)->getHref();
     }
 
-    protected function proceedSelect2ajax()
+    protected function proceedSelect2ajax(): ?array
     {
         if (!Request::isAjax()) {
             $this->redirectToList();
-            return;
+            return null;
         }
 
         if (isset($_GET['fromFilters'])) {
             // Внутри proceedFilters есть обработка поля select2ajax
             $this->proceedFilters();
-            return;
+            return null;
         }
 
         if (isset($_GET['fromDeleteDialogId'])) {
             // Запрос на получение элементов для select2ajax пришел из диалога удаления, когда текущий элемент
             // требуется заменить на какой-то новый
             $field = $this->whileDeleteFieldForReplacement((int)$_GET['fromDeleteDialogId']);
-            /** @var $field FieldSelect */
-            $field->proceedSelect2ajax();
-            return;
+            /** @var FieldSelect $field */
+
+            $select2ajaxController = new Select2ajaxController();
+            return $select2ajaxController->proceed($field, Request::$psr7);
         }
 
         // Иначе ищем поле среди полей объекта или подтаблиц
         $fieldKey = $_GET['select2ajax'];
 
-        // Это может быть multiple поле, в этом случае fieldKey на конце содержит '[]'
-        $fieldKey = str_replace('[]', '', $fieldKey);
-
-        $field = $this->getField($fieldKey);
-
-        if (!$field) {
+        $res = $this->getFieldset()->proceedSelect2ajax($fieldKey);
+        if ($res === null) {
             // Если поле не найдено среди полей объекта, возможно это поле в подтаблице?
             preg_match_all('/(\w+)\[(\d+)\]\[(\w+)\]/', $fieldKey, $mathes);
             if (count($mathes) === 4 && isset($mathes[1][0]) && $mathes[1][0]) {
@@ -1029,24 +1130,12 @@ abstract class ModuleAbstract extends Table
                 if ($this->hasSubtable($subtableClass)) {
                     $subtable = $this->getSubtable($subtableClass);
                     $fieldKey = $mathes[3][0] ?? '';
-                    $field = $subtable->getFieldset()->getField($fieldKey);
+                    $res = $subtable->getFieldset()->proceedSelect2ajax($fieldKey);
                 }
             }
         }
 
-
-        if (!$field) {
-            Response::abort(400, "Unknown field $fieldKey");
-            return;
-        }
-
-        if ($field->getType() !== F::TYPE_SELECT) {
-            Response::abort(400, "Field is not Select ($fieldKey)");
-            return;
-        }
-
-        /** @var FieldSelect $field */
-        $field->proceedSelect2ajax();
+        return $res;
     }
 
     /**
@@ -1061,6 +1150,13 @@ abstract class ModuleAbstract extends Table
                 'moduleSessionParams' => $this->getModuleSessionUrlParams(),
             ]
         );
+    }
+
+    /**
+     * Метод для переопределения в классах потоках
+     */
+    protected function initEditFlash()
+    {
     }
 
     /**
@@ -1096,11 +1192,15 @@ abstract class ModuleAbstract extends Table
         $id = (int)$_GET['logid'];
 
         //Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
-        $this->loadObjAndCheck($id);
+        if (!$this->loadObjAndCheck($id)) {
+            // Внутри произошел redirect и метод loadObjAndCheck() вернул false
+            return null;
+        }
 
         if (!$this->allowLog || !User::hasLogInPlaceAccess() || !$this->hasLogAccessRightToObj($this->_obj)) {
             Session::flashError('No access to log');
             $this->redirectToView();
+            return null;
         }
 
         //В момент создания объект CrudModuleLog загрузит данные из базы и инициализирует фильты
@@ -1149,14 +1249,14 @@ abstract class ModuleAbstract extends Table
                 $urlParams = ['id' => $id];
             }
             Response::redirect($this->getModule(), $urlParams);
-            return;
+            return null;
         }
 
         // Проверим, есть ли права на запись в этот модуль?
         if (!$this->allowEdit || !User::hasWriteAccess()) {
             $this->riseSaveErorr('No access to edit');
             $this->abortSubmit(403);
-            return;
+            return null;
         }
 
         if ($id === 0) {
@@ -1165,31 +1265,21 @@ abstract class ModuleAbstract extends Table
             if (!$this->allowAdd) {
                 $this->riseSaveErorr('Add new records not allowed');
                 $this->abortSubmit(403);
-                return;
+                return null;
             }
 
         } else {
 
-            try {
-
-                // Это режим редактирования - проверим, существует ли этот объект?
-                // Попробоуем загрузить объект и одновременно проверим права доступа к нему, если что-то не так - будет редирект
-                $this->loadObjAndCheck($id);
-
-            } catch (\Throwable $e) {
-
-                reportException($e);
-                $this->riseSaveErorr($e->getMessage());
-                $this->abortSubmit(500);
-                return;
-
+            if (!$this->loadObjAndCheck($id)) {
+                // Внутри произошел redirect и метод loadObjAndCheck() вернул false
+                return null;
             }
 
             //Проверим права доступа к редактированию именно этого объекта
             if (!$this->hasWriteAccessRightToObj($this->_obj)) {
                 $this->riseSaveErorr("No access to edit record with ID=$id");
                 $this->abortSubmit(403);
-                return;
+                return null;
             }
         }
 
@@ -1203,16 +1293,17 @@ abstract class ModuleAbstract extends Table
 
         if ($this->hasCriticalErrors()) {
             $this->abortSubmit(400);
-            return;
+            return null;
         }
 
         // Были ли другие ошибки? Если были, нажал ли пользователь кнопку Save Anyway?
         if (!isset($_REQUEST['saveanyway']) && count($this->_saveErrors) > 0) {
             $this->abortSubmit(400);
-            return;
+            return null;
         }
 
         $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
+        $this->_obj->loadSubtablesForChangeDetection();
 
         // Оставим только те поля, у которых есть F::MODE_SUBMIT
         $fieldsData = $this->_obj->filterDataByModeSubmit($dataFromPost);
@@ -1221,7 +1312,6 @@ abstract class ModuleAbstract extends Table
         $fieldsData = $this->_obj->filterDataByEditAccessFunction($fieldsData);
 
         $this->prefetchSelectOptionsForWriteCompareDbLog($oldData, $fieldsData);
-
 
         try {
             Db::begin();
@@ -1248,25 +1338,21 @@ abstract class ModuleAbstract extends Table
             }
 
             $afterSubmitTimer = new Timer();
-            if ($this->_justInserted) {
-                $this->afterInsert($this->_obj, $dataFromPost);
-            } else {
-                $this->afterUpdate($this->_obj, $dataFromPost, $affectedRows, $oldData, $this->flash, false);
-            }
 
-            $this->_obj->afterSubmit($oldData, $this->flash);
+            $this->_obj->loadSubtablesForChangeDetection();
+            $this->_obj->afterSubmit($this->flash);
             $this->afterSubmit($this->_obj, $dataFromPost, $affectedRows, $oldData, $this->flash, false);
 
             Metric::newrelicMetric($this->getModule() . '/afterSubmit', $afterSubmitTimer->getMs());
 
             Db::commit();
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
 
-            reportException($e);
+            ErrorHandler::reportException($e);
             $this->riseSaveErorr($e->getMessage());
             $this->abortSubmit(500);
-            return;
+            return null;
 
         }
 
@@ -1314,11 +1400,12 @@ abstract class ModuleAbstract extends Table
 
     /**
      * Метод запускается перед сохранением объекта (перед $this->proceedInsertUpdateObj($dataFromPost))
-     * Старые данные сохраняются во временную переменную, чтобы потом быть передаными в методы afterUpdate() и afterSubmit()
+     * Старые данные сохраняются во временную переменную, чтобы потом быть передаными в метод afterSubmit()
      * Иногда, старые данные нужно расширить, например, данными из подтаблиц - тогда этот метод можно переопределить в
      * классах потомках
      * @param ObjAbstract $obj
      * @return array
+     * @deprecated
      */
     public function getOldDataBeforeSubmitOrDelete(ObjAbstract $obj)
     {
@@ -1336,7 +1423,7 @@ abstract class ModuleAbstract extends Table
 
     private function abortSubmit(int $code)
     {
-        Response::abort($code, json_encode($this->_saveErrors));
+        Response::json($this->_saveErrors, $code);
     }
 
     protected function getDataFromPost()
@@ -1384,10 +1471,11 @@ abstract class ModuleAbstract extends Table
     {
         $nameFieldKey = $this->getNameFieldKey();
 
+        $id = $this->_obj->getId();
         $query = "SELECT ID
                   FROM " . $this->getDbTable() . "
-                  WHERE `$nameFieldKey` = '" . Db::esc($name) . "'
-                      AND ID != " . (int)$this->_obj->getId();
+                  WHERE " . Db::quote($nameFieldKey) . " = " . Db::escString($name) . "
+                      AND ID != $id";
 
         if ($existId = Db::getOne($query)) {
             if ($fieldKey === null) {
@@ -1422,7 +1510,7 @@ abstract class ModuleAbstract extends Table
     {
         $query = "SELECT ID
                   FROM " . $this->getDbTable() . "
-                  WHERE CONCAT(Synonyms, '\n') LIKE '%" . Db::esc($name) . "\n%'
+                  WHERE CONCAT('\n', Synonyms, '\n') LIKE '%\n" . Db::esc($name) . "\n%'
                       AND ID != " . $this->_obj->getId();
 
         if ($existId = Db::getOne($query)) {
@@ -1465,7 +1553,7 @@ abstract class ModuleAbstract extends Table
 
                 $lineObj = clone $subtable->getObj();
                 foreach ($errors as $error) {
-                    $fieldKey = 'StatusSubtable[' . $rowNum . '][' . $error['fieldKey'] . ']';
+                    $fieldKey = $this->getTableName() . 'Subtable[' . $rowNum . '][' . $error['fieldKey'] . ']';
                     $msg = $error['msg'];
                     $lineDescription = $lineObj->setData($rowData)->getDescriptionHtml();
                     if ($lineDescription) {
@@ -1523,34 +1611,6 @@ abstract class ModuleAbstract extends Table
     }
 
     /**
-     * Вызывается после создания новой записи через режим Add New
-     * @param ObjAbstract $obj
-     * @param array $dataFromPost
-     */
-    protected function afterInsert(ObjAbstract $obj, array $dataFromPost)
-    {
-    }
-
-    /**
-     * Вызывается после обновления записи через режим Edit или MultipleUpdate
-     * @param ObjAbstract $obj
-     * @param array $dataFromPost
-     * @param int $affectedRows
-     * @param array $oldData
-     * @param Msg $msgBuff
-     * @param bool $fromMultipleUpdate
-     */
-    protected function afterUpdate(
-        ObjAbstract $obj,
-        array $dataFromPost,
-        $affectedRows,
-        array $oldData,
-        Msg $msgBuff,
-        $fromMultipleUpdate
-    ) {
-    }
-
-    /**
      * Вызывается после создания ноыой записи из Add New и при редактировании записи через Edit или Multiple Update
      * (иными словами самый универсальный метод - вызывается всегда! Если нужно сделать какое-то обновление кеширующих
      * данных во всех случаях, этот метод подходит лучше всего)
@@ -1560,6 +1620,7 @@ abstract class ModuleAbstract extends Table
      * @param array $oldData
      * @param Msg $msgBuff
      * @param bool $fromMultipleUpdate
+     *
      */
     protected function afterSubmit(
         ObjAbstract $obj,
@@ -1575,15 +1636,30 @@ abstract class ModuleAbstract extends Table
      * @throws \Exception
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
-     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     * @throws Exception
      */
     protected function proceedList()
     {
+        // Сначала проверяем все невозможные ситуации (которые должены приводить к редиректу обратно на list)
+
+        if (!$this->allowExportToExcel && Request::isXls()) {
+            // Если в параметрах url передан xls=1, но при этом экспорт в Excel запрещён, то просто делаем редирект
+            $this->redirectToList();
+            return;
+        }
+
         if (isset($_GET['loadTableLayoutSettings'])) {
-            $this->initFieldsFromSubtables();
-            $this->initList();
-            $this->initLayoutable();
-            $this->showTableLayoutSettingsDialog();
+            $this->proceedTableLayoutSettingsDialog();
+            return;
+        }
+
+        if (isset($_GET['action'])) {
+            return $this->proceedAction();
+        }
+
+        if (isset($_GET['renderRowForAjax']) && $_GET['renderRowForAjax'] === $this->getTableName() && Request::isAjax()) {
+            // Пользователь поменял какое-то поле с помощью changeField в режиме таблицы и теперь нужно перезагрузить всю строку
+            $this->proceedListRenderRowForAjax();
             return;
         }
 
@@ -1595,42 +1671,31 @@ abstract class ModuleAbstract extends Table
             // редирект с помощью GET (фильтры уже сохранены в настройках пользователя благодаря $this->proceedFilters();
             // и они не потеряются)
             Response::redirectUrl($_SERVER['REQUEST_URI']);
+            return;
         }
-
-        // Правильно определим переменную _state
-        $this->_state = self::STATE_LIST;
 
         if (Request::isXls()) {
-            if (!$this->allowExportToExcel) {
-                // Если в параметрах url передан xls=1, но при этом экспорт в Excel запрещён, то просто делаем редирект
-                $this->redirectToList();
-                return;
-            }
-            // Если же экспорт в Excel разрешен, то установим специальный _state
-            $this->_state = self::STATE_LIST_EXCEL;
-        }
-
-        // Параметр из класса Table: имя модуля на который автоматически делать ссылки в таблице
-        // Этот параметр также определяем модуль для перехода при двойном клике
-        $this->tableLinkModule = $this->tableLinkModule ?: $this->getModule();
-
-        if (!$this->isStateListExcel()) {
-            // Инициализируем пажинацию, только если это не экспорт в Excel
-            $this->initPaginatable();
-        }
-
-        if ($this->isStateListExcel() || Request::isAjax()) {
-
-            $this->renderListTable();
+            $this->proceedListSendExcel();
             return;
+        }
 
+        if (Request::isAjax()) {
+            $this->proceedListRenderTableForAjax();
+            return;
         }
 
         // При первоначальном рендеринге не загружаем данные
         // Данные появятся на экране пользователя в результате ajax запроса, который произойдёт сразу после загрузки
         // страницы
-        $this->renderListInitialPage();
+        $this->proceedListRenderInitialPage();
+    }
 
+    protected function proceedTableLayoutSettingsDialog()
+    {
+        $this->initFieldsFromSubtables();
+        $this->initList();
+        $this->initLayoutable();
+        $this->showTableLayoutSettingsDialog();
     }
 
     /**
@@ -1640,8 +1705,10 @@ abstract class ModuleAbstract extends Table
      * Таблица будет загружена отдельным ajax запросом (см. renderListTable())
      * @throws \Exception
      */
-    protected function renderListInitialPage()
+    protected function proceedListRenderInitialPage()
     {
+        $this->_state = self::STATE_LIST;
+
         $moduleName = ModuleRegister::getModuleName($this->getModule());
         Response::setPageHeadHtml('<strong>' . $moduleName . '</strong>');
         Response::setPageTitle($moduleName);
@@ -1651,11 +1718,13 @@ abstract class ModuleAbstract extends Table
         $this->initListJsData();
         $this->initListIntro();
         $this->initListFlash();
+        $this->initListLinks();
+        $this->initListTableLinkModule();
 
         //Это обычный запрос на рендринг таблицы в режиме List
         $tdata = [
             'table' => $this->getHtmlTableDivWrapper() . '</div>',
-            'buttons' => $this->getListButtons(),
+            'linksHtml' => $this->getListLinksHtml(),
             'badgeMessagess' => $this->getListBadgeMessagess(),
             'filters' => $this->getFiltersHtml(),
         ];
@@ -1663,32 +1732,112 @@ abstract class ModuleAbstract extends Table
         Template::includeTpl('module/list.tpl.php', $tdata);
     }
 
+    protected function getAjaxChangeFieldUrl(): string
+    {
+        return Link::create($this->getModule())->action(AjaxChangeField::class)->getHref() . '&id=';
+    }
+
+    protected function initListTableLinkModule()
+    {
+        // Параметр из класса Table: имя модуля на который автоматически делать ссылки в таблице
+        // Этот параметр также определяем модуль для перехода при двойном клике
+
+        // Используется как при рендере div обёртки воркуг таблицы, так и при рендере отдельных ячеек
+        $this->tableLinkModule = $this->tableLinkModule ?: $this->getModule();
+    }
+
+    /**
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     * @throws Exception
+     */
+    protected function proceedListSendExcel()
+    {
+        $this->_state = self::STATE_LIST_EXCEL;
+
+        $this->prepareListFieldsBeforeRender();
+        $this->initSortable();
+
+        $this->tableLoadData();
+        $this->sendExcel();
+    }
+
     /**
      * Этот метод вызывается либо при рендеринге html вида таблицы с помощью ajax запроса от бразуера
      * либо пре экспорте таблицы в Excel
-     *
-     * @throws \PhpOffice\PhpSpreadsheet\Exception
-     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
-     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
-    protected function renderListTable()
+    protected function proceedListRenderTableForAjax()
     {
-        // Регистрируем массовые действия - метод initMassactions должен быть переопределён в классе потомке
-        $this->initMassactions();
+        $this->_state = self::STATE_LIST;
 
-        if (method_exists($this, 'filesDialogAddMassaction')) {
-            /** @var FilesDialogTrait $moduleWithFilesDialog */
-            $moduleWithFilesDialog = $this;
-            $moduleWithFilesDialog->filesDialogAddMassaction();
+        $this->prepareListFieldsBeforeRender();
+
+        $this->initSortable();
+        $this->initPaginatable();
+        $this->initListTableLinkModule();
+
+        $this->tableLoadData();
+
+        print $this->getHtmlTableForAjax();
+    }
+
+    /**
+     * Метод вызывается после изменения поля в строке с помощью ajax
+     */
+    public function proceedListRenderRowForAjax()
+    {
+        $id = (int)$_GET['rowId'];
+        if (!$id) {
+            Response::abort(400);
+            return;
         }
 
-        // Добавляем опции печати (они также отображаются в массовых действиях)
-        $this->initPrintForms();
-        $this->printFormsAddMassaction();
+        $this->prepareListFieldsBeforeRender();
+        $this->initListTableLinkModule();
+
+        $this->tableLoadListRowForAjax($id);
+
+        if (!$this->tableData) {
+            Response::abort(404);
+            return;
+        }
+
+        print $this->getHtmlTableTrForAjax();
+    }
+
+    protected function tableLoadListRowForAjax(int $id)
+    {
+        $query = $this->getDataQuery([$id]);
+        $this->tableData = Db::getAll($query);
+    }
+
+    /**
+     * Метод используется в трёх сценариях:
+     * 1) При рендеринге таблицы в html
+     * 2) При отправке таблицы в Excel
+     * 3) При ajax рендеринге отдельной строки
+     */
+    protected function prepareListFieldsBeforeRender()
+    {
+        // В рамках подготовки списка полей перед выводом на экран нужно инициализировать все massactions,
+        // только тогда будет понтно, выводить ли колонку с чекбоксами?
+        if (!Request::isXls()) {
+            $this->initMassactions();
+
+            if (method_exists($this, 'filesDialogAddMassaction')) {
+                /** @var FilesDialogTrait $moduleWithFilesDialog */
+                $moduleWithFilesDialog = $this;
+                $moduleWithFilesDialog->filesDialogAddMassaction();
+            }
+
+            // Добавляем опции печати (они также отображаются в массовых действиях)
+            $this->initPrintForms();
+            $this->printFormsAddMassaction();
+        }
 
         // Если у пользователя нет прав на редактирование в этом модуле - нужно закрыть для редактирования все поля
         // Это особо актуально для полей с ajax редактированием, чтобы они не рендрились в таблицу как редактируемые
-        if (!$this->allowEdit || !User::hasWriteAccess()) {
+        if (!Request::isXls() && (!$this->allowEdit || !User::hasWriteAccess())) {
             $this->disableAllFieldsEdit();
         }
 
@@ -1699,20 +1848,7 @@ abstract class ModuleAbstract extends Table
         // Метод initList() переопределяется в классх потоках - там добавляются поля необходимые только для режима List
         $this->initList();
 
-        $this->initSortable();
         $this->initLayoutable();
-
-        // При запросе Excel файла или при ajax запросе - загружаем данные таблицы для режима List и выводим в бразуер
-        $this->tableLoadData();
-
-        if ($this->isStateListExcel()) {
-            $this->sendExcel();
-        } else {
-            print $this->getHtmlTableForAjax();
-            if (Config::$debug) {
-                print '<div class="note">Peak memory usage: ' . (memory_get_peak_usage(true) / 1024) . ' Kb</div>';
-            }
-        }
     }
 
     protected function initListJsData()
@@ -1748,17 +1884,40 @@ abstract class ModuleAbstract extends Table
         IntroManager::addIntro($selector, $text, $this->_state);
     }
 
-    protected function getListButtons()
+    /**
+     * Метод для переопределения в классах потомках - здесь нужно вызывать метод $this->addListLink()
+     */
+    protected function initListLinks()
     {
-        $out = [];
+    }
+
+    final protected function addListLink(Link $link)
+    {
+        $this->listLinks[] = $link;
+    }
+
+    protected function getListLinksHtml(): string
+    {
+        $links = [];
         if ($this->allowAdd && User::hasWriteAccess()) {
-            $out[] = [
-                'text' => 'Add New',
-                'url' => Link::create($this->getModule())->addNew()->getHref(),
-            ];
+            $links[] = $this->getAddNewLink();
         }
 
-        return $out;
+        /** @var Link $link */
+        foreach ($this->listLinks as $link) {
+            $link->cssClass('btn-flat waves-effect');
+        }
+
+        $links = array_merge($links, $this->listLinks);
+
+        return implode(' ', $links);
+    }
+
+    protected function getAddNewLink(): Link
+    {
+        return Link::create($this->getModule(), '+')
+            ->addNew()
+            ->cssClass('btn-floating btn waves-effect btn-addnew');
     }
 
     protected function isStateList()
@@ -1817,6 +1976,33 @@ abstract class ModuleAbstract extends Table
         return $link;
     }
 
+    final protected function addSubmenuAction(string $actionClass): Link
+    {
+        /** @var ActionAbstract $action */
+        $action = new $actionClass($this->_obj, $this->flash);
+
+        $link = Link::create($this->getModule(), $action->getSubmenuHtml())
+            ->view($this->_obj->getId())
+            ->action($actionClass);
+
+        /** @var ActionAbstract $actionClass */
+        if ($action->onlyAjax) {
+            $link->ajax();
+        }
+        if ($action->onlyPost) {
+            $link->post();
+        }
+
+        // Добавляем в подменю, только если есть доступ к этому Action
+        if ($action->hasAccess()) {
+            $this->addSubmenuLink($link);
+        }
+
+        // Метод возващает ссылку, чтобы к ней можно было добавить опций по месту вызова
+        // $this->addSubmenuAction(..., ...)->params(...)->ajax()->post()->...
+        return $link;
+    }
+
     final protected function riseSaveWarning($msg, $fieldKey = '')
     {
         $this->riseSaveErorr($msg, $fieldKey, false);
@@ -1840,11 +2026,24 @@ abstract class ModuleAbstract extends Table
         ];
     }
 
+    final protected function riseSaveErorrSubtable(
+        $msg,
+        string $subtableName,
+        int $rowNum,
+        string $fieldKey,
+        $critical = true
+    ) {
+        // Если имя класс передано с помощью Fully Qualified Class Name, то приведём к короткому виду
+        $subtableName = Misc::getClass($subtableName);
+        $fieldKey = "{$subtableName}Subtable[$rowNum][$fieldKey]";
+        $this->riseSaveErorr($msg, $fieldKey, $critical);
+    }
+
     /**
      * @param string $subtableClass имя класса подтаблицы без суффикса Subtable и без неймспейса текущего модуля
      * @return void
      */
-    protected function registerSubtable(string $subtableClass)
+    protected function addSubtable(string $subtableClass)
     {
         $this->subtables[$subtableClass] = [
             'class' => $subtableClass,
@@ -1852,7 +2051,7 @@ abstract class ModuleAbstract extends Table
         ];
     }
 
-    protected function registerSubtableReadonly(string $subtableClass)
+    protected function addSubtableReadonly(string $subtableClass)
     {
         $this->subtables[$subtableClass] = [
             'class' => $subtableClass,
@@ -1867,7 +2066,7 @@ abstract class ModuleAbstract extends Table
 
     /**
      * @param string $subtableClass имя класса подтаблицы
-     * @return \Light\SubtableBase\Subtable
+     * @return Subtable
      */
     protected function getSubtable(string $subtableClass)
     {
@@ -1889,20 +2088,6 @@ abstract class ModuleAbstract extends Table
         return '';
     }
 
-    public function getFiltersSqlWhere()
-    {
-        $sqlWhere = $this->filters->getSqlWhere();
-
-        // Добавляем к общему запросу на получение данных для режима list
-        // дополниетельное условие ограничивающее по правам доступа
-        $accessSqlWhere = $this->getAccessSqlWhere();
-        if ($accessSqlWhere) {
-            $sqlWhere .= " AND ($accessSqlWhere)";
-        }
-        return $sqlWhere;
-    }
-
-
     /**
      * Метод для переопределения в классах потоках - здесь проверяются права доступа к объекту в режимах View/Edit/Log/Delete
      * @param ObjAbstract $obj
@@ -1919,8 +2104,9 @@ abstract class ModuleAbstract extends Table
             return (bool)Db::getOne("SELECT ID FROM $dbTable WHERE ID = $id AND ($accessSqlWhere)");
         }
 
-        // Если никаких дополнительных органичений в классе потомке не накладывается, то по умолчанию возвращаем true
-        return true;
+        // Если никаких дополнительных органичений в классе потомке не накладывается,
+        // то по умолчанию возвращаем логику описанную в Obj
+        return $obj->accessRead();
     }
 
     protected function initFieldsFromSubtables()
@@ -1964,16 +2150,18 @@ abstract class ModuleAbstract extends Table
      */
     protected function disableAllFieldsEdit()
     {
+        /** @var AjaxChangeField $ajaxChageFieldAction */
+        $ajaxChageFieldAction = $this->createViewActionInstance(Misc::getClass(AjaxChangeField::class));
         foreach ($this->getFieldset() as $field) {
             // Для ajax полей особый подход к отключению редактирования: нужно отдельно вызвать функцию,
             // которая может быть переопределена
-            if ($field->ajax) {
-                // Для ajax полей отдельный способ проверки прав на редактирование
-                if ($this->hasWriteAccessAjaxChangeField($field)) {
-                    // Это ajax поле можно редактировать, не смотря на то, что в целом для текущего пользователя
-                    // все поля должны быть отключены от редактирования
-                    continue;
-                }
+            if ($this->allowEdit
+                && $field->ajax
+                && User::hasWriteAccess()
+                && $ajaxChageFieldAction->hasAccessAjaxChangeField($field->key)) {
+                // Это ajax поле можно редактировать, не смотря на то, что в целом для текущего пользователя
+                // все поля должны быть отключены от редактирования
+                continue;
             }
             $field->setModes($field->getModes() & ~F::MODE_EDITSUBMIT);
         }
@@ -2007,7 +2195,7 @@ abstract class ModuleAbstract extends Table
                 $colorField = $this->getField('Color');
                 $colorField->setParam(
                     'source',
-                    '?a=' . $module . '&id={id}&func=changeField'
+                    Link::create($module)->action(AjaxChangeField::class)->getHref() . '&id={id}',
                 );
                 $this->getFieldsetFirst()->addField($colorField);
             }
@@ -2048,14 +2236,14 @@ abstract class ModuleAbstract extends Table
             $outHtml = '';
 
             if ($this->allowEdit) {
-                $outHtml .= Link::create($module, Img::iconEdit())
+                $outHtml .= Link::create($module, Ico::edit())
                     ->edit($data['ID'])
                     ->params(['fromList' => 1] + $this->getModuleSessionUrlParams())
                     ->getHtml();
             }
 
             if ($this->allowDelete) {
-                $outHtml .= Link::create($module, Img::iconDelete())
+                $outHtml .= Link::create($module, Ico::delete())
                     ->params(['delid' => $data['ID'], 'fromList' => 1] + $this->getModuleSessionUrlParams())
                     ->ajax()
                     ->cssClass("del-link")
@@ -2071,11 +2259,6 @@ abstract class ModuleAbstract extends Table
 
     protected function tableLoadData()
     {
-        // Cформируем условие сортировки.
-        // Оно может состоять из сортировки указанной в trait TableSortable и из tableDefaultOrderBy
-        // Сначала соберём всё в массив, потом из него склеим строку
-        $sqlOrderBy = $this->getSqlOrderBy();
-
         if (isset($_GET['excelIds']) && $this->isStateListExcel()) {
 
             $ids = Misc::idsFromComaSeparatedString($_GET['excelIds']);
@@ -2086,83 +2269,121 @@ abstract class ModuleAbstract extends Table
             //После этого достанем все поля, указав в условии WHERE ID IN (...)
             //Это значительно ускорит запрос, т.к. сортировка сначала LIMIT будут производиться на лёгком наборе ID
             //При выборке остальных колонок объём данных будет уже меньше за счёт ограниченного набора WHERE ID IN (...)
+            $queryIds = $this->getDataQueryIds();
 
-            $queryIds = "SELECT";
-
-            //В режиме выгрузки таблицы в Excel нам не важно сколько строк в таблице всего
-            if (!$this->isStateListExcel()) {
-                $queryIds .= " SQL_CALC_FOUND_ROWS";
-            }
-
-            $queryIds .= " ID";
-
-            //Проверим поле по которому идёт сортировка. Если оно вычисляемое, его тоже придётся добавить в этот запрос
-            //Причём у этого вычисляемого поля могут быть зависимости, поэтому используем $this->getFieldset()->getSqlSelect()
-            $sortField = $this->getSortField();
-            if ($sortField && $sortField->getSqlSelect()) {
-                $queryIds .= ', ' . $this->getFieldset()->getSqlSelect([$sortField->key]);
-            }
-
-            $queryIds .= " FROM " . Db::quote($this->getDbTable());
-
-            $sqlWhere = $this->getFiltersSqlWhere();
-            if ($sqlWhere !== '') {
-                $queryIds .= " WHERE $sqlWhere";
-            }
-
-            if ($sqlOrderBy) {
-                $queryIds .= " ORDER BY $sqlOrderBy";
-            }
-
-            if ($this->isStateListExcel()) {
-                $queryIds .= ' LIMIT ' . $this->getTableExcelMaxRows();
-            } elseif ($this->allowPagination) {
-                $page = $this->getTablePage();
-                $rowsPerPage = $this->getTableRowsPerPage();
-                $queryIds .= ' LIMIT ' . ($page - 1) * $rowsPerPage . ', ' . $rowsPerPage;
-            }
-
-            //Получим все ID из базы
-            $timer = new Timer();
+            // Получим все ID из базы
             $ids = Db::getCol($queryIds);
-            $this->_queryTime += $timer->get();
-        }
-
-        if ($ids) {
-
-            //Сразу посчитаем общее количество строк, если это не режим экспорта в Excel
-            if (!$this->isStateListExcel()) {
-                $foundRows = Db::getOne("SELECT FOUND_ROWS()");
-                $this->setTableTotalRecordsFound($foundRows);
-            }
-
-            //Если это не режим экспорта в Excel, запишем ID всех отображенных пользователю строк в базу
-            //Они понадобятся для навигации по стрелочкам в режимах View/Edit/Log
-            if (!$this->isStateListExcel()) {
-                $this->createModuleSession($ids, $this->getTablePage());
-            }
-
-            //Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->tableData
-            $query = "SELECT ";
-
-            $selectFieldKeys = $this->getFieldsetShowed()->getKeys();
-            $query .= $this->getFieldset()->getSqlSelect($selectFieldKeys);
-
-            $query .= " FROM " . Db::quote($this->getDbTable());
-            $query .= " WHERE ID IN (@a)";
-
-            if ($sqlOrderBy) {
-                $query .= " ORDER BY $sqlOrderBy";
-            }
-
-            $timer = new Timer();
-            $this->tableData = Db::getAll($query, $ids);
-
-            //Загрузим специальный массив с закешированным состоянием непустых папок
-            FilesFolder::loadFoldersStatus($this->getModule(), $ids);
-            $this->_queryTime += $timer->get();
+            $this->_queryTime += Db::getLastQueryTime();
 
         }
+
+        if (!$ids) {
+            // Не найдены id для загрузки - пользователь указал какие-то очень сильные фильтры
+            return;
+        }
+
+
+        // Посчитаем общее количество строк, если это не режим экспорта в Excel
+        if (!$this->isStateListExcel()) {
+            $queryCount = $this->getDataQueryCount();
+
+            $foundRows = Db::getOne($queryCount);
+            $this->_queryTime += Db::getLastQueryTime();
+
+            $this->setTableTotalRecordsFound($foundRows);
+        }
+
+        // Если это не режим экспорта в Excel, запишем ID всех отображенных пользователю строк в базу
+        // Они понадобятся для навигации по стрелочкам в режимах View/Edit/Log
+        if (!$this->isStateListExcel()) {
+            $this->createModuleSession($ids, $this->getTablePage());
+        }
+
+        // Теперь сделаем второй запрос, в котором WHERE ID IN (...) - результат запишем в таблицу $this->tableData
+        $query = $this->getDataQuery($ids);
+
+        $this->tableData = Db::getAll($query);
+        $this->_queryTime += Db::getLastQueryTime();
+
+        // Загрузим специальный массив с закешированным состоянием непустых папок
+        if ($this->folders) {
+            FilesFolder::loadFoldersStatus($this->folderModule, $ids);
+        }
+    }
+
+    /**
+     * Формирует SQL запрос для выборки ID записей подходящих по условиям WHERE и пажинации LIMIT
+     * @return string
+     */
+    protected function getDataQueryIds(): string
+    {
+        $queryIds = "SELECT ID";
+
+        // Проверим поле по которому идёт сортировка. Если оно вычисляемое, его тоже придётся добавить в этот запрос
+        $queryIds = $this->getDataQueryWithSortFieldInSelect($queryIds);
+        // Добавялем секцию FROM $this->getDbTable()
+        $queryIds = $this->getDataQueryWithFrom($queryIds);
+        // Добавляем секцию WHERE которая состит из фильтров и прав доступа $this->getAccessSqlWhere()
+        $queryIds = $this->getDataQueryWithWhere($queryIds);
+        // Добавляем секцию ORDER BY
+        $queryIds = $this->getDataQueryWithSortFieldOrderBy($queryIds);
+        // Добавляем секцию LIMIT с учётом паджинации
+        $queryIds = $this->getDataQueryWithLimits($queryIds, $this->isStateListExcel());
+
+        return $queryIds;
+    }
+
+    /**
+     * Формирует SQL запрос для выборки реальных данных на основе отображаемых у пользователя колонок
+     * и выбирает только указнные $ids (эти ids были определены ранее)
+     * @param array $ids
+     * @return string
+     */
+    protected function getDataQuery(array $ids): string
+    {
+        $query = "SELECT ";
+        // В секрции SELECT набор полей определяется реально отображаемыми пользователем полями
+        $selectFieldKeys = $this->getFieldsetShowed()->getKeys();
+        $query .= $this->getFieldset()->getSqlSelect($selectFieldKeys);
+        // Добавялем секцию FROM
+        $query = $this->getDataQueryWithFrom($query);
+        // В условии WHERE вместо всех сложных фильтров указываем полученный массив $ids
+        $query .= Db::parse(" WHERE ID IN (@a)", $ids);
+        // Добавляем секцию ORDER BY
+        $query = $this->getDataQueryWithSortFieldOrderBy($query);
+        // LIMIT не добавляем, т.к. у нас уже есть финсированный набор $ids подходящий для текущей страницы
+        return $query;
+    }
+
+    /**
+     * Формирует запрос SELECT count(*) FROM ... WHERE ... чтобы посчитать общее число строк для работы пажинации
+     * @return string
+     */
+    protected function getDataQueryCount(): string
+    {
+        $queryCount = "SELECT count(*)";
+        $queryCount = $this->getDataQueryWithFrom($queryCount);
+        $queryCount = $this->getDataQueryWithWhere($queryCount);
+        return $queryCount;
+    }
+
+    private function getDataQueryWithFrom(string $query): string
+    {
+        return $query . " FROM " . Db::quote($this->getDbTable());
+    }
+
+    private function getDataQueryWithWhere(string $query): string
+    {
+        $query = $this->getDataQueryWithFiltersWhere($query);
+
+        // Добавляем к общему запросу на получение данных для режима list
+        // дополниетельное условие ограничивающее по правам доступа
+        $accessSqlWhere = $this->getAccessSqlWhere();
+        if ($accessSqlWhere) {
+            $query .= " AND ($accessSqlWhere)";
+        }
+
+        return $query;
     }
 
     final protected function isStateListExcel()
@@ -2177,19 +2398,18 @@ abstract class ModuleAbstract extends Table
             $outHtml .= $this->getFiltersHiddenInput();
         }
 
-        if ($this->massactions && $this->getTableDataCount()) {
-            $outHtml .= MassactionUtils::getHtmlSelectMassactions($this->massactions);
-        }
+        $outHtml .= $this->getMassactionsHtml();
 
         return $outHtml;
     }
 
-    protected function hasWriteAccessAjaxChangeField(FieldAbstract $field): bool
+    protected function getMassactionsHtml(): string
     {
-        return $this->allowEdit
-            && User::hasWriteAccess()
-            && ($this->_obj->getId() === 0 || $this->hasWriteAccessRightToObj($this->_obj))
-            && $this->_obj->hasFieldModeSubmit($field->key);
+        if ($this->massactions && $this->getTableDataCount()) {
+            return MassactionUtils::getHtmlSelectMassactions($this->massactions);
+        }
+
+        return '';
     }
 
     protected function hasWriteAccessAjaxChangeFieldSubtable(FieldAbstract $field): bool
@@ -2198,87 +2418,6 @@ abstract class ModuleAbstract extends Table
             && User::hasWriteAccess()
             && ($this->_obj->getId() === 0 || $this->hasWriteAccessRightToObj($this->_obj))
             && $field->hasMode(F::MODE_SUBMIT);
-    }
-
-    /**
-     * Метод вызывается через GET ajax запросы на url ?a=<module>&id=123&func=changeField
-     * когда пользователь кликнул на ссылку .ajax-input - в этот момент нужно подгрузить с сервера HTML код поля ввода
-     */
-    protected function viewGetChangeField()
-    {
-        $this->_state = self::STATE_VIEW_CHANGE_FIELD;
-        if (!Request::isAjax()) {
-            $this->redirectToView();
-        }
-
-        $fieldKey = $_REQUEST['fieldKey'];
-        $field = $this->_obj->getFieldset()->getField($fieldKey);
-        if (!$field) {
-            Response::abort(400, "Field not found");
-        }
-
-        if (!$this->hasWriteAccessAjaxChangeField($field)) {
-            Response::abort(403, 'Edit not allowed');
-        }
-
-        $value = $this->_obj[$fieldKey];
-        $data = $this->_obj->getData();
-        // Выводим в ajax ответ HTML код для поля ввода
-        print $this->_obj->getField($fieldKey)->getHtmlInput($value, $data);
-        ApplicationAbstract::terminate();
-    }
-
-    /**
-     * Метод вызывается через POST ajax запросы на url ?a=<module>&id=123&func=changeField&fieldKey=...&newValue=...
-     * когда пользователь отправляет на сервер значение какого-то ajax поля
-     */
-    protected function viewPostChangeField()
-    {
-        $this->_state = self::STATE_VIEW_CHANGE_FIELD;
-        if (!Request::isAjax()) {
-            $this->redirectToView();
-        }
-
-        $fieldKey = $_REQUEST['fieldKey'];
-        $field = $this->_obj->getFieldset()->getField($fieldKey);
-        if (!$field) {
-            Response::abort(400, "Field not found");
-        }
-
-        if (!$this->hasWriteAccessAjaxChangeField($field)) {
-            Response::abort(403, 'Edit not allowed');
-        }
-
-        $timer = new Timer();
-
-        $value = $_REQUEST['newValue'];
-        $data = [$fieldKey => $value];
-        $normilizedValue = $field->getDataFromRequest($data);
-        if ($normilizedValue === null && !$field->nullable) {
-            Response::abort(400, "Invalid value $value");
-        }
-
-        $oldData = $this->getOldDataBeforeSubmitOrDelete($this->_obj);
-
-        Db::begin();
-
-        $updateData = [$fieldKey => $normilizedValue];
-        $affectedRows = $this->_obj->updateDb($updateData, 'Ajax');
-
-        // Вызовем дополнительный обработчик, который, возможно, переопределён в классах потомках
-        $this->_obj->afterSubmit($oldData, $this->flash);
-        $this->afterSubmit($this->_obj, $updateData, $affectedRows, $oldData, $this->flash, false);
-
-        Db::commit();
-
-        print $this->_obj->getFieldHtml($fieldKey);
-
-        Metric::newrelicMetric($this->getModule() . '/ChangeField', $timer->getMs());
-
-        // Если при изменении поля в $this->afterChangeField накопились какие-то Flash сообщения,
-        // отправим их в виде Toast блоков
-        Session::$showAsToast = true;
-        ApplicationAbstract::terminate();
     }
 
     /**
@@ -2298,7 +2437,7 @@ abstract class ModuleAbstract extends Table
      */
     protected function hasWriteAccessRightToObj(ObjAbstract $obj)
     {
-        return true;
+        return $obj->accessWrite();
     }
 
     protected function hasWriteAccessRightToFolder(ObjAbstract $obj)
@@ -2312,7 +2451,7 @@ abstract class ModuleAbstract extends Table
      */
     protected function hasDeleteAccessRightToObj(ObjAbstract $obj)
     {
-        return $this->hasWriteAccessRightToObj($obj);
+        return $obj->accessDelete();
     }
 
     protected function getFindidUrlParams()
@@ -2343,5 +2482,29 @@ abstract class ModuleAbstract extends Table
         }
 
         return $out;
+    }
+
+    public static function proceedDownloadExampleFile()
+    {
+        $file = $_GET['file'];
+        $examplesDir = LIGHT_DIR_PROJECT . '/Module/' . Request::getModule() . '/Examples';
+
+        $realpath = realpath($examplesDir . '/' . $file);
+        if (!$realpath) {
+            Response::redirect(Request::getModule());
+            return;
+        }
+
+        if (strpos($realpath, $examplesDir) !== 0) {
+            Response::redirect(Request::getModule());
+            return;
+        }
+
+        if (!is_file($realpath)) {
+            Response::redirect(Request::getModule());
+            return;
+        }
+
+        Response::streamFileFromFilesystem($realpath);
     }
 }

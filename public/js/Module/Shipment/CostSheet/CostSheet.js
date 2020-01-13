@@ -50,8 +50,8 @@ var CostSheet;
         $(".cs-cinvoice-btn").addClass("display-none");
         $(".cs-vinvoice-btn").addClass("display-none");
         //Отобразим ссылки Copy и Fill from Quotation
-        $("#cs-copy-btn").removeClass("display-none");
-        $("#cs-fillquotation-btn").removeClass("display-none");
+        $(".cs-copy-btn").removeClass("display-none");
+        $(".cs-fillquotation-btn").removeClass("display-none");
         //Отобразим ссылки Search Airfreight Rate и Copy to Selling
         $("#search-airfreightrate-link").removeClass("display-none");
         $("#copy-to-selling-link").removeClass("display-none");
@@ -103,8 +103,8 @@ var CostSheet;
         $(".cs-cinvoice-btn").removeClass("display-none");
         $(".cs-vinvoice-btn").removeClass("display-none");
         //Скроем ссылки Copy и Quotation / Standart Rate
-        $("#cs-copy-btn").addClass("display-none");
-        $("#cs-fillquotation-btn").addClass("display-none");
+        $(".cs-copy-btn").addClass("display-none");
+        $(".cs-fillquotation-btn").addClass("display-none");
         //Скроем ссылки Search Airfreight Rate и Copy to Selling
         $("#search-airfreightrate-link").addClass("display-none");
         $("#copy-to-selling-link").addClass("display-none");
@@ -128,7 +128,7 @@ var CostSheet;
         document.location.href =
             "index.php?a=VInvoice&addnew=1&fromCostSheet=" + shipmentId + "&csLineIds=" + checkedValues;
     });
-    $("#cs-copy-btn").on("click", function (e) {
+    $(".cs-copy-btn").on("click", function (e) {
         e.preventDefault();
         var bodyHtml = '<form><label for="cs-copy-number">Copy from Shipment (enter number):</label> <input type="text" id="cs-copy-number" class="input-ceil input-small input-left"></form>';
         var options = {
@@ -361,7 +361,7 @@ var CostSheet;
             .removeClass("hover");
         $(".total-selected").css("visibility", "hidden");
     });
-    $("#cs-fillquotation-btn").on("click", function (e) {
+    $(".cs-fillquotation-btn").on("click", function (e) {
         e.preventDefault();
         //Отобразим диалог для ввода номера котировки из которой заполнить
         var bodyHtml = '<form><label for="use PHPUnitFrameworkTestCase;fillFromQuotation-quotation">Quotation / Standart Rate ID</label> <input type="text" id="fillFromQuotation-quotation" class="input-ceil input-small input-left" value="' +

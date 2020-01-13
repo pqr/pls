@@ -5,6 +5,8 @@ import * as subtable from "./Subtable";
 
 let openedDialogsStack: Dialog[] = [];
 
+const MINMUM_DIALOG_MARGIN = 20;
+
 export interface Button {
     id?: string;
     text: string;
@@ -22,6 +24,7 @@ export interface DialogOptions {
     height?: string;
     top?: string;
     afterClose?: () => void;
+    afterOpen?: (dialog: Dialog) => void;
 }
 
 export class Dialog {
@@ -30,6 +33,7 @@ export class Dialog {
 
     private top: string;
     private afterClose: () => void;
+    private afterOpen: (dialog: Dialog) => void;
     private destroyAfterClose: boolean;
     private $overlay: JQuery | null;
     private defaultSubmitHandler: (dialog: Dialog, buttonId: string) => void;
@@ -145,6 +149,16 @@ export class Dialog {
         table.init($divContent);
         subtable.init($divContent);
 
+        // После добавления таблиц в диалоге добавим функцию автоцентрирования при обновлении таблиц
+        $div.find("div[data-tablename]").each((_, tableDiv: any) => {
+            const tableName = tableDiv.getAttribute("data-tablename");
+            if (table.has(tableName)) {
+                table.get(tableName).onReload(() => {
+                    this.positiionCenter();
+                });
+            }
+        });
+
         //Проверим, содержал ли content какую либо форму?
         const $form = $div.find("form:not(.filters-form)");
         if ($form.length > 0) {
@@ -197,7 +211,7 @@ export class Dialog {
                 if (action) {
                     if (action.indexOf("#ajax") !== -1) {
                         // Поскольку в action встретился якорь #ajax - это значит будем отправлять через ajax
-                        $form.on("submit", (e:any) => {
+                        $form.on("submit", (e: any) => {
                             e.preventDefault();
                             this.blockButtons();
                             const url: string = $form.attr("action")!;
@@ -222,26 +236,24 @@ export class Dialog {
                     } else {
                         // Форму нужно отправить простым POST запросом, но при этом не забудем заблокировать кнопки диалога
                         $form.on("submit", () => {
-
                             // Если это не асинхронный ajax запрос, то проверим, возможно мы этим диалогом генерируем Excel файл?
                             // если так, что post запрос не обновит страницу, а следовательно диалог никогда не закроется!
                             // Сделаем проверку на xls=1 в строке action, если есть, то автоматически закрем диалог через пару секунд
                             this.blockButtons();
 
-                            if (action.indexOf('xls=1') !== -1) {
-                                toastInfo('Excel file is being generated...');
+                            if (action.indexOf("xls=1") !== -1) {
+                                toastInfo("Excel file is being generated...");
                                 setTimeout(() => {
                                     this.close();
                                 }, 5000);
                             }
-
                         });
                     }
                 }
             } else {
                 //Если же defaultSubmitHandler был определён выше (в кропке Ok или в какой-либо другой кнопке isPrimary
                 //то вместо стандартного сабмита формы запустим эту специально определённую функцию
-                $form.on("submit", e => {
+                $form.on("submit", (e: any) => {
                     e.preventDefault();
                     this.blockButtons();
                     this.defaultSubmitHandler(this, "form");
@@ -256,6 +268,9 @@ export class Dialog {
 
         if (options.afterClose) {
             this.afterClose = options.afterClose;
+        }
+        if (options.afterOpen) {
+            this.afterOpen = options.afterOpen;
         }
 
         this.positiionCenter = this.positiionCenter.bind(this);
@@ -291,7 +306,7 @@ export class Dialog {
         if ($div) {
             // Поставим фокус на первый элемент формы, только если это не виджет выбора даты (он некрасиво раскрывается)
             const $firstInput = $div.find(
-                "input[type=text]:first, select[data-type=Select2Multiple]:first, select[data-type=Select2ChildMultiple]:first, textarea:first"
+                "input[type=text]:not(.choices__input):first, select[data-type=Select2Multiple]:first, select[data-type=Select2ChildMultiple]:first, textarea:first"
             );
             if ($firstInput.length > 0 && !$firstInput.hasClass("input-date")) {
                 $firstInput.get(0).focus();
@@ -300,6 +315,11 @@ export class Dialog {
 
         //Добавим открытый диалог в стек диалогов
         openedDialogsStack.push(this);
+
+        // Если был какой-то пользовательский обработчик - запустим его
+        if (this.afterOpen) {
+            this.afterOpen(this);
+        }
     }
 
     positiionCenter() {
@@ -314,18 +334,18 @@ export class Dialog {
                 left: (windowWidth - divWidth) / 2
             };
 
-            if (css.left < 0) {
-                css.left = 0;
-                css.width = windowWidth;
+            if (css.left < MINMUM_DIALOG_MARGIN) {
+                css.left = MINMUM_DIALOG_MARGIN;
+                css.width = windowWidth - MINMUM_DIALOG_MARGIN * 2;
             }
 
             if (this.top === undefined) {
                 //Если пользователь жестко не задал настройку top, то центрирует диалог по вертикали автоматически
 
                 css.top = (windowHeight - divHeight) / 2;
-                if (css.top < 0) {
-                    css.top = 0;
-                    css.height = windowHeight;
+                if (css.top < MINMUM_DIALOG_MARGIN) {
+                    css.top = MINMUM_DIALOG_MARGIN;
+                    css.height = windowHeight - MINMUM_DIALOG_MARGIN * 2;
                 }
             }
 
@@ -413,6 +433,9 @@ $(document).ajaxComplete((_, XMLHttpRequest) => {
                 }
                 if (options.afterClose) {
                     options.afterClose = eval(options.afterClose);
+                }
+                if (options.afterOpen) {
+                    options.afterOpen = eval(options.afterOpen);
                 }
                 if (options.buttons) {
                     options.buttons = options.buttons.map((button: any) => {

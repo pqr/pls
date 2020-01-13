@@ -8,7 +8,7 @@ use Forward\Classes\Constant;
 use Forward\Classes\CustomerAccess;
 use Forward\Field\GeneralFields;
 use Forward\Module\CustomerAccount\Subtables\Customers;
-use Light\Img;
+use Light\Ico;
 use Light\Link;
 use Light\ModuleBase\ModuleAbstract;
 use Light\User;
@@ -25,16 +25,16 @@ class CustomerAccount extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(Customers::class);
+        $this->addSubtable(Customers::class);
     }
 
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
 
-        $this->addFilterName();
+        $this->addFilterText('Name');
         $this->addFilter(GeneralFields::buIdsFilter());
     }
 
@@ -64,7 +64,7 @@ class CustomerAccount extends ModuleAbstract
 
             $url = "mailto:$mailto?subject=" . rawurlencode($subject) . "&body=" . rawurlencode($body);
             $this->addSubmenuLink(
-                Link::create(null, Img::iconMailBlue() . ' Email в бухгалтерию')
+                Link::create(null, Ico::mailBlue() . ' Email в бухгалтерию')
                     ->externalUrl($url)
             );
         }

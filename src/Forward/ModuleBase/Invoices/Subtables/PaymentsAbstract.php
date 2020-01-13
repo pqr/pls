@@ -2,7 +2,7 @@
 namespace Forward\ModuleBase\Invoices\Subtables;
 
 use Forward\Application;
-use Forward\Classes\Traits\FirstLetterTrait;
+use Light\Traits\FirstLetterTrait;
 use Forward\Field\PaymentFields;
 use Forward\Field\PaymentInvoiceFields;
 use Light\Field\FieldAbstract as F;

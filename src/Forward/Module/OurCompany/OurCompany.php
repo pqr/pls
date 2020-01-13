@@ -18,8 +18,8 @@ class OurCompany extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(Banks::class);
+        $this->addSubtable(Banks::class);
     }
 }

@@ -3,7 +3,7 @@ namespace Forward\ModuleBase\Payments;
 
 use Forward\Application;
 use Forward\Classes\Finance;
-use Forward\Classes\Traits\FirstLetterTrait;
+use Light\Traits\FirstLetterTrait;
 use Light\Css;
 use Light\Db;
 use Light\Js;

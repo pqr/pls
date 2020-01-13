@@ -112,6 +112,11 @@ class Msg implements \Countable, \JsonSerializable
         return $this->messages;
     }
 
+    public function setAll($messages)
+    {
+        return $this->messages = $messages;
+    }
+
     /**
      * Принимает массив из сообщений, каждое сообщение это массив из двух элементов: type и msg
      * @return string

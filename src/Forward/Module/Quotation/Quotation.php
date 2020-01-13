@@ -19,7 +19,7 @@ use Light\Currency;
 use Light\Db;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
-use Light\Img;
+use Light\Ico;
 use Light\Link;
 use Light\ModuleBase\ModuleAbstract;
 use Light\Msg;
@@ -139,16 +139,16 @@ class Quotation extends ModuleAbstract
 
     }
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(Cargo::class);
-        $this->registerSubtable(Income::class);
-        $this->registerSubtable(Expenses::class);
+        $this->addSubtable(Cargo::class);
+        $this->addSubtable(Income::class);
+        $this->addSubtable(Expenses::class);
     }
 
     protected function initMassactions()
     {
-        $this->addMassactionMultipleUpdate();
+        $this->addMassactionMassUpdate();
     }
 
     protected function initCopyModes()
@@ -314,22 +314,22 @@ class Quotation extends ModuleAbstract
     {
         //Кнопка экспорта в Excel
         //$this->addSubmenuItem('Export to Excel', Img::sprite('excel'), 'printExcel');
-        $this->addSubmenuLinkViewFunc(Img::iconExcel() . ' Export to Excel (En)', 'Excel')->params(['lang' => 'en']);
-        $this->addSubmenuLinkViewFunc(Img::iconExcel() . ' Export to Excel (Ru)', 'Excel')->params(['lang' => 'ru']);
+        $this->addSubmenuLinkViewFunc(Ico::excel() . ' Export to Excel (En)', 'Excel')->params(['lang' => 'en']);
+        $this->addSubmenuLinkViewFunc(Ico::excel() . ' Export to Excel (Ru)', 'Excel')->params(['lang' => 'ru']);
 
         //Добавим кнопку просмотра шипмента, если эта котровка привязана к каой-то перевозке
         $shipmentId = Db::getOne("SELECT ID FROM shipment WHERE QuotationID = " . $this->_obj->getId());
         if ($shipmentId) {
 
             $this->addSubmenuLink(
-                Link::create(Shipment::class, Img::iconSearch() . ' View Shipment')
+                Link::create(Shipment::class, Ico::search() . ' View Shipment')
                     ->view($shipmentId)
             );
 
         } elseif ($this->_obj['Status'] === 'win') {
 
             $this->addSubmenuLink(
-                Link::create(Shipment::class, Img::iconPlus() . ' Create Shipment')
+                Link::create(Shipment::class, Ico::plus() . ' Create Shipment')
                     ->params(['addnew' => 1, 'qid' => $this->_obj->getId()])
             );
 

@@ -7,8 +7,9 @@ use Light\Css;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
-use Light\Img;
+use Light\Ico;
 use Light\Js;
+use Light\Misc;
 use Light\ObjAbstract;
 use Light\Request;
 use Light\Response;
@@ -119,17 +120,17 @@ abstract class Subtable2
 
     protected function initObj()
     {
-        //Если объект не задан явно, попробуем найти соответсвующий класс рядом с текущим файлом модуля
+        // Если объект не задан явно, попробуем найти соответсвующий класс рядом с текущим файлом модуля
         $objClass = get_class($this) . 'Obj';
-        $filepath = LIGHT_DIR_ROOT . '/src/' . str_replace('\\', '/', $objClass) . '.php';
-        if (file_exists($filepath)) {
+        if (Misc::classExists($objClass)) {
             //Файл найден, создаём объект именно этого класса
             $this->_obj = new $objClass();
-        } else {
-            //Отдельного файла для класса найдено не было, создадим на основе обычного Obj
-            $this->_obj = new SimpleObj();
-            $this->_obj->setDbTable(strtolower($this->getTableName()));
+            return;
         }
+
+        // Отдельного файла для класса найдено не было, создадим на основе обычного Obj
+        $this->_obj = new SimpleObj();
+        $this->_obj->setDbTable(strtolower($this->getTableName()));
     }
 
     /**
@@ -329,6 +330,11 @@ abstract class Subtable2
         }
     }
 
+    public function getSubtableDataCount()
+    {
+        return $this->getDataCount();
+    }
+
     public function getDataCount()
     {
         if ($this->_data === null) {
@@ -475,7 +481,7 @@ abstract class Subtable2
 
         if ($this->allowAdd) {
             $outHtml .= '<p class="subtable2-add-p">'
-                . '<a href="#" class="subtable2-add-link">' . Img::iconPlus() . ' ' . $this->textAddLink . '</a>'
+                . '<a href="#" class="subtable2-add-link">' . Ico::plus() . ' ' . $this->textAddLink . '</a>'
                 . '</p>';
         }
         $outHtml .= '</div>';
@@ -509,7 +515,7 @@ abstract class Subtable2
             $newField = clone $field;
             $newField->setParams([
                 'editName' => $this->getFieldEditName($fieldKey, $rowNum),
-                'editId' => $subtableName . '-' . $rowNum . '-' . $fieldKey
+                'editId' => $subtableName . '-' . $rowNum . '-' . $fieldKey,
             ]);
             $newFieldset->addField($newField);
         }
@@ -580,9 +586,9 @@ abstract class Subtable2
             // Оставим только те поля, по которым проходит проверку editAccessFunction
             $fieldsData = $this->_obj->filterDataByEditAccessFunction($fieldsData);
 
-            //Проверим $id и существование объекта в базе
-            if ($id != 0) {
-                $query = "SELECT ID FROM " . Db::quote($this->getDbTable()) . " WHERE ID = " . (int)$id;
+            // Проверим $id и существование объекта в базе
+            if ($id !== 0) {
+                $query = "SELECT ID FROM " . Db::quote($this->getDbTable()) . " WHERE ID = $id";
                 $id = Db::getOne($query);
             }
 
@@ -693,7 +699,7 @@ abstract class Subtable2
             $dataFromRequest[] = [
                 'ID' => $id,
                 'fieldsData' => $this->getRowDataFromPost($rowNum),
-                'rowNum' => $rowNum
+                'rowNum' => $rowNum,
             ];
         }
 

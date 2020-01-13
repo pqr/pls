@@ -4,7 +4,7 @@ namespace Forward\Module\Customer\Subtables;
 
 use Forward\Module\Customer\Customer;
 use Light\Field\FieldAbstract as F;
-use Light\Img;
+use Light\Ico;
 use Light\Link;
 use Light\ObjAbstract;
 use Light\SubtableBase\Subtable;
@@ -41,7 +41,7 @@ class StandartRates extends Subtable
             'nameTable' => '',
             'tableAlign' => 'center',
             'getHtmlFunction' => function ($value, $data) {
-                return Link::create(Customer::class, Img::iconDelete())
+                return Link::create(Customer::class, Ico::delete())
                     ->view($data['CustomerID'])
                     ->func('StandartRateDialog')
                     ->params(['action' => 'del', 'srid' => $data['ID']])

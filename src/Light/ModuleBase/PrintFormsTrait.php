@@ -7,7 +7,7 @@ use Light\ApplicationAbstract;
 use Light\Config;
 use Light\Field\FieldAbstract as F;
 use Light\FilesFolder;
-use Light\Img;
+use Light\Ico;
 use Light\Link;
 use Light\ObjAbstract;
 use Light\PrintForm\PrintForm;
@@ -72,7 +72,7 @@ trait PrintFormsTrait
          * @var PrintForm $printForm
          */
         foreach ($this->printForms as $printFormName => $printForm) {
-            if ($printForm->testForObj($this->_obj)) {
+            if ($printForm->allowSingle && $printForm->testForObj($this->_obj)) {
                 $link = clone $linkBase;
                 $link->innerHtml($printForm->getIcon() . ' ' . $printForm->getTitle())
                     ->params(['form' => $printFormName])
@@ -298,6 +298,12 @@ trait PrintFormsTrait
         $objects = [];
         $targetDirs = [];
 
+        $multipleError = $printForm->testMultiple($ids);
+        if ($multipleError) {
+            MassactionUtils::sendErrorDialog($multipleError, $printForm->isLinkBlank());
+            return;
+        }
+
         foreach ($ids as $id) {
             /** @var ObjAbstract $obj */
             $obj = clone $objBase;
@@ -319,7 +325,7 @@ trait PrintFormsTrait
             // Все переданные в ids объекты либо уже не существуют, либо уже не подходят для печати в выбанной печатной форме
             $msg = Config::$lang === 'ru' ? 'Выбранные записи не подходят для печатной формы' : 'Not sutable for print form';
             $printFormTitle = $printForm->getTitle();
-            MassactionUtils::sendErrorDialog("$msg: $printFormTitle");
+            MassactionUtils::sendErrorDialog("$msg: $printFormTitle", $printForm->isLinkBlank());
             return;
         }
 
@@ -359,7 +365,8 @@ trait PrintFormsTrait
         array $objects,
         PrintForm $printForm,
         bool $multipleAsOne
-    ) {
+    )
+    {
         $formAction = $this->getPrintSubmitLink($printForm, $multipleAsOne)
             ->params(['fromDialog' => 1]);
 

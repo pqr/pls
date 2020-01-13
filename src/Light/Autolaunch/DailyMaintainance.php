@@ -11,12 +11,13 @@ use Light\Pdf;
 class DailyMaintainance extends AutolaunchAbstract
 {
     protected static $title = 'System: Daily Database Maintainance';
-    protected static $description = 'Очищает modulesession, удаляет log_autolaunch > 3000шт, удаляет temp/concatenate_pdfs, очищает папки *_pdfs и *_massaction, зипует старые логи';
+    protected static $description = 'Очищает modulesession, удаляет log_autolaunch > 3000шт, log_filter старше 6 мес., удаляет temp/concatenate_pdfs, очищает папки *_pdfs и *_massaction, зипует старые логи';
 
     public function run(array $params)
     {
         $this->clearModulesession();
-        $this->clearAutolaunchLog();
+        $this->clearLogAutolaunch();
+        $this->clearLogFilter();
         $this->clearMassactions();
         $this->clearConcatenatePdfs();
         $this->zipLastMonthLogs();
@@ -26,12 +27,12 @@ class DailyMaintainance extends AutolaunchAbstract
     {
         $rows = Db::getOne("SELECT count(*) FROM modulesession");
         Db::query("TRUNCATE modulesession");
-        $msg = 'Modulesession deleted records: ' . $rows;
+        $msg = '<code>modulesession</code> deleted records: ' . $rows;
         $this->_msgBuff->addSuccessOrInfo($msg, $rows);
         $this->_msgBuffShort->addSuccessOrInfo($msg, $rows);
     }
 
-    private function clearAutolaunchLog()
+    private function clearLogAutolaunch()
     {
         $deleted = 0;
         $classes = Db::getCol("SELECT DISTINCT(ClassName) FROM log_autolaunch");
@@ -48,7 +49,18 @@ class DailyMaintainance extends AutolaunchAbstract
 
         Db::query("DELETE FROM log_autolaunch_text WHERE NOT EXISTS(SELECT 1 FROM log_autolaunch la WHERE la.ID = log_autolaunch_text.ID)");
 
-        $msg = 'Autolaunchlog deleted records: ' . $deleted;
+        $msg = '<code>log_autolaunch</code> deleted records: ' . $deleted;
+        $this->_msgBuff->addSuccessOrInfo($msg, $deleted);
+        $this->_msgBuffShort->addSuccessOrInfo($msg, $deleted);
+    }
+
+    private function clearLogFilter()
+    {
+        $deleted = 0;
+        Db::query("DELETE FROM log_filter WHERE CreatedDateTime < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)");
+        $deleted += Db::getAffectedRows();
+
+        $msg = '<code>log_filter</code> deleted records: ' . $deleted;
         $this->_msgBuff->addSuccessOrInfo($msg, $deleted);
         $this->_msgBuffShort->addSuccessOrInfo($msg, $deleted);
     }
@@ -70,7 +82,7 @@ class DailyMaintainance extends AutolaunchAbstract
 
                 try {
                     File::fs()->remove($dirPath);
-                    $msg = htmlspecialchars($dir) . " deleted";
+                    $msg = '<code>' . htmlspecialchars($dir) . '</code> deleted';
                     $this->_msgBuff->addSuccess($msg);
                     $this->_msgBuffShort->addSuccess($msg);
                 } catch (\Exception $e) {
@@ -98,7 +110,7 @@ class DailyMaintainance extends AutolaunchAbstract
                 try {
 
                     File::fs()->remove($dirPath);
-                    $msg = htmlspecialchars($dirPath) . " deleted";
+                    $msg = '<code>' . htmlspecialchars($dirPath) . '</code> deleted';
                     $this->_msgBuff->addSuccess($msg);
                     $this->_msgBuffShort->addSuccess($msg);
 

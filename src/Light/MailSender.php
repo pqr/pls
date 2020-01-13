@@ -24,7 +24,7 @@ class MailSender
                 return 0;
             }
         } catch (\Exception $e) {
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             $msgBuff->addError("Failed to load E-mail queue ID = $queueId");
             return 0;
         }
@@ -42,7 +42,15 @@ class MailSender
 
             /** @var \Swift_SmtpTransport $transport */
             $transport = $swiftmailer->getTransport();
-            $from = (string)$transport->getUsername();
+
+            if (!empty($emailDataFromQueue['CustomFrom'])) {
+                // Для данного письма значение From установлено вне рамок EmailAccountID (какое-то особенное)
+                // именно его и писпользуем (но smtp сервер может не пропустить - разрешается ли данному приложению
+                // подменять from настраивается с помощью Config::$emailAllowCustomFrom = false;)
+                $from = $emailDataFromQueue['CustomFrom'];
+            } else {
+                $from = (string)$transport->getUsername();
+            }
 
             $message = self::getSwiftMessage($emailDataFromQueue, $from);
             $failedRecipients = [];
@@ -69,7 +77,7 @@ class MailSender
 
         } catch (\Throwable $e) {
 
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             $reportBuff->addError($e->getMessage());
 
         }
@@ -254,7 +262,7 @@ class MailSender
 
                 } catch (\Throwable $e) {
 
-                    reportException($e);
+                    \Light\ErrorHandler::reportException($e);
 
                 }
             }

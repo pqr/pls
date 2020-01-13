@@ -5,6 +5,7 @@ namespace Light\ModuleBase;
 
 
 use Light\Config;
+use Light\Ico;
 use Light\Link;
 use Light\ModuleRegister;
 use Light\ObjAbstract;
@@ -94,7 +95,7 @@ trait ViewEditDialogsTrait
         $id = $obj->getId();
 
         $openExternalText = Config::$lang === 'ru' ? 'Открыть в новом окне' : 'Open in new window';
-        $link = Link::create($module, "$openExternalText <i class='fa fa-external-link'></i>");
+        $link = Link::create($module, $openExternalText . ' ' . Ico::externalLink());
 
         if ($this->isEditDialog()) {
             $link->edit($id);
@@ -117,8 +118,8 @@ trait ViewEditDialogsTrait
     protected function getViewEditDialogContent(): string
     {
         // Чтобы работали ajax ссылки на изменение полей, обернём в дополнительный div с параметрами для ajax запросов
-        $ajaxChangeFieldUrl = Link::create($this->getModule())->func('ChangeField')->getHref();
-        return '<div data-ajaxchangefieldurl="' . $ajaxChangeFieldUrl . '&id=">'
+        $ajaxChangeFieldUrl = $this->getAjaxChangeFieldUrl();
+        return '<div data-ajaxchangefieldurl="' . $ajaxChangeFieldUrl . '">'
             . $this->getViewEditContentHtml()
             . '<div>';
     }

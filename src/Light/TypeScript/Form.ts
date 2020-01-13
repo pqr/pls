@@ -21,7 +21,7 @@ export class Form {
     private name: string;
     private fields: Map<string, Field>;
 
-    constructor($form: JQuery) {
+    constructor($form: JQuery<HTMLFormElement>) {
         this.$form = $form;
         this.name = $form.attr("name") || "";
         this.fields = buildMapFromObj(parseJson($form.attr("data-fields")!, {}));
@@ -117,7 +117,7 @@ let formsStore: { [key: string]: Form } = {};
 
 export function init($root: JQuery) {
     $root.find("form").each(function(this: HTMLFormElement) {
-        const $form = $(this);
+        const $form = $(this) as JQuery<HTMLFormElement>;
         const formObj = new Form($form);
         const name = formObj.getName();
         formsStore[name] = formObj;

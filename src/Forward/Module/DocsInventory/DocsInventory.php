@@ -34,9 +34,9 @@ class DocsInventory extends ModuleAbstract
 
     }
 
-    protected function registerSubtables()
+    protected function initSubtables()
     {
-        $this->registerSubtable(Lines::class);
+        $this->addSubtable(Lines::class);
     }
 
     protected function initFilters()

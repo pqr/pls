@@ -80,6 +80,8 @@ class Config
     public static $swiftmailerUser;
     public static $swiftmailerPassword;
 
+    public static $emailAllowCustomFrom = false;
+
 
     /** @var string имя пользователя linux из под которого запускаются cron задачи
      * это имя пользователя используется при формировании таблицы autolaunch, чтобы узнать, какие задачи запускаются

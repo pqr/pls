@@ -1,4 +1,5 @@
 <?php
+
 namespace Light\Traits;
 
 use Light\Config;
@@ -148,6 +149,26 @@ trait TableSortable
 
     }
 
+    protected function getDataQueryWithSortFieldInSelect(string $querySelect): string
+    {
+        $sortField = $this->getSortField();
+        if ($sortField && $sortField->getSqlSelect()) {
+            $querySelect .= ', ' . $this->getFieldset()->getSqlSelect([$sortField->key]);
+        }
+
+        return $querySelect;
+    }
+
+    protected function getDataQueryWithSortFieldOrderBy(string $query): string
+    {
+        $sqlOrderBy = $this->getSqlOrderBy();
+        if ($sqlOrderBy) {
+            $query .= " ORDER BY $sqlOrderBy";
+        }
+
+        return $query;
+    }
+
     private function isFieldSortable(F $field)
     {
         //Если поле скрыто и не является одним из полей first или last - то сортировку по нему делать не надо
@@ -202,7 +223,35 @@ trait TableSortable
                 }
             }
 
-            $sqlOrderBy[] = $sortField->tableOrderBy . ' ' . $this->getTableSortOrder();
+            $orderFieldKey = $sortField->tableOrderBy;
+
+            // В случае если сортировка по неким ID - нужно сделать подзапрос на внешнюю таблицу,
+            // чтобы отсортировать по реальным текстовым описаниям
+            $foreignTable = $sortField->tableOrderByForeignTable;
+            // Если внешняя таблица не задана явно, возможно есть указание таблицы для FieldSelect поля?
+            // таблицы из которой берутся значения для отображения?
+            if (!$foreignTable && property_exists($sortField, 'optionsView')) {
+                // Сначала попробуем узнать внешнюю таблицу по свойству optionsView
+                // это самое надёжное свойство, оно хранит ссылку на внешнюю таблицу для отображения справочника
+                $optionsView = $sortField->optionsView;
+                if ($optionsView && !is_callable($optionsView) && is_string($optionsView) && strpos($optionsView, ' ') === false) {
+                    $foreignTable = explode('|', $optionsView)[0];
+                }
+            }
+            if (!$foreignTable && property_exists($sortField, 'options')) {
+                // Если по optionsView не удалось определить внешнюю таблицу, то попробуем по options
+                // options должен быть строковый, также нужно отделить первую часть до вертикальной черты
+                $options = $sortField->options;
+                if ($options && !is_callable($options) && is_string($options) && strpos($options, ' ') === false) {
+                    $foreignTable = explode('|', $options)[0];
+                }
+            }
+
+            if ($foreignTable) {
+                $orderFieldKey = "(SELECT Name FROM " . Db::quote($foreignTable) . " WHERE ID = $orderFieldKey LIMIT 1)";
+            }
+
+            $sqlOrderBy[] = $orderFieldKey . ' ' . $this->getTableSortOrder();
         }
 
         if ($this->tableDefaultOrderBy) {
@@ -309,29 +358,37 @@ trait TableSortable
 
         if ($this->allowSort) {
 
-            // Добавим иконку сортировки, если сортировка по текущему полю
-            $sortField = $this->getSortField();
-            if ($sortField === $field) {
-                $icon = $this->getTableSortOrder() === 'DESC' ? '▼' : '▲';
-                $html .= ' <span class="tr-sort-icon">' . $icon . '</span>';
-            }
+            $html = $this->getFieldSortLink($field, $html);
+        }
 
-            // Превратим загловок поля в ссылку
-            if ($this->isFieldSortable($field)) {
-                if ($sortField === $field) {
-                    $order = $this->getTableSortOrder() === 'DESC' ? null : 'DESC';
-                    if ($order === null && isset($this->_state) && $this->_state === Subtable::STATE_EDIT) {
-                        $order = 'ASC';
-                    }
-                } else {
+        return $html;
+    }
+
+    protected function getFieldSortLink(F $field, string $innerHtml): string
+    {
+        $html = $innerHtml;
+        // Добавим иконку сортировки, если сортировка по текущему полю
+        $sortField = $this->getSortField();
+        if ($sortField === $field) {
+            $icon = $this->getTableSortOrder() === 'DESC' ? '▼' : '▲';
+            $html .= ' <span class="tr-sort-icon">' . $icon . '</span>';
+        }
+
+        // Превратим загловок поля в ссылку
+        if ($this->isFieldSortable($field)) {
+            if ($sortField === $field) {
+                $order = $this->getTableSortOrder() === 'DESC' ? null : 'DESC';
+                if ($order === null && isset($this->_state) && $this->_state === Subtable::STATE_EDIT) {
                     $order = 'ASC';
                 }
+            } else {
+                $order = 'ASC';
+            }
 
-                if ($order === null) {
-                    $html = $this->getHtmlSortLink($html, $field->key, '');
-                } else {
-                    $html = $this->getHtmlSortLink($html, $field->key, $order);
-                }
+            if ($order === null) {
+                $html = $this->getHtmlSortLink($html, $field->key, '');
+            } else {
+                $html = $this->getHtmlSortLink($html, $field->key, $order);
             }
         }
 
@@ -341,7 +398,7 @@ trait TableSortable
     private function getHtmlSortLink($innerHtml, $fieldKey, $order)
     {
         return '<a href="#' . rawurlencode(
-            $fieldKey
-        ) . '|' . $order . '" class="table-sort-link">' . $innerHtml . '</a>';
+                $fieldKey
+            ) . '|' . $order . '" class="table-sort-link">' . $innerHtml . '</a>';
     }
 }

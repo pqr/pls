@@ -1,7 +1,7 @@
 import {getFieldNode, getNodeValue} from "./Light";
 
 class Select2 {
-    private select: HTMLSelectElement;
+    private select: HTMLSelectElement & {select2widget?: Select2};
     private $select: JQuery;
     private $root: JQuery;
     private parentFields: JQuery[] | null = null;
@@ -40,7 +40,7 @@ class Select2 {
         const parentFields: JQuery[] = <JQuery[]>parentFieldKeysStr
             .split(",")
             .map((parentFieldKey: string) => {
-                return getFieldNode(this.$root, parentFieldKey, 'Select');
+                return getFieldNode(this.$root, parentFieldKey, "Select");
             })
             // уберём все не найденные элементы
             .filter(($parentField: JQuery) => {
@@ -130,7 +130,7 @@ class Select2 {
             // Попробуем найти ближайший узел с атрибутом data-select2ajaxurl
             const container = <HTMLFormElement | null>this.select.closest("*[data-select2ajaxurl]");
             if (container) {
-                url = container.getAttribute('data-select2ajaxurl')
+                url = container.getAttribute("data-select2ajaxurl");
             }
         }
 
@@ -146,7 +146,7 @@ class Select2 {
 
         if (this.parentFields) {
             // http://api.jquery.com/jquery.param/
-            url += "&" + $.param({ parentFieldValues: this.getParentFieldsValues() });
+            url += "&" + $.param({parentFieldValues: this.getParentFieldsValues()});
         }
 
         return url;
@@ -160,8 +160,8 @@ class Select2 {
         return this.parentFields.reduce((acc: any, $parentField: JQuery) => {
             // У родительских полей принудительно убираем квардратные скобки из атрибута name, на случае если это
             // было поле multiple select
-            const parentFieldKey = $parentField.attr('name')!.replace('[]', '');
-            acc[parentFieldKey] = getNodeValue($parentField, 'Select');
+            const parentFieldKey = $parentField.attr("name")!.replace("[]", "");
+            acc[parentFieldKey] = getNodeValue($parentField, "Select");
             return acc;
         }, {});
     }
@@ -178,8 +178,12 @@ class Select2 {
             options["allowClear"] = true;
         }
 
-        if (this.select.hasAttribute('data-minimum-input-length')) {
-            options['minimumInputLength'] = this.select.getAttribute('data-minimum-input-length');
+        if (this.select.hasAttribute("data-select2-closeOnSelect")) {
+            options["closeOnSelect"] = this.select.getAttribute("data-select2-closeOnSelect") === '1';
+        }
+
+        if (this.select.hasAttribute("data-minimum-input-length")) {
+            options["minimumInputLength"] = this.select.getAttribute("data-minimum-input-length");
         }
 
         if (this.select.classList.contains("select2-ajax")) {
@@ -289,7 +293,7 @@ function escapeHtml(text: string) {
         "'": "&#039;"
     };
 
-    return text.replace(/[&<>"']/g, function(m) {
+    return text.replace(/[&<>"']/g, function (m) {
         return map[m];
     });
 }
@@ -302,8 +306,9 @@ function formatResultSelect2(option: any) {
     const originalOption = $(option.element);
 
     let icon = originalOption.data("icon");
-    const cssClass = originalOption.attr("class");
-    if (!icon && !cssClass) {
+    const img = originalOption.data("img");
+    let cssClass = originalOption.attr("class") || '';
+    if (!icon && !cssClass && !img) {
         return option.text;
     }
 
@@ -312,14 +317,21 @@ function formatResultSelect2(option: any) {
 
     let out = "";
 
-    if (title || cssClass) {
-        out = '<span class="' + cssClass;
-        if (title !== "") {
-            out += ' toggle-tooltip" title="' + escapeHtml(title) + '"';
-        } else {
-            out += '"';
+    if (title || cssClass || img) {
+        out = '<span';
+        if (title) {
+            cssClass += ' toggle-tooltip';
         }
-        out += ">";
+        if (img) {
+            cssClass += ' select2-option-with-avatar';
+        }
+        if (cssClass) {
+            out += ` class="${cssClass}"`;
+        }
+        if (title) {
+            out += ` title="${escapeHtml(title)}"`;
+        }
+        out += '>';
     }
 
     if (icon !== undefined) {
@@ -329,9 +341,13 @@ function formatResultSelect2(option: any) {
         out += '<i class="fa ' + icon + '"></i> ';
     }
 
+    if (img) {
+        out += `<img src="${img}" class="select2-option-avatar"/> `;
+    }
+
     out += escapeHtml(text);
 
-    if (title || cssClass) {
+    if (title || cssClass || img) {
         out += "</span>";
     }
 
@@ -340,7 +356,7 @@ function formatResultSelect2(option: any) {
 
 export function initSelect2($root: JQuery) {
     if (jQuery().select2) {
-        $root.find("select.select-select2").each(function(this: HTMLSelectElement) {
+        $root.find("select.select-select2").each(function (this: HTMLSelectElement) {
             const select = this;
             new Select2(select, $root);
         });

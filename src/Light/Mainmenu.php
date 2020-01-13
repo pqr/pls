@@ -9,6 +9,10 @@ use Light\Services\ModuleBadgeLoader;
 
 class Mainmenu
 {
+    const PARAM_PINNED = 'Mainmenu_pinned';
+
+    private static $unpinnedForThisPage = false;
+
     private static function getUserParams()
     {
         $query = "SELECT Name, Value
@@ -49,7 +53,7 @@ class Mainmenu
 
         $tdata = [
             'favoriteItems' => $favoriteItems,
-            'allItems' => $allItems
+            'allItems' => $allItems,
         ];
 
         $bodyHtml = Template::parseTpl('MainmenuSettings.tpl.php', $tdata);
@@ -206,55 +210,35 @@ class Mainmenu
             'sectionsHtml' => $sectionsHtml,
         ];
 
+        $avatar = User::avatarImgHtml(User::getId());
         $userName = htmlspecialchars(User::getName());
         if (User::hasWriteAccess(UserSettings::class)) {
             $userName = Link::create(UserSettings::class, $userName)->getHtml();
+            $avatar = Link::create(UserSettings::class, $avatar)->getHtml();
         }
         $tdata['UserName'] = $userName;
-        
+        $tdata['Avatar'] = $avatar;
+
         if (Config::$showRatesInMenu) {
             $tdata['rates'] = self::getCurrencyRates();
         }
         return Template::parseTpl(LIGHT_DIR_LIGHT . '/templates/Mainmenu.tpl.php', $tdata);
     }
 
-    public static function hasUserAvatar(int $userId): bool
+    public static function setUnpinnedForThisPage()
     {
-        return file_exists(self::getUserAvatarFilepathAbs($userId));
+        self::$unpinnedForThisPage = true;
     }
 
-    public static function getUserAvatarFilepathAbs(int $userId): string
+    public static function isPinned(): bool
     {
-        $relative = FilesFolder::getRelativeModule('User', $userId);
-        $avatarFilepathAbs = FilesFolder::getAbsolute("$relative/Avatar.jpg");
-        return $avatarFilepathAbs;
-    }
-
-    public static function getUserAvatarImgSrc(int $userId)
-    {
-        if (Mainmenu::hasUserAvatar($userId)) {
-            $avatarFilepathAbs = self::getUserAvatarFilepathAbs($userId);
-            $mtime = filemtime($avatarFilepathAbs);
-            return "index.php?a=Core&ps=GetUserAvatar&UserID=$userId&nouserrefreshtime=1&mtime=$mtime";
-        }
-        return "lightpublic/i/user.png";
-    }
-
-    public static function streamUserAvatar(int $userId)
-    {
-        if (Mainmenu::hasUserAvatar($userId)) {
-            $avatarFileAbs = Mainmenu::getUserAvatarFilepathAbs($userId);
-            // Кэшируем изображение навечно, т.к. в url есть признак времени изменения файла (см getUserAvatarImgTag)
-            // https://www.mnot.net/cache_docs/
-            Response::header('Content-Type: image/jpg');
-            Response::header('Cache-Control: public, max-age=31556926');
-            Response::header('Expires: Sun, 17-Jan-2038 19:14:07 GMT');
-            Response::header('Pragma: ');
-            readfile($avatarFileAbs);
-            ApplicationAbstract::terminate();
-            return;
+        if (self::$unpinnedForThisPage) {
+            // Для данной страницы принудительно была установлена опция "сделать меню unpinned"
+            // возвращаем статус pinned = false
+            return false;
         }
 
-        Response::redirectUrl('lightpublic/i/user.png');
+        // Если принудильных указаний внутри текущего модуля не было, то загрузим данные из настроек пользователя
+        return (bool)(User::getParam(self::PARAM_PINNED) ?? true);
     }
 }

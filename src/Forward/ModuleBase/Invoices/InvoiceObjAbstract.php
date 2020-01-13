@@ -3,7 +3,7 @@ namespace Forward\ModuleBase\Invoices;
 
 use Forward\Classes\CitadeleCurreny;
 use Forward\Classes\Finance;
-use Forward\Classes\Traits\FirstLetterTrait;
+use Light\Traits\FirstLetterTrait;
 use Forward\Field\InvoiceFields;
 use Light\Db;
 use Light\Field\FieldAbstract as F;

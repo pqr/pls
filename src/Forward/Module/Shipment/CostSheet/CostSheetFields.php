@@ -7,7 +7,7 @@ use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldMoney;
 use Light\Field\FieldMoneyWithCurrency;
-use Light\Img;
+use Light\Ico;
 
 class CostSheetFields
 {
@@ -78,7 +78,7 @@ class CostSheetFields
                 'getHtmlFunction' => function ($value) {
                         //Комментарии отображаются в виде иконки
                         if ($value != '') {
-                            return '<span title="'.htmlspecialchars($value).'">'. Img::iconInfo() .'</span>';
+                            return '<span title="'.htmlspecialchars($value).'">'. Ico::info() .'</span>';
                         }
                         return '';
                     }

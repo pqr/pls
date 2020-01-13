@@ -4,28 +4,52 @@
 namespace Light\ModuleBase\Massactions;
 
 
-use Light\ApplicationAbstract;
+use Light\Autolaunch\BackupHelpres\P7zip;
 use Light\Config;
+use Light\ErrorHandler;
 use Light\File;
 use Light\FilesFolder;
+use Light\ModuleBase\MassactionAbstract;
 use Light\ModuleRegister;
 use Light\ObjAbstract;
-use function Light\reportException;
+use Light\Request;
 use Light\Response;
 use Light\Session;
 use Symfony\Component\Process\Process;
 
-trait MassactionDownloadAsZip
+class MassactionDownloadAsZip extends MassactionAbstract
 {
-    protected function addMassactionDownloadAsZip()
+    /**
+     * @var array
+     */
+    private $options = [
+        'ext' => '',
+        'startWith' => '',
+        'zipFilename' => '',
+    ];
+
+    public $blank = true;
+    /**
+     * @var ObjAbstract
+     */
+    private $objBase;
+
+    public function __construct($text = '', array $options = [])
     {
-        if ($this->folders) {
+        $this->options = array_merge($this->options, $options);
+
+        if ($text === '') {
             $text = Config::$lang === 'ru' ? 'Скачать файлы в ZIP архиве' : 'Download files as ZIP';
-            $this->addMassaction('DownloadAsZip', $text, '', '', null, true);
         }
+        $this->text = $text;
     }
 
-    protected function massactionDownloadAsZip(array $ids)
+    public function getKey(): string
+    {
+        return 'DownloadAsZip' . implode('', $this->options);
+    }
+
+    public function __invoke(array $ids)
     {
         $tmpDir = File::mkdirTmp('massactionDownloadAsZip');
         if (!$tmpDir) {
@@ -35,67 +59,120 @@ trait MassactionDownloadAsZip
             return;
         }
 
-        $success = 0;
+        $copied = $this->copyFilesToTmpDir($ids, $tmpDir);
 
-        $objBase = $this->getObj();
-        foreach ($ids as $id) {
-            /** @var ObjAbstract $obj */
-            $obj = clone $objBase;
-            $obj->setId($id);
-            if (!$obj->loadData()) {
-                continue;
-            }
-
-            // $objName = strip_tags($obj->getDescriptionHtml());
-
-            $relative = $this->getFolderRelative($obj->getData());
-            foreach (FilesFolder::scandir($relative) as $file) {
-                $origin = FilesFolder::getAbsolute("$relative/$file");
-                $target = File::getUniqueFilename("$tmpDir/$file");
-                $copyResult = File::copy($origin, $target);
-                if (!$copyResult) {
-                    $msg = Config::$lang === 'ru'
-                        ? 'Не удалось скопировать файл '
-                        : 'Can\'t copy file ';
-                    Session::flashError($msg . htmlspecialchars("$relative/$file"));
-                } else {
-                    $success++;
-                }
-            }
-        }
-
-        if (!$success) {
+        if (!$copied) {
             $msg = Config::$lang === 'ru' ? 'Нет файлов' : 'No files';
             Session::flashError($msg);
             $this->redirectToList();
             return;
         }
 
-        $module = $this->getModule();
-        $moduleName = ModuleRegister::getModuleName($module);
-        $zipFile = "$moduleName ($success).zip";
+        $zipFileAbs = $this->zipFiles($tmpDir);
+        if (!$zipFileAbs) {
+            $this->redirectToList();
+            return;
+        }
+
+        Response::streamFileFromFilesystem($zipFileAbs);
+    }
+
+    private function copyFilesToTmpDir(array $ids, string $tmpDir)
+    {
+        $copied = 0;
+
+        foreach ($ids as $id) {
+
+            try {
+
+                $relativeDir = FilesFolder::getRelativeModule(Request::getModule(), $id);
+                foreach (FilesFolder::scandir($relativeDir) as $file) {
+
+                    if (!$this->filterFile($file)) {
+                        // Файл не подходит по расширению или имени файла
+                        continue;
+                    }
+
+                    $copied += $this->copyFileToTmpDir($relativeDir, $file, $tmpDir);
+
+                }
+
+            } catch (\Throwable $e) {
+
+                Session::flashError($e->getMessage());
+                ErrorHandler::reportException($e);
+
+            }
+        }
+
+        return $copied;
+    }
+
+    private function filterFile(string $file): bool
+    {
+        $ext = $this->options['ext'];
+        if ($ext) {
+            $fileExt = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if ($fileExt !== $ext) {
+                // Данный файл не подходит по условию расширения
+                return false;
+            }
+        }
+
+        $startWith = $this->options['startWith'];
+        if ($startWith && mb_stripos($file, $startWith) !== 0) {
+            // Данный файл не подходит по условию что имя файла должно начинаться с $startWith
+            return false;
+        }
+
+        return true;
+    }
+
+    private function copyFileToTmpDir(string $relativeDir, string $file, string $tmpDir): int
+    {
+        $origin = FilesFolder::getAbsolute("$relativeDir/$file");
+        $target = File::getUniqueFilename("$tmpDir/$file");
+        $copyResult = File::copy($origin, $target);
+        if (!$copyResult) {
+            $msg = Config::$lang === 'ru'
+                ? 'Не удалось скопировать файл '
+                : 'Can\'t copy file ';
+            Session::flashError($msg . htmlspecialchars("$relativeDir/$file"));
+            return 0;
+        }
+
+        return 1;
+    }
+
+    private function redirectToList()
+    {
+        Response::redirect(Request::getModule());
+    }
+
+    private function zipFiles(string $tmpDir): ?string
+    {
+        $filesCount = count(scandir($tmpDir)) - 2;
+
+        $zipFilename = $this->options['zipFilename'] ?: ModuleRegister::getModuleName(Request::getModule());
+        $zipFile = "$zipFilename ($filesCount).zip";
         $zipFileAbs = "$tmpDir/$zipFile";
-        // Зазипуем с помощью 7z
-        $args = [
-            '7z',
-            'a', // команда 'a' - добавление файлов в архив
-            $zipFileAbs, // файл назначения
-            "$tmpDir/*" // источник
-        ];
+
+        $cmd = P7zip::create($zipFileAbs)
+            ->inputDir($tmpDir)
+            ->getCmd();
 
         try {
 
-            $process = new Process($args);
+            $process = Process::fromShellCommandline($cmd);
             $process->mustRun();
 
-            Response::streamFileFromFilesystem($zipFileAbs);
-            ApplicationAbstract::terminate();
+            return $zipFileAbs;
 
         } catch (\Exception $e) {
 
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             Session::flashError($e->getMessage());
-            $this->redirectToList();
+            return null;
 
         }
     }

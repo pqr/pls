@@ -49,6 +49,10 @@ class FieldColor extends FieldAbstract
 
     public function getText($value, array $data = [], $forTable = false)
     {
+        if (!$this->checkAccessFunction($data)) {
+            return '';
+        }
+
         return $value;
     }
 
@@ -68,7 +72,7 @@ class FieldColor extends FieldAbstract
         //Сформируем параметры для вставки в тег кнопки
         $tagParams = $source ? ' data-source="' . htmlspecialchars($source) . '"' : null;
 
-        return '<i class="fa fa-picture-o colorpalette" ' . $tagParams . '></i>';
+        return '<i class="fas fa-palette colorpalette" ' . $tagParams . '></i>';
     }
 
     protected function getHtmlInner($value, array $data, $forTable)

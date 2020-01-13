@@ -1,11 +1,12 @@
-import {myParseInt} from "./Light";
-import {Filters} from "./Filters";
-import {FieldsWidth} from "./TableLayoutDialog";
+import { getBeautyMoney, myParseFloat, myParseInt, round, stripTags, parseJson } from "./Light";
+import { Filters } from "./Filters";
+import { FieldsWidth } from "./TableLayoutDialog";
 
 export type FilterChangeHandler = (newValue: string, $node: JQuery) => void;
 export type SelectRowHandler = (selected: boolean, $tr: JQuery) => void;
 export type SelectAllHandler = (allSelected: boolean) => void;
-export type ReloadHandler = () => void;
+export type ReloadHandler = (table: Table) => void;
+export type ResetHandler = (table: Table) => void;
 
 export interface ReloadParams {
     page?: number;
@@ -24,7 +25,7 @@ export class Table {
     private name: string;
     private linkModule: string;
     private linkBlank: boolean;
-    private linkAjax: boolean;
+    private linkModuleDialog: boolean;
     private currentPage: number;
     private currentReloadXhr: JQueryXHR | null;
 
@@ -44,7 +45,7 @@ export class Table {
         this.reloadUrl = $div.attr("data-reloadurl") || "";
         this.linkModule = $div.attr("data-linkmodule") || "";
         this.linkBlank = !!$div.attr("data-linkblank");
-        this.linkAjax = !!$div.attr("data-linkajax");
+        this.linkModuleDialog = !!$div.attr("data-linkmoduledialog");
 
         $div.on("click", "span.table-excel a", (e: any) => {
             const ids = this.getSelectedValues();
@@ -64,7 +65,11 @@ export class Table {
         // Проверим, есть ли форма фильтров поиском по глобальному идентификатору?
         const filtersFormEl = document.getElementById(`${this.name}-filters-form`);
         if (filtersFormEl) {
-            this.filters = new Filters(this);
+            this.filters = new Filters(
+                this.name,
+                this.filtersSubmitAction.bind(this),
+                this.filtersResetAction.bind(this),
+            );
         }
 
         $div.on("click", ".table-pages a", (e: any) => {
@@ -75,23 +80,23 @@ export class Table {
             const $body = $(document.body);
             if ($body.scrollTop()! > tableTop) {
                 //window.scrollTo($body.scrollLeft(), tableTop - 10);
-                $("html,body").animate({scrollTop: tableTop - 10}, 500);
+                $("html,body").animate({ scrollTop: tableTop - 10 }, 500);
             }
 
             const newPage = myParseInt((<HTMLAnchorElement>e.currentTarget).hash.substring(1));
-            this.reload({page: newPage});
+            this.reload({ page: newPage });
         });
 
         $div.on("click", "a.table-showall-link", (e: any) => {
             e.preventDefault();
             const showall = (<HTMLAnchorElement>e.currentTarget).hash.substring(1);
-            this.reload({showall: showall, page: 1});
+            this.reload({ showall: showall, page: 1 });
         });
 
         $div.on("click", "a.table-sort-link", (e: any) => {
             e.preventDefault();
             const params = (<HTMLAnchorElement>e.currentTarget).hash.substring(1).split("|");
-            this.reload({sort: params[0], order: params[1], page: 1});
+            this.reload({ sort: params[0], order: params[1], page: 1 });
         });
 
         // Переход по ссылке зашитой внутри строки таблицы при двойном клике
@@ -106,8 +111,8 @@ export class Table {
                     if (linkId) {
                         href = `?a=${that.linkModule}&id=${linkId}`;
 
-                        if (this.linkAjax) {
-                            href += '&func=Dialog';
+                        if (this.linkModuleDialog) {
+                            href += "&func=Dialog";
                         }
 
                         // Попробуем проверить, есть ли дополнительные параметры для url
@@ -131,7 +136,7 @@ export class Table {
                 // Перемещаем окраску findid на строку, по которой был совершен двойной клик
                 $tr.addClass("findid");
                 // Переходим на другую страницу
-                if (this.linkAjax) {
+                if (this.linkModuleDialog || href.substr(-5) === '#ajax') {
                     $.ajax(href);
                 } else if (this.linkBlank) {
                     window.open(href, "_blank");
@@ -179,8 +184,7 @@ export class Table {
                 const $rb = $tr.find("input[type=radio].rb");
                 if ($rb.length > 0) {
                     //Делаем выделение этой строки, но перед этим снимим выделение со всех других строк
-                    $tr
-                        .closest("table.table")
+                    $tr.closest("table.table")
                         .find("tr")
                         .removeClass("selected");
 
@@ -205,6 +209,38 @@ export class Table {
             e.preventDefault();
             this.selectAll(false);
         });
+    }
+
+    private filtersSubmitAction(filterValues:any) {
+        const reloadParams = {
+            filterValues: JSON.stringify(filterValues),
+            page: 1
+        };
+
+        return new Promise((resolve) => {
+            this.reload(reloadParams, () => {
+                const hiddenInput = this.getDivNode().find("input[name=filterValues]");
+                if (hiddenInput.length > 0) {
+                    const newValues = parseJson(<string>hiddenInput.val());
+                    this.filters!.setValuesAfterReload(newValues);
+                }
+                resolve();
+            });
+        });
+    }
+
+    private filtersResetAction() {
+        if (this.isLoading()) {
+            // Если в момент нажатия RESET уже происходила какая-то загрузка данных, то её нужно прервать,
+            this.cancelReload();
+        }
+
+        if (globalResetHandlers.has(this.name)) {
+            const globalResetHandlersForTable = globalResetHandlers.get(this.name)!;
+            globalResetHandlersForTable.forEach(handler => {
+                handler(this);
+            });
+        }
     }
 
     getName(): string {
@@ -312,7 +348,7 @@ export class Table {
      * у которых есть чекбокс с классом cb
      */
     selectAll(selected: boolean): void {
-        this.$tbody.find("tr").each(function (this: HTMLTableRowElement) {
+        this.$tbody.find("tr").each(function(this: HTMLTableRowElement) {
             const $tr = $(this);
             const $cb = $tr.find("input[type=checkbox].cb");
             if ($cb.length > 0) {
@@ -324,6 +360,7 @@ export class Table {
         });
 
         this.getHeadCheckbox().prop("checked", selected);
+        this.updateExcelSelectedCountSpan();
         this.selectAllHandlers.forEach((handler: SelectAllHandler) => {
             handler(selected);
         });
@@ -347,8 +384,8 @@ export class Table {
         }
 
         // При передаче параметров на сервер, основным параметрам влияющим на таблицу дадим префикс с именем таблицы
-        const {fieldsShow, page, showall, sort, order, fieldsWidth, ...other} = reloadParams;
-        const postData: any = {...other};
+        const { fieldsShow, page, showall, sort, order, fieldsWidth, ...other } = reloadParams;
+        const postData: any = { ...other };
         if (typeof fieldsShow !== "undefined") {
             postData[this.name + "_fieldsShow"] = fieldsShow;
         }
@@ -382,7 +419,7 @@ export class Table {
                 this.$tbody = this.$table.find("tbody");
                 // Вернём отметки галочками к состоянию до перезагрузки
                 selectedValues.forEach(value => {
-                    this.$tbody.find("input[type=checkbox].cb").each(function (this: HTMLInputElement) {
+                    this.$tbody.find("input[type=checkbox].cb").each(function(this: HTMLInputElement) {
                         if (this.value == value) {
                             this.checked = true;
                             const $tr = $(this).closest("tr");
@@ -404,9 +441,53 @@ export class Table {
                 }
 
                 this.reloadHandlers.forEach(handler => {
-                    handler();
+                    handler(this);
                 });
+
+                if (globalReloadHandlers.has(this.name)) {
+                    const globalReloadHandlersForTable = globalReloadHandlers.get(this.name)!;
+                    globalReloadHandlersForTable.forEach(handler => {
+                        handler(this);
+                    });
+                }
             });
+
+        // Возвращаем JQueryXHR
+        return this.currentReloadXhr;
+    }
+
+    reloadRow($tr: JQuery) {
+        if (
+            $tr.length === 0 ||
+            $tr.hasClass("no-reload-row-after-ajax-field-change") ||
+            !this.$div.attr("data-allowtablereloadurl")
+        ) {
+            // На строке таблице стоит специальный класс, который запроещает перезагружать отдельные строки
+            // Или на всей таблице нет флага data-allowtablereloadurl
+            return;
+        }
+
+        const rowId = $tr.attr("data-rowid");
+        if (!rowId) {
+            return;
+        }
+
+        if (this.currentReloadXhr) {
+            this.currentReloadXhr.abort();
+        }
+
+        const url = `${this.reloadUrl}&renderRowForAjax=${this.name}&rowId=${rowId}&nouserrefreshtime=1`;
+
+        // Запоминаем ссылку на текущий запрос обновления этой таблицы
+        this.currentReloadXhr = $.get(url);
+
+        this.currentReloadXhr.done((newRowHtml: any) => {
+            if (!newRowHtml) {
+                return;
+            }
+
+            $tr.replaceWith(newRowHtml);
+        });
 
         // Возвращаем JQueryXHR
         return this.currentReloadXhr;
@@ -473,12 +554,197 @@ export class Table {
             $span.html(`&nbsp;(${selectedCount})`);
         }
     }
+
+    /**
+     * Обновляет div в котором находятся выпадающий список с massaction
+     * Обновление происходит во время прокрутки таблицы или при выделении строк таблицы
+     */
+    updateMassactionDiv() {
+        const $massactionDiv = $(".listmassaction");
+        if ($massactionDiv.length === 0) {
+            // В этом модуле вообще нет div отвечающего за massaction
+            return;
+        }
+
+        // Сразу удаляем все total-span, которые могли быть в этом div -
+        // в них отображались старые знаения total по полям
+        // (ниже будет пересчёт этих total и повторный вывод)
+        $massactionDiv.find(".listmassaction__total").remove();
+
+        const $countSpan = $massactionDiv.find('label[for="massaction-select"] > span');
+
+        const selectedCount = this.getSelectedCount();
+        if (selectedCount === 0) {
+            // Если ничего не выделено, больше ничего и не делаем
+            $massactionDiv.removeClass("sticky");
+            $countSpan.html("");
+            return;
+        }
+
+        // Если что-то выделено галочками, обязательно добавляем класс sticky, который выставит position: sticky; bottom: 0;
+        $massactionDiv.addClass("sticky");
+        $countSpan.html(` (${selectedCount})`);
+
+        // Некоторые колонки могут быть отмечены атрибутом data-total="true"
+        // по ним посчитаем сумму по выделенным галочками
+        const $thead = this.getTableNode().find("thead");
+        const table = this;
+        $thead.find("th[data-total]").each(function(this: HTMLTableHeaderCellElement) {
+            const $th = $(this);
+            // Узнаем порядковый номер колонки, чтобы далее прочитать все значения
+            // в выделенных строках
+            const colIndex = $thead.find("th").index($th);
+            const fieldType = $th.attr("data-total");
+
+            let totalHtml: string | null = null;
+            switch (fieldType) {
+                case "MoneyWithCurrency":
+                    totalHtml = table.getSelectedTotalMoneyWithCurrencyHtml(colIndex);
+                    break;
+
+                case "Money":
+                    totalHtml = table.getSelectedTotalMoneyHtml(colIndex);
+                    break;
+
+                default:
+                    totalHtml = table.getSelectedTotalHtml(colIndex);
+            }
+
+            if (totalHtml === null) {
+                return;
+            }
+
+            // Имя поля возьмём из th, чтобы вывести внизу в massaction div
+            const fieldName = $th
+                .html()
+                .replace(/<br>/g, " ")
+                .replace(/<\/?[^>]+>/gi, "")
+                .replace("▼", "")
+                .replace("▲", "")
+                .trim();
+
+            const $totalSpan = $(`<div class="listmassaction__total"></div>`).append(
+                `<div class="listmassaction__totalfieldname"><strong>${fieldName}:&nbsp;</strong></div>`
+            );
+            // Склеиваем все суммы по валютам через запятую и доавляем в текущий $totalSpan
+            $totalSpan.append(`<div class="listmassaction__totalamount">${totalHtml}</div>`);
+
+            // Итоговый результат вставляем в $massactionDiv
+            $massactionDiv.append($totalSpan);
+        });
+    }
+
+    getSelectedTotalMoneyWithCurrencyHtml(colIndex: number): string | null {
+        // Сразу заготовим Map с разбивкой по валютам
+        const totalPerCurrency = new Map<string, number>();
+
+        // Пройдём по всем выделенным строкам
+        this.getSelectedRows().each((_, tr) => {
+            const tdHtml = $(tr)
+                .find("td")
+                .eq(colIndex)
+                .html();
+
+            // HTML код внутри ячейки может содержать <br>
+            // это значит несколько сумм в режиме groupconcat
+            // разобьём на элементарные строки
+            tdHtml.split("<br>").forEach((oneLineHtml: string) => {
+                // Вырежем все теги (которые обычно оформляют суммы)
+                const text = stripTags(oneLineHtml);
+
+                // Попробуем распарсить текст, возможно там какие суммы с валютами?
+                // Например "123 456.78 USD" или "1 234.00 $"
+                // По умолчанию примим валюту пустой
+                let currencyIso: string = "";
+                const parts = text.split(" ");
+                // Прововерим последнюю часть массива после разбивки по пробелам - там может быть реальная валюта
+                if (!$.isNumeric(parts[parts.length - 1])) {
+                    // Нашли валюту в конце числа, вынимаем валюту из массива частей
+                    currencyIso = parts.pop()!;
+                }
+                // Оставшиеся части после изъятия валюты склеиваем обратно
+                const amount = myParseFloat(parts.join(""));
+                if (!totalPerCurrency.has(currencyIso)) {
+                    // Нашли какую-то новую валюту, которая не встречалась ранее
+                    totalPerCurrency.set(currencyIso, amount);
+                } else {
+                    // Эта валюта уже есть в Map totalPerCurrency, прибавляем текующую сумму amount
+                    totalPerCurrency.set(currencyIso, totalPerCurrency.get(currencyIso)! + amount);
+                }
+            });
+        });
+
+        // После того как прошлись по всем строкам и собрали результат в totalPerCurrency
+        // выведем этот результат в massaction div
+        let perCurrencyBeautyAmounts: string[] = [];
+        totalPerCurrency.forEach((total: number, currencyIso: string) => {
+            if (total != 0) {
+                perCurrencyBeautyAmounts.push(getBeautyMoney(total, true, currencyIso));
+            }
+        });
+        if (perCurrencyBeautyAmounts.length === 0) {
+            return null;
+        }
+
+        return perCurrencyBeautyAmounts.join("<br>");
+    }
+
+    getSelectedTotalMoneyHtml(colIndex: number): string | null {
+        const totalAmount = this.calcSelectedTotal(colIndex);
+        if (totalAmount == 0) {
+            return null;
+        }
+
+        return getBeautyMoney(totalAmount, true);
+    }
+
+    getSelectedTotalHtml(colIndex: number): string | null {
+        const totalAmount = this.calcSelectedTotal(colIndex);
+        if (totalAmount == 0) {
+            return null;
+        }
+
+        return round(totalAmount).toString();
+    }
+
+    calcSelectedTotal(colIndex: number): number {
+        let total = 0;
+
+        // Пройдём по всем выделенным строкам
+        this.getSelectedRows().each((_, tr) => {
+            const tdHtml = $(tr)
+                .find("td")
+                .eq(colIndex)
+                .html();
+
+            // HTML код внутри ячейки может содержать <br>
+            // это значит несколько сумм в режиме groupconcat
+            // разобьём на элементарные строки
+            tdHtml.split("<br>").forEach((oneLineHtml: string) => {
+                // Вырежем все теги (которые обычно оформляют суммы)
+                const amount = myParseFloat(oneLineHtml);
+                total += amount;
+            });
+        });
+
+        return total;
+    }
+
+    initMassactionListeners() {
+        try {
+            this.onSelectRow(() => this.updateMassactionDiv.call(this));
+            this.onSelectAll(() => this.updateMassactionDiv.call(this));
+            this.onReload(() => this.updateMassactionDiv.call(this));
+        } catch (e) {
+            console.log(e);
+        }
+    }
 }
 
 const tablesStore: { [key: string]: Table } = {};
 
 export function init($root: JQuery) {
-    $root.find("div.table-div").each(function (this: HTMLDivElement) {
+    $root.find("div.table-div").each(function(this: HTMLDivElement) {
         const $div = $(this);
         const tableObj = new Table($div);
         const name = tableObj.getName();
@@ -496,6 +762,40 @@ export function get(name: string): Table {
 
 export function has(name: string): boolean {
     return tablesStore[name] !== undefined;
+}
+
+export function findClosestTable($node: JQuery): Table | null {
+    const $div = $node.closest("div[data-tablename]");
+    if ($div.length === 0) {
+        return null;
+    }
+
+    const tableName = $div.attr("data-tablename") as string;
+    if (!has(tableName)) {
+        return null;
+    }
+
+    return get(tableName);
+}
+
+const globalReloadHandlers = new Map<string, ReloadHandler[]>();
+export function onReload(tableName: string, onReloadHandler: ReloadHandler) {
+    const handlersForTable: ReloadHandler[] = globalReloadHandlers.has(tableName)
+        ? globalReloadHandlers.get(tableName)!
+        : [];
+
+    handlersForTable.push(onReloadHandler);
+    globalReloadHandlers.set(tableName, handlersForTable);
+}
+
+const globalResetHandlers = new Map<string, ResetHandler[]>();
+export function onFiltersReset(tableName: string, onResetHandler: ResetHandler) {
+    const handlersForTable: ReloadHandler[] = globalResetHandlers.has(tableName)
+        ? globalReloadHandlers.get(tableName)!
+        : [];
+
+    handlersForTable.push(onResetHandler);
+    globalResetHandlers.set(tableName, handlersForTable);
 }
 
 //Инициализируем таблицы

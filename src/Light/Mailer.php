@@ -12,6 +12,13 @@ class Mailer
     /** @var int */
     private $emailAccountId;
 
+    /**
+     * Используется только если Config::$emailAllowCustomFrom === true
+     * Позволяет подставть любой адрес отправителя в поле from (без привязки к emailAccountId)
+     * @var string
+     */
+    private $customFrom;
+
     /** @var array|string */
     private $to;
 
@@ -85,10 +92,21 @@ class Mailer
             $emailAccountId = null;
 
         } else {
+
             $emailAccountId = Db::getOne("SELECT ID FROM emailaccount WHERE Username = @s", $from);
             if (!$emailAccountId) {
-                throw new \InvalidArgumentException("Unknown E-mail account with Username = $from");
+
+                if (Config::$emailAllowCustomFrom) {
+                    // Email Account не найден, но настройками приложения разрешено отправлять от имени любой почты
+                    // запишем в специальное поле customFrom
+                    $this->customFrom = $from;
+                } else {
+                    // Если не найден emailaccount и настройками приложения запрещено подставлять какой-попало from
+                    // то не можем отправить такое письмо
+                    throw new \InvalidArgumentException("Unknown E-mail account with Username = $from");
+                }
             }
+
         }
 
         $this->emailAccountId = $emailAccountId;
@@ -99,6 +117,12 @@ class Mailer
     public function emailAccountId(?int $emailAccountId)
     {
         $this->emailAccountId = $emailAccountId;
+        return $this;
+    }
+
+    public function customFrom(string $customFrom)
+    {
+        $this->customFrom = $customFrom;
         return $this;
     }
 
@@ -212,13 +236,18 @@ class Mailer
             return 0;
         }
 
+//        if (Config::$debug) {
+//            $msgBuff->addSuccess('Debug Mailer::sendNow to ' . htmlspecialchars($this->to));
+//            return 1;
+//        }
+
         $sent = MailSender::sendFromQueue($queueId, $msgBuff);
         if (!$sent) {
             try {
                 // Если отправка не удалась, значит что-то пошло не так. Очистим PID у этой записи в очереди
                 Db::query("UPDATE queue_email SET PID = NULL WHERE ID = @i", $queueId);
             } catch (\Exception $e) {
-                reportException($e);
+                \Light\ErrorHandler::reportException($e);
             }
         }
 
@@ -256,6 +285,7 @@ class Mailer
             'CreatedBy' => User::getId(),
             'Subject' => $this->subject,
             'EmailAccountID' => $this->emailAccountId ?: null,
+            'CustomFrom' => $this->customFrom ?: '',
             'To' => Mailer::getEmailsAsString($this->to),
             'Cc' => Mailer::getEmailsAsString($this->getFinalCc()),
             'Bcc' => Mailer::getEmailsAsString($this->bcc),
@@ -273,7 +303,7 @@ class Mailer
             return Db::insertRow($dataForQueue, 'queue_email');
 
         } catch (\Exception $e) {
-            reportException($e);
+            \Light\ErrorHandler::reportException($e);
             $msgBuff->addError(MailSender::getErrorMsg($dataForQueue));
             $msgBuff->addError($e->getMessage());
             return 0;
@@ -287,7 +317,7 @@ class Mailer
     public static function getEmailsAsString($emails): string
     {
         if (is_array($emails)) {
-            $emails = implode(', ', $emails);
+            $emails = implode(', ', array_unique($emails));
         }
         return (string)$emails;
     }
@@ -301,10 +331,10 @@ class Mailer
             $emails = preg_split("/,|;|\s/", $emails);
         }
         $emails = array_unique(array_filter(array_map('trim', $emails)));
-        $emails = array_map(function ($email) {
+        $emails = array_map(static function ($email) {
             return str_replace(['<', '>'], '', trim($email));
         }, $emails);
-        $emails = array_filter($emails, function ($email) {
+        $emails = array_filter($emails, static function ($email) {
             return filter_var($email, FILTER_VALIDATE_EMAIL);
         });
         return array_values(array_unique($emails));

@@ -2,12 +2,12 @@
 namespace tests\functional;
 use Codeception\Example;
 use Light\Codeception\ModuleCestAbstract;
-use Light\Codeception\ModuleCestWithMultipleUpdateTrait;
+use Light\Codeception\ModuleCestWithMassUpdateTrait;
 use Light\Codeception\ModuleCestWithPrintFormsTrait;
 
 class CInvoiceCest extends ModuleCestAbstract
 {
-    use ModuleCestWithMultipleUpdateTrait, ModuleCestWithPrintFormsTrait;
+    use ModuleCestWithMassUpdateTrait, ModuleCestWithPrintFormsTrait;
 
     protected function getTestObjId():int
     {

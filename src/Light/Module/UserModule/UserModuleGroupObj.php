@@ -1,9 +1,9 @@
 <?php
 namespace Light\Module\UserModule;
 
-use Light\ObjAbstract;
-use Light\Field\FieldAbstract as F;
 use Light\Field\CommonFields as CF;
+use Light\Field\FieldAbstract as F;
+use Light\ObjAbstract;
 
 class UserModuleGroupObj extends ObjAbstract
 {
@@ -18,6 +18,16 @@ class UserModuleGroupObj extends ObjAbstract
             F::createText('SpecialAccessJSON')
         );
 
+    }
+
+    public function getMasterFieldKey(): string
+    {
+        return 'ID';
+    }
+
+    public function getMasterModuleForDbLog(): string
+    {
+        return 'UserModule';
     }
 
 }

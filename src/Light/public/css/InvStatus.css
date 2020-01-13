@@ -101,7 +101,35 @@
     vertical-align: bottom;
 }
 
-/* PAYMENT_SENT_TO_BANK */
+/* PAYMENT_SENT */
+.invstatus26 {
+    color: #fe8601;
+    border: 1px solid #fe8601;
+}
+
+.invicon26 {
+    display: inline-block;
+    vertical-align: bottom;
+    width: 20px;
+}
+
+.invicon26 i {
+    display: inline-block;
+    width: 6px;
+    height: 12px;
+    border-radius: 6px 0 0 6px;
+    background-color: #fe8601;
+}
+
+.invicon26 i + i {
+    display: inline-block;
+    width: 6px;
+    height: 12px;
+    border-radius: 0 6px 6px 0;
+    background-color: #64992c;
+}
+
+/* PAYMENT_EXECUTED */
 .invstatus25 {
     color: #006633;
     border: 1px solid #006633;

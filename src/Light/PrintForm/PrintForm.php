@@ -5,8 +5,9 @@ namespace Light\PrintForm;
 use Light\Field\FieldAbstract as F;
 use Light\Fieldset;
 use Light\File;
-use Light\Img;
+use Light\Ico;
 use Light\Metric;
+use Light\Misc;
 use Light\ObjAbstract;
 use Light\Request;
 use Light\Response;
@@ -15,7 +16,6 @@ use Light\Timer;
 use Light\Traits\FieldsetAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
-use function Light\reportException;
 
 class PrintForm
 {
@@ -46,6 +46,7 @@ class PrintForm
     /** @var Fieldset|F[] */
     protected $fieldset;
 
+    public $allowSingle = true;
     public $allowMultiple = true;
     public $allowMultipleAsOne = false;
 
@@ -127,6 +128,17 @@ class PrintForm
     }
 
     /**
+     * Метод для переопределения в классах потомках - проверяет, подходит ли данная печатная форма для нескольких
+     * объектов (massaction)
+     * @param ObjAbstract $obj
+     * @return bool
+     */
+    public function testMultiple(array $ids): ?string
+    {
+        return null;
+    }
+
+    /**
      * Возвращает текст, который попадёт в заголовок html страницы
      * @param ObjAbstract $obj
      * @return string
@@ -183,7 +195,8 @@ class PrintForm
         }
 
         $validFilename = File::getValidFilename($this->key, true);
-        return "PrintForms/$validFilename.$ext";
+        $module = Misc::getModule($obj);
+        return LIGHT_DIR_PROJECT . "/Module/$module/PrintForms/$validFilename.$ext";
     }
 
     /**
@@ -229,7 +242,7 @@ class PrintForm
         }
 
         $data['_printForm'] = $this->key;
-        $data = array_merge($data, $this->getDialogDataFromRequest());
+        $data = $this->getDialogDataFromRequest() + $data;
 
         return $data;
     }
@@ -401,7 +414,7 @@ class PrintForm
 
             } catch (\Throwable $e) {
                 // Не прерываем работу приложения, но сообщим об ошибке в rollbar
-                reportException($e);
+                \Light\ErrorHandler::reportException($e);
             }
 
         }
@@ -474,7 +487,7 @@ class PrintForm
                 // Отлавливаем Exceptions, если какой-то файл не удалось распечатать
                 // чтобы продолжить печать других файлов.
                 // Тем не менее ошибку нужно зарегистрировать в rollbar
-                reportException($e);
+                \Light\ErrorHandler::reportException($e);
             }
         }
 
@@ -484,7 +497,7 @@ class PrintForm
             try {
                 $proc->wait();
             } catch (\Throwable $e) {
-                reportException($e);
+                \Light\ErrorHandler::reportException($e);
             }
         }
 
@@ -519,7 +532,7 @@ class PrintForm
                     }
 
                     if (!is_file($tmpFile)) {
-                        reportException(new \Exception("Не найден временный файл при массовой печати (будет пропущен) $tmpFile"));
+                        \Light\ErrorHandler::reportException(new \Exception("Не найден временный файл при массовой печати (будет пропущен) $tmpFile"));
                         continue;
                     }
 
@@ -537,7 +550,7 @@ class PrintForm
                     // Отлавливаем Exceptions, если какой-то файл не удалось скоприовать
                     // чтобы продолжить копирование других файлов.
                     // Тем не менее ошибку нужно зарегистрировать в rollbar
-                    reportException($e);
+                    \Light\ErrorHandler::reportException($e);
                 }
             }
         }
@@ -667,17 +680,17 @@ class PrintForm
     {
         switch ($this->format) {
             case self::FORMAT_EXCEL:
-                return Img::iconExcel();
+                return Ico::excel();
 
             case self::FORMAT_PDF:
-                return Img::iconPdf();
+                return Ico::pdf();
 
             case self::FORMAT_DOC:
             case self::FORMAT_DOCX:
-                return Img::iconWord();
+                return Ico::word();
 
         }
-        return Img::iconPrint();
+        return Ico::print();
     }
 
 }

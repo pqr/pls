@@ -4,6 +4,7 @@
         <td class="col-left">
             <table class="form">
                 <?= t::c('PID') ?>
+                <?= t::c('CustomFrom') ?>
                 <?= t::c('EmailAccountID') ?>
                 <?= t::c('To') ?>
                 <?= t::c('Cc') ?>

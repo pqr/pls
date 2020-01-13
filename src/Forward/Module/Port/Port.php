@@ -38,8 +38,7 @@ class Port extends ModuleAbstract
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
-        $this->addFilterName(F::TYPE_STRING,
-            ['name' => 'Name', 'sqlWhere' => "Name LIKE '%{value}%' OR NameRu LIKE '%{value}%'"]);
+        $this->addFilterText(['Name', 'NameRu'], ['name' => 'Name']);
     }
 
     protected function getDeleteConfirmationDialogHtml()

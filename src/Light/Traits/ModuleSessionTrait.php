@@ -4,6 +4,7 @@ namespace Light\Traits;
 
 use Light\Db;
 use Light\Link;
+use Light\ModuleSession;
 use Light\ObjAbstract;
 use Light\Request;
 use Light\Response;
@@ -46,11 +47,7 @@ trait ModuleSessionTrait
      */
     protected function getModuleSessionUrlParams(): array
     {
-        if (isset($_GET['msid']) || $this->moduleSessionId) {
-            return ['msid' => $_GET['msid'] ?? $this->moduleSessionId];
-        }
-
-        return [];
+        return ModuleSession::getModuleSessionUrlParams();
     }
 
     private function createModuleSession(array $ids, $tablePage)
@@ -107,7 +104,7 @@ trait ModuleSessionTrait
                     $additionalUrlParams
                 );
                 if ($prevUrl) {
-                    $linksHtml .= '<a class="prev-link waves-effect btn-floating btn-small" title="← Ctrl" href="' . $prevUrl . '">←</a>';
+                    $linksHtml .= '<a class="prev-link waves-effect btn-floating" title="← Ctrl" href="' . $prevUrl . '">←</a>';
                 }
                 $nextUrl = $this->getModuleSessionNextPrevLink(
                     $currentIndex + 1,
@@ -115,7 +112,7 @@ trait ModuleSessionTrait
                     $additionalUrlParams
                 );
                 if ($nextUrl) {
-                    $linksHtml .= '<a class="next-link waves-effect btn-floating btn-small" title="Ctrl →" href="' . $nextUrl . '">→</a>';
+                    $linksHtml .= '<a class="next-link waves-effect btn-floating" title="Ctrl →" href="' . $nextUrl . '">→</a>';
                 }
 
                 Response::setPageHeadRightHtml($linksHtml);

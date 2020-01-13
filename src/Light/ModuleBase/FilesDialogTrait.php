@@ -7,7 +7,7 @@ namespace Light\ModuleBase;
 use Light\Config;
 use Light\Field\FieldAbstract;
 use Light\Field\FieldAbstract as F;
-use Light\Img;
+use Light\Ico;
 use Light\Link;
 use Light\ObjAbstract;
 use Light\Response;
@@ -29,7 +29,7 @@ trait FilesDialogTrait
     protected function filesDialogSubmenuLink(): Link
     {
         $btnText = $this->filesDialogButtonText();
-        return Link::create($this->getModule(), Img::icon('fa-bars') . " $btnText")
+        return Link::create($this->getModule(), Ico::i('fa-bars') . " $btnText")
             ->view($this->_obj->getId())
             ->func('FilesDialog')
             ->ajax()
@@ -122,7 +122,7 @@ trait FilesDialogTrait
     {
         $folderLink = $this->fieldFolder()->getHtml('', $masterObj->getData());
         $objDescription = $masterObj->getDescriptionHtml();
-                $externalLink = Link::create($this->getModule(), '<small>' . Img::iconExternalLink() . '</small>')
+                $externalLink = Link::create($this->getModule(), '<small>' . Ico::externalLink() . '</small>')
                 ->view($masterObj->getId())
                 ->blank();
 
@@ -248,7 +248,10 @@ trait FilesDialogTrait
                     $base64 = base64_encode($data['RelativePath']);
                     $cloneField->setEditId("FilesDialogTable-$masterId-$base64-$cloneField->key");
                     $cloneField->setEditName("FilesDialogTable[$masterId][$base64][$cloneField->key]");
-                    return $cloneField->getHtmlInput($value, $data);
+                    if ($cloneField->checkEditAccessFunction($data)) {
+                        return $cloneField->getHtmlInput($value, $data);
+                    }
+                    return $cloneField->getHtml($value, $data, true);
                 });
             }
         }

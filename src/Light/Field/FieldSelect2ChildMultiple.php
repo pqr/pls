@@ -102,7 +102,7 @@ class FieldSelect2ChildMultiple extends FieldSelect
         return '';
     }
 
-    protected function getSqlWhereInner($value)
+    protected function getSqlWhereInner($value): string
     {
         $sql = [];
         $values = explode('|', $value);

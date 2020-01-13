@@ -13,7 +13,7 @@ use Light\Field\FieldDate;
 use Light\Field\FieldMoney;
 use Light\File;
 use Light\FilesFolder;
-use Light\Img;
+use Light\Ico;
 use Light\ModuleBase\ModuleAbstract;
 use Light\Msg;
 use Light\Response;
@@ -206,11 +206,11 @@ class ShipmentAccounting extends ModuleAbstract
 
     protected function initMassactions()
     {
-        $this->addMassaction('DownloadDocs', 'Собрать полный комплект документов', '', '', null, true);
-        $this->addMassaction('DownloadShipmentRequestsXlsx', 'Скачать заявки в Excel', '', '', null, true);
+        $this->addMassaction('DownloadDocs', 'Собрать полный комплект документов', '', '', true);
+        $this->addMassaction('DownloadShipmentRequestsXlsx', 'Скачать заявки в Excel', '', '', true);
 
         foreach (Constant::$standardFolders as $i => $standardFolder) {
-            $this->addMassaction("DownloadDocs$i", $standardFolder, '', '', null, true);
+            $this->addMassaction("DownloadDocs$i", $standardFolder, '', '', true);
         }
     }
 
@@ -345,7 +345,7 @@ class ShipmentAccounting extends ModuleAbstract
 
     protected function initViewSubmenu()
     {
-        $this->addSubmenuLinkViewFunc(Img::icon('file-archive-o') . ' Комплект документов', 'DownloadDocs')
+        $this->addSubmenuLinkViewFunc(Ico::i('file-archive-o') . ' Комплект документов', 'DownloadDocs')
             ->blank();
     }
 

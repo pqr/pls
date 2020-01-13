@@ -31,11 +31,17 @@ class Badge
      */
     public $listFilters;
 
-    public function __construct(string $counter, string $type, string $title, array $listFilters = [])
+    /**
+     * @var array
+     */
+    public $urlParams;
+
+    public function __construct(string $counter, string $type, string $title, array $listFilters = [], array $urlParams = [])
     {
         $this->counter = $counter;
         $this->type = $type;
         $this->title = $title;
         $this->listFilters = $listFilters;
+        $this->urlParams = $urlParams;
     }
 }

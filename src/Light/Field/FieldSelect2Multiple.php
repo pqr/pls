@@ -67,14 +67,17 @@ class FieldSelect2Multiple extends FieldSelect
         return '';
     }
 
-    protected function getSqlWhereInner($value)
+    protected function getSqlWhereInner($value): string
     {
         $sql = [];
         $values = explode('|', $value);
         foreach ($values as $val) {
             if ($val !== '') {
-                $sql[] = "{fieldKey} = " . Db::escString($val);
+                $sql[] = "{fieldKey} LIKE '%" . Db::esc($val) . "%'";
             }
+        }
+        if (!$sql) {
+            return '1';
         }
         return implode(" " . $this->logicSqlWhere . " ", $sql);
     }
