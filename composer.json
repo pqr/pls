@@ -26,7 +26,7 @@
     "mtdowling/cron-expression": "@stable",
     "guzzlehttp/guzzle": "@stable",
     "studio-42/elfinder": "@stable",
-    "sentry/sentry": "@stable",
+    "sentry/sdk": "^2.0",
     "phpoffice/phpspreadsheet": "^1.0",
     "symfony/process": "^4.2",
     "symfony/filesystem": "^4.2",
