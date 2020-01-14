@@ -36,10 +36,8 @@ class ImportFromOneC
             $authErr = 'Запрос долежн быть POST';
         } elseif (!isset($_SERVER['HTTP_X_AUTH'])) {
             $authErr = 'Нет http заголовка x-auth';
-        } else {
-            if ($_SERVER['HTTP_X_AUTH'] !== ForwardConfig::$onecAuthToken) {
-                $authErr = 'Не верное значение x-auth ' . $_SERVER['HTTP_X_AUTH'];
-            }
+        } elseif ($_SERVER['HTTP_X_AUTH'] !== ForwardConfig::$onecAuthToken) {
+            $authErr = 'Не верное значение x-auth ' . $_SERVER['HTTP_X_AUTH'];
         }
         if ($authErr) {
             Db::updateRow(['Log' => htmlspecialchars($authErr)], 'log_onecimport', $this->importId);

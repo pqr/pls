@@ -527,7 +527,7 @@ abstract class ApplicationAbstract
      * @param null|string|array|ResponseInterface $resultFromModule
      * @return ResponseInterface
      */
-    protected function getFinalPsr7Response($resultFromModule): ResponseInterface
+    public function getFinalPsr7Response($resultFromModule): ResponseInterface
     {
         if ($resultFromModule instanceof ResponseInterface) {
 
@@ -560,7 +560,7 @@ abstract class ApplicationAbstract
         return Response::$psr7;
     }
 
-    protected function emitResponse($finalPsr7Response)
+    public function emitResponse($finalPsr7Response)
     {
         // Если же не CLI, то нужно отправить с помощью эмиттера
         (new SapiEmitter())->emit($finalPsr7Response);
@@ -574,12 +574,12 @@ abstract class ApplicationAbstract
         }
     }
 
-    protected function beforeSend()
+    public function beforeSend()
     {
         $this->runHandlers($this->handlersBeforeSend);
     }
 
-    protected function finalize()
+    public function finalize()
     {
         if (!isset($_REQUEST['nouserrefreshtime']) && !self::isCli() && User::isAuth()) {
             User::updateLastRefreshDateTime();
