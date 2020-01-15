@@ -72,6 +72,7 @@ class CInvoicePrintForm extends PrintForm
             $field->setTotal(false);
         }
         $linesSubtable->loadData();
+        $linesSubtable->copySubtableDataToTableData();
         $linesSubtable->tableFieldsShow = ['Name', 'UOMID', 'Quantity', 'Price', 'Amount'];
         $tdata['LinesSubtable'] = $linesSubtable->getHtmlTable();
 

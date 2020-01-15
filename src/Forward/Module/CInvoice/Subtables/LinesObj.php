@@ -27,7 +27,7 @@ class LinesObj extends ObjAbstract
 
             GeneralFields::quantity(),
 
-            F::createMoney('Price', ['name' => 'Unit Price']),
+            F::createMoney('Price', ['name' => 'Unit Price', 'total' => false]),
 
             F::createMoney('Amount', ['name' => 'Amount'])
 
