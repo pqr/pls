@@ -259,12 +259,12 @@ class ImportCPayment extends ImporterAbstract
 
     private function loadCInvoice(array $lineFromOneC, int $companyId)
     {
-        if ($lineFromOneC['CInvoiceID']) {
+        if (!empty($lineFromOneC['CInvoiceID'])) {
             // Если в json строке передан конкретный ID счёта в нашей базе - загрузим его
             return Db::getRow("SELECT * FROM cinvoice WHERE ID = @i", $lineFromOneC['CInvoiceID']);
         }
 
-        if (!$lineFromOneC['CInvoiceNumber'] || !$lineFromOneC['CInvoiceDate']) {
+        if (empty($lineFromOneC['CInvoiceNumber']) || empty($lineFromOneC['CInvoiceDate'])) {
             // Из 1С не пришла дата или номер счёта - это основные ключевые поля по которым возможен поиск после CInvoiceID
             // Если их нет, то и найти ничего не можем!
             return [];
