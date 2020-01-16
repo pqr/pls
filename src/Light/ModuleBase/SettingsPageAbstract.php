@@ -124,10 +124,6 @@ class SettingsPageAbstract
             $msg = Config::$lang === 'ru' ? 'Сохранено' : 'Saved';
             Session::flashSuccess($msg);
 
-            // Полностью обновим страницу с помощью редиректа, чтобы значения формы заново загрузились из базы
-            // таким образом пользователь будет уверен, что всё сохранилось как надо
-            Response::redirect(Request::getModule());
-
         } catch (\Throwable $e) {
 
             $msg = Config::$lang === 'ru' ? 'Не удалось сохранить' : 'Error while saving';
@@ -136,6 +132,10 @@ class SettingsPageAbstract
             Response::abort(500);
 
         }
+
+        // Полностью обновим страницу с помощью редиректа, чтобы значения формы заново загрузились из базы
+        // таким образом пользователь будет уверен, что всё сохранилось как надо
+        Response::redirect(Request::getModule());
     }
 
     protected function getDataFromPost(): array

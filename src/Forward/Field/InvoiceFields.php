@@ -263,7 +263,7 @@ class InvoiceFields
             'title' => 'Разница между Payments Amount и суммой счёта = задолженность по данному счёту',
             'modes' => F::MODE_READONLY,
             'zeroEmpty' => true,
-            'sqlSelectRequires' => 'DocType',
+            // 'sqlSelectRequires' => 'DocType',
             'viewCssClass' => function ($value, array $data) {
                 if ($value == 0) {
                     return '';
