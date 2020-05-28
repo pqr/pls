@@ -22,6 +22,7 @@ class Constant
     const OC_ACB = 7;
     const OC_PLS12_OOO = 12;
     const OC_PGL11_OOO = 11;
+    const OC_PF14_OOO = 14;
 
     const TRAFFIC_OCEAN = 7;
     const TRAFFIC_FINANCE = 11;
@@ -36,7 +37,8 @@ class Constant
         Constant::OC_PLS_OOO => 'pls',
         Constant::OC_PGL_OOO => 'pgl',
         Constant::OC_PLS12_OOO => 'pls12',
-        Constant::OC_PGL11_OOO => 'pgl11'
+        Constant::OC_PGL11_OOO => 'pgl11',
+        Constant::OC_PF14_OOO => 'pf14'
     ];
 
     const FOLDER_REQUEST = 0;
