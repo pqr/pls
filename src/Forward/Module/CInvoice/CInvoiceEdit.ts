@@ -55,14 +55,14 @@ namespace CInvoice {
         var companyId = Light.module.getFieldValue("CompanyID");
         var currencyIso = Light.module.getFieldValue("CurrencyISO");
 
-        var hideButton = (companyId != 4 && companyId != 5) || currencyIso === "RUB";
+        var hideButton = !Forward.isOnshoreCompany(companyId) || currencyIso === "RUB";
         $("#converttorub-tr").toggleClass("display-none", hideButton);
     }
 
     function showHideOnlyOoo() {
         var companyId = Light.module.getFieldValue("CompanyID");
 
-        var hideOoo = companyId != 4 && companyId != 5 && companyId != 11 && companyId != 12;
+        var hideOoo = !Forward.isOnshoreCompany(companyId);
         $(".only-ooo").toggleClass("display-none", hideOoo);
         $(".only-not-ooo").toggleClass("display-none", !hideOoo);
     }

@@ -55,7 +55,7 @@ class VendorAccount extends ModuleAbstract
             }
 
             $subject = "Новый подрядчик $vendorAccountName для $ourCompanyName, ID=$id";
-            $body = "Внесите, пожалуйста, нового клиента $vendorAccountName в 1С для нашей компании $ourCompanyName, ID=$id. Договор во вложении.";
+            $body = "Внесите, пожалуйста, нового подрядчика $vendorAccountName в 1С для нашей компании $ourCompanyName, ID=$id. Договор во вложении.";
 
             $url = "mailto:$mailto?subject=" . rawurlencode($subject) . "&body=" . rawurlencode($body);
             $this->addSubmenuLink(

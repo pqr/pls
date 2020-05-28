@@ -49,7 +49,7 @@ var Shipment;
     function onCompanyChange() {
         var companyId = Light.module.getFieldValue("CompanyID");
         // Отобразим или скроем поле Заявка
-        var hideShipmentRequest = companyId != 4 && companyId != 5 && companyId != 11 && companyId != 12;
+        var hideShipmentRequest = !Forward.isOnshoreCompany(companyId);
         $("#shipmentrequestno-tr").toggleClass("display-none", hideShipmentRequest);
     }
     Light.module.onFieldChange("CompanyID", onCompanyChange);

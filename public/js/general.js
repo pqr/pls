@@ -1,5 +1,5 @@
 var Forward = {
-    onMAWBSelect: function(item) {
+    onMAWBSelect: function (item) {
         //Преобразуем поле для ввода номера MAWB в объект jQuery
         var $mawbInput = $(this);
         //По этом объекту найдём подтаблицу в которой он находится
@@ -11,7 +11,7 @@ var Forward = {
         }
     },
 
-    onFileNumberSelect: function(item) {
+    onFileNumberSelect: function (item) {
         //Преобразуем поле для ввода номера файла в объект jQuery
         var $fileNumberInput = $(this);
         //По этом объекту найдём подтаблицу в которой он находится
@@ -23,7 +23,7 @@ var Forward = {
         }
     },
 
-    acMawbFileResultFormatter: function(item) {
+    acMawbFileResultFormatter: function (item) {
         return (
             '<span class="ac-mawb-filenumber">' +
             Light.htmlspecialchars(item.MAWBNumber) +
@@ -35,7 +35,7 @@ var Forward = {
         );
     },
 
-    onLocationIATASelect: function(item) {
+    onLocationIATASelect: function (item) {
         var type = this.id.replace("IATA", ""); //Вернёт либо 'Departure' либо 'Arrival'
         //Найдём соответсвующее поле LocationName в той же форме
         $(this)
@@ -44,7 +44,7 @@ var Forward = {
             .val(item.LocationName);
     },
 
-    onLocationNameSelect: function(item) {
+    onLocationNameSelect: function (item) {
         var type = this.id.replace("LocationName", ""); //Вернёт либо 'Departure' либо 'Arrival'
         //Найдём соответсвующее поле LocationName в той же форме
         $(this)
@@ -53,7 +53,7 @@ var Forward = {
             .val(item.IATA);
     },
 
-    acLocationIATANameFormatter: function(item) {
+    acLocationIATANameFormatter: function (item) {
         return (
             '<span class="ac-location-iata-name">' +
             Light.htmlspecialchars(item.IATA) +
@@ -63,7 +63,7 @@ var Forward = {
         );
     },
 
-    parseQuantity: function(num) {
+    parseQuantity: function (num) {
         num = Light.parseFloat(num);
         var floor = Math.floor(num);
         var decimal = num - floor;
@@ -78,9 +78,9 @@ var Forward = {
         return num;
     },
 
-    addStandartListeners: function($root) {
+    addStandartListeners: function ($root) {
         //При изменении значения во вспомагательном поле AirlineAlphaCodeInput обновим текущий выбор в выпадающем списке
-        $root.find("#AirlineAlphaCodeInput").on("keyup", function() {
+        $root.find("#AirlineAlphaCodeInput").on("keyup", function () {
             if (this.value.length === 2) {
                 //#AirlineAlphaCode - это выпадающий список в котором колючами являются как раз коды авиалиний!
                 $(this)
@@ -89,12 +89,16 @@ var Forward = {
             }
         });
 
-        $root.find("#AirlineAlphaCode").on("keyup change", function() {
+        $root.find("#AirlineAlphaCode").on("keyup change", function () {
             var newVal = this.value == "%" ? "" : this.value;
             $(this)
                 .prev("#AirlineAlphaCodeInput")
                 .val(newVal);
         });
+    },
+
+    isOnshoreCompany: function (companyId) {
+        return [4, 5, 11, 12, 14].includes(parseInt(companyId));
     }
 };
 
