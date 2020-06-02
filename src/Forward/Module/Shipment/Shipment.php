@@ -1353,6 +1353,8 @@ class Shipment extends ModuleAbstract
             $exceltemplate = 'ShipmentRequestPLS12.xlsx';
         } elseif ($shipmentObj['CompanyID'] == Constant::OC_PGL11_OOO) {
             $exceltemplate = 'ShipmentRequestPGL11.xlsx';
+        } elseif ($shipmentObj['CompanyID'] == Constant::OC_PF14_OOO) {
+            $exceltemplate = 'ShipmentRequestPF14.xlsx';
         } else {
             Session::flashError('Для компании ' . $shipmentObj->getFieldHtml('CompanyID') . ' нет формы заявки');
             $this->redirectToView();
@@ -1404,8 +1406,10 @@ class Shipment extends ModuleAbstract
             'CustomerAccount');
 
         // Добавим адрес первого отправителя
-        $firstShipper = Db::getRow("SELECT Name, HAWBNumber FROM shipmentshipper WHERE ShipmentID = @i",
-            $shipmentObj->getId());
+        $firstShipper = Db::getRow(
+            "SELECT Name, HAWBNumber FROM shipmentshipper WHERE ShipmentID = @i",
+            $shipmentObj->getId()
+        );
         if ($firstShipper) {
             $excelData['HAWBNumber'] = $firstShipper['HAWBNumber'];
             if ($firstShipper['Name']) {
@@ -1486,6 +1490,11 @@ class Shipment extends ModuleAbstract
         // Отдельную копию файла без печати и подписи нужно положить в папку "0 Заявка"
         $this->removeStampFromShipmentRequestExcel($xls);
         $requestFolder = Constant::getStandartFolderReqeust();
+
+        // На всякий случай проверим, что папка "0 Заявка" создана
+        $folderRelative = $this->getFolderRelative();
+        FilesFolder::mkdir("$folderRelative/$requestFolder");
+
         $filepathAbsXlsx = "$folderAbs/$requestFolder/$filenameWithoutExt.xlsx";
 
         try {
