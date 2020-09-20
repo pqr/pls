@@ -52,19 +52,18 @@
 
             <table>
                 <tr valign="top">
-                    <td style="padding-right: 10px; width: 25%; font-family: Verdana, Arial; font-size: 9px;">
+                    <td style="padding-right: 10px; width: 30%; font-family: Verdana, Arial; font-size: 9px;">
                         <strong>Beneficiary Bank:</strong>
 
-                        <p style="white-space: pre"><?= htmlspecialchars($OurCompanyBeneficiaryBank_raw) ?></p>
+                        <p><?= nl2br(htmlspecialchars($OurCompanyBeneficiaryBank_raw)) ?></p>
                     </td>
 
-                    <td style="padding: 0 10px 0 10px; width: 35%; font-family: Verdana, Arial; font-size: 9px;">
+                    <td style="padding: 0 10px 0 10px; width: 30%; font-family: Verdana, Arial; font-size: 9px;">
                         <strong>Correspondent Bank:</strong>
-
-                        <p style="white-space: pre"><?= htmlspecialchars($OurCompanyCorrespondentBank_raw) ?></p>
+                        <p><?= nl2br(htmlspecialchars($OurCompanyCorrespondentBank_raw)) ?></p>
                     </td>
 
-                    <td style="font-family: Verdana, Arial; font-size: 11px; text-align: right; width: 40%">
+                    <td style="font-family: Verdana, Arial; font-size: 9px; text-align: right; width: 40%">
                         <div>Date: <?= t::html('DocDate') ?></div>
                         <div><?= strtoupper(t::text('DocType')) ?> # <?= t::html('Name') ?></div>
                         <table style="font-size: 11px; font-family: Century Gothic, Verdana, Arial; width: auto;">
