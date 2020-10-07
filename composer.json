@@ -23,7 +23,7 @@
     "symfony/dom-crawler": "@stable",
     "symfony/css-selector": "@stable",
     "nesbot/carbon": "@stable",
-    "mtdowling/cron-expression": "@stable",
+    "dragonmantank/cron-expression": "@stable",
     "guzzlehttp/guzzle": "@stable",
     "studio-42/elfinder": "@stable",
     "sentry/sdk": "^2.0",
