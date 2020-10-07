@@ -1101,9 +1101,17 @@ class Table implements \JsonSerializable
             $precision = $field->getPrecision();
         }
 
+        $groupconcat = $field->groupconcat;
         $totalAmount = 0;
-        foreach ($amounts as $amount) {
-            $totalAmount += round($amount, $precision);
+        foreach ($amounts as $cellText) {
+            if ($groupconcat) {
+                $amountsLines = explode("\n", $cellText);
+            } else {
+                $amountsLines[] = $cellText;
+            }
+            foreach($amountsLines as $amountValue) {
+                $totalAmount += round($amountValue, $precision);
+            }
         }
 
         return $totalAmount;
