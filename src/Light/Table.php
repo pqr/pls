@@ -1107,7 +1107,7 @@ class Table implements \JsonSerializable
             if ($groupconcat) {
                 $amountsLines = explode("\n", $cellText);
             } else {
-                $amountsLines[] = $cellText;
+                $amountsLines = [$cellText];
             }
             foreach($amountsLines as $amountValue) {
                 $totalAmount += round($amountValue, $precision);
