@@ -505,7 +505,7 @@ class CInvoice extends InvoiceModuleAbstract
 
         $dataForOneC = $this->getDataForOneC($cinvObj, $onecDocDate);
 
-        $client = new Client();
+        $client = new Client(['verify' => false]);
         $path = Constant::$onecCompany[$cinvObj['CompanyID']];
         $url = 'https://' . ForwardConfig::$onecIp . ":" . ForwardConfig::$onecPort . "/$path/hs/CreateCustomerInvoice";
         Session::flashInfo('Отправляем данные на адрес ' . $url);
