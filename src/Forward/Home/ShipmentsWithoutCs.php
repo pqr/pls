@@ -33,6 +33,7 @@ class ShipmentsWithoutCs extends HomeBlockAbstract
                     , CustomerID
                 FROM shipment
                 WHERE ResponsibleCS = 0
+                    AND FileClosed = 0
                 ORDER BY ID DESC";
     }
 }
