@@ -25,24 +25,33 @@ class VendorOutstanding extends HomeBlockAbstract
         $this->addFields(
 
             F::createString('Name', ['name' => 'Vendor']),
-            F::createHtml('Outstanding', [
-                'title' => 'Sum of Amount of Open & Part Cleared Vendor Invoices',
-                'tableAlign' => 'right'
-            ]),
+            F::createHtml(
+                'Outstanding',
+                [
+                    'title' => 'Sum of Amount of Open & Part Cleared Vendor Invoices',
+                    'tableAlign' => 'right',
+                ]
+            ),
 
-            F::createHtml('OverdueCL', [
-                'name' => 'Overdue CL',
-                'title' => 'Overdue Credit Limit',
-                'tableAlign' => 'right',
-                'viewCssClass' => 'bad'
-            ]),
+            F::createHtml(
+                'OverdueCL',
+                [
+                    'name' => 'Overdue CL',
+                    'title' => 'Overdue Credit Limit',
+                    'tableAlign' => 'right',
+                    'viewCssClass' => 'bad',
+                ]
+            ),
 
-            F::createHtml('OverdueTime', [
-                'name' => 'Overdue Time',
-                'title' => 'Overdue by Invoices Due Date',
-                'tableAlign' => 'right',
-                'viewCssClass' => 'bad'
-            ])
+            F::createHtml(
+                'OverdueTime',
+                [
+                    'name' => 'Overdue Time',
+                    'title' => 'Overdue by Invoices Due Date',
+                    'tableAlign' => 'right',
+                    'viewCssClass' => 'bad',
+                ]
+            )
 
         );
     }
@@ -57,6 +66,24 @@ class VendorOutstanding extends HomeBlockAbstract
         if (!User::hasSpecialAccess(Application::SA_HOME_VOUTSTANDING, $userId)) {
             return;
         }
+
+        $totalOutstanding = [
+            'EUR' => 0,
+            'RUB' => 0,
+            'USD' => 0,
+        ];
+
+        $totalOverdueCl = [
+            'EUR' => 0,
+            'RUB' => 0,
+            'USD' => 0,
+        ];
+
+        $totalOverdueTime = [
+            'EUR' => 0,
+            'RUB' => 0,
+            'USD' => 0,
+        ];
 
         //Найдём всех подрядчиков у которых был хотя бы один счёт
         $query = "SELECT ID AS i, ID, Name, CreditAmount, CreditCurrencyISO FROM vendor
@@ -84,26 +111,25 @@ class VendorOutstanding extends HomeBlockAbstract
                 $vendorId = $row['VendorID'];
                 $currencyIso = $row['CurrencyISO'];
 
+                $totalOutstanding[$currencyIso] += $row['Amount'];
+
                 $outstanding = FieldMoney::beautify($row['Amount'], true, $currencyIso);
                 $outstanding = Finance::getVInvoiceLink($outstanding, $vendorId, false, $currencyIso);
 
                 //Если в текущей строке посчитана сумма в валюте == кредитной валюте => сразу посчитаем превышение кредитной линии
                 if ($currencyIso == $data[$vendorId]['CreditCurrencyISO']) {
                     if ($row['Amount'] > $data[$vendorId]['CreditAmount']) {
-
                         //Подкрасим основную сумму в красный
                         $outstanding = '<span class="bad">' . $outstanding . '</span>';
 
                         //Дополнительно заполним колонку OverdueCL
-                        $overdueCl = FieldMoney::beautify($row['Amount'] - $data[$vendorId]['CreditAmount'], true,
-                            $currencyIso);
+                        $overdueClAmount = $row['Amount'] - $data[$vendorId]['CreditAmount'];
+                        $totalOverdueCl[$currencyIso] += $overdueClAmount;
+                        $overdueCl = FieldMoney::beautify($overdueClAmount, true, $currencyIso);
                         $data[$vendorId]['OverdueCL'] = $overdueCl;
-
                     } elseif ($row['Amount'] >= 0.8 * $data[$vendorId]['CreditAmount'] && $row['Amount'] > 0) {
-
                         //Подкрасим основную сумму в оранжевый
                         $outstanding = '<span class="warning"">' . $outstanding . '</span>';
-
                     }
                 }
 
@@ -125,6 +151,7 @@ class VendorOutstanding extends HomeBlockAbstract
                 $vendorId = $row['VendorID'];
                 $currencyIso = $row['CurrencyISO'];
 
+                $totalOverdueTime[$currencyIso] += $row['Amount'];
                 $overdueTime = FieldMoney::beautify($row['Amount'], true, $currencyIso);
                 $overdueTime = Finance::getVInvoiceLink($overdueTime, $vendorId, false, $currencyIso, true);
 
@@ -150,18 +177,36 @@ class VendorOutstanding extends HomeBlockAbstract
         }
 
         $this->tableData = array_values($data);
+
+        $this->tableDataTotal = [
+            'Outstanding' => $this->getTotalHtml($totalOutstanding),
+            'OverdueCL' => $this->getTotalHtml($totalOverdueCl),
+            'OverdueTime' => $this->getTotalHtml($totalOverdueTime),
+        ];
+    }
+
+    private function getTotalHtml(array $amountsPerCurrency): string
+    {
+        $lines = [];
+        foreach ($amountsPerCurrency as $currencyIso => $amount) {
+            if ($amount) {
+                $lines[] = FieldMoney::beautify($amount, true, $currencyIso);
+            }
+        }
+        return implode('<br>', $lines);
     }
 
     protected function getCountForTitle()
     {
         // Отобразим число просроченных счетов по клиентам на этом Home
-        $overdueCount = Db::getOne("SELECT count(*) FROM vinvoice WHERE Status IN (@a) AND DueDate < CURDATE()",
-            Finance::$vinvoiceOpenStatuses);
+        $overdueCount = Db::getOne(
+            "SELECT COUNT(*) FROM vinvoice WHERE Status IN (@a) AND DueDate < CURDATE()",
+            Finance::$vinvoiceOpenStatuses
+        );
 
         return Link::create('VInvoice', $overdueCount)
             ->filters(['Overdue' => 'Overdue'])
             ->title('Число просроченных счетов')
             ->getHtml();
-
     }
 }
