@@ -23,6 +23,7 @@ class Constant
     const OC_PLS12_OOO = 12;
     const OC_PGL11_OOO = 11;
     const OC_PF14_OOO = 14;
+    const OC_MAXVEL = 16;
 
     const TRAFFIC_OCEAN = 7;
     const TRAFFIC_FINANCE = 11;

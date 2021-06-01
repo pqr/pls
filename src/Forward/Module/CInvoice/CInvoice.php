@@ -15,6 +15,7 @@ use Forward\Field\InvoiceFields;
 use Forward\ForwardConfig;
 use Forward\Module\CInvoice\Massactions\CreateCPayments;
 use Forward\Module\CInvoice\PrintForms\CInvoicePrintForm;
+use Forward\Module\CInvoice\PrintForms\Maxvel;
 use Forward\Module\CInvoice\Subtables\CPayments;
 use Forward\Module\CInvoice\Subtables\Lines;
 use Forward\Module\CPayment\CPayment;
@@ -65,6 +66,7 @@ class CInvoice extends InvoiceModuleAbstract
         $this->addPrintForm(new CInvoicePrintForm('WordStamp', 'Word with stamp', PrintForm::FORMAT_DOC));
         $this->addPrintForm(new CInvoicePrintForm('PDF', 'PDF', PrintForm::FORMAT_PDF));
         $this->addPrintForm(new CInvoicePrintForm('PDFStamp', 'PDF with stamp', PrintForm::FORMAT_PDF));
+        $this->addPrintForm(new Maxvel());
     }
 
     protected function initFilters()
