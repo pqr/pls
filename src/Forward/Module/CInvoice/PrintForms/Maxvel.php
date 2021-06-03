@@ -12,9 +12,9 @@ use Light\Table;
 
 class Maxvel extends PrintForm
 {
-    public function __construct()
+    public function __construct(string $format)
     {
-        parent::__construct('Maxvel', 'Maxvel Freight Invoice', self::FORMAT_EXCEL, PrintForm::OUT_SAVE_AND_STREAM);
+        parent::__construct('Maxvel' . $format, 'Maxvel Freight Invoice', $format, PrintForm::OUT_SAVE_AND_STREAM);
         ini_set('display_errors', 0);
         $this->templateFormat = self::TEMPLATE_FORMAT_EXCEL;
         error_reporting(0);
@@ -23,6 +23,11 @@ class Maxvel extends PrintForm
     public function testForObj(ObjAbstract $obj): bool
     {
         return $obj['CompanyID'] === Constant::OC_MAXVEL;
+    }
+
+    protected function getTemplate(ObjAbstract $obj): string
+    {
+        return __DIR__ . '/Maxvel.xlsx';
     }
 
     protected function getTplDataForExcel(ObjAbstract $obj): array
