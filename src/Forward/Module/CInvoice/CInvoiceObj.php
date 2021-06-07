@@ -270,7 +270,11 @@ class CInvoiceObj extends InvoiceObjAbstract
      */
     public function autogenerateName()
     {
-        $this->updateDb(['Name' => $this->getId()], 'Auto');
+        $name = $this->getId();
+        if ($this['CompanyID'] == Constant::OC_MAXVEL) {
+            $name = "PLS-$name";
+        }
+        $this->updateDb(['Name' => $name], 'Auto');
     }
 
     public function updateCacheAfterDelete(array $oldFileNumbers, $dbLogMsg)
