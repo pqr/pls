@@ -12,6 +12,11 @@ use Light\Table;
 
 class Maxvel extends PrintForm
 {
+    private const BANK_ACCOUNTS = [
+        'USD' => 'ES1401825000892012500032',
+        'EUR' => 'ES2001825000810201804226',
+    ];
+
     public function __construct(string $format)
     {
         parent::__construct('Maxvel' . $format, 'Maxvel Freight Invoice', $format, PrintForm::OUT_SAVE_AND_STREAM);
@@ -33,6 +38,7 @@ class Maxvel extends PrintForm
     protected function getTplDataForExcel(ObjAbstract $obj): array
     {
         $tdata = parent::getTplDataForExcel($obj);
+        $tdata['BankAccount'] = self::BANK_ACCOUNTS[$obj['CurrencyISO']] ?? '';
         $tdata['DocDateFormatted'] = $this->formatDate($obj['DocDate']);
 
         $ca = Db::getRow(
@@ -65,18 +71,30 @@ class Maxvel extends PrintForm
         $lines = new Table('MaxvelExcelLines');
         $lines->addFields(
             F::createInt('No'),
-            F::createString('Description', [
-                'name' => 'Description'
-            ]),
-            F::createString('MAWB', [
-                'name' => 'MAWB'
-            ]),
-            F::createString('CountryOfOrigin', [
-                'name' => ''
-            ]),
-            F::createString('TradeMark', [
-                'name' => ''
-            ]),
+            F::createString(
+                'Description',
+                [
+                    'name' => 'Description',
+                ]
+            ),
+            F::createString(
+                'MAWB',
+                [
+                    'name' => 'MAWB',
+                ]
+            ),
+            F::createString(
+                'CountryOfOrigin',
+                [
+                    'name' => '',
+                ]
+            ),
+            F::createString(
+                'TradeMark',
+                [
+                    'name' => '',
+                ]
+            ),
             F::createFloat('Quantity'),
             F::createMoney('Price'),
             F::createMoney('Amount')
