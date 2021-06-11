@@ -83,18 +83,6 @@ class Maxvel extends PrintForm
                     'name' => 'MAWB',
                 ]
             ),
-            F::createString(
-                'CountryOfOrigin',
-                [
-                    'name' => '',
-                ]
-            ),
-            F::createString(
-                'TradeMark',
-                [
-                    'name' => '',
-                ]
-            ),
             F::createFloat('Quantity'),
             F::createMoney('Price'),
             F::createMoney('Amount')
