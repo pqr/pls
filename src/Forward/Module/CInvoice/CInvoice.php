@@ -67,7 +67,7 @@ class CInvoice extends InvoiceModuleAbstract
         $this->addPrintForm(new CInvoicePrintForm('PDF', 'PDF', PrintForm::FORMAT_PDF));
         $this->addPrintForm(new CInvoicePrintForm('PDFStamp', 'PDF with stamp', PrintForm::FORMAT_PDF));
         $this->addPrintForm(new Maxvel(PrintForm::FORMAT_EXCEL));
-        $this->addPrintForm(new Maxvel(PrintForm::FORMAT_PDF));
+        //$this->addPrintForm(new Maxvel(PrintForm::FORMAT_PDF));
     }
 
     protected function initFilters()
