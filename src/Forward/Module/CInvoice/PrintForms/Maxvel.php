@@ -42,12 +42,12 @@ class Maxvel extends PrintForm
         $tdata['DocDateFormatted'] = $this->formatDate($obj['DocDate']);
 
         $ca = Db::getRow(
-            "SELECT InvoiceAddress FROM customeraccount WHERE ID = @i",
+            "SELECT InvoiceAddress, INN FROM customeraccount WHERE ID = @i",
             $obj['CustomerAccountID']
         );
 
         $tdata['CustomerAccountInvoiceAddress'] = $ca['InvoiceAddress'] ?? '';
-        $tdata['CustomerAccountINN'] = ''; // номера ИНН в базе нет $ca['INN'] ?? '';
+        $tdata['CustomerAccountINN'] = $ca['INN'] ?? '';
 
         $cinvId = $obj->getId();
 

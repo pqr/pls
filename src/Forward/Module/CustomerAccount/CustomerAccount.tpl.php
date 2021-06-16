@@ -7,6 +7,7 @@
                 <?= t::c('Active') ?>
                 <?= t::c('CompanyID') ?>
                 <?= t::c('ContractNo') ?>
+                <?= t::c('INN') ?>
                 <?= t::c('InvoiceAddress') ?>
                 <?= t::c('Comments') ?>
                 <?= t::c('RatePercent') ?>

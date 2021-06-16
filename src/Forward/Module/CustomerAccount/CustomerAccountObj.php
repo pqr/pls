@@ -25,6 +25,7 @@ class CustomerAccountObj extends ObjAbstract
             CF::active(),
 
             F::createString('ContractNo', ['name' => 'Contract No.']),
+            F::createString('INN', ['name' => 'INN / VAT']),
 
             F::createText('InvoiceAddress', ['name' => 'Billing Address']),
 
