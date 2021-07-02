@@ -197,6 +197,7 @@ if ($csLineIds) {
                     <?= t::c('CActName') ?>
                     <?= t::c('CActDate') ?>
                     <?= t::c('CActAmount') ?>
+                    <?= t::c('AmountInUSD') ?>
                 </table>
 
             </td>

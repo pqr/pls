@@ -1,12 +1,13 @@
 <?php
+
 namespace Forward\Module\CInvoice;
 
 use Forward\Classes\Constant;
 use Forward\Classes\Finance;
-use Forward\ModuleBase\Invoices\InvoiceObjAbstract;
 use Forward\Field\GeneralFields;
 use Forward\Field\InvoiceFields;
 use Forward\Module\Customer\CustomerObj;
+use Forward\ModuleBase\Invoices\InvoiceObjAbstract;
 use Light\Db;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
@@ -20,22 +21,28 @@ class CInvoiceObj extends InvoiceObjAbstract
 
         $this->addFields(
 
-            F::createString('Name', [
-                'name' => 'Inv. No',
-                'tableWidthExcel' => 12
-            ]),
+            F::createString(
+                'Name',
+                [
+                    'name' => 'Inv. No',
+                    'tableWidthExcel' => 12,
+                ]
+            ),
             GeneralFields::companyId(),
             GeneralFields::bankId(),
             GeneralFields::customerId(true, false), //editMandatory => true, filter => false
 
             GeneralFields::customerAccountId(),
             InvoiceFields::docType(),
-            F::createSelect('Status', [
-                'name' => 'Payment Status',
-                'options' => Finance::$cinvoiceStatuses,
-                'empty' => false,
-                'sqlSelectMandatory' => true
-            ]),
+            F::createSelect(
+                'Status',
+                [
+                    'name' => 'Payment Status',
+                    'options' => Finance::$cinvoiceStatuses,
+                    'empty' => false,
+                    'sqlSelectMandatory' => true,
+                ]
+            ),
             InvoiceFields::cStatusIco(),
             F::createText('InvoiceTo', ['name' => 'Invoice To', 'rows' => 5, 'upper' => true]),
             InvoiceFields::shippingDocument(),
@@ -56,39 +63,50 @@ class CInvoiceObj extends InvoiceObjAbstract
             InvoiceFields::docDate(true), //editMandatory = true
             InvoiceFields::dueDate(), //поле не обязательно к заполнению, будет вычеслено автоматически при сохранении
 
-            F::createInt('Overdue', [
-                'name' => 'Overdue',
-                'nameTable' => "Overdue\n(days)",
-                'sqlSelectReqires' => 'Status',
-                'tableAlign' => 'center',
-                'sqlSelect' => "IF(Status IN (" . implode(', ', Finance::$cinvoiceOpenStatuses) . ")
+            F::createInt(
+                'Overdue',
+                [
+                    'name' => 'Overdue',
+                    'nameTable' => "Overdue\n(days)",
+                    'sqlSelectReqires' => 'Status',
+                    'tableAlign' => 'center',
+                    'sqlSelect' => "IF(Status IN (" . implode(', ', Finance::$cinvoiceOpenStatuses) . ")
                            , DATEDIFF(CURDATE(), DueDate)
                            , -999)",
-                //Определим функцию, которая в зависимости от значения Overdue окрасит ячеку таблицы в класс bad или warning
-                'viewCssClass' => [Finance::class, 'getOverdueViewCssClass'],
-                //Определим функцию, которая очистит ячейку Overdue, если статус счёта CLEARD или CREDITNOTED
-                'getHtmlFunction' => function ($value, $data, $outHtml, $forTable) {
-                    if (isset($data['Status'])) {
-                        $status = $data['Status'];
-                        if (!isset(Finance::$cinvoiceOpenStatuses[$status])) {
-                            $outHtml = '';
+                    //Определим функцию, которая в зависимости от значения Overdue окрасит ячеку таблицы в класс bad или warning
+                    'viewCssClass' => [Finance::class, 'getOverdueViewCssClass'],
+                    //Определим функцию, которая очистит ячейку Overdue, если статус счёта CLEARD или CREDITNOTED
+                    'getHtmlFunction' => function ($value, $data, $outHtml, $forTable) {
+                        if (isset($data['Status'])) {
+                            $status = $data['Status'];
+                            if (!isset(Finance::$cinvoiceOpenStatuses[$status])) {
+                                $outHtml = '';
+                            }
                         }
-                    }
 
-                    return $outHtml;
-                }
-            ]),
+                        return $outHtml;
+                    },
+                ]
+            ),
 
             GeneralFields::ratePercent(),
 
             GeneralFields::cactName(),
             GeneralFields::cactDate(),
-            GeneralFields::cactAmount()
+            GeneralFields::cactAmount(),
+
+            F::createMoney(
+                'AmountInUSD',
+                [
+                    'name' => 'Amount in USD',
+                    'title' => 'Фиксированная сумма в USD для статистики',
+                    'currencyIso' => 'USD',
+                ]
+            )
 
         );
 
         $this->addStandrtFields();
-
     }
 
     public function updateAmount($dbLogMsg = '')
@@ -146,9 +164,7 @@ class CInvoiceObj extends InvoiceObjAbstract
             //Пройдём по каждой строке в исходном счёте по данному файлу (массив $invLinesForFile) и попробуем найти соответсвие в $csLines
             /** @var array $invLinesForFile */
             foreach ($invLinesForFile as $invLine) {
-
                 foreach ($csLines as $index => $csLine) {
-
                     //Проверяем совпадение по сумме Amount
                     if ($csLine['Amount'] == $invLine['Amount'] && $csLine['CurrencyISO'] == $this->_data['CurrencyISO']) {
                         //Нашли совпадение, обновим строку кост-шита
@@ -159,7 +175,6 @@ class CInvoiceObj extends InvoiceObjAbstract
                         unset($csLines[$index]);
                     }
                 }
-
             }
         }
 
@@ -198,7 +213,6 @@ class CInvoiceObj extends InvoiceObjAbstract
         $updateShipmentsGpAndCriteria = true,
         $dbLogMsg = ''
     ) {
-
         if (isset($oldData['FileNumbers'])) {
             $oldFileNumbers = $oldData['FileNumbers'];
         } else {
@@ -207,15 +221,11 @@ class CInvoiceObj extends InvoiceObjAbstract
 
         // Если имя счета изменилось, запустим метод переименования и в платежах, и в Cost-sheet`ах
         if ($this['Name'] === '' && !Constant::isOneCCompany($this['CompanyID'])) {
-
             $this->autogenerateName();
-
         }
 
         if (isset($oldData['Name']) && (string)$oldData['Name'] !== (string)$this['Name']) {
-
             $this->renameAfterInsertUpdate($oldData['Name'], $this['Name']);
-
         }
 
         //Обновим дату DueDate, но только если она пуста. Если она уже заполнена - возможно, это правильное значение введённое пользователем
@@ -223,6 +233,8 @@ class CInvoiceObj extends InvoiceObjAbstract
 
         //Обновим поле cinvoice.Amount на основе подтаблицы с линиями = sum(cinvoiceline.Amount)
         $this->updateAmount($dbLogMsg);
+
+        $this->updateAmountInUsd();
 
         //Обновим поля поля CacheLastPaymentDate, CachePaymentsReference, CachePaymentsTotalAmount, CacheOutstandingAmount
         //Эти поля связаны с оплатами и казалось бы они не должны измениться при сохранении счёта
@@ -246,7 +258,6 @@ class CInvoiceObj extends InvoiceObjAbstract
         $this->guessAndUpdateCostSheetsInvNum();
 
         if ($updateShipmentsGpAndCriteria) {
-
             //После обновления кеширующей таблицы cinvoice_file_amount, можно обновить и GP по всем файлам,
             //которые участвовали при сохранении данного счёта
             $this->updateShipmentsGpAndCriteria($oldFileNumbers, $dbLogMsg);
@@ -283,5 +294,12 @@ class CInvoiceObj extends InvoiceObjAbstract
         parent::updateCacheAfterDelete($oldFileNumbers, $dbLogMsg);
         //Обновим сумму открытых счетов клиента фигурирующего в данном счёте
         $this->updateCustomerCacheOpenAndOverdueInvoicesAmount();
+    }
+
+    private function updateAmountInUsd(): void
+    {
+        if ($this->_data['CurrencyISO'] === 'USD') {
+            $this->updateDb(['AmountInUSD'=> $this->_data['Amount']], 'Автоматическое обновление на основе суммы счёта');
+        }
     }
 }
