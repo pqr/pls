@@ -21,12 +21,6 @@
       job: "php {{ project_dir_flowerbase }}/public/index.php Light/CurrencyRateCBRF"
     tags: cron
 
-  - name: Cron CitadeleCurrencyLoader every hour 9-21
-    cron:
-      name: "flowerbase CitadeleCurrencyLoader"
-      state: absent
-    tags: cron
-
   - name: Cron UpdateCustomerOutstandingCache at 8
     cron:
       name: "flowerbase UpdateCustomerOutstandingCache"
@@ -63,9 +57,9 @@
   - name: Cron Backup Database Logs Tables (once per month)
     cron:
       name: "flowerbase Light/BackupMysqlLogs"
-      hour: 5
-      minute: 40
-      day: 3
+      hour: "5"
+      minute: "40"
+      day: "3"
       job: "php {{ project_dir_flowerbase }}/public/index.php Light/BackupMysqlLogs"
     tags: cron
 

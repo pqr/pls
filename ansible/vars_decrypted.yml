@@ -9,13 +9,8 @@ project_dir_pls: "/home/{{ ansible_user }}/pls"
 project_dir_flowerbase: "/home/{{ ansible_user }}/flowerbase"
 filesfolder_pls: "/home/{{ ansible_user }}/files"
 filesfolder_flowerbase: "/home/{{ ansible_user }}/files/_flowerbase"
-ftpfolder: "/home/pls"
 
 git_version: master
 
 bitbucket_pipeline_public_key_app: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCuugzuVOs+y9Ij2t95FRBmxIpWRfm90QGpZCQgwrU84BE4wJx9KGc7gv6OBEO4kOPKYIKqSDvNTC4D4tXvkILV3RFppNFQqTBvT9IUsyqGQMgmnTCTMrJOnNdYPJuKRWdDjXY6uuVlxWx81o5Poq2EICriofT5DC5X/mt4uaoRpjPDwAvfcujBK3pdHDYKeQeqB6FQlBcPWYojWwjfocYA9zFYU/dgiA0SfZeqiIuAgScTERFBvhDTNF/b6XYnSEnl0tPpPSZ/2OJWNmYZFDT7NbbpiXMlazqtg6RCAddQoEQovfX76I5gPhLaEZhrvvQutEBzyZPbDNvab8jGeLC3U8RtXKhzjKxccT/xpW5BhAcDAz9KXNl+4V8IRpZBNW154R+h+rJSps+tgfgcYs0pEjluB+XW24gwBydvCWpTXOe1q98muzujQjVuxpwSpuBjoJ+JLnHhOPQABoMDahPRjKLXalBoF4CcaEvKWqgkmQkx2B1XQOnM3pPYJexkR5U=
-
-telegrambot_working_dir: "/home/{{ ansible_user }}/telegram-bot"
-telegrambot_executable: forward-hkg-telegram-bot
-telegrambot_backend_url: https://forwardlog.net/bot.php
 

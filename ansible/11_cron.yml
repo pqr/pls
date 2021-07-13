@@ -23,13 +23,6 @@
       job: "php {{ project_dir_pls }}/public/index.php Light/CurrencyRateCBRF"
     tags: cron
 
-  - name: Cron CitadeleCurrencyLoader every hour 9-21
-    become: false
-    cron:
-      name: "pls CitadeleCurrencyLoader"
-      state: absent
-    tags: cron
-
   - name: Cron UpdateCustomerOutstandingCache at 8
     become: false
     cron:
@@ -70,9 +63,9 @@
     become: false
     cron:
       name: "pls Light/BackupMysqlLogs"
-      hour: 5
-      minute: 30
-      day: 3
+      hour: "5"
+      minute: "30"
+      day: "3"
       job: "php {{ project_dir_pls }}/public/index.php Light/BackupMysqlLogs"
     tags: cron
 
@@ -97,7 +90,7 @@
   - name: Cron DiskFreeSpace at 8:30AM
     cron:
       name: "pls DiskFreeSpace"
-      hour: 8
-      minute: 30
+      hour: "8"
+      minute: "30"
       job: "php {{ project_dir_pls }}/public/index.php DiskFreeSpace"
     tags: cron
