@@ -2,22 +2,6 @@
   become: true
 
   tasks:
-  - name: Add Certbot repository
-    become: true
-    apt_repository: repo=ppa:certbot/certbot
-    tags: certbot
-
-  - name: Update apt cache
-    become: true
-    apt: update_cache=true
-    changed_when: no
-    tags: certbot
-
-  - name: Install python-certbot-nginx
-    become: true
-    apt: name=python-certbot-nginx
-    tags: certbot
-
   - name: Cron Certbot Renew
     cron:
       name: "Certbot Renew"

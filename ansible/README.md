@@ -64,12 +64,15 @@ vault_password_file = .vault-pass
 sudo apt install python
 ~~~
 
- * Подключение отдельного хранилища, например, `xvdb`:
+ * Подключение отдельного хранилища, например, `xvdf`:
 
- 1. Создать на пустом диске файловую систему
+ 0. Проверить имя устройсва командой `lsblk` - удостовериться, что это `xvdf`
+
+ 1. Создать на пустом диске файловую систему, если это новый диск 
+    (если же прикрепляем volume, который уже был, то этот шаг можно пропустить)
  
 ~~~
-sudo mkfs -t ext4 /dev/xvdb
+sudo mkfs -t ext4 /dev/xvdf
 ~~~
  
  2. Создать папку куда будет система примонтирована:
@@ -81,7 +84,7 @@ mkdir /home/ubuntu/files
 3. Примонтировать эту файловую систему в созданную папку:
 
 ~~~
-sudo mount /dev/xvdb /home/ubuntu/files
+sudo mount /dev/xvdf /home/ubuntu/files
 ~~~
 
 4. Проверить что получилось и сконфигурировать `/etc/fstab`
@@ -96,20 +99,20 @@ tmpfs           2.0G     0  2.0G   0% /dev/shm
 tmpfs           5.0M     0  5.0M   0% /run/lock
 tmpfs           2.0G     0  2.0G   0% /sys/fs/cgroup
 tmpfs           396M     0  396M   0% /run/user/1000
-/dev/xvdb        15G   38M   14G   1% /home/ubuntu/files
+/dev/xvdf        15G   38M   14G   1% /home/ubuntu/files
 ~~~
 
-В файл `/etc/fstab` добавить новую запись: `/dev/xvdb  /home/ubuntu/files  ext4     noatime  0 0`
+В файл `/etc/fstab` добавить новую запись: `/dev/xvdf  /home/ubuntu/files  ext4     noatime  0 0`
 
 После добавления этой новой строчки файл будет выглядеть так:
 
 ~~~
 # cat /etc/fstab 
 LABEL=cloudimg-rootfs	/	 ext4	defaults,discard	0 0
-/dev/xvdb  /home/ubuntu/files  ext4     noatime  0 0
+/dev/xvdf  /home/ubuntu/files  ext4     noatime  0 0
 ~~~
 
-\* Имя диска (`xvdb`) или папки (`/home/ubuntu/files`) определяются на месте. Для записи в папку файлов необходимо, чтобы у неё был владелец и группа `ubuntu`, и чтобы в папку мог писать nginx и при этом insync - режим `0777`
+\* Имя диска (`xvdf`) или папки (`/home/ubuntu/files`) определяются на месте. Для записи в папку файлов необходимо, чтобы у неё был владелец и группа `ubuntu`, и чтобы в папку мог писать nginx и при этом insync - режим `0777`
 
 ~~~
 ubuntu@ip-172-31-22-0:~$ sudo chmod 777 /home/ubuntu/files

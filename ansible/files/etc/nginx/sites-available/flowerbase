@@ -1,6 +1,6 @@
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+    listen 80;
+    listen [::]:80;
     server_name 2.forwardlog.net;
 
     sendfile on;
@@ -49,7 +49,4 @@ server {
     location ~ \.(js|css)$ {
          expires max;
     }
-
-    ssl_certificate /etc/letsencrypt/live/2.forwardlog.net/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/2.forwardlog.net/privkey.pem; # managed by Certbot
 }

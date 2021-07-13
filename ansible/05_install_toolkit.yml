@@ -12,10 +12,10 @@
     changed_when: no
 
   # Установить dependency libicu52 для wkhtmltopdf:
-  - name: Install libicu52
-    apt:
-      deb: http://launchpadlibrarian.net/201330288/libicu52_52.1-8_amd64.deb
-    tags: wkhtmltopdf
+#  - name: Install libicu52
+#    apt:
+#      deb: http://launchpadlibrarian.net/201330288/libicu52_52.1-8_amd64.deb
+#    tags: wkhtmltopdf
 
   # Установить dependency libxrender1 для wkhtmltopdf:
   - name: Install libxrender1
@@ -25,26 +25,15 @@
 
   - name: Install wkhtmltopdf
     apt:
-      deb: https://downloads.wkhtmltopdf.org/0.12/0.12.5/wkhtmltox_0.12.5-1.xenial_amd64.deb
+      deb: https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.bionic_amd64.deb
     tags:
-      - tools
       - wkhtmltopdf
 
   # Установить нужные в работе утилиты:
   - name: Install tools
-    apt: name={{ item }} state=latest
-    with_items:
-      - mc
-      - curl
-      - wget
-      - htop
-      - unzip
-      - unrar
-      - p7zip-full
-      - ghostscript
-      - imagemagick
-      - git
-      - pdftk
+    apt:
+      name: ['mc', 'curl', 'wget', 'htop', 'unzip', 'unrar', 'p7zip-full', 'ghostscript', 'imagemagick', 'git', 'pdftk']
+      state: latest
     tags: tools
 
   # Установить mysql-client:

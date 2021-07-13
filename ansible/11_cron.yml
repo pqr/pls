@@ -1,0 +1,103 @@
+- hosts: all
+  become: false
+  vars_files:
+    - vars_decrypted.yml
+    - vars_encrypted.yml
+
+  tasks:
+  - name: Cron Light/CurrencyRateCBRF today at 6am
+    become: false
+    cron:
+      name: "pls CurrencyRateCBRF today"
+      minute: "0"
+      hour: "6"
+      job: "php {{ project_dir_pls }}/public/index.php Light/CurrencyRateCBRF today"
+    tags: cron
+
+  - name: Cron Light/CurrencyRateCBRF every 30 min 11-18
+    become: false
+    cron:
+      name: "pls CurrencyRateCBRF"
+      minute: "*/30"
+      hour: "11-18"
+      job: "php {{ project_dir_pls }}/public/index.php Light/CurrencyRateCBRF"
+    tags: cron
+
+  - name: Cron CitadeleCurrencyLoader every hour 9-21
+    become: false
+    cron:
+      name: "pls CitadeleCurrencyLoader"
+      state: absent
+    tags: cron
+
+  - name: Cron UpdateCustomerOutstandingCache at 8
+    become: false
+    cron:
+      name: "pls UpdateCustomerOutstandingCache"
+      minute: "7"
+      hour: "0"
+      job: "php {{ project_dir_pls }}/public/index.php UpdateCustomerOutstandingCache"
+    tags: cron
+
+  - name: Cron UpdateShipmentCriteria at 0:10
+    become: false
+    cron:
+      name: "pls UpdateShipmentCriteria"
+      minute: "10"
+      hour: "0"
+      job: "php {{ project_dir_pls }}/public/index.php UpdateShipmentCriteria"
+    tags: cron
+
+  - name: Cron Light/Email every minute
+    become: false
+    cron:
+      name: "pls Light/Email"
+      minute: "*"
+      hour: "8-23"
+      job: "php {{ project_dir_pls }}/public/index.php Light/Email"
+    tags: cron
+
+  - name: Cron Light/BackupMysqlData at 6:15
+    become: false
+    cron:
+      name: "pls Light/BackupMysqlData"
+      minute: "15"
+      hour: "6"
+      job: "php {{ project_dir_pls }}/public/index.php Light/BackupMysqlData"
+    tags: cron
+
+  - name: Cron Backup Database Logs Tables (once per month)
+    become: false
+    cron:
+      name: "pls Light/BackupMysqlLogs"
+      hour: 5
+      minute: 30
+      day: 3
+      job: "php {{ project_dir_pls }}/public/index.php Light/BackupMysqlLogs"
+    tags: cron
+
+  - name: Cron EmailPendingQuotations14days at 16:30 working days
+    become: false
+    cron:
+      name: "pls EmailPendingQuotations14days"
+      minute: "30"
+      hour: "16"
+      weekday: "1-5"
+      job: "php {{ project_dir_pls }}/public/index.php EmailPendingQuotations14days"
+    tags: cron
+
+  - name: Cron Light/DailyMaintainance at 5AM
+    cron:
+      name: "pls Light/DailyMaintainance"
+      minute: "0"
+      hour: "5"
+      job: "php {{ project_dir_pls }}/public/index.php Light/DailyMaintainance"
+    tags: cron
+
+  - name: Cron DiskFreeSpace at 8:30AM
+    cron:
+      name: "pls DiskFreeSpace"
+      hour: 8
+      minute: 30
+      job: "php {{ project_dir_pls }}/public/index.php DiskFreeSpace"
+    tags: cron

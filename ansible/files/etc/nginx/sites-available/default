@@ -1,33 +1,6 @@
 server {
     listen 80;
     listen [::]:80;
-
-    access_log off;
-
-    location = /favicon.ico { access_log off; log_not_found off; }
-    location = /robots.txt  { access_log off; log_not_found off; }
-
-    location /.well-known/ {
-        try_files $uri $uri/ =404;
-    }
-
-    root /home/ubuntu/redirect;
-    index index.html index.htm;
-
-    location / {
-        rewrite ^(.*)$ https://$host$1;
-    }
-
-    location ~ /\.git {
-        deny all;
-    }
-
-}
-
-# Main redirect
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
     server_name forwardlog.net;
 
     sendfile on;
@@ -76,7 +49,4 @@ server {
     location ~ \.(js|css)$ {
          expires max;
     }
-
-    ssl_certificate /etc/letsencrypt/live/forwardlog.net/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/forwardlog.net/privkey.pem; # managed by Certbot
 }

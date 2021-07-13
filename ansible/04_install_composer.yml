@@ -1,5 +1,5 @@
 # Example: ansible-playbook 04_install_composer.yml
-- hosts: []
+- hosts: all
   become: true
   become_user: root
   become_method: sudo
