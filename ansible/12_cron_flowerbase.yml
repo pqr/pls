@@ -1,0 +1,78 @@
+- hosts: all
+  become: false
+  vars_files:
+    - vars_decrypted.yml
+    - vars_encrypted.yml
+
+  tasks:
+  - name: Cron Light/CurrencyRateCBRF today at 6am
+    cron:
+      name: "flowerbase CurrencyRateCBRF today"
+      minute: "0"
+      hour: "6"
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/CurrencyRateCBRF today"
+    tags: cron
+
+  - name: Cron Light/CurrencyRateCBRF every 30 min 11-18
+    cron:
+      name: "flowerbase CurrencyRateCBRF"
+      minute: "*/30"
+      hour: "11-18"
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/CurrencyRateCBRF"
+    tags: cron
+
+  - name: Cron CitadeleCurrencyLoader every hour 9-21
+    cron:
+      name: "flowerbase CitadeleCurrencyLoader"
+      state: absent
+    tags: cron
+
+  - name: Cron UpdateCustomerOutstandingCache at 8
+    cron:
+      name: "flowerbase UpdateCustomerOutstandingCache"
+      minute: "7"
+      hour: "0"
+      job: "php {{ project_dir_flowerbase }}/public/index.php UpdateCustomerOutstandingCache"
+    tags: cron
+
+  - name: Cron UpdateShipmentCriteria at 0:10
+    cron:
+      name: "flowerbase UpdateShipmentCriteria"
+      minute: "10"
+      hour: "0"
+      job: "php {{ project_dir_flowerbase }}/public/index.php UpdateShipmentCriteria"
+    tags: cron
+
+  - name: Cron Light/Email every minute
+    cron:
+      name: "flowerbase Light/Email"
+      minute: "*"
+      hour: "8-23"
+      state: absent
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/Email"
+    tags: cron
+
+  - name: Cron Light/BackupMysqlData at 6:20
+    cron:
+      name: "flowerbase Light/BackupMysqlData"
+      minute: "20"
+      hour: "6"
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/BackupMysqlData"
+    tags: cron
+
+  - name: Cron Backup Database Logs Tables (once per month)
+    cron:
+      name: "flowerbase Light/BackupMysqlLogs"
+      hour: 5
+      minute: 40
+      day: 3
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/BackupMysqlLogs"
+    tags: cron
+
+  - name: Cron Light/DailyMaintainance at 5AM
+    cron:
+      name: "pls Light/DailyMaintainance"
+      minute: "0"
+      hour: "5"
+      job: "php {{ project_dir_flowerbase }}/public/index.php Light/DailyMaintainance"
+    tags: cron

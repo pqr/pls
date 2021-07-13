@@ -22,17 +22,6 @@
       accept_hostkey: true
     tags: code
 
-  - name: Install composer deps
-    become: no
-    composer:
-      command: install
-      working_dir: "{{ project_dir_pls }}"
-      no_dev: true
-      optimize_autoloader: true
-    environment:
-      COMPOSER_ALLOW_SUPERUSER: 1
-    tags: code
-
   # Проверить папки logs и temp и права 777 на них:
   - name: Check logs and temp folders and mode
     become: true
@@ -55,13 +44,6 @@
       backup: yes
     tags: conf
 
-  - name: Run Migrate autolaunch
-    shell: php public/index.php Light/Migrate
-    args:
-      chdir: "{{ project_dir_pls }}"
-      executable: /bin/bash
-    tags: migrate
-
     # Создать символические ссылки на папки для nginx
   - name: Create lightpublic symlink
     file:
@@ -77,9 +59,9 @@
       path: "{{ filesfolder_pls }}/ShipmentAccounting"
     tags: dirs
 
-  - name: Run Sentry Deploy script
-    shell: "{{ project_dir_pls }}/sentry.sh"
+  - name: Run Deploy script
+    shell: "{{ project_dir_pls }}/up.sh"
     args:
       chdir: "{{ project_dir_pls }}"
       executable: /bin/bash
-    tags: sentry
+    tags: code
