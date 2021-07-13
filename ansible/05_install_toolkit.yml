@@ -32,7 +32,7 @@
   # Установить нужные в работе утилиты:
   - name: Install tools
     apt:
-      name: ['mc', 'curl', 'wget', 'htop', 'unzip', 'unrar', 'p7zip-full', 'ghostscript', 'imagemagick', 'git', 'pdftk']
+      name: ['net-tools', 'mc', 'curl', 'wget', 'htop', 'unzip', 'unrar', 'p7zip-full', 'ghostscript', 'imagemagick', 'git', 'pdftk']
       state: latest
     tags: tools
 
