@@ -44,7 +44,26 @@ class CInvoiceObj extends InvoiceObjAbstract
                 ]
             ),
             InvoiceFields::cStatusIco(),
-            F::createText('InvoiceTo', ['name' => 'Invoice To', 'rows' => 5, 'upper' => true]),
+            F::createText(
+                'InvoiceTo',
+                [
+                    'name' => 'Invoice To',
+                    'rows' => 5,
+                    'upper' => true,
+                    'getHtmlFunction' => function ($value, array $data, $outHtml) {
+                        $lines = explode("\n", $value);
+                        $htmlLines = [];
+                        foreach ($lines as $i => $line) {
+                            $htmlLine = \htmlspecialchars($line);
+                            if ($i === 0) {
+                                $htmlLine = "<strong>$htmlLine</strong>";
+                            }
+                            $htmlLines[] = $htmlLine;
+                        }
+                        return implode('<br>', $htmlLines);
+                    },
+                ]
+            ),
             InvoiceFields::shippingDocument(),
             F::createString('ShipmentReference', ['name' => 'Shipment Reference', 'upper' => true]),
             GeneralFields::consigneeReference(),
@@ -299,7 +318,10 @@ class CInvoiceObj extends InvoiceObjAbstract
     private function updateAmountInUsd(): void
     {
         if ($this->_data['CurrencyISO'] === 'USD') {
-            $this->updateDb(['AmountInUSD'=> $this->_data['Amount']], 'Автоматическое обновление на основе суммы счёта');
+            $this->updateDb(
+                ['AmountInUSD' => $this->_data['Amount']],
+                'Автоматическое обновление на основе суммы счёта'
+            );
         }
     }
 }
