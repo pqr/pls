@@ -1,0 +1,28 @@
+# Example: ansible-playbook 06_mysql.yml -i inventory.test
+- hosts: all
+  become: true
+  vars_files:
+    - vars_decrypted.yml
+    - vars_encrypted.yml
+
+  tasks:
+  - name: Install mysql-client
+    apt: name=mysql-client install_recommends=no
+    tags: mysql
+
+  - name: Copy .my.cnf
+    become: false
+    template:
+      src: files/.my.cnf
+      dest: /home/{{ ansible_user }}/.my.cnf
+      backup: yes
+      mode: 0600
+    tags: mysql
+
+  # https://stackoverflow.com/questions/61649764/mysql-error-2026-ssl-connection-error-ubuntu-20-04
+  - name: Fix openssl policy for MySQL
+    copy:
+      src: files/etc/ssl/openssl.cnf
+      dest: /etc/ssl/openssl.cnf
+      mode: 0644
+    tags: mysql

@@ -1,4 +1,4 @@
-# Example: ansible-playbook 06_install_toolkit.yml -i inventory.test
+# Example: ansible-playbook 05_install_toolkit.yml -i inventory.test
 - hosts: all
   become: true
   vars_files:
@@ -35,20 +35,6 @@
       name: ['net-tools', 'mc', 'curl', 'wget', 'htop', 'unzip', 'unrar', 'p7zip-full', 'ghostscript', 'imagemagick', 'git', 'pdftk']
       state: latest
     tags: tools
-
-  # Установить mysql-client:
-  - name: Install mysql-client
-    apt: name=mysql-client install_recommends=no
-    tags: mysql
-
-  - name: Copy .my.cnf
-    become: false
-    template:
-      src: files/.my.cnf
-      dest: /home/{{ ansible_user }}/.my.cnf
-      backup: yes
-      mode: 0600
-    tags: mysql
 
   - name: Install Goss
     become: true
