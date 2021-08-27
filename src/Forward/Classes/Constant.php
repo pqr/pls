@@ -1,4 +1,5 @@
 <?php
+
 namespace Forward\Classes;
 
 use Forward\Application;
@@ -24,6 +25,8 @@ class Constant
     const OC_PGL11_OOO = 11;
     const OC_PF14_OOO = 14;
     const OC_MAXVEL = 16;
+    const OC_PLS17_OOO = 17;
+    const OC_PGL18_OOO = 18;
 
     const TRAFFIC_OCEAN = 7;
     const TRAFFIC_FINANCE = 11;
@@ -39,7 +42,9 @@ class Constant
         Constant::OC_PGL_OOO => 'pgl',
         Constant::OC_PLS12_OOO => 'pls12',
         Constant::OC_PGL11_OOO => 'pgl11',
-        Constant::OC_PF14_OOO => 'pf14'
+        Constant::OC_PF14_OOO => 'pf14',
+        Constant::OC_PLS17_OOO => 'pls17',
+        Constant::OC_PGL18_OOO => 'pgl18',
     ];
 
     const FOLDER_REQUEST = 0;
@@ -98,7 +103,7 @@ class Constant
             'OurCompanyName_raw' => self::getCompanyNameBeforePartnthesis($company['Name'] ?? ''),
             'OurCompanyAddress_raw' => $company['Address'] ?? '',
             'OurCompanyBeneficiaryBank_raw' => $bank['BeneficiaryBank'] ?? '',
-            'OurCompanyCorrespondentBank_raw' => $bank['CorrespondentBank'] ?? ''
+            'OurCompanyCorrespondentBank_raw' => $bank['CorrespondentBank'] ?? '',
         ];
     }
 
@@ -120,7 +125,7 @@ class Constant
     ) {
         $parts = [
             (new \DateTime($date))->format('dmy'),
-            $departureIata . $arrivalIata
+            $departureIata . $arrivalIata,
         ];
 
         if ($chargeableWeight) {
@@ -135,9 +140,12 @@ class Constant
 
     public static function getWeightInterval($weight)
     {
-        return A::find([2000, 1000, 750, 500, 300, 200, 100, 45], function($interval) use ($weight) {
-            return $weight >= $interval;
-        });
+        return A::find(
+            [2000, 1000, 750, 500, 300, 200, 100, 45],
+            function ($interval) use ($weight) {
+                return $weight >= $interval;
+            }
+        );
     }
 
     public static function getDefaultAddons()
