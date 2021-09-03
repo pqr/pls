@@ -1364,6 +1364,8 @@ class Shipment extends ModuleAbstract
             $this->redirectToView();
         }
 
+        ini_set('display_errors', 0);
+
         $shipmentRequestDate = $this->getShipmentRequestDate($shipmentObj['ETD']);
 
         if (!$shipmentObj['ShipmentRequestNo'] && $shipmentObj['CustomerAccountID']) {
