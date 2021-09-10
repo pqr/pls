@@ -3,6 +3,7 @@ namespace Forward\Module\CInvoice\Subtables;
 
 use Forward\Field\GeneralFields;
 use Forward\Field\InvoiceFields;
+use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
 use Light\ObjAbstract;
 
@@ -29,7 +30,9 @@ class LinesObj extends ObjAbstract
 
             F::createMoney('Price', ['name' => 'Unit Price', 'total' => false]),
 
-            F::createMoney('Amount', ['name' => 'Amount'])
+            F::createMoney('Amount', ['name' => 'Amount']),
+
+            CF::vatPercent()
 
         );
     }

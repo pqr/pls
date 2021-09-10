@@ -29,7 +29,7 @@ class Lines extends Subtable
         $this->tableLinkIdFieldKey = 'ShipmentID';
         $this->tableLinkUrlParams = ['func' => 'cs', 'fromInvNum' => $masterObj['Name']];
 
-        $this->subtableLayoutView = 'FileNumber|Name|UOMID|Quantity|Price|Amount';
+        $this->subtableLayoutView = 'FileNumber|Name|UOMID|Quantity|Price|Amount|VATPercent';
         $this->subtableLayoutEdit = $this->subtableLayoutView;
 
         $this->allowTablePrintTotalRecordsFound = true;
