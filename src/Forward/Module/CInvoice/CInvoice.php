@@ -543,24 +543,26 @@ class CInvoice extends InvoiceModuleAbstract
 
         $resBody = (string)$res->getBody();
         if (!$resBody) {
-            Session::flashError('Не удалось прочитать ответ от 1С');
+            Session::flashError('Не удалось прочитать ответ от 1С (пустое тело ответа)');
             $this->redirectToView();
         }
 
         $resData = json_decode($resBody, true);
         if (!$resData) {
             Session::flashError('Не удалось прочитать ответ от 1С');
-            Session::flashError('<pre>' . htmlspecialchars($resBody) . '</pre>');
+            Session::flashError('Полный текст ответа:<pre>' . htmlspecialchars($resBody) . '</pre>');
             $this->redirectToView();
             return;
         }
 
         if (isset($resData['Errors']) && $resData['Errors']) {
-            Session::flashWarning('От 1С получен следующий ответ:<br>' . nl2br(htmlspecialchars($resData['Errors'])));
+            Session::flashError('От 1С получен следующий ответ:<br>' . nl2br(htmlspecialchars($resData['Errors'])));
+            Session::flashInfo('Полный текст ответа:' . '<pre>' . htmlspecialchars($resBody) . '</pre>');
         }
 
         if (!isset($resData['DocNumber']) || !$resData['DocNumber']) {
             Session::flashError('От 1С не получен номер счёта');
+            Session::flashInfo('Полный текст ответа:' . '<pre>' . htmlspecialchars($resBody) . '</pre>');
             $this->redirectToView();
             return;
         }
