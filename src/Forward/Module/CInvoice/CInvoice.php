@@ -533,7 +533,16 @@ class CInvoice extends InvoiceModuleAbstract
         Session::flashInfo('Отправляем данные на адрес ' . $url);
 
         try {
-            $res = $client->post($url, ['json' => $dataForOneC]);
+            $body = json_encode($dataForOneC, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        } catch (\Throwable $e) {
+            $msg = 'Не удалось сформировать данные для отправки в 1С, отправка не состоялась.<br>' . $e->getMessage();
+            Session::flashError($msg);
+            $this->redirectToView();
+            return;
+        }
+
+        try {
+            $res = $client->post($url, ['body' => $body]);
         } catch (RequestException $e) {
             $msg = 'Не удалось подключиться к серверу 1С.<br>' . $e->getMessage();
             Session::flashError($msg);
