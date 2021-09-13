@@ -555,14 +555,18 @@ class CInvoice extends InvoiceModuleAbstract
             return;
         }
 
+        $fullTextShowed = false;
         if (isset($resData['Errors']) && $resData['Errors']) {
             Session::flashError('От 1С получен следующий ответ:<br>' . nl2br(htmlspecialchars($resData['Errors'])));
             Session::flashInfo('Полный текст ответа:' . '<pre>' . htmlspecialchars($resBody) . '</pre>');
+            $fullTextShowed = true;
         }
 
         if (!isset($resData['DocNumber']) || !$resData['DocNumber']) {
             Session::flashError('От 1С не получен номер счёта');
-            Session::flashInfo('Полный текст ответа:' . '<pre>' . htmlspecialchars($resBody) . '</pre>');
+            if ($fullTextShowed) {
+                Session::flashInfo('Полный текст ответа:' . '<pre>' . htmlspecialchars($resBody) . '</pre>');
+            }
             $this->redirectToView();
             return;
         }
