@@ -96,7 +96,7 @@ class ImportCInvoice extends ImporterAbstract
                     // Нужно привязать строку к какому-то номеру файла. Загрузим первый попавшийся номер файла из
                     // уже имеющихся строк
                     if (!isset($fileNumber)) {
-                        $fileNumber = Db::getOne(
+                        $fileNumber = (int)Db::getOne(
                             "SELECT FileNumber 
                                  FROM cinvoiceline 
                                  WHERE FileNumber != 0 
