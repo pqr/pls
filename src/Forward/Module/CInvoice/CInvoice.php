@@ -537,7 +537,7 @@ class CInvoice extends InvoiceModuleAbstract
         } catch (RequestException $e) {
             $msg = 'Не удалось подключиться к серверу 1С.<br>' . $e->getMessage();
             Session::flashError($msg);
-            Session::flashInfo('Отправленные данные:<pre>' . json_encode($dataForOneC, JSON_PRETTY_PRINT) . '</pre>');
+            Session::flashInfo('Отправленные данные:<pre>' . json_encode($dataForOneC, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . '</pre>');
             $this->redirectToView();
             return;
         }
@@ -545,15 +545,15 @@ class CInvoice extends InvoiceModuleAbstract
         $resBody = (string)$res->getBody();
         if (!$resBody) {
             Session::flashError('Не удалось прочитать ответ от 1С (пустое тело ответа)');
-            Session::flashInfo('Отправленные данные:<pre>' . json_encode($dataForOneC, JSON_PRETTY_PRINT) . '</pre>');
+            Session::flashInfo('Отправленные данные:<pre>' . json_encode($dataForOneC, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . '</pre>');
             $this->redirectToView();
         }
 
         $resData = json_decode($resBody, true);
         if (!$resData) {
             Session::flashError('Не удалось прочитать ответ от 1С');
-            Session::flashError('Полный текст ответа:<pre>' . htmlspecialchars($resBody) . '</pre>');
-            Session::flashInfo('Отправленные данные:<pre>' . json_encode($dataForOneC, JSON_PRETTY_PRINT) . '</pre>');
+            Session::flashError('Полный текст ответа от 1С:<pre>' . htmlspecialchars($resBody) . '</pre>');
+            Session::flashInfo('Отправленные данные:<pre>' . json_encode($dataForOneC, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . '</pre>');
             $this->redirectToView();
             return;
         }
@@ -561,16 +561,16 @@ class CInvoice extends InvoiceModuleAbstract
         $fullTextShowed = false;
         if (isset($resData['Errors']) && $resData['Errors']) {
             Session::flashWarning('От 1С получено сообщение в поле Errors:<br>' . nl2br(htmlspecialchars($resData['Errors'])));
-            Session::flashInfo('Полный текст ответа:' . '<pre>' . htmlspecialchars($resBody) . '</pre>');
-            Session::flashInfo('Отправленные данные:<pre>' . json_encode($dataForOneC, JSON_PRETTY_PRINT) . '</pre>');
+            Session::flashInfo('Полный текст ответа от 1С:' . '<pre>' . htmlspecialchars($resBody) . '</pre>');
+            Session::flashInfo('Отправленные данные:<pre>' . json_encode($dataForOneC, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . '</pre>');
             $fullTextShowed = true;
         }
 
         if (!isset($resData['DocNumber']) || !$resData['DocNumber']) {
             Session::flashError('От 1С не получен номер счёта');
             if (!$fullTextShowed) {
-                Session::flashInfo('Полный текст ответа:' . '<pre>' . htmlspecialchars($resBody) . '</pre>');
-                Session::flashInfo('Отправленные данные:<pre>' . json_encode($dataForOneC, JSON_PRETTY_PRINT) . '</pre>');
+                Session::flashInfo('Полный текст ответа от 1С:' . '<pre>' . htmlspecialchars($resBody) . '</pre>');
+                Session::flashInfo('Отправленные данные:<pre>' . json_encode($dataForOneC, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . '</pre>');
             }
             $this->redirectToView();
             return;
