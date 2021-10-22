@@ -64,7 +64,7 @@ class ImportCAct extends ImporterAbstract
             'CActAmount' => $data['Amount']
         ], $dbLogMsg);
         if ($affectedRows) {
-            $this->msgBuff->addSuccess("Информация об акте записа в карточку счёта {$cinvObj->getLinkView()}");
+            $this->msgBuff->addSuccess("Информация об акте записана в карточку счёта {$cinvObj->getLinkView()}");
         }
 
         $this->saveFiles($cinvObj, $data);
@@ -82,16 +82,18 @@ class ImportCAct extends ImporterAbstract
         $actName = $data['CActName'];
         $actDate = $cinvObj['CActDate'];
 
+        $filename = $data['Filename'] ?? "Акт без подписи $actName от $actDate";
+
         $cinvFolderRelative = FilesFolder::getRelativeModule(CInvoice::class, $cinvId);
 
         $pdfDataBase64 = $data['Data'];
         $pdfData = base64_decode($pdfDataBase64);
-        $pdfFilename = File::getValidFilename("Акт без подписи $actName от $actDate.pdf");
+        $pdfFilename = File::getValidFilename("$filename.pdf");
         $this->writeFile($cinvFolderRelative, $pdfFilename, $pdfData, $cinvLink);
 
         $excelDataBase64 = $data['DataExcel'];
         $excelData = base64_decode($excelDataBase64);
-        $excelFilename = File::getValidFilename("Акт без подписи $actName от $actDate.xlsx");
+        $excelFilename = File::getValidFilename("$filename.xlsx");
         $this->writeFile($cinvFolderRelative, $excelFilename, $excelData, $cinvLink);
 
         // Попробуем определить все перевозки к которым относится данный счёт и скопировать файлы в папку "5 Акт без подписи"
