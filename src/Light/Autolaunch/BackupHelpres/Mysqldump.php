@@ -38,7 +38,7 @@ class Mysqldump
 
     public function getCmd(): string
     {
-        $cmd = "mysqldump --max-allowed-packet=16777216"
+        $cmd = "mysqldump --max-allowed-packet=16777216 --ssl-mode=disabled"
             . " -h" . Config::$mysqlHost
             . " -u" . Config::$mysqlUser;
 
