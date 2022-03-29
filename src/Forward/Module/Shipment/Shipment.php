@@ -1442,14 +1442,17 @@ class Shipment extends ModuleAbstract
             $excelData['AmountText'] = Translate::amountWordsRu($firstCInvoice['Amount'],
                 $firstCInvoice['CurrencyISO']);
 
+            $excelData['RateText'] = '';
+
+            // Можем сделать в базе, при вставлении счетов в USD/EUR, что бы в заявке ниже суммы за перевозку удалялось инфо: оплата по курсу ЦБ РФ?
+            /*
             if ($firstCInvoice['CurrencyISO'] !== 'RUB') {
                 $excelData['RateText'] = 'Оплата по курсу ЦБ РФ на день оплаты';
                 if ($firstCInvoice['RatePercent'] !== '' && $firstCInvoice['RatePercent'] !== '0%') {
                     $excelData['RateText'] .= ' +' . $firstCInvoice['RatePercent'];
                 }
-            } else {
-                $excelData['RateText'] = '';
             }
+            */
         }
 
         [$insuranceCurrency, $insuranceAmount] = FieldMoneyWithCurrency::getAsTouple($shipmentObj['InsuranceAmount']);
@@ -1480,7 +1483,7 @@ class Shipment extends ModuleAbstract
 
         $filepathAbsWithStamp = "$folderAbs/$filenameWithoutExt.xlsx";
 
-        // Затем отправим пользотвателю
+        // Затем отправим пользователю
         try {
 
             // Основной вариант с печатью и подписью сохраняем в формате PDF
