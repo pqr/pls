@@ -86,12 +86,10 @@ class ShipmentGp
         $csExpensesLines = self::loadCsLines($shipmentId, 'expenses');
 
         if (self::isOneCurrency($customerInvoices, $vendorInvoices)) {
-
             $minDocDate = self::minDocDate($customerInvoices, $vendorInvoices);
 
             $actualIncome = self::getActualIncomeExpensesOneRate($customerInvoices, $minDocDate);
             $actualExpenses = self::getActualIncomeExpensesOneRate($vendorInvoices, $minDocDate);
-
         } else {
             $actualIncome = self::getActualIncomeExpenses($customerInvoices);
             $actualExpenses = self::getActualIncomeExpenses($vendorInvoices);
@@ -101,19 +99,23 @@ class ShipmentGp
         // проверим, возможно все Estimated расходы и все доходы в одной валюте?
         // Если так, то не будем использовать разные курсы покупки и продажи, будем использовать единый курс!
         if (self::isOneCurrency($csIncomeLines, $csExpensesLines)) {
-
             $minDocDate = self::minDocDate($customerInvoices, $vendorInvoices);
 
             $estimatedIncome = self::getEstimatedIncomeExpensesOneRate($csIncomeLines, $minDocDate);
             $estimatedExpenses = self::getEstimatedIncomeExpensesOneRate($csExpensesLines, $minDocDate);
-
         } else {
-
-            $estimatedIncome = self::getEstimatedIncomeExpenses($csIncomeLines, $customerInvoices, 'income',
-                $defaultConvertionDate);
-            $estimatedExpenses = self::getEstimatedIncomeExpenses($csExpensesLines, $vendorInvoices, 'expenses',
-                $defaultConvertionDate);
-
+            $estimatedIncome = self::getEstimatedIncomeExpenses(
+                $csIncomeLines,
+                $customerInvoices,
+                'income',
+                $defaultConvertionDate
+            );
+            $estimatedExpenses = self::getEstimatedIncomeExpenses(
+                $csExpensesLines,
+                $vendorInvoices,
+                'expenses',
+                $defaultConvertionDate
+            );
         }
 
         self::updateShipment(
@@ -177,8 +179,12 @@ class ShipmentGp
         // Посчитаем доход/расход
         $total = 0;
         foreach ($invoices as $invoice) {
-            $total += Currency::convertValue($invoice['AmountOnShipment'], $invoice['CurrencyISO'], 'USD',
-                $minDocDate);
+            $total += Currency::convertValue(
+                $invoice['AmountOnShipment'],
+                $invoice['CurrencyISO'],
+                'USD',
+                $minDocDate
+            );
         }
 
         return $total;
@@ -244,13 +250,16 @@ class ShipmentGp
         //Посчитаем доход/расход
         $total = 0;
         foreach ($csLines as $csLine) {
-
             if ($csLine['CurrencyISO'] === 'USD') {
                 //Перевод в какую-то другую валюту не требуется
                 $csLineAmountInUsd = $csLine['Amount'];
             } else {
-                $csLineAmountInUsd = self::convertCsLineAmountIntoUsd($csLine, $invoices, $incomeOrExpenses,
-                    $defaultConvertionDate);
+                $csLineAmountInUsd = self::convertCsLineAmountIntoUsd(
+                    $csLine,
+                    $invoices,
+                    $incomeOrExpenses,
+                    $defaultConvertionDate
+                );
             }
 
             $total += $csLineAmountInUsd;
@@ -294,7 +303,6 @@ class ShipmentGp
                     //Найден счёт по совпадению номера, попробуем определить курс
                     //Мы можем использовать курс внутри счёта только в том случае, если валюта счёта совпадает с валютой строки
                     if ($foundInvoice['CurrencyISO'] == $csLine['CurrencyISO']) {
-
                         //Повезло!
                         //Требуемая валюта - это USD - используем для расчёта курса показатели $invAmount и $invAmountInUsd
                         $rate = $invAmountInUsd / $invAmount;
@@ -314,16 +322,18 @@ class ShipmentGp
             }
         }
 
+        return Currency::convertValue((float)$csLine['Amount'], $csLine['CurrencyISO'], 'USD', $convertDate);
+
         //Если дошли до этого места, значит continue выше не сработал - используем простой пересчёт по справочнику валют
-        if ($incomeOrExpenses === 'income') {
-            //Доходная часть. Мы получили от клиента какую-то странную валюту и теперь продаём её банку, чтобы
-            //получились доллары
-            return CitadeleCurreny::sellSomethingBuyUsd($csLine['Amount'], $csLine['CurrencyISO'], $convertDate);
-        } else {
-            //Расходная часть. Мы заплатили подрядчику в какой-то странной валюте, которую нам нужно было купить
-            //за доллары. Узнаем кол-во требуемых долларов
-            return CitadeleCurreny::buySomethingSellUsd($csLine['Amount'], $csLine['CurrencyISO'], $convertDate);
-        }
+//        if ($incomeOrExpenses === 'income') {
+//            //Доходная часть. Мы получили от клиента какую-то странную валюту и теперь продаём её банку, чтобы
+//            //получились доллары
+//            return CitadeleCurreny::sellSomethingBuyUsd($csLine['Amount'], $csLine['CurrencyISO'], $convertDate);
+//        } else {
+//            //Расходная часть. Мы заплатили подрядчику в какой-то странной валюте, которую нам нужно было купить
+//            //за доллары. Узнаем кол-во требуемых долларов
+//            return CitadeleCurreny::buySomethingSellUsd($csLine['Amount'], $csLine['CurrencyISO'], $convertDate);
+//        }
     }
 
     private static function updateShipment(
