@@ -1429,7 +1429,7 @@ class Shipment extends ModuleAbstract
 
         // Найдём первый счёт выставленный на клиента по этой перевозке и подставим его сумму в заявку
         $firstCInvoice = Db::getRow(
-            "SELECT cfa.Amount, ci.CurrencyISO, ci.RatePercent
+            "SELECT cfa.Amount, ci.CurrencyISO, ci.RatePercent, ci.PaymentCurrencyISO
              FROM cinvoice_file_amount cfa, cinvoice ci
              WHERE cfa.CInvoiceID = ci.ID
                  AND cfa.FileNumber = @s
@@ -1444,15 +1444,12 @@ class Shipment extends ModuleAbstract
 
             $excelData['RateText'] = '';
 
-            // Можем сделать в базе, при вставлении счетов в USD/EUR, что бы в заявке ниже суммы за перевозку удалялось инфо: оплата по курсу ЦБ РФ?
-            /*
-            if ($firstCInvoice['CurrencyISO'] !== 'RUB') {
+            if ($firstCInvoice['CurrencyISO'] !== 'RUB' && $firstCInvoice['PaymentCurrencyISO'] === 'RUB') {
                 $excelData['RateText'] = 'Оплата по курсу ЦБ РФ на день оплаты';
                 if ($firstCInvoice['RatePercent'] !== '' && $firstCInvoice['RatePercent'] !== '0%') {
                     $excelData['RateText'] .= ' +' . $firstCInvoice['RatePercent'];
                 }
             }
-            */
         }
 
         [$insuranceCurrency, $insuranceAmount] = FieldMoneyWithCurrency::getAsTouple($shipmentObj['InsuranceAmount']);
