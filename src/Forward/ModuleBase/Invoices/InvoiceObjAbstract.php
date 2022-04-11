@@ -3,6 +3,7 @@ namespace Forward\ModuleBase\Invoices;
 
 use Forward\Classes\CitadeleCurreny;
 use Forward\Classes\Finance;
+use Light\Currency;
 use Light\Traits\FirstLetterTrait;
 use Forward\Field\InvoiceFields;
 use Light\Db;
@@ -246,11 +247,12 @@ abstract class InvoiceObjAbstract extends ObjAbstract
             if ($this->_data['CurrencyISO'] === 'USD') {
                 $rateToUsd = 1;
             } else {
-                if ($firstLetter === 'C') {
-                    $rateToUsd = CitadeleCurreny::sellSomethingBuyUsd(1, $this->_data['CurrencyISO'], $convertDate);
-                } else {
-                    $rateToUsd = CitadeleCurreny::buySomethingSellUsd(1, $this->_data['CurrencyISO'], $convertDate);
-                }
+                $rateToUsd = Currency::getRate($this->_data['CurrencyISO'], 'USD', $convertDate);
+//                if ($firstLetter === 'C') {
+//                    $rateToUsd = CitadeleCurreny::sellSomethingBuyUsd(1, $this->_data['CurrencyISO'], $convertDate);
+//                } else {
+//                    $rateToUsd = CitadeleCurreny::buySomethingSellUsd(1, $this->_data['CurrencyISO'], $convertDate);
+//                }
             }
         }
 
