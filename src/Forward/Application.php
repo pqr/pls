@@ -54,7 +54,7 @@ class Application extends ApplicationAbstract
 
         Db::query("SET time_zone='+3:00'");
         Db::query("SET group_concat_max_len=65535");
-        Db::query("SET sql_mode = ''");
+        Db::query("SET sql_mode = 'ALLOW_INVALID_DATES'");
     }
 
     protected function registerModules()
