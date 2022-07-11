@@ -35,7 +35,7 @@ class Db
 
         self::$mysqli->set_charset('utf8');
         self::$mysqli->set_opt(MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
-        self::$mysqli->query("SET SESSION SQL_MODE = ''");
+        self::$mysqli->query("SET SESSION SQL_MODE = 'ALLOW_INVALID_DATES'");
     }
 
     /**
