@@ -9,6 +9,7 @@ use Forward\Module\CPayment\Subtables\CInvoices;
 use Forward\ModuleBase\Payments\PaymentModuleAbstract;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
+use Light\User;
 
 class CPayment extends PaymentModuleAbstract
 {
@@ -63,6 +64,10 @@ class CPayment extends PaymentModuleAbstract
 
     protected function getAccessSqlWhere(): string
     {
-        return BuAccess::getSqlWhereCustomerId() . " AND " . CustomerAccess::getSqlWhere();
+        $sqlWhere = BuAccess::getSqlWhereBu() . " AND " . CustomerAccess::getSqlWhere();
+        if (User::getId() == 28) {
+            $sqlWhere .= " AND CreatedDateTime >= '2022-07-01'";
+        }
+        return $sqlWhere;
     }
 }

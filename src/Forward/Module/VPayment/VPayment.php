@@ -7,6 +7,7 @@ use Forward\Module\VPayment\Subtables\VInvoices;
 use Forward\ModuleBase\Payments\PaymentModuleAbstract;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
+use Light\User;
 
 class VPayment extends PaymentModuleAbstract
 {
@@ -50,5 +51,13 @@ class VPayment extends PaymentModuleAbstract
             ],
             ['PaymentDate'],
         ];
+    }
+
+    protected function getAccessSqlWhere(): string
+    {
+        if (User::getId() == 28) {
+            return "CreatedDateTime >= '2022-07-01'";
+        }
+        return '';
     }
 }

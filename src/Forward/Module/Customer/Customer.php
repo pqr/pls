@@ -163,5 +163,4 @@ class Customer extends ModuleAbstract
         $table = new StandartRatesExcel($this->_obj->getId(), $rateIds);
         $table->sendStandartRatesExcel($this->_obj['Name'], $this->_obj['CompanyID'], 'en');
     }
-
 }

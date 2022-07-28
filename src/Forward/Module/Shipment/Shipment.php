@@ -1714,7 +1714,11 @@ class Shipment extends ModuleAbstract
 
     protected function getAccessSqlWhere(): string
     {
-        return BuAccess::getSqlWhereBu() . " AND " . CustomerAccess::getSqlWhere();
+        $sqlWhere = BuAccess::getSqlWhereBu() . " AND " . CustomerAccess::getSqlWhere();
+        if (User::getId() == 28) {
+            $sqlWhere .= " AND CreatedDateTime >= '2022-07-01'";
+        }
+        return $sqlWhere;
     }
 
 }

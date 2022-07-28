@@ -71,7 +71,7 @@ class VInvoice extends InvoiceModuleAbstract
             $this->addMassaction('CreateVendorPayment', 'Create Vendor Payment', 'invcleared');
         }
 
-        $this->addMassaction('Download', 'Скачать файлы единым zip архивом', '', '',  true);
+        $this->addMassaction('Download', 'Скачать файлы единым zip архивом', '', '', true);
     }
 
     protected function initCssJs()
@@ -79,11 +79,9 @@ class VInvoice extends InvoiceModuleAbstract
         parent::initCssJs();
 
         if ($this->isStateEdit() || $this->isStateAddNew()) {
-
             if (User::hasSpecialAccess(Application::SA_VINVOICE_ALLOW_ALL_COMPANYID)) {
                 CompanyChild::initJsCompanyChildFromVendor();
             }
-
         }
     }
 
@@ -118,7 +116,6 @@ class VInvoice extends InvoiceModuleAbstract
                             ")";
 
                         return $query;
-
                     },
                 ]
             ),
@@ -206,7 +203,9 @@ class VInvoice extends InvoiceModuleAbstract
                 'Status' => function () {
                     return Template::html('Status')
                         . '<div><table id="statuses-checkboxes-table"'
-                        . ((is_numeric(Template::value('Status')) || Template::value('Status') == '%') ? ' class="display-none"' : '')
+                        . ((is_numeric(Template::value('Status')) || Template::value(
+                                'Status'
+                            ) == '%') ? ' class="display-none"' : '')
                         . '><tr valign="top"><td>'
                         . '<div class="invopen">'
                         . Template::html('Status' . Finance::INVOICESTATUS_OPEN)
@@ -336,21 +335,17 @@ class VInvoice extends InvoiceModuleAbstract
 
 
         if (count($vendorInfo) === 0) {
-
             MassactionUtils::sendErrorDialog('Отмеченные счета не найдены в базе.');
             return;
-
         }
 
         if (count($vendorInfo) !== 1) {
-
             //Если кол-во комбинаций вендоров и аккаунтов больше 1, значит пользователь неверно выбрал входящие счета
             MassactionUtils::sendErrorDialog(
                 'Выбранные счета относятся к несольким Vendor или Vendor Account.<br>
                  Чтобы создать Vendor Payment, счета должны относится к одному Vendor и Vendor Account.'
             );
             return;
-
         }
 
         //Всё отлично, необходимо перенаправить пользователя в модуль оплаты
@@ -380,7 +375,6 @@ class VInvoice extends InvoiceModuleAbstract
 
         $usedFilenames = [];
         foreach ($vinvoices as $vinvoice) {
-
             // Превратим номера накладных в строку через запятые
             $mawbNumbers = explode("\n", $vinvoice['CacheLinesMAWBNumber']);
             $mawbNumbers = array_unique(array_filter(array_map('trim', $mawbNumbers)));
@@ -388,25 +382,21 @@ class VInvoice extends InvoiceModuleAbstract
 
             $folder = $this->getFolderRelative($vinvoice);
             foreach (FilesFolder::scandir($folder) as $file) {
-
                 $fileForZip = $mawbNumbersForFile . ' ' . $file;
 
                 // Добавим в начало файла номера накладных
                 $filePathinfo = pathinfo($fileForZip);
                 $index = 0;
                 while (isset($usedFilenames[$fileForZip])) {
-
                     // Если файл с таким именем уже был добавлен в zip архив, прибавим индекс
                     $index++;
                     $fileForZip = $filePathinfo['filename'] . ' (' . $index . ').' . $filePathinfo['extension'];
-
                 }
 
                 $usedFilenames[$fileForZip] = true;
                 $srcFilepath = FilesFolder::getAbsolute($folder) . '/' . $file;
 
                 copy($srcFilepath, "$tmpdir/$fileForZip");
-
             }
         }
 
@@ -430,29 +420,21 @@ class VInvoice extends InvoiceModuleAbstract
 
         $process = proc_open($cmd, $descriptorspec, $pipes, null, null, ['bypass_shell' => true]);
         if (is_resource($process)) {
-
             $errText = stream_get_contents($pipes[2]);
             fclose($pipes[2]);
             proc_close($process);
             if ($errText) {
-
                 print 'Error:<br>';
                 print mb_convert_encoding($errText, 'UTF-8', 'cp866');
-
             } else {
-
                 Response::header('Content-Type: application/zip');
                 Response::header('Content-Length: ' . filesize($resultFilepath));
                 Response::header('Content-Disposition: attachment;filename="' . $resultFilename . '"');
                 Response::header('Cache-Control: max-age=0');
                 readfile($resultFilepath);
-
             }
-
         } else {
-
             print 'Error proc_open ' . $cmd;
-
         }
 
         ApplicationAbstract::terminate();
@@ -492,7 +474,6 @@ class VInvoice extends InvoiceModuleAbstract
     private function renameAfterInsertUpdate($oldVInvoiceName, $newVInvoiceName)
     {
         if ((string)$oldVInvoiceName !== (string)$newVInvoiceName) {
-
             Db::query(
                 "UPDATE vpayment_vinvoice
                  SET VInvoiceName = '" . Db::esc($newVInvoiceName) . "'
@@ -665,9 +646,11 @@ class VInvoice extends InvoiceModuleAbstract
 
     private function emailToAccountingIfNeeded(VInvoiceObj $obj, Msg $msgBuff)
     {
-        $vendor = Db::getRow("SELECT NotifyAccountingByEmail, Name FROM vendoraccount WHERE ID = @i", $obj['VendorAccountID']);
+        $vendor = Db::getRow(
+            "SELECT NotifyAccountingByEmail, Name FROM vendoraccount WHERE ID = @i",
+            $obj['VendorAccountID']
+        );
         if ($vendor['NotifyAccountingByEmail']) {
-
             /*
              * Прошу внести в карточку Vendor Accounts поле, при выборе которого, при внесении входящего счета в файл, база будет генерировать письмо в бухгалтерию.
             В этом письме нам нужна следующая информация:
@@ -678,11 +661,14 @@ class VInvoice extends InvoiceModuleAbstract
             - дата счета.
              */
 
-            $mawbs = Db::getOne("SELECT GROUP_CONCAT(DISTINCT MAWBNumber) FROM vinvoiceline WHERE VInvoiceID = @i",
-                $obj->getId());
+            $mawbs = Db::getOne(
+                "SELECT GROUP_CONCAT(DISTINCT MAWBNumber) FROM vinvoiceline WHERE VInvoiceID = @i",
+                $obj->getId()
+            );
 
             $subject = 'Входщий счёт ' . $obj['Name'] . ' от ' . $vendor['Name'];
-            $body = 'Новый входящий счёт (' . $obj->getLinkView('Посмотреть в базе >>')->blank()->absolute()->getHtml() . ')'
+            $body = 'Новый входящий счёт (' . $obj->getLinkView('Посмотреть в базе >>')->blank()->absolute()->getHtml(
+                ) . ')'
                 . '<p><small>Our Company:</small> ' . $obj->getFieldText('CompanyID') . '</p>'
                 . '<p><small>Vendor Account:</small> ' . $obj->getFieldText('VendorAccountID') . '</p>'
                 . '<p><small>MAWB/BL:</small> ' . htmlspecialchars($mawbs) . '</p>'
@@ -693,5 +679,13 @@ class VInvoice extends InvoiceModuleAbstract
                 ->wrapBodyWithHtmlTemplate()
                 ->send($msgBuff);
         }
+    }
+
+    protected function getAccessSqlWhere(): string
+    {
+        if (User::getId() == 28) {
+            return "CreatedDateTime >= '2022-07-01'";
+        }
+        return '';
     }
 }

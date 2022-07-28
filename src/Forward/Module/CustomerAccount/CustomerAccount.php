@@ -74,6 +74,4 @@ class CustomerAccount extends ModuleAbstract
     {
         return BuAccess::getSqlWhereBu() . " AND " . CustomerAccess::getSqlWhereCustomerAccount();
     }
-
-
 }
