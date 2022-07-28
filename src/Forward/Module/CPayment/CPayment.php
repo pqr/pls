@@ -64,7 +64,7 @@ class CPayment extends PaymentModuleAbstract
 
     protected function getAccessSqlWhere(): string
     {
-        $sqlWhere = BuAccess::getSqlWhereBu() . " AND " . CustomerAccess::getSqlWhere();
+        $sqlWhere = BuAccess::getSqlWhereCustomerId() . " AND " . CustomerAccess::getSqlWhere();
         if (User::getId() == 28) {
             $sqlWhere .= " AND CreatedDateTime >= '2022-07-01'";
         }
