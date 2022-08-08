@@ -266,7 +266,7 @@ class CInvoice extends InvoiceModuleAbstract
         $tdata = parent::getTplData();
 
         // Подгрузим курс даты последней оплаты для режима View
-        if ($this->isStateView()) {
+        if ($this->isStateView() && FieldDate::notEmpty($this->_obj['CacheLastPaymentDate'])) {
             $query = "SELECT RateToInvoiceCurrency
                       FROM cpayment_cinvoice cpi, cpayment cp
                       WHERE cpi.CInvoiceID = @i_cinvoiceId
