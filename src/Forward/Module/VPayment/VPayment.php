@@ -2,6 +2,7 @@
 
 namespace Forward\Module\VPayment;
 
+use Forward\Classes\Constant;
 use Forward\Field\GeneralFields;
 use Forward\Module\VPayment\Subtables\VInvoices;
 use Forward\ModuleBase\Payments\PaymentModuleAbstract;
@@ -55,9 +56,6 @@ class VPayment extends PaymentModuleAbstract
 
     protected function getAccessSqlWhere(): string
     {
-        if (User::getId() == 28) {
-            return "CreatedDateTime >= '2022-07-01'";
-        }
-        return '';
+        return Constant::getCreatedDateSqlWhere();
     }
 }

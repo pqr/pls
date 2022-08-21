@@ -399,11 +399,9 @@ class CInvoice extends InvoiceModuleAbstract
 
     protected function getAccessSqlWhere(): string
     {
-        $sqlWhere = BuAccess::getSqlWhereCustomerId() . " AND " . CustomerAccess::getSqlWhere();
-        if (User::getId() == 28) {
-            $sqlWhere .= " AND CreatedDateTime >= '2022-07-01'";
-        }
-        return $sqlWhere;
+        return BuAccess::getSqlWhereCustomerId()
+            . " AND " . CustomerAccess::getSqlWhere()
+            . " AND " . Constant::getCreatedDateSqlWhere();
     }
 
     protected function hasWriteAccessRightToObj(ObjAbstract $obj)

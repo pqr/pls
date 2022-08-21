@@ -4,6 +4,7 @@ namespace Forward\Module\VInvoice;
 
 use Forward\Application;
 use Forward\Classes\CompanyChild;
+use Forward\Classes\Constant;
 use Forward\Classes\Finance;
 use Forward\Classes\InvoicesCommon;
 use Forward\Field\GeneralFields;
@@ -683,9 +684,6 @@ class VInvoice extends InvoiceModuleAbstract
 
     protected function getAccessSqlWhere(): string
     {
-        if (User::getId() == 28) {
-            return "CreatedDateTime >= '2022-07-01'";
-        }
-        return '';
+        return Constant::getCreatedDateSqlWhere();
     }
 }

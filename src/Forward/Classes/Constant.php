@@ -5,6 +5,7 @@ namespace Forward\Classes;
 use Forward\Application;
 use Light\A;
 use Light\Db;
+use Light\User;
 
 class Constant
 {
@@ -37,6 +38,14 @@ class Constant
     const ACTONDATETYPE_ATA = 1;
     const ACTONDATETYPE_CPAYMENT = 2;
 
+    const USER_PETR = 28;
+    const USER_OLGA = 29;
+
+    const USER_START_DATE = [
+        self::USER_PETR => '2022-07-01',
+        self::USER_OLGA => '2022-08-01',
+    ];
+
     public static $onecCompany = [
         Constant::OC_PLS_OOO => 'pls',
         Constant::OC_PGL_OOO => 'pgl',
@@ -66,6 +75,16 @@ class Constant
         '6 Акт подписанный', // 4 Акт подписанный
         '7 Акт от нерезидента', // 5 Акт от нерезидента
     ];
+
+    public static function getCreatedDateSqlWhere(): string
+    {
+        $startDate = self::USER_START_DATE[User::getId()] ?? null;
+        if (!$startDate) {
+            return 'TRUE';
+        }
+
+        return "CreatedDateTime >= '$startDate'";
+    }
 
     public static function getStarndartFolderCAct()
     {

@@ -3,6 +3,7 @@
 namespace Forward\Module\CPayment;
 
 use Forward\Classes\BuAccess;
+use Forward\Classes\Constant;
 use Forward\Classes\CustomerAccess;
 use Forward\Field\GeneralFields;
 use Forward\Module\CPayment\Subtables\CInvoices;
@@ -64,10 +65,8 @@ class CPayment extends PaymentModuleAbstract
 
     protected function getAccessSqlWhere(): string
     {
-        $sqlWhere = BuAccess::getSqlWhereCustomerId() . " AND " . CustomerAccess::getSqlWhere();
-        if (User::getId() == 28) {
-            $sqlWhere .= " AND CreatedDateTime >= '2022-07-01'";
-        }
-        return $sqlWhere;
+        return BuAccess::getSqlWhereCustomerId()
+            . " AND " . CustomerAccess::getSqlWhere()
+            . " AND " . Constant::getCreatedDateSqlWhere();
     }
 }
