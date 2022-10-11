@@ -1359,6 +1359,8 @@ class Shipment extends ModuleAbstract
             $exceltemplate = 'ShipmentRequestPLS17.xlsx';
         } elseif ($shipmentObj['CompanyID'] == Constant::OC_PGL18_OOO) {
             $exceltemplate = 'ShipmentRequestPGL18.xlsx';
+        } elseif ($shipmentObj['CompanyID'] == Constant::OC_PRO_AIR_OOO) {
+            $exceltemplate = 'ShipmentRequest19.xlsx';
         } else {
             Session::flashError('Для компании ' . $shipmentObj->getFieldHtml('CompanyID') . ' нет формы заявки');
             $this->redirectToView();
