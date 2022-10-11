@@ -98,7 +98,7 @@ var Forward = {
     },
 
     isOnshoreCompany: function (companyId) {
-        return [4, 5, 11, 12, 14, 17, 18].includes(parseInt(companyId));
+        return [4, 5, 11, 12, 14, 17, 18, 19].includes(parseInt(companyId));
     }
 };
 
