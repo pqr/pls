@@ -28,6 +28,7 @@ class Constant
     const OC_MAXVEL = 16;
     const OC_PLS17_OOO = 17;
     const OC_PGL18_OOO = 18;
+    const OC_PRO_AIR_OOO = 19;
 
     const TRAFFIC_OCEAN = 7;
     const TRAFFIC_FINANCE = 11;
@@ -54,6 +55,7 @@ class Constant
         Constant::OC_PF14_OOO => 'pf14',
         Constant::OC_PLS17_OOO => 'pls17',
         Constant::OC_PGL18_OOO => 'pgl18',
+        Constant::OC_PRO_AIR_OOO => 'pgl19',
     ];
 
     const FOLDER_REQUEST = 0;
