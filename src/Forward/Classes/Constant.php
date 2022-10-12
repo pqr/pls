@@ -55,7 +55,7 @@ class Constant
         Constant::OC_PF14_OOO => 'pf14',
         Constant::OC_PLS17_OOO => 'pls17',
         Constant::OC_PGL18_OOO => 'pgl18',
-        Constant::OC_PRO_AIR_OOO => 'pgl19',
+        Constant::OC_PRO_AIR_OOO => 'uma',
     ];
 
     const FOLDER_REQUEST = 0;
