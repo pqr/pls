@@ -45,8 +45,6 @@ use Light\Template;
 use Light\Translate;
 use Light\User;
 use Light\XlsWriter;
-use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
-use PhpOffice\PhpSpreadsheet\Worksheet\BaseDrawing;
 
 class Shipment extends ModuleAbstract
 {
@@ -59,6 +57,10 @@ class Shipment extends ModuleAbstract
     protected $textSaveBtn = 'Shipment';
     public $tableLayoutDefault =
         'Name|FileClosed|Month|MAWBNumber|DepartureIATA|ArrivalIATA|CustomerID|ETD|ETA|ATA';
+
+    public $tableLayouts = [
+        'FBL' => 'CompanyID|MAWBNumber|Pieces|ChargeableWeight|Volume|NatureOfGoods|DepartureIATA|ArrivalIATA|Comments'
+    ];
 
     public function __construct()
     {
@@ -96,7 +98,9 @@ class Shipment extends ModuleAbstract
                 } else {
                     $statusIco = Finance::getVInvoiceStatusIcon($status);
                 }
-                $outHtml = $statusIco . ' ' . htmlspecialchars($invoice) . ' <small class="gray">(' . htmlspecialchars($contragent) . ')</small>';
+                $outHtml = $statusIco . ' ' . htmlspecialchars($invoice) . ' <small class="gray">(' . htmlspecialchars(
+                        $contragent
+                    ) . ')</small>';
             }
 
             return $outHtml;
@@ -259,7 +263,9 @@ class Shipment extends ModuleAbstract
         }
 
         //$link = 'http://connect.track-trace.com/for/pls/aircargo/' . $this->_obj['MAWBNumber'];
-        $link = 'http://quicktracing.com/api/air.php?token=tVRtbXgXHxE71UJTTkbPOE0qZrj6sMYF&awb=' . rawurlencode($this->_obj['MAWBNumber']);
+        $link = 'http://quicktracing.com/api/air.php?token=tVRtbXgXHxE71UJTTkbPOE0qZrj6sMYF&awb=' . rawurlencode(
+                $this->_obj['MAWBNumber']
+            );
         $subject = str_replace('{TrackTraceLink}', $link, $subject);
         $body = str_replace('{TrackTraceLink}', $link, $body);
 
@@ -289,13 +295,10 @@ class Shipment extends ModuleAbstract
         );
 
         if (Constant::isOneCCompany($this->_obj['CompanyID'])) {
-
             $this->addSubmenuLinkViewFunc(Ico::download() . ' Заявка', 'ShipmentRequestExcel')->post();
             $this->addSubmenuLinkViewFunc(Ico::i('file-archive-o') . ' Комплект документов', 'DownloadDocs');
             $this->addSubmenuLinkViewFunc(Ico::i('file-archive-o') . ' Документы на печать', 'DownloadDocsForPrint');
-
         }
-
     }
 
 
@@ -528,8 +531,11 @@ class Shipment extends ModuleAbstract
 
             if ($trafficType === 'avia') {
                 if (isset($_POST['MAWBNumber1'], $_POST['MAWBNumber2'])) {
-                    $dataFromRequest['MAWBNumber'] = str_replace(' ', '',
-                        trim($_POST['MAWBNumber1']) . '-' . trim($_POST['MAWBNumber2']));
+                    $dataFromRequest['MAWBNumber'] = str_replace(
+                        ' ',
+                        '',
+                        trim($_POST['MAWBNumber1']) . '-' . trim($_POST['MAWBNumber2'])
+                    );
                     if ($dataFromRequest['MAWBNumber'] === '-') {
                         $dataFromRequest['MAWBNumber'] = '';
                     }
@@ -589,7 +595,6 @@ class Shipment extends ModuleAbstract
         }
 
         if ($dataFromRequest['FileClosed'] == ShipmentObj::SHIPMENT_CLOSED) {
-
             //Если пользователь пытается закрыть перевозку - добавим mandatory поля!
             //Они будут проверены при запуске стандартной проверки parent::validateMandatory($dataFromRequest); (ниже)
             $mandatoryFieldKeys = [
@@ -663,14 +668,15 @@ class Shipment extends ModuleAbstract
             && $dataFromRequest['CustomerAccountID']
             && Constant::isOneCCompany($dataFromRequest['CompanyID'])
         ) {
-
             $shipmentRequestDate = $this->getShipmentRequestDate($dataFromRequest['ETD']);
             $shipmentRequestYearShort = substr($shipmentRequestDate, 2, 2);
-            $maxShipmentRequestNo = $this->getMaxShipmentRequestNo($dataFromRequest['CompanyID'],
-                $dataFromRequest['CustomerAccountID'], $shipmentRequestDate);
+            $maxShipmentRequestNo = $this->getMaxShipmentRequestNo(
+                $dataFromRequest['CompanyID'],
+                $dataFromRequest['CustomerAccountID'],
+                $shipmentRequestDate
+            );
 
             if ($maxShipmentRequestNo && $dataFromRequest['ShipmentRequestNo'] - $maxShipmentRequestNo > 1) {
-
                 $msg = 'Номер заявки <strong class="bad">'
                     . $dataFromRequest['ShipmentRequestNo'] . '-' . $shipmentRequestYearShort
                     . '</strong> выглядит слишком большим,'
@@ -680,9 +686,7 @@ class Shipment extends ModuleAbstract
                     . ' проверьте правильность заполнения';
 
                 $this->riseSaveWarning($msg);
-
             }
-
         }
     }
 
@@ -693,7 +697,6 @@ class Shipment extends ModuleAbstract
         //Добавим переменную TrafficType, чтобы скрыть или отобразить блок Ocean
         $tdata['TrafficType'] = Db::getOne("SELECT Type FROM traffic WHERE ID = " . (int)$this->_obj['TrafficID']);
         if (!$this->isStateView()) {
-
             //Разделим поле MAWB на два поля для ввода
             $mawb1 = '';
             $mawb2 = '';
@@ -725,7 +728,6 @@ class Shipment extends ModuleAbstract
                     'editMaxLength' => 8,
                 ]
             )->getHtmlInput($mawb2);
-
         }
 
         //Для сообщения "Attention: prepaid customer"
@@ -927,10 +929,8 @@ class Shipment extends ModuleAbstract
         $fromMultipleUpdate
     ) {
         if ($this->_justInserted) {
-
             // Если шипмент был создан из котировки (заполнено поле QuotationID), то нужно заполнить и Cost-sheet!
             if ($obj['QuotationID'] && $obj['QuotationID'] < 700000) {
-
                 $newCsLines = $this->getCsLinesFromQuotation(
                     $obj['QuotationID'],
                     $obj['GrossWeight'],
@@ -940,7 +940,6 @@ class Shipment extends ModuleAbstract
                 );
 
                 if ($newCsLines) {
-
                     $shipmentId = $obj->getId();
                     $quotationId = $obj['QuotationID'];
 
@@ -966,16 +965,13 @@ class Shipment extends ModuleAbstract
                     $cs->updateShipmentCache();
                     //Сохраним первый (только что созданный Cost-sheet) в history
                     $cs->saveToHistory();
-
                 }
             }
 
             //При создании новой перевозки отправляем Email уведомление для Sales и для Customer Service
             /** @var ShipmentObj $obj */
             $this->sendShipmentEmail($obj, '', $this->flash);
-
         } else {
-
             // Обновление уже существующей перевозки
             if (isset($oldData['ResponsibleCS'], $obj['ResponsibleCS']) && $oldData['ResponsibleCS'] != $obj['ResponsibleCS']) {
                 $additionalText = 'New Customer Service <strong>'
@@ -1015,10 +1011,13 @@ class Shipment extends ModuleAbstract
 
         if ($newAta !== '0000-00-00' && $newAta != $oldAta) {
             // Проверим настройки Customer Account
-            $actOnDateType = Db::getOne("SELECT ActOnDateType FROM customeraccount WHERE ID = @i",
-                $obj['CustomerAccountID']);
+            $actOnDateType = Db::getOne(
+                "SELECT ActOnDateType FROM customeraccount WHERE ID = @i",
+                $obj['CustomerAccountID']
+            );
             if ($actOnDateType == Constant::ACTONDATETYPE_ATA) {
-                $body = 'Изменилась дата ATA ' . FieldDate::beautify($newAta) . ' по накладной ' . $obj->getLinkView() . ' (' . $obj->getFieldText('CustomerAccountID') . ')';
+                $body = 'Изменилась дата ATA ' . FieldDate::beautify($newAta) . ' по накладной ' . $obj->getLinkView(
+                    ) . ' (' . $obj->getFieldText('CustomerAccountID') . ')';
                 $subject = strip_tags($body);
                 Mailer::create('accounting@proactive-ls.com', $subject, $body)
                     ->wrapBodyWithHtmlTemplate()
@@ -1060,7 +1059,8 @@ class Shipment extends ModuleAbstract
             . '->' . $obj->getFieldText('ArrivalIATA');
 
         $body = $newOrUpdate
-            . ' Shipment <a href="' . Config::$localUrl . '/?a=Shipment&id=' . $obj->getId() . '"><strong>' . $obj['Name'] . '</strong></a>'
+            . ' Shipment <a href="' . Config::$localUrl . '/?a=Shipment&id=' . $obj->getId(
+            ) . '"><strong>' . $obj['Name'] . '</strong></a>'
             . ' for ' . $obj->getFieldText('CustomerID')
             . ' ' . $obj->getFieldText('DepartureIATA')
             . '➔' . $obj->getFieldText('ArrivalIATA')
@@ -1108,7 +1108,6 @@ class Shipment extends ModuleAbstract
         $outCsLines = ['income' => [], 'expenses' => []];
 
         foreach (['income', 'expenses'] as $incomeOrExpenses) {
-
             $quotationLines = Db::getAll(
                 "SELECT Name, Price, Per, MinAmount
                  FROM quotation{$incomeOrExpenses}
@@ -1118,7 +1117,6 @@ class Shipment extends ModuleAbstract
             );
 
             foreach ($quotationLines as $quotationLine) {
-
                 //Подготовим массив данных для вставки в строку Cost-sheet'а
                 //Для начала нужно расчитать Amount, который может зависеть от веса или числа мест
                 switch ($quotationLine['Per']) {
@@ -1157,7 +1155,6 @@ class Shipment extends ModuleAbstract
                     'Amount' => $quotationCurrencyIso . ' ' . $amount,
                 ];
             }
-
         }
 
         return $outCsLines;
@@ -1192,7 +1189,6 @@ class Shipment extends ModuleAbstract
         $outCsLines = ['income' => [], 'expenses' => []];
 
         foreach (['income' => 'Selling', 'expenses' => 'Buying'] as $incomeOrExpenses => $sellingOrBuying) {
-
             $amountFieldKey = $sellingOrBuying . $amountFieldKeySuffix;
             $price = $rate[$amountFieldKey];
             $quantity = $chargeableWeight;
@@ -1310,7 +1306,6 @@ class Shipment extends ModuleAbstract
 
         //Если же инвойсов нет, то отправим стандартный подтверждающий удаление диалог
         parent::sendDeleteConfirmDialog();
-
     }
 
     private function getShipmentRequestDate(string $etd)
@@ -1371,16 +1366,18 @@ class Shipment extends ModuleAbstract
         $shipmentRequestDate = $this->getShipmentRequestDate($shipmentObj['ETD']);
 
         if (!$shipmentObj['ShipmentRequestNo'] && $shipmentObj['CustomerAccountID']) {
-
             // В базе нет сохранённого номера заявки - сгенерируем автоматически
             // Выбираем максимальный номер заявки в рамках этого года
             Db::begin();
-            $lastNo = $this->getMaxShipmentRequestNo($shipmentObj['CompanyID'], $shipmentObj['CustomerAccountID'],
-                $shipmentRequestDate, true);
+            $lastNo = $this->getMaxShipmentRequestNo(
+                $shipmentObj['CompanyID'],
+                $shipmentObj['CustomerAccountID'],
+                $shipmentRequestDate,
+                true
+            );
             $newNo = $lastNo ? $lastNo + 1 : 1;
             $shipmentObj->updateDb(['ShipmentRequestNo' => $newNo], 'Автоматическое присвоение следующего номера');
             Db::commit();
-
         }
 
         // Сформируем путь до файла назначения и проверим, что этого файла ещё нет в папке
@@ -1392,26 +1389,37 @@ class Shipment extends ModuleAbstract
         $excelData['ShipmentRequestYearShort'] = $shipmentRequestYearShort;
 
         // Загрузим номер контракта из карточки Customer Account
-        $contractNo = Db::getOne("SELECT ContractNo FROM customeraccount WHERE ID = @i",
-            $shipmentObj['CustomerAccountID']);
+        $contractNo = Db::getOne(
+            "SELECT ContractNo FROM customeraccount WHERE ID = @i",
+            $shipmentObj['CustomerAccountID']
+        );
         // Заменим в номере контракта английское слово "from" на русское "от"
         $excelData['CustomerAccountContractNo'] = str_replace('from', 'от', $contractNo);
 
         // Добавим адрес получателя
         if ($shipmentObj['ConsigneeID'] > 0) {
             // Если был задан конкретный Consignee в выпадающем списке на форме перевозки, то подтянем информацию из него
-            $excelData += self::getAddressForShipmentRequest('customerconsignee', $shipmentObj['ConsigneeID'],
-                'Consignee');
+            $excelData += self::getAddressForShipmentRequest(
+                'customerconsignee',
+                $shipmentObj['ConsigneeID'],
+                'Consignee'
+            );
         } elseif ($shipmentObj['ConsigneeID'] == -1) {
             // Если же был выбран вариант "совпадает с Customer Account", тогда загрузим информацию из таблицы Customer Account
             // (но префикс для полей с данными по прежнему будет 'Consignee'
-            $excelData += self::getAddressForShipmentRequest('customeraccount', $shipmentObj['CustomerAccountID'],
-                'Consignee');
+            $excelData += self::getAddressForShipmentRequest(
+                'customeraccount',
+                $shipmentObj['CustomerAccountID'],
+                'Consignee'
+            );
         }
 
         // Добавим адрес плательщика (Customer Account)
-        $excelData += self::getAddressForShipmentRequest('customeraccount', $shipmentObj['CustomerAccountID'],
-            'CustomerAccount');
+        $excelData += self::getAddressForShipmentRequest(
+            'customeraccount',
+            $shipmentObj['CustomerAccountID'],
+            'CustomerAccount'
+        );
 
         // Добавим адрес первого отправителя
         $firstShipper = Db::getRow(
@@ -1423,8 +1431,11 @@ class Shipment extends ModuleAbstract
             if ($firstShipper['Name']) {
                 $shipperId = Db::getOne("SELECT ID FROM list_shipper WHERE Name = @s", $firstShipper['Name']);
                 if ($shipperId) {
-                    $excelData += self::getAddressForShipmentRequest('list_shipper', $shipperId,
-                        'Shipper');
+                    $excelData += self::getAddressForShipmentRequest(
+                        'list_shipper',
+                        $shipperId,
+                        'Shipper'
+                    );
                 }
             }
         }
@@ -1435,14 +1446,22 @@ class Shipment extends ModuleAbstract
              FROM cinvoice_file_amount cfa, cinvoice ci
              WHERE cfa.CInvoiceID = ci.ID
                  AND cfa.FileNumber = @s
-             LIMIT 1", $shipmentObj['Name']
+             LIMIT 1",
+            $shipmentObj['Name']
         );
 
         if ($firstCInvoice) {
-            $excelData['AmountAndCurrency'] = strip_tags(FieldMoney::beautify($firstCInvoice['Amount'], false,
-                $firstCInvoice['CurrencyISO']));
-            $excelData['AmountText'] = Translate::amountWordsRu($firstCInvoice['Amount'],
-                $firstCInvoice['CurrencyISO']);
+            $excelData['AmountAndCurrency'] = strip_tags(
+                FieldMoney::beautify(
+                    $firstCInvoice['Amount'],
+                    false,
+                    $firstCInvoice['CurrencyISO']
+                )
+            );
+            $excelData['AmountText'] = Translate::amountWordsRu(
+                $firstCInvoice['Amount'],
+                $firstCInvoice['CurrencyISO']
+            );
 
             $excelData['RateText'] = '';
 
@@ -1484,15 +1503,16 @@ class Shipment extends ModuleAbstract
 
         // Затем отправим пользователю
         try {
-
             // Основной вариант с печатью и подписью сохраняем в формате PDF
             $xls->save($filepathAbsWithStamp);
             //Session::flashSuccess('Файл <strong>' . htmlspecialchars($filename) . '</strong> сохранён в папку перевозки');
 
         } catch (\Exception $e) {
-
-            Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($filenameWithoutExt . ".pdf") . '</strong> в папку перевозки, возможно, он открыт в Excel?');
-
+            Session::flashError(
+                'Не удалось сохранить файл <strong>' . htmlspecialchars(
+                    $filenameWithoutExt . ".pdf"
+                ) . '</strong> в папку перевозки, возможно, он открыт в Excel?'
+            );
         }
 
         // Отдельную копию файла без печати и подписи нужно положить в папку "0 Заявка"
@@ -1506,12 +1526,13 @@ class Shipment extends ModuleAbstract
         $filepathAbsXlsx = "$folderAbs/$requestFolder/$filenameWithoutExt.xlsx";
 
         try {
-
             $xls->save($filepathAbsXlsx);
-
         } catch (\Exception $e) {
-
-            Session::flashError('Не удалось сохранить файл <strong>' . htmlspecialchars($filenameWithoutExt . ".xlsx") . '</strong> в папку "' . htmlspecialchars($requestFolder) . '", возможно, он открыт в Excel?');
+            Session::flashError(
+                'Не удалось сохранить файл <strong>' . htmlspecialchars(
+                    $filenameWithoutExt . ".xlsx"
+                ) . '</strong> в папку "' . htmlspecialchars($requestFolder) . '", возможно, он открыт в Excel?'
+            );
         }
 
         if (file_exists($filepathAbsWithStamp)) {
@@ -1574,8 +1595,11 @@ class Shipment extends ModuleAbstract
     {
         $sd = ShipmentDownloadDocs::create($this->flash);
         $ids = [$this->_obj->getId()];
-        $resultFilepath = $sd->generateZip($ids, false,
-            [Constant::FOLDER_REQUEST, Constant::FOLDER_CINVOICE, Constant::FOLDER_CACT]);
+        $resultFilepath = $sd->generateZip(
+            $ids,
+            false,
+            [Constant::FOLDER_REQUEST, Constant::FOLDER_CINVOICE, Constant::FOLDER_CACT]
+        );
         if (!$resultFilepath) {
             $this->redirectToView();
             return;
@@ -1625,7 +1649,6 @@ class Shipment extends ModuleAbstract
         //Если CostSheet роутер вернул некий контент - значит это был режим View - отображение всей страницы
         //Обернём вывод этого HTML контента в стандартный шаблон для ModuleAbstract
         if ($content) {
-
             $shipmentId = $this->_obj->getId();
 
             $this->setPageHeadForObj('Cost-sheet');
@@ -1650,7 +1673,6 @@ class Shipment extends ModuleAbstract
         /** @var ShipmentObj $shipmentObj */
         $shipmentObj = $this->_obj;
         if (CostSheetRouter::hasAccessWriteCostSheet($shipmentObj)) {
-
             $this->addSubmenuLink(
                 Link::create(self::class, Ico::edit() . ' Edit Cost-sheet')
                     ->cssClass('cs-edit-btn')
@@ -1675,7 +1697,6 @@ class Shipment extends ModuleAbstract
                 Link::create(self::class, Ico::search() . ' Quotation / Standart Rate')
                     ->cssClass('cs-fillquotation-btn display-none')
             );
-
         }
 
         return $this->getSubmenuHtml();
@@ -1711,7 +1732,6 @@ class Shipment extends ModuleAbstract
         }
 
         Response::json($newCsLines);
-
     }
 
     protected function getAccessSqlWhere(): string
