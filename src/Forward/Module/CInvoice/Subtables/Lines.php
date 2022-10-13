@@ -117,7 +117,7 @@ class Lines extends Subtable
                 $linesData = CInvoiceCommon::getLinesDataFromCostSheet($shipmentId, $csLineIds);
             } else {
                 // Для ООО компаний сворачиваем строки в одну строку Транспортно-экспедиторское обслуживание по маршруту: ...
-                $linesData = CInvoiceCommon::getLinesDataFromCostSheetPlsPgl($shipmentId, $csLineIds);
+                $linesData = CInvoiceCommon::getLinesDataFromCostSheetPlsPgl($shipmentId, $csLineIds, (int)$this->_masterObj['CompanyID']);
             }
             $this->setSubtableDataAdditional($linesData);
 

@@ -1,8 +1,9 @@
 <?php
+
 namespace Forward\Classes;
 
-use Forward\Module\Shipment\ShipmentObj;
 use Light\Db;
+use Light\Field\CommonFields;
 
 class CInvoiceCommon
 {
@@ -103,7 +104,7 @@ class CInvoiceCommon
     /**
      * Для ООО компаний сворачиваем строки в одну строку Транспортно-экспедиторское обслуживание по маршруту: ...
      */
-    public static function getLinesDataFromCostSheetPlsPgl($shipmentId, array $csLineIds)
+    public static function getLinesDataFromCostSheetPlsPgl($shipmentId, array $csLineIds, int $companyId)
     {
         $lineData = null;
         if ($csLineIds) {
@@ -134,8 +135,10 @@ class CInvoiceCommon
         $lineData['Name'] = "Транспортно-экспедиторское обслуживание по маршруту: ";
 
         // Загрузим информацию по всем локациям
-        $shipment = Db::getRow("SELECT TrafficID, IncotermsLocation, POLID, PODID, DepartureLocationName, ArrivalLocationName FROM shipment WHERE ID = @i",
-            $shipmentId);
+        $shipment = Db::getRow(
+            "SELECT TrafficID, IncotermsLocation, POLID, PODID, DepartureLocationName, ArrivalLocationName FROM shipment WHERE ID = @i",
+            $shipmentId
+        );
         if ($shipment) {
             $locations = [];
 
@@ -149,14 +152,21 @@ class CInvoiceCommon
             $lineData['Name'] .= implode(' - ', $locations);
         }
 
+        if ($companyId === Constant::OC_PGL18_OOO) {
+            // Для ПГЛ по умолчанию ставим НДС 0%
+            $lineData['VATPercent'] = CommonFields::VAT_0;
+        }
+
         // Возвращаем обернув в массив, т.к. нам нужно вернуть массив строк счёта (в данном случае одну строку счёта)
         return [$lineData];
     }
 
     private static function getIncomtermsLocationRu(array $shipment)
     {
-        $incotermsNameRu = Db::getOne("SELECT NameRu FROM location WHERE Name = @s AND NameRu != ''",
-            $shipment['IncotermsLocation']);
+        $incotermsNameRu = Db::getOne(
+            "SELECT NameRu FROM location WHERE Name = @s AND NameRu != ''",
+            $shipment['IncotermsLocation']
+        );
 
         if (!$incotermsNameRu) {
             return $shipment['IncotermsLocation'];
@@ -165,22 +175,21 @@ class CInvoiceCommon
         return $incotermsNameRu . ' (' . $shipment['IncotermsLocation'] . ')';
     }
 
-    private static function getDepartureNameRu(array $shipment) {
-
+    private static function getDepartureNameRu(array $shipment)
+    {
         if ($shipment['TrafficID'] == Constant::TRAFFIC_OCEAN) {
-
             $departure = Db::getRow("SELECT Name, NameRu FROM port WHERE ID = @i AND NameRu != ''", $shipment['POLID']);
             if (!$departure) {
                 return '';
             }
             $departureName = $departure['Name'];
             $departureNameRu = $departure['NameRu'];
-
         } else {
-
             $departureName = $shipment['DepartureLocationName'];
-            $departureNameRu = Db::getOne("SELECT NameRu FROM location WHERE Name = @s AND NameRu != ''", $shipment['DepartureLocationName']);
-
+            $departureNameRu = Db::getOne(
+                "SELECT NameRu FROM location WHERE Name = @s AND NameRu != ''",
+                $shipment['DepartureLocationName']
+            );
         }
 
         if (!$departureNameRu) {
@@ -188,25 +197,23 @@ class CInvoiceCommon
         }
 
         return $departureNameRu . ' (' . $departureName . ')';
-
     }
 
-    private static function getArrivalNameRu(array $shipment) {
-
+    private static function getArrivalNameRu(array $shipment)
+    {
         if ($shipment['TrafficID'] == Constant::TRAFFIC_OCEAN) {
-
             $arrival = Db::getRow("SELECT Name, NameRu FROM port WHERE ID = @i AND NameRu != ''", $shipment['PODID']);
             if (!$arrival) {
                 return '';
             }
             $arrivalName = $arrival['Name'];
             $arrivalNameRu = $arrival['NameRu'];
-
         } else {
-
             $arrivalName = $shipment['ArrivalLocationName'];
-            $arrivalNameRu = Db::getOne("SELECT NameRu FROM location WHERE Name = @s AND NameRu != ''", $shipment['ArrivalLocationName']);
-
+            $arrivalNameRu = Db::getOne(
+                "SELECT NameRu FROM location WHERE Name = @s AND NameRu != ''",
+                $shipment['ArrivalLocationName']
+            );
         }
 
         if (!$arrivalNameRu) {
@@ -214,6 +221,5 @@ class CInvoiceCommon
         }
 
         return $arrivalNameRu . ' (' . $arrivalName . ')';
-
     }
 } 
