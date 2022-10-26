@@ -45,6 +45,8 @@ use Light\Template;
 use Light\Translate;
 use Light\User;
 use Light\XlsWriter;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Worksheet\BaseDrawing;
 
 class Shipment extends ModuleAbstract
 {
