@@ -1,6 +1,6 @@
 <?php
 ini_set('display_errors', 1);
-error_reporting(E_ALL);
+error_reporting(E_ALL & ~E_DEPRECATED);
 
 if (isset($_SERVER['HTTP_USER_AGENT'])) {
     // Убираем из HTTP_USER_AGENT признак OS X, чтобы у Мишы вместо нативных папок smb:// заработали папки через elFinder

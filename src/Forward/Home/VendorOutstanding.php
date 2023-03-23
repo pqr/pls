@@ -111,6 +111,17 @@ class VendorOutstanding extends HomeBlockAbstract
                 $vendorId = $row['VendorID'];
                 $currencyIso = $row['CurrencyISO'];
 
+                // Для новых экзотических валют, помимо RUB, USD, EUR, динамически проверим и добавим записи в массивы
+                if (!isset($totalOutstanding[$currencyIso])) {
+                    $totalOutstanding[$currencyIso] = 0;
+                }
+                if (!isset($totalOverdueCl[$currencyIso])) {
+                    $totalOverdueCl[$currencyIso] = 0;
+                }
+                if (!isset($totalOverdueTime[$currencyIso])) {
+                    $totalOverdueTime[$currencyIso] = 0;
+                }
+
                 $totalOutstanding[$currencyIso] += $row['Amount'];
 
                 $outstanding = FieldMoney::beautify($row['Amount'], true, $currencyIso);
