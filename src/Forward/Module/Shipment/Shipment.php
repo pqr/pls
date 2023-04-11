@@ -19,6 +19,7 @@ use Forward\Module\Shipment\CostSheet\CostSheetRouter;
 use Forward\Module\Shipment\CostSheet\Subtables\Base\IncomeExpensesObjAbstract;
 use Forward\Module\Shipment\CostSheet\Subtables\ExpensesObj;
 use Forward\Module\Shipment\CostSheet\Subtables\IncomeObj;
+use Forward\Module\Shipment\PrintForms\MAWBExcel;
 use Forward\Module\Shipment\Subtables\Shippers;
 use Light\ApplicationAbstract;
 use Light\Config;
@@ -71,6 +72,12 @@ class Shipment extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
         $this->allowDelete = User::hasSpecialAccess(Application::SA_SHIPMENT_DELETE);
     }
+
+    protected function initPrintForms()
+    {
+        $this->addPrintForm(new MAWBExcel());
+    }
+
 
     protected function initSubtables()
     {
