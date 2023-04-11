@@ -677,7 +677,7 @@ class Shipment extends ModuleAbstract
             && $dataFromRequest['CustomerAccountID']
             && Constant::isOneCCompany($dataFromRequest['CompanyID'])
         ) {
-            $shipmentRequestDate = $this->getShipmentRequestDate($dataFromRequest['ETD']);
+            $shipmentRequestDate = $this->getShipmentRequestDate($dataFromRequest['ReadyForCarriageDate']);
             $shipmentRequestYearShort = substr($shipmentRequestDate, 2, 2);
             $maxShipmentRequestNo = $this->getMaxShipmentRequestNo(
                 $dataFromRequest['CompanyID'],
@@ -1025,8 +1025,7 @@ class Shipment extends ModuleAbstract
                 $obj['CustomerAccountID']
             );
             if ($actOnDateType == Constant::ACTONDATETYPE_ATA) {
-                $body = 'Изменилась дата ATA ' . FieldDate::beautify($newAta) . ' по накладной ' . $obj->getLinkView(
-                    ) . ' (' . $obj->getFieldText('CustomerAccountID') . ')';
+                $body = 'Изменилась дата ATA ' . FieldDate::beautify($newAta) . ' по накладной ' . $obj->getLinkView() . ' (' . $obj->getFieldText('CustomerAccountID') . ')';
                 $subject = strip_tags($body);
                 Mailer::create('accounting@proactive-ls.com', $subject, $body)
                     ->wrapBodyWithHtmlTemplate()
@@ -1068,8 +1067,7 @@ class Shipment extends ModuleAbstract
             . '->' . $obj->getFieldText('ArrivalIATA');
 
         $body = $newOrUpdate
-            . ' Shipment <a href="' . Config::$localUrl . '/?a=Shipment&id=' . $obj->getId(
-            ) . '"><strong>' . $obj['Name'] . '</strong></a>'
+            . ' Shipment <a href="' . Config::$localUrl . '/?a=Shipment&id=' . $obj->getId() . '"><strong>' . $obj['Name'] . '</strong></a>'
             . ' for ' . $obj->getFieldText('CustomerID')
             . ' ' . $obj->getFieldText('DepartureIATA')
             . '➔' . $obj->getFieldText('ArrivalIATA')
@@ -1317,9 +1315,9 @@ class Shipment extends ModuleAbstract
         parent::sendDeleteConfirmDialog();
     }
 
-    private function getShipmentRequestDate(string $etd)
+    private function getShipmentRequestDate(string $readyForCarriageDate)
     {
-        return $etd !== '0000-00-00' ? $etd : date('Y-m-d');
+        return FieldDate::notEmpty($readyForCarriageDate) ? $readyForCarriageDate : date('Y-m-d');
     }
 
     private function getMaxShipmentRequestNo(
