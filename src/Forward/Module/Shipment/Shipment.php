@@ -1394,6 +1394,7 @@ class Shipment extends ModuleAbstract
 
         $excelData['ShipmentRequestDate'] = self::getDateInText($shipmentRequestDate);
         $excelData['ShipmentRequestYearShort'] = $shipmentRequestYearShort;
+        $excelData['ETA'] = FieldDate::beautify($shipmentObj['ETA']);
 
         // Загрузим номер контракта из карточки Customer Account
         $contractNo = Db::getOne(
