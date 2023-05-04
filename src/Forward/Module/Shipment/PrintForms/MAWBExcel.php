@@ -39,7 +39,7 @@ final class MAWBExcel extends PrintForm
 
     private function getConsigneeName(ObjAbstract $obj): string
     {
-        if ($obj->notEmpty('ConsigneeID')) {
+        if ($obj->notEmpty('ConsigneeID') && $obj['ConsigneeID'] !== -1) {
             return $obj->getFieldExcel('ConsigneeID');
         }
 
