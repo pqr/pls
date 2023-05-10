@@ -76,7 +76,7 @@ class GeneralFields
 
         $noAccessCustomerIds = CustomerAccess::getNoAccessCustomerIds();
         if ($noAccessCustomerIds) {
-            foreach($noAccessCustomerIds as $noAccessCustomerId) {
+            foreach ($noAccessCustomerIds as $noAccessCustomerId) {
                 if (isset($options[$noAccessCustomerId])) {
                     $options[$noAccessCustomerId]['Active'] = 0;
                 }
@@ -112,7 +112,7 @@ class GeneralFields
 
         $noAccessCustomerAccountIds = CustomerAccess::getNoAccessCustomerAccountIds();
         if ($noAccessCustomerAccountIds) {
-            foreach($noAccessCustomerAccountIds as $noAccessCustomerAccountId) {
+            foreach ($noAccessCustomerAccountIds as $noAccessCustomerAccountId) {
                 if (isset($options[$noAccessCustomerAccountId])) {
                     $options[$noAccessCustomerAccountId]['Active'] = 0;
                 }

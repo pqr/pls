@@ -22,27 +22,86 @@ final class MAWBExcel extends PrintForm
         $mawbPars = explode('-', $obj['MAWBNumber'], 2);
         $tdata['MAWBPrefix'] = $mawbPars[0];
         $tdata['MAWBSuffix'] = $mawbPars[1] ?? '';
-        $tdata['ShipperName'] = $this->getShipperName($obj->getId());
-        $tdata['ConsigneeName'] = $this->getConsigneeName($obj);
+        $shipmentId = $obj->getId();
+        $tdata += $this->getShipperData($shipmentId);
+        $tdata += $this->getConsigneeData($obj);
         $tdata['AirlineAlphaCode_raw'] = $obj['AirlineAlphaCode'];
+        $tdata['HandlingInformation'] = $obj['Comments'];
 
         return $tdata;
     }
 
-    private function getShipperName(int $shipmentId): string
+    private function getShipperData(int $shipmentId): array
     {
-        return (string)Db::getOne(
+        $shipperName = Db::getOne(
             "SELECT Name FROM shipmentshipper WHERE ShipmentID = @i AND Name != '' ORDER BY ID LIMIT 1",
             $shipmentId
         );
-    }
-
-    private function getConsigneeName(ObjAbstract $obj): string
-    {
-        if ($obj->notEmpty('ConsigneeID') && $obj['ConsigneeID'] !== -1) {
-            return $obj->getFieldExcel('ConsigneeID');
+        if (!$shipperName) {
+            return [];
         }
 
-        return $obj->getFieldExcel('CustomerAccountID');
+        $shipperInfo = Db::getRow(
+            "SELECT ShipmentRequestZIP, ShipmentRequestCountry, ShipmentRequestCity, ShipmentRequestStreet, ShipmentRequestPhone
+             FROM list_shipper
+             WHERE Name = @s",
+            $shipperName
+        );
+        $shipperAddress = implode(', ', array_filter($shipperInfo));
+
+        return [
+            'ShipperName' => $shipperName,
+            'ShipperAddress' => $shipperAddress,
+        ];
+    }
+
+    private function getConsigneeData(ObjAbstract $shipmentObj): array
+    {
+        if ($shipmentObj['ConsigneeID'] === -1) {
+            return $this->getConsigneeDataFromCustomerAccount($shipmentObj['CustomerAccountID']);
+        }
+
+        $consigneeInfo = Db::getRow(
+            "SELECT Name, ShipmentRequestZIP, ShipmentRequestCountry, ShipmentRequestCity, ShipmentRequestStreet, ShipmentRequestPhone
+            FROM customerconsignee
+            WHERE ID = @i",
+            $shipmentObj['ConsigneeID'],
+        );
+
+        if (!$consigneeInfo) {
+            return [];
+        }
+
+        $consigneeName = $consigneeInfo['Name'];
+        unset($consigneeInfo['Name']);
+        $consigneeAddress = implode(', ', array_filter($consigneeInfo));
+
+        return [
+            'ConsigneeName' => $consigneeName,
+            'ConsigneeAddress' => $consigneeAddress,
+        ];
+    }
+
+    private function getConsigneeDataFromCustomerAccount(?int $customerAccountId): array
+    {
+        if (!$customerAccountId) {
+            return [];
+        }
+
+        $customerAccountInfo = Db::getRow(
+            "SELECT Name, InvoiceAddress
+            FROM customeraccount
+            WHERE ID = @i",
+            $customerAccountId,
+        );
+
+        if (!$customerAccountInfo) {
+            return [];
+        }
+
+        return [
+            'ConsigneeName' => $customerAccountInfo['Name'],
+            'ConsigneeAddress' => $customerAccountInfo['InvoiceAddress'],
+        ];
     }
 }
