@@ -305,7 +305,7 @@ class Quotation extends ModuleAbstract
 
     protected function validateMandatory(array $dataFromPost)
     {
-        if ($dataFromPost['Status'] == 'lost') {
+        if ($dataFromPost['Status'] === 'lost') {
             $this->getField('CommentsLost')->setEditMandatory('Fill Comments Lost');
         }
 

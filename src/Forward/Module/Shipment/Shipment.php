@@ -1370,7 +1370,7 @@ class Shipment extends ModuleAbstract
 
         ini_set('display_errors', 0);
 
-        $shipmentRequestDate = $this->getShipmentRequestDate($shipmentObj['ETD']);
+        $shipmentRequestDate = $this->getShipmentRequestDate($shipmentObj['ReadyForCarriageDate']);
 
         if (!$shipmentObj['ShipmentRequestNo'] && $shipmentObj['CustomerAccountID']) {
             // В базе нет сохранённого номера заявки - сгенерируем автоматически
