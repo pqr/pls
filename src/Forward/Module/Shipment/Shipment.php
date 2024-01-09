@@ -62,7 +62,7 @@ class Shipment extends ModuleAbstract
         'Name|FileClosed|Month|MAWBNumber|DepartureIATA|ArrivalIATA|CustomerID|ETD|ETA|ATA';
 
     public $tableLayouts = [
-        'FBL' => 'CompanyID|MAWBNumber|Pieces|ChargeableWeight|Volume|NatureOfGoods|DepartureIATA|ArrivalIATA|Comments'
+        'FBL' => 'CompanyID|MAWBNumber|Pieces|ChargeableWeight|Volume|NatureOfGoods|DepartureIATA|ArrivalIATA|Comments',
     ];
 
     public function __construct()
@@ -90,6 +90,7 @@ class Shipment extends ModuleAbstract
             $firstLetterLower = strtolower($firstLetter);
             $customerOrVendor = $firstLetter === 'C' ? 'Customer' : 'Vendor';
             $customerOrVendorLower = strtolower($customerOrVendor);
+
             return "SELECT GROUP_CONCAT(CONCAT(i.Name, '|', cv.Name, '|', i.Status) ORDER BY i.DocDate, i.ID SEPARATOR '\\n') 
                     FROM {$firstLetterLower}invoice_file_amount fa, {$firstLetterLower}invoice i 
                         LEFT JOIN $customerOrVendorLower cv ON i.{$customerOrVendor}ID = cv.ID
@@ -107,9 +108,9 @@ class Shipment extends ModuleAbstract
                 } else {
                     $statusIco = Finance::getVInvoiceStatusIcon($status);
                 }
-                $outHtml = $statusIco . ' ' . htmlspecialchars($invoice) . ' <small class="gray">(' . htmlspecialchars(
-                        $contragent
-                    ) . ')</small>';
+                $outHtml = $statusIco.' '.htmlspecialchars($invoice).' <small class="gray">('.htmlspecialchars(
+                        $contragent,
+                    ).')</small>';
             }
 
             return $outHtml;
@@ -118,7 +119,7 @@ class Shipment extends ModuleAbstract
         $getExcelFunctionInvoices = function ($value, array $data, $out) {
             if (strpos($value, '|') !== false) {
                 [$invoice, $contragent] = explode('|', $value, 2);
-                $out = $invoice . ' (' . $contragent . ')';
+                $out = $invoice.' ('.$contragent.')';
             }
 
             return $out;
@@ -126,6 +127,7 @@ class Shipment extends ModuleAbstract
 
         $getSqlSelectInvoicesAmounts = function ($firstLetter) {
             $firstLetterLower = strtolower($firstLetter);
+
             return "SELECT GROUP_CONCAT(i.Amount ORDER BY DocDate, ID SEPARATOR '\\n') FROM {$firstLetterLower}invoice i, {$firstLetterLower}invoice_file_amount fa WHERE i.ID = fa.{$firstLetter}InvoiceID AND fa.FileNumber = shipment.Name";
         };
 
@@ -161,11 +163,11 @@ class Shipment extends ModuleAbstract
             ]),
 
             $this->getListVatMountField(12),
-            $this->getListVatMountField(18)
+            $this->getListVatMountField(18),
         );
 
         $this->addFields(
-            $this->fieldFolderFilesList()
+            $this->fieldFolderFilesList(),
         );
     }
 
@@ -219,7 +221,7 @@ class Shipment extends ModuleAbstract
                 'Incoterms',
                 'IncotermsLocation',
             ],
-            null
+            null,
         );
     }
 
@@ -246,6 +248,7 @@ class Shipment extends ModuleAbstract
         if (!$resultFilepath) {
             print $msgBuff->getHtml();
             Response::disableMainmenu();
+
             return;
         }
 
@@ -266,21 +269,21 @@ class Shipment extends ModuleAbstract
         foreach ($this->_obj->getFieldset() as $field) {
             if (isset($this->_obj[$field->key])) {
                 $value = $field->getExcel($this->_obj[$field->key], $this->_obj->getData());
-                $subject = str_replace('{' . $field->key . '}', $value, $subject);
-                $body = str_replace('{' . $field->key . '}', $value, $body);
+                $subject = str_replace('{'.$field->key.'}', $value, $subject);
+                $body = str_replace('{'.$field->key.'}', $value, $body);
             }
         }
 
         //$link = 'http://connect.track-trace.com/for/pls/aircargo/' . $this->_obj['MAWBNumber'];
-        $link = 'http://quicktracing.com/api/air.php?token=tVRtbXgXHxE71UJTTkbPOE0qZrj6sMYF&awb=' . rawurlencode(
-                $this->_obj['MAWBNumber']
+        $link = 'http://quicktracing.com/api/air.php?token=tVRtbXgXHxE71UJTTkbPOE0qZrj6sMYF&awb='.rawurlencode(
+                $this->_obj['MAWBNumber'],
             );
         $subject = str_replace('{TrackTraceLink}', $link, $subject);
         $body = str_replace('{TrackTraceLink}', $link, $body);
 
         //Загрузим email и имя контактной персоны клиента, на который отправлять уведомление
         $customerInfo = Db::getRow(
-            "SELECT ContactPersonName, NoticeEmail FROM customer WHERE ID = " . $this->_obj['CustomerID']
+            "SELECT ContactPersonName, NoticeEmail FROM customer WHERE ID = ".$this->_obj['CustomerID'],
         );
         if ($customerInfo) {
             $contactPerson = $customerInfo['ContactPersonName'];
@@ -292,21 +295,21 @@ class Shipment extends ModuleAbstract
 
         $body = str_replace('{ContactPersonName}', $contactPerson, $body);
 
-        $href = 'mailto:' . $email . '?subject=' . rawurlencode($subject) . '&body=' . rawurlencode($body);
+        $href = 'mailto:'.$email.'?subject='.rawurlencode($subject).'&body='.rawurlencode($body);
         if (strlen($href) > 2040) {
             $href = substr($href, 0, 2040);
         }
 
         $this->addSubmenuLink(
-            Link::create(null, Ico::mail() . ' Email Notice')
+            Link::create(null, Ico::mail().' Email Notice')
                 ->externalUrl($href)
-                ->cssClass('emailnotice-link')
+                ->cssClass('emailnotice-link'),
         );
 
         if (Constant::isOneCCompany($this->_obj['CompanyID'])) {
-            $this->addSubmenuLinkViewFunc(Ico::download() . ' Заявка', 'ShipmentRequestExcel')->post();
-            $this->addSubmenuLinkViewFunc(Ico::i('file-archive-o') . ' Комплект документов', 'DownloadDocs');
-            $this->addSubmenuLinkViewFunc(Ico::i('file-archive-o') . ' Документы на печать', 'DownloadDocsForPrint');
+            $this->addSubmenuLinkViewFunc(Ico::download().' Заявка', 'ShipmentRequestExcel')->post();
+            $this->addSubmenuLinkViewFunc(Ico::i('file-archive-o').' Комплект документов', 'DownloadDocs');
+            $this->addSubmenuLinkViewFunc(Ico::i('file-archive-o').' Документы на печать', 'DownloadDocsForPrint');
         }
     }
 
@@ -329,7 +332,7 @@ class Shipment extends ModuleAbstract
                     'sqlWhere' => function ($value) {
                         return Db::getSqlWhereSeparatedByComa($value, 'shipment.Name', -1, false, true, 1);
                     },
-                ]
+                ],
             ),
             ShipmentFields::filterMawbs(),
             GeneralFields::trafficId(),
@@ -346,15 +349,15 @@ class Shipment extends ModuleAbstract
                         $options = [];
                         foreach ($responsibleRole as $roleField => $roleDescription) {
                             //Добавим пустое значение в каждую группу
-                            $options[$roleField . '_0'] = ['text' => '', 'optgroup' => $roleDescription];
+                            $options[$roleField.'_0'] = ['text' => '', 'optgroup' => $roleDescription];
 
                             $users = Db::getAssoc(
-                                "SELECT DISTINCT(shipment." . $roleField .
-                                "), user.Name FROM shipment, user WHERE user.ID = shipment." . $roleField .
-                                " ORDER BY user.Name"
+                                "SELECT DISTINCT(shipment.".$roleField.
+                                "), user.Name FROM shipment, user WHERE user.ID = shipment.".$roleField.
+                                " ORDER BY user.Name",
                             );
                             foreach ($users as $id => $name) {
-                                $options[$roleField . '_' . $id] = [
+                                $options[$roleField.'_'.$id] = [
                                     'text' => $name,
                                     'optgroup' => $roleDescription,
                                 ];
@@ -367,13 +370,13 @@ class Shipment extends ModuleAbstract
                         //Фильтр по Responsible состоит из двух частей разделённых знаком подчёркивания: Имя поля в базе () и значение поля
                         $responsibleFilterValue = explode('_', $value);
                         if (isset($responsibleRole[$responsibleFilterValue[0]])) {
-                            return "`" . Db::esc($responsibleFilterValue[0]) . "` = " .
-                                (int)$responsibleFilterValue[1];
+                            return "`".Db::esc($responsibleFilterValue[0])."` = ".
+                                (int) $responsibleFilterValue[1];
                         }
 
                         return '';
                     },
-                ]
+                ],
             ),
             GeneralFields::buIdsFilter(),
             GeneralFields::departureIata(),
@@ -392,11 +395,11 @@ class Shipment extends ModuleAbstract
                             //Проверим все чекбоксы по статусам на каждый из которых будем создавать подзапрос EXISTS
                             $checkboxFound = false;
                             foreach (ShipmentCriteria::getSelectOptions() as $crId => $_) {
-                                if ($filtersValues['Criterion' . $crId]) {
+                                if ($filtersValues['Criterion'.$crId]) {
                                     $checkboxFound = true;
                                     $query .=
-                                        " AND EXISTS (SELECT ShipmentID FROM shipmentcriterion WHERE ShipmentID = shipment.ID AND CriterionID = " .
-                                        $crId . ")";
+                                        " AND EXISTS (SELECT ShipmentID FROM shipmentcriterion WHERE ShipmentID = shipment.ID AND CriterionID = ".
+                                        $crId.")";
                                 }
 
                                 if (!$checkboxFound) {
@@ -406,27 +409,27 @@ class Shipment extends ModuleAbstract
                         } elseif ($value === 'LogicOR') {
                             $crIds = [];
                             foreach (ShipmentCriteria::getSelectOptions() as $crId => $_) {
-                                if ($filtersValues['Criterion' . $crId]) {
+                                if ($filtersValues['Criterion'.$crId]) {
                                     $crIds[] = $crId;
                                 }
                             }
 
                             if ($crIds) {
                                 $query .=
-                                    " AND EXISTS (SELECT ShipmentID FROM shipmentcriterion WHERE ShipmentID = shipment.ID AND CriterionID IN (" .
-                                    implode(', ', $crIds) . "))";
+                                    " AND EXISTS (SELECT ShipmentID FROM shipmentcriterion WHERE ShipmentID = shipment.ID AND CriterionID IN (".
+                                    implode(', ', $crIds)."))";
                             } else {
                                 $query .= " AND 0";
                             }
                         } else {
                             $query .=
-                                " AND EXISTS (SELECT ShipmentID FROM shipmentcriterion WHERE ShipmentID = shipment.ID AND CriterionID = " .
-                                (int)$value . ")";
+                                " AND EXISTS (SELECT ShipmentID FROM shipmentcriterion WHERE ShipmentID = shipment.ID AND CriterionID = ".
+                                (int) $value.")";
                         }
 
                         return $query;
                     },
-                ]
+                ],
             ),
             ShipmentFields::fileClosed(),
             /*
@@ -463,6 +466,7 @@ class Shipment extends ModuleAbstract
                 'yearUntil' => $monthYearUntil,
                 'sqlWhere' => function ($value, $filtersValues, $sqlWhere) {
                     $sqlWhere = str_replace('{fieldKey}', 'Month', $sqlWhere);
+
                     return str_replace('=', '<=', $sqlWhere);
                 },
             ]),
@@ -476,7 +480,7 @@ class Shipment extends ModuleAbstract
                 'name' => 'VAT (НДС)',
                 'options' => [1 => 'Есть НДС'],
                 'sqlWhere' => "EXISTS(SELECT * FROM vinvoiceline WHERE FileNumber = shipment.Name AND (VATAmount !=0 OR Name = 'НДС'))",
-            ])
+            ]),
 
         );
 
@@ -507,15 +511,15 @@ class Shipment extends ModuleAbstract
             ],
             [
                 'Color' => function () {
-                    return '<div class="color-container color' . Template::value('Color') . '">'
-                        . Template::html('Color')
-                        . '</div>';
+                    return '<div class="color-container color'.Template::value('Color').'">'
+                        .Template::html('Color')
+                        .'</div>';
                 },
                 'BUIDsFilter',
                 'FileClosed',
 
                 'MonthFrom' => function () {
-                    return Template::html('MonthFrom') . ' - ' . Template::html('MonthUntil');
+                    return Template::html('MonthFrom').' - '.Template::html('MonthUntil');
                 },
                 'ReadyForCarriageDate',
                 'ETD',
@@ -523,7 +527,7 @@ class Shipment extends ModuleAbstract
                 'ATA',
                 'DocsPrintedDate',
                 'FlightNo' => function () {
-                    return Template::html('FlightNo') . ' ' . Template::html('FlightDate');
+                    return Template::html('FlightNo').' '.Template::html('FlightDate');
                 },
                 'HasVAT',
             ],
@@ -536,14 +540,14 @@ class Shipment extends ModuleAbstract
 
         //Чтобы правильно записать поле MAWB Number, нужно определить traffic.Type
         if (isset($dataFromRequest['TrafficID'])) {
-            $trafficType = Db::getOne("SELECT Type FROM traffic WHERE ID=" . (int)$dataFromRequest['TrafficID']);
+            $trafficType = Db::getOne("SELECT Type FROM traffic WHERE ID=".(int) $dataFromRequest['TrafficID']);
 
             if ($trafficType === 'avia') {
                 if (isset($_POST['MAWBNumber1'], $_POST['MAWBNumber2'])) {
                     $dataFromRequest['MAWBNumber'] = str_replace(
                         ' ',
                         '',
-                        trim($_POST['MAWBNumber1']) . '-' . trim($_POST['MAWBNumber2'])
+                        trim($_POST['MAWBNumber1']).'-'.trim($_POST['MAWBNumber2']),
                     );
                     if ($dataFromRequest['MAWBNumber'] === '-') {
                         $dataFromRequest['MAWBNumber'] = '';
@@ -558,12 +562,12 @@ class Shipment extends ModuleAbstract
                 if (!$this->_obj->getId()) {
                     $dataFromRequest['Month'] = date('Y-m-01');
                 } else {
-                    $dataFromRequest['Month'] = substr($this->_obj['CreatedDateTime'], 0, 7) . '-01';
+                    $dataFromRequest['Month'] = substr($this->_obj['CreatedDateTime'], 0, 7).'-01';
                 }
             } else {
                 //Для других трафиков в качестве месяца используется ETD
                 if ($dataFromRequest['ETD'] !== '') {
-                    $dataFromRequest['Month'] = substr($dataFromRequest['ETD'], 0, 7) . '-01';
+                    $dataFromRequest['Month'] = substr($dataFromRequest['ETD'], 0, 7).'-01';
                 }
             }
         }
@@ -578,20 +582,20 @@ class Shipment extends ModuleAbstract
             //Проверим существование такого имени в базе
             $query = "SELECT ID
                   FROM shipment
-                  WHERE MAWBNumber='" . Db::esc($dataFromRequest['MAWBNumber']) . "'
+                  WHERE MAWBNumber='".Db::esc($dataFromRequest['MAWBNumber'])."'
                       AND CreatedDateTime >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)";
             if ($this->_obj->getId()) {
-                $query .= " AND ID != " . $this->_obj->getId();
+                $query .= " AND ID != ".$this->_obj->getId();
             }
 
             if ($id = Db::getOne($query)) {
                 $this->riseSaveErorr(
-                    'MAWB ' . htmlspecialchars($dataFromRequest['MAWBNumber']) . ' already exists, ' .
+                    'MAWB '.htmlspecialchars($dataFromRequest['MAWBNumber']).' already exists, '.
                     Link::create(Shipment::class, 'view...')
                         ->view($id)
                         ->blank()
                         ->getHtml(),
-                    'MAWBNumber'
+                    'MAWBNumber',
                 );
             }
         }
@@ -636,11 +640,11 @@ class Shipment extends ModuleAbstract
 
             // Проверим, что хотя бы один инвойс выставлен и получен по этому файлу
             if ($this->_obj['Name']
-                && !Db::getOne("SELECT ID FROM cinvoiceline WHERE FileNumber = " . $this->_obj['Name'] . " LIMIT 1")
-                && !Db::getOne("SELECT ID FROM vinvoiceline WHERE FileNumber = " . $this->_obj['Name'] . " LIMIT 1")
+                && !Db::getOne("SELECT ID FROM cinvoiceline WHERE FileNumber = ".$this->_obj['Name']." LIMIT 1")
+                && !Db::getOne("SELECT ID FROM vinvoiceline WHERE FileNumber = ".$this->_obj['Name']." LIMIT 1")
             ) {
                 $this->riseSaveErorr(
-                    'At least one Customer Invoice and one Vendor Invoices should be assigned to the shipment'
+                    'At least one Customer Invoice and one Vendor Invoices should be assigned to the shipment',
                 );
             }
         }
@@ -657,13 +661,13 @@ class Shipment extends ModuleAbstract
         }
 
         // Задача из плана: При заведении файла нужно проверить карточку клиента - если OurCompany там не заполнен - не давать сохранить файл с соответвующим сообщением.
-        $customerId = (int)$dataFromRequest['CustomerID'];
+        $customerId = (int) $dataFromRequest['CustomerID'];
         if ($customerId) {
             //Загрузим поле Our Company из клиента
             $customerCompanyId = Db::getOne("SELECT CompanyID FROM customer WHERE ID = @i", $customerId);
             if (!$customerCompanyId) {
                 $msg = 'В целях наполнения базы невозможно сохранить перевозку, пока в карточке клиента не заполнено поле Our Company.';
-                $msg .= '<br>' . Link::create(Customer::class, 'Отредактировать карточку клиента')
+                $msg .= '<br>'.Link::create(Customer::class, 'Отредактировать карточку клиента')
                         ->view($customerId)
                         ->blank()
                         ->getHtml();
@@ -677,22 +681,22 @@ class Shipment extends ModuleAbstract
             && $dataFromRequest['CustomerAccountID']
             && Constant::isOneCCompany($dataFromRequest['CompanyID'])
         ) {
-            $shipmentRequestDate = $this->getShipmentRequestDate($dataFromRequest['ReadyForCarriageDate']);
+            $shipmentRequestDate = $this->getShipmentRequestDate($dataFromRequest['ETD']);
             $shipmentRequestYearShort = substr($shipmentRequestDate, 2, 2);
             $maxShipmentRequestNo = $this->getMaxShipmentRequestNo(
                 $dataFromRequest['CompanyID'],
                 $dataFromRequest['CustomerAccountID'],
-                $shipmentRequestDate
+                $shipmentRequestDate,
             );
 
             if ($maxShipmentRequestNo && $dataFromRequest['ShipmentRequestNo'] - $maxShipmentRequestNo > 1) {
                 $msg = 'Номер заявки <strong class="bad">'
-                    . $dataFromRequest['ShipmentRequestNo'] . '-' . $shipmentRequestYearShort
-                    . '</strong> выглядит слишком большим,'
-                    . ' последний использовавшийся в этом году номер: <strong>'
-                    . $maxShipmentRequestNo . '-' . $shipmentRequestYearShort
-                    . '</strong>,'
-                    . ' проверьте правильность заполнения';
+                    .$dataFromRequest['ShipmentRequestNo'].'-'.$shipmentRequestYearShort
+                    .'</strong> выглядит слишком большим,'
+                    .' последний использовавшийся в этом году номер: <strong>'
+                    .$maxShipmentRequestNo.'-'.$shipmentRequestYearShort
+                    .'</strong>,'
+                    .' проверьте правильность заполнения';
 
                 $this->riseSaveWarning($msg);
             }
@@ -704,7 +708,7 @@ class Shipment extends ModuleAbstract
         $tdata = parent::getTplData();
 
         //Добавим переменную TrafficType, чтобы скрыть или отобразить блок Ocean
-        $tdata['TrafficType'] = Db::getOne("SELECT Type FROM traffic WHERE ID = " . (int)$this->_obj['TrafficID']);
+        $tdata['TrafficType'] = Db::getOne("SELECT Type FROM traffic WHERE ID = ".(int) $this->_obj['TrafficID']);
         if (!$this->isStateView()) {
             //Разделим поле MAWB на два поля для ввода
             $mawb1 = '';
@@ -726,7 +730,7 @@ class Shipment extends ModuleAbstract
                 [
                     'editCssClass' => 'input-int',
                     'editMaxLength' => 3,
-                ]
+                ],
             )->getHtmlInput($mawb1);
 
             $tdata['MAWBNumber2'] = F::create(
@@ -735,7 +739,7 @@ class Shipment extends ModuleAbstract
                 [
                     'editCssClass' => 'input-int',
                     'editMaxLength' => 8,
-                ]
+                ],
             )->getHtmlInput($mawb2);
         }
 
@@ -743,7 +747,7 @@ class Shipment extends ModuleAbstract
         $tdata['isPrepaidCustomer'] = false;
         if (isset($this->_obj['CustomerID']) && $this->_obj['CustomerID']) {
             $creditAmount = Db::getOne(
-                "SELECT CreditAmount FROM customer WHERE ID = " . (int)$this->_obj['CustomerID']
+                "SELECT CreditAmount FROM customer WHERE ID = ".(int) $this->_obj['CustomerID'],
             );
             if ($creditAmount == 0) {
                 $tdata['isPrepaidCustomer'] = true;
@@ -762,9 +766,9 @@ class Shipment extends ModuleAbstract
             if ($crArr) {
                 $crBlock = '<ul>';
                 foreach ($crArr as $crInfo) {
-                    $crBlock .= '<li title="' . htmlspecialchars($crInfo['Description']) . '"' .
-                        (isset($crInfo['cssClass']) ? ' class="' . $crInfo['cssClass'] . '"' : '') . '>' .
-                        htmlspecialchars($crInfo['text']) . '</li>';
+                    $crBlock .= '<li title="'.htmlspecialchars($crInfo['Description']).'"'.
+                        (isset($crInfo['cssClass']) ? ' class="'.$crInfo['cssClass'].'"' : '').'>'.
+                        htmlspecialchars($crInfo['text']).'</li>';
                 }
                 $crBlock .= '</ul>';
                 $tdata['Criteria'] = $crBlock;
@@ -791,8 +795,8 @@ class Shipment extends ModuleAbstract
         //Распечатаем связь между Customer и Consignee, чтобы при выборе Customer поменять Consignee
         $query = "SELECT c.ID,
                       IF(c.CreditAmount = 0, 1, 0) AS p,
-                      IFNULL((SELECT UserID FROM customer_responsible WHERE CustomerID = c.ID AND Role = '" . Application::ROLE_SALES . "' ORDER BY ID LIMIT 1), '') AS s,
-                      IFNULL((SELECT UserID FROM customer_responsible WHERE CustomerID = c.ID AND Role = '" . Application::ROLE_CS . "' ORDER BY ID LIMIT 1), '') AS c
+                      IFNULL((SELECT UserID FROM customer_responsible WHERE CustomerID = c.ID AND Role = '".Application::ROLE_SALES."' ORDER BY ID LIMIT 1), '') AS s,
+                      IFNULL((SELECT UserID FROM customer_responsible WHERE CustomerID = c.ID AND Role = '".Application::ROLE_CS."' ORDER BY ID LIMIT 1), '') AS c
                   FROM customer c
                   ";
         $customersInfo = Db::getAssoc($query);
@@ -801,7 +805,7 @@ class Shipment extends ModuleAbstract
             'customersInfo' => $customersInfo,
             'trafficTypes' => Db::getAssoc("SELECT ID, Type FROM traffic"),
             'airlineCodes' => Db::getAssoc(
-                "SELECT DigitalCode, AlphaCode FROM airline WHERE DigitalCode != 0 AND AlphaCode != ''"
+                "SELECT DigitalCode, AlphaCode FROM airline WHERE DigitalCode != 0 AND AlphaCode != ''",
             ),
         ]);
     }
@@ -828,36 +832,38 @@ class Shipment extends ModuleAbstract
 
     /**
      * Переопределяем стандартную функцию, чтобы не добавлять ID в конец
+     *
      * @param string $stateText
      */
     protected function setPageHeadForObj($stateText = '')
     {
         $headText = 'Shipments - ';
         if ($stateText) {
-            $headText .= $stateText . ' ';
+            $headText .= $stateText.' ';
         }
-        $headText .= '<strong>' . $this->_obj->getDescriptionHtml() . '</strong>';
+        $headText .= '<strong>'.$this->_obj->getDescriptionHtml().'</strong>';
         Response::setPageHeadHtml($headText);
         Response::setPageTitle($headText);
     }
 
     /**
      * Возвращает массив данных из другого Cost-sheet'а для копирования
+     *
      * @return array
      */
     public static function proceedLoadCs()
     {
         //Узнаем ShipmentID по переданному номеру файла
         $out = [];
-        $sid = Db::getOne("SELECT ID FROM shipment WHERE Name = '" . Db::esc($_GET['filenumber']) . "'");
+        $sid = Db::getOne("SELECT ID FROM shipment WHERE Name = '".Db::esc($_GET['filenumber'])."'");
         if ($sid) {
             //Перевозка найдена, загрузим все строки из её Cost-sheet'а
             $out['income'] = Db::getAll(
-                "SELECT Name, Amount, CurrencyISO FROM csincome WHERE ShipmentID = " . $sid
+                "SELECT Name, Amount, CurrencyISO FROM csincome WHERE ShipmentID = ".$sid,
             );
 
             $out['expenses'] = Db::getAll(
-                "SELECT Name, Amount, CurrencyISO FROM csexpenses WHERE ShipmentID = " . $sid
+                "SELECT Name, Amount, CurrencyISO FROM csexpenses WHERE ShipmentID = ".$sid,
             );
         }
 
@@ -898,17 +904,17 @@ class Shipment extends ModuleAbstract
                         , IncotermsLocation
                         , CommentsInternal AS Comments
                       FROM quotation
-                      WHERE ID = " . (int)$_GET['qid'];
+                      WHERE ID = ".(int) $_GET['qid'];
             $quotationInfo = Db::getRow($query);
             if ($quotationInfo) {
                 $this->_obj->mergeData($quotationInfo);
-                $this->_obj['QuotationID'] = (int)$_GET['qid'];
+                $this->_obj['QuotationID'] = (int) $_GET['qid'];
 
                 //Дополним поле Pieces и Volume
                 $query = "SELECT sum(Pieces) AS Pieces
                               , sum(Volume) AS Volume
                           FROM quotationcargo
-                          WHERE QuotationID = " . (int)$_GET['qid'];
+                          WHERE QuotationID = ".(int) $_GET['qid'];
                 $pv = Db::getRow($query);
                 if ($pv) {
                     $this->_obj->mergeData($pv);
@@ -945,7 +951,7 @@ class Shipment extends ModuleAbstract
                     $obj['GrossWeight'],
                     $obj['ChargeableWeight'],
                     $obj['Pieces'],
-                    $obj->getId()
+                    $obj->getId(),
                 );
 
                 if ($newCsLines) {
@@ -960,7 +966,7 @@ class Shipment extends ModuleAbstract
                         foreach ($csLines as $csLineData) {
                             $csLineObj = clone $csLineObjBase;
                             $csLineObj->setMasterIdForDbLog($shipmentId);
-                            $csLineObj->insertDb($csLineData, 'from Quotation ' . $quotationId);
+                            $csLineObj->insertDb($csLineData, 'from Quotation '.$quotationId);
                         }
                     };
 
@@ -984,8 +990,8 @@ class Shipment extends ModuleAbstract
             // Обновление уже существующей перевозки
             if (isset($oldData['ResponsibleCS'], $obj['ResponsibleCS']) && $oldData['ResponsibleCS'] != $obj['ResponsibleCS']) {
                 $additionalText = 'New Customer Service <strong>'
-                    . htmlspecialchars(Db::getOne("SELECT Name FROM user WHERE ID = @i", $obj['ResponsibleCS']))
-                    . '</strong>';
+                    .htmlspecialchars(Db::getOne("SELECT Name FROM user WHERE ID = @i", $obj['ResponsibleCS']))
+                    .'</strong>';
                 /** @var ShipmentObj $obj */
                 $this->sendShipmentEmail($obj, $additionalText, $msgBuff);
             }
@@ -1009,9 +1015,10 @@ class Shipment extends ModuleAbstract
     /**
      * Автоматическое E-mail уведомление из базы на адрес бухгалтерии по тем перевозкам,
      * где просталена дата прилёта и если у клиента указана опция "Акт на дату прилёта".
+     *
      * @param ObjAbstract $obj
-     * @param array $oldData
-     * @param Msg $msgBuff
+     * @param array       $oldData
+     * @param Msg         $msgBuff
      */
     private function emailOnAtaChange(ObjAbstract $obj, array $oldData, Msg $msgBuff)
     {
@@ -1022,10 +1029,11 @@ class Shipment extends ModuleAbstract
             // Проверим настройки Customer Account
             $actOnDateType = Db::getOne(
                 "SELECT ActOnDateType FROM customeraccount WHERE ID = @i",
-                $obj['CustomerAccountID']
+                $obj['CustomerAccountID'],
             );
             if ($actOnDateType == Constant::ACTONDATETYPE_ATA) {
-                $body = 'Изменилась дата ATA ' . FieldDate::beautify($newAta) . ' по накладной ' . $obj->getLinkView() . ' (' . $obj->getFieldText('CustomerAccountID') . ')';
+                $body = 'Изменилась дата ATA '.FieldDate::beautify($newAta).' по накладной '.$obj->getLinkView(
+                    ).' ('.$obj->getFieldText('CustomerAccountID').')';
                 $subject = strip_tags($body);
                 Mailer::create('accounting@proactive-ls.com', $subject, $body)
                     ->wrapBodyWithHtmlTemplate()
@@ -1061,25 +1069,26 @@ class Shipment extends ModuleAbstract
         //Отправим Email уведомление для Customer Service и Sales при создании новой перевозки
         $newOrUpdate = $this->_justInserted ? 'New' : 'Update';
         $subject = $newOrUpdate
-            . ' Shipment ' . $obj['Name']
-            . ' for ' . $obj->getFieldText('CustomerID')
-            . ' ' . $obj->getFieldText('DepartureIATA')
-            . '->' . $obj->getFieldText('ArrivalIATA');
+            .' Shipment '.$obj['Name']
+            .' for '.$obj->getFieldText('CustomerID')
+            .' '.$obj->getFieldText('DepartureIATA')
+            .'->'.$obj->getFieldText('ArrivalIATA');
 
         $body = $newOrUpdate
-            . ' Shipment <a href="' . Config::$localUrl . '/?a=Shipment&id=' . $obj->getId() . '"><strong>' . $obj['Name'] . '</strong></a>'
-            . ' for ' . $obj->getFieldText('CustomerID')
-            . ' ' . $obj->getFieldText('DepartureIATA')
-            . '➔' . $obj->getFieldText('ArrivalIATA')
-            . '<br><br>';
+            .' Shipment <a href="'.Config::$localUrl.'/?a=Shipment&id='.$obj->getId(
+            ).'"><strong>'.$obj['Name'].'</strong></a>'
+            .' for '.$obj->getFieldText('CustomerID')
+            .' '.$obj->getFieldText('DepartureIATA')
+            .'➔'.$obj->getFieldText('ArrivalIATA')
+            .'<br><br>';
 
         if ($additionalText) {
-            $body .= $additionalText . '<br><br>';
+            $body .= $additionalText.'<br><br>';
         }
 
         $body .= '<small>';
         $body .= $this->_justInserted ? 'Created' : 'Updated';
-        $body .= ' by ' . htmlspecialchars(User::getName()) . '</small>';
+        $body .= ' by '.htmlspecialchars(User::getName()).'</small>';
 
         Mailer::create($to, $subject, $body)
             ->send($msgBuff);
@@ -1091,11 +1100,13 @@ class Shipment extends ModuleAbstract
      * CostSheet.
      * Также, если перевозка уже создана то в Cost-sheet можно нажать "Fill from Quotation" - этот метод загружает
      * данные из котировки и они возвращаются пользователю в ajax ответе для заполнения Cost-sheet в режиме Edit
+     *
      * @param int $quotationId
      * @param int $grossWeight
      * @param int $chargeableWeight
      * @param int $pieces
      * @param int $shipmentId
+     *
      * @return array
      */
     private function getCsLinesFromQuotation($quotationId, $grossWeight, $chargeableWeight, $pieces, $shipmentId): array
@@ -1104,7 +1115,7 @@ class Shipment extends ModuleAbstract
         //Заодно проверим, существует ли такая котировка вообще?
         $quotationCurrencyIso = Db::getOne(
             "SELECT CurrencyISO FROM quotation WHERE ID = @i",
-            $quotationId
+            $quotationId,
         );
 
         if (!$quotationCurrencyIso) {
@@ -1120,7 +1131,7 @@ class Shipment extends ModuleAbstract
                  FROM quotation{$incomeOrExpenses}
                  WHERE QuotationID = @i
                  ORDER BY ID",
-                $quotationId
+                $quotationId,
             );
 
             foreach ($quotationLines as $quotationLine) {
@@ -1159,7 +1170,7 @@ class Shipment extends ModuleAbstract
                     'ShipmentID' => $shipmentId,
                     'Quantity' => $multiplier,
                     'Price' => $price,
-                    'Amount' => $quotationCurrencyIso . ' ' . $amount,
+                    'Amount' => $quotationCurrencyIso.' '.$amount,
                 ];
             }
         }
@@ -1172,9 +1183,11 @@ class Shipment extends ModuleAbstract
      * заполняются в карточке клиента.
      * Если перевозка уже создана то в Cost-sheet можно нажать "Fill from Quotation" - этот метод загружает
      * данные из ставки и они возвращаются пользователю в ajax ответе для заполнения Cost-sheet в режиме Edit
+     *
      * @param int $srId
      * @param float $chargeableWeight
      * @param int $shipmentId
+     *
      * @return array
      */
     private function getCsLinesFromStandartRate($srId, $chargeableWeight, $shipmentId)
@@ -1190,20 +1203,20 @@ class Shipment extends ModuleAbstract
 
         $interval = Constant::getWeightInterval($chargeableWeight);
         //Какую цену применить как основную?
-        $amountFieldKeySuffix = $interval ? 'Amount' . $interval : 'AmountN';
+        $amountFieldKeySuffix = $interval ? 'Amount'.$interval : 'AmountN';
 
         // Подготовим выходной массив
         $outCsLines = ['income' => [], 'expenses' => []];
 
         foreach (['income' => 'Selling', 'expenses' => 'Buying'] as $incomeOrExpenses => $sellingOrBuying) {
-            $amountFieldKey = $sellingOrBuying . $amountFieldKeySuffix;
+            $amountFieldKey = $sellingOrBuying.$amountFieldKeySuffix;
             $price = $rate[$amountFieldKey];
             $quantity = $chargeableWeight;
             $amount = $price * $quantity;
 
             //Если итоговая сумма меньше меньшего - нужно использовать минимальную сумму
-            if ($amount < $rate[$sellingOrBuying . 'MinAmount']) {
-                $amount = $rate[$sellingOrBuying . 'MinAmount'];
+            if ($amount < $rate[$sellingOrBuying.'MinAmount']) {
+                $amount = $rate[$sellingOrBuying.'MinAmount'];
                 $price = $amount;
                 $quantity = 1;
             }
@@ -1213,39 +1226,39 @@ class Shipment extends ModuleAbstract
                 'ShipmentID' => $shipmentId,
                 'Quantity' => $quantity,
                 'Price' => $price,
-                'Amount' => $rate[$sellingOrBuying . 'CurrencyISO'] . ' ' . $amount,
+                'Amount' => $rate[$sellingOrBuying.'CurrencyISO'].' '.$amount,
             ];
 
             //Добавим FSC и SSC
             foreach (['FSC', 'SSC'] as $fscOrSsc) {
-                $price = $rate[$sellingOrBuying . $fscOrSsc . 'Amount'];
+                $price = $rate[$sellingOrBuying.$fscOrSsc.'Amount'];
                 if ($price) {
                     $outCsLines[$incomeOrExpenses][] = [
                         'Name' => $fscOrSsc,
                         'ShipmentID' => $shipmentId,
                         'Quantity' => $chargeableWeight,
                         'Price' => $price,
-                        'Amount' => $rate[$sellingOrBuying . 'CurrencyISO'] . ' ' . ($price * $chargeableWeight),
+                        'Amount' => $rate[$sellingOrBuying.'CurrencyISO'].' '.($price * $chargeableWeight),
                     ];
                 }
             }
 
             //Теперь добавим все надбавки
-            $surchargesTableName = "customer_standratrates_" . strtolower($sellingOrBuying) . "surcharges";
+            $surchargesTableName = "customer_standratrates_".strtolower($sellingOrBuying)."surcharges";
             $surcharges = Db::getAll(
                 "SELECT *
                  FROM $surchargesTableName
-                 WHERE CustomerStandartRateID = {$rate['ID']}"
+                 WHERE CustomerStandartRateID = {$rate['ID']}",
             );
 
             foreach ($surcharges as $surcharge) {
-                $base = (double)$surcharge['BaseAmount'];
-                $price = (double)$surcharge['PerKgAmount'];
+                $base = (double) $surcharge['BaseAmount'];
+                $price = (double) $surcharge['PerKgAmount'];
                 $quantity = $chargeableWeight;
                 $amount = $base + $price * $quantity;
 
-                $minAmount = (double)$surcharge['MinAmount'];
-                $maxAmount = (double)$surcharge['MaxAmount'];
+                $minAmount = (double) $surcharge['MinAmount'];
+                $maxAmount = (double) $surcharge['MaxAmount'];
 
                 if ($amount < $minAmount) {
                     $amount = $minAmount;
@@ -1265,7 +1278,7 @@ class Shipment extends ModuleAbstract
                     'ShipmentID' => $shipmentId,
                     'Quantity' => $quantity,
                     'Price' => $price,
-                    'Amount' => $surcharge['CurrencyISO'] . ' ' . $amount,
+                    'Amount' => $surcharge['CurrencyISO'].' '.$amount,
                 ];
             }
         }
@@ -1279,31 +1292,31 @@ class Shipment extends ModuleAbstract
     protected function sendDeleteConfirmDialog()
     {
         //Найдём число привязанных счетов
-        $cinvCount = (int)Db::getOne(
+        $cinvCount = (int) Db::getOne(
             "SELECT count(*) 
               FROM cinvoice_file_amount cfa, cinvoice ci 
               WHERE cfa.FileNumber = @i
                   AND cfa.CInvoiceID = ci.ID
-                  AND ci.Status NOT IN (" . InvStatus::getDeletedStatusesSql() . ")",
-            $this->_obj['Name']
+                  AND ci.Status NOT IN (".InvStatus::getDeletedStatusesSql().")",
+            $this->_obj['Name'],
         );
-        $vinvCount = (int)Db::getOne(
+        $vinvCount = (int) Db::getOne(
             "SELECT count(*)
             FROM vinvoice_file_amount vfa, vinvoice vi
             WHERE vfa.FileNumber = @i
                 AND vfa.VInvoiceID = vi.ID
-                AND vi.Status NOT IN (" . InvStatus::getDeletedStatusesSql() . ")",
-            $this->_obj['Name']
+                AND vi.Status NOT IN (".InvStatus::getDeletedStatusesSql().")",
+            $this->_obj['Name'],
         );
 
         if ($cinvCount || $vinvCount) {
             $msg = "Can't delete shipment because ";
             $invMsg = [];
             if ($cinvCount) {
-                $invMsg[] = $cinvCount . " Customer Invoices";
+                $invMsg[] = $cinvCount." Customer Invoices";
             }
             if ($vinvCount) {
-                $invMsg[] = $vinvCount . " Vendor Invoices";
+                $invMsg[] = $vinvCount." Vendor Invoices";
             }
             $msg .= implode(' and ', $invMsg);
             $msg .= " are linked to the shipment";
@@ -1315,9 +1328,9 @@ class Shipment extends ModuleAbstract
         parent::sendDeleteConfirmDialog();
     }
 
-    private function getShipmentRequestDate(string $readyForCarriageDate)
+    private function getShipmentRequestDate(string $etd)
     {
-        return FieldDate::notEmpty($readyForCarriageDate) ? $readyForCarriageDate : date('Y-m-d');
+        return FieldDate::notEmpty($etd) ? $etd : date('Y-m-d');
     }
 
     private function getMaxShipmentRequestNo(
@@ -1338,7 +1351,7 @@ class Shipment extends ModuleAbstract
             $query .= " FOR UPDATE";
         }
 
-        return (int)Db::getOne($query, $customerAccountId);
+        return (int) Db::getOne($query, $customerAccountId);
     }
 
     protected function viewPostShipmentRequestExcel()
@@ -1364,13 +1377,13 @@ class Shipment extends ModuleAbstract
         } elseif ($shipmentObj['CompanyID'] == Constant::OC_PRO_AIR_OOO) {
             $exceltemplate = 'ShipmentRequest19.xlsx';
         } else {
-            Session::flashError('Для компании ' . $shipmentObj->getFieldHtml('CompanyID') . ' нет формы заявки');
+            Session::flashError('Для компании '.$shipmentObj->getFieldHtml('CompanyID').' нет формы заявки');
             $this->redirectToView();
         }
 
         ini_set('display_errors', 0);
 
-        $shipmentRequestDate = $this->getShipmentRequestDate($shipmentObj['ReadyForCarriageDate']);
+        $shipmentRequestDate = $this->getShipmentRequestDate($shipmentObj['ETD']);
 
         if (!$shipmentObj['ShipmentRequestNo'] && $shipmentObj['CustomerAccountID']) {
             // В базе нет сохранённого номера заявки - сгенерируем автоматически
@@ -1380,7 +1393,7 @@ class Shipment extends ModuleAbstract
                 $shipmentObj['CompanyID'],
                 $shipmentObj['CustomerAccountID'],
                 $shipmentRequestDate,
-                true
+                true,
             );
             $newNo = $lastNo ? $lastNo + 1 : 1;
             $shipmentObj->updateDb(['ShipmentRequestNo' => $newNo], 'Автоматическое присвоение следующего номера');
@@ -1399,7 +1412,7 @@ class Shipment extends ModuleAbstract
         // Загрузим номер контракта из карточки Customer Account
         $contractNo = Db::getOne(
             "SELECT ContractNo FROM customeraccount WHERE ID = @i",
-            $shipmentObj['CustomerAccountID']
+            $shipmentObj['CustomerAccountID'],
         );
         // Заменим в номере контракта английское слово "from" на русское "от"
         $excelData['CustomerAccountContractNo'] = str_replace('from', 'от', $contractNo);
@@ -1410,7 +1423,7 @@ class Shipment extends ModuleAbstract
             $excelData += self::getAddressForShipmentRequest(
                 'customerconsignee',
                 $shipmentObj['ConsigneeID'],
-                'Consignee'
+                'Consignee',
             );
         } elseif ($shipmentObj['ConsigneeID'] == -1) {
             // Если же был выбран вариант "совпадает с Customer Account", тогда загрузим информацию из таблицы Customer Account
@@ -1418,7 +1431,7 @@ class Shipment extends ModuleAbstract
             $excelData += self::getAddressForShipmentRequest(
                 'customeraccount',
                 $shipmentObj['CustomerAccountID'],
-                'Consignee'
+                'Consignee',
             );
         }
 
@@ -1426,13 +1439,13 @@ class Shipment extends ModuleAbstract
         $excelData += self::getAddressForShipmentRequest(
             'customeraccount',
             $shipmentObj['CustomerAccountID'],
-            'CustomerAccount'
+            'CustomerAccount',
         );
 
         // Добавим адрес первого отправителя
         $firstShipper = Db::getRow(
             "SELECT Name, HAWBNumber FROM shipmentshipper WHERE ShipmentID = @i",
-            $shipmentObj->getId()
+            $shipmentObj->getId(),
         );
         if ($firstShipper) {
             $excelData['HAWBNumber'] = $firstShipper['HAWBNumber'];
@@ -1442,7 +1455,7 @@ class Shipment extends ModuleAbstract
                     $excelData += self::getAddressForShipmentRequest(
                         'list_shipper',
                         $shipperId,
-                        'Shipper'
+                        'Shipper',
                     );
                 }
             }
@@ -1455,7 +1468,7 @@ class Shipment extends ModuleAbstract
              WHERE cfa.CInvoiceID = ci.ID
                  AND cfa.FileNumber = @s
              LIMIT 1",
-            $shipmentObj['Name']
+            $shipmentObj['Name'],
         );
 
         if ($firstCInvoice) {
@@ -1463,12 +1476,12 @@ class Shipment extends ModuleAbstract
                 FieldMoney::beautify(
                     $firstCInvoice['Amount'],
                     false,
-                    $firstCInvoice['CurrencyISO']
-                )
+                    $firstCInvoice['CurrencyISO'],
+                ),
             );
             $excelData['AmountText'] = Translate::amountWordsRu(
                 $firstCInvoice['Amount'],
-                $firstCInvoice['CurrencyISO']
+                $firstCInvoice['CurrencyISO'],
             );
 
             $excelData['RateText'] = '';
@@ -1476,7 +1489,7 @@ class Shipment extends ModuleAbstract
             if ($firstCInvoice['CurrencyISO'] !== 'RUB' && $firstCInvoice['PaymentCurrencyISO'] === 'RUB') {
                 $excelData['RateText'] = 'Оплата по курсу ЦБ РФ на день оплаты';
                 if ($firstCInvoice['RatePercent'] !== '' && $firstCInvoice['RatePercent'] !== '0%') {
-                    $excelData['RateText'] .= ' +' . $firstCInvoice['RatePercent'];
+                    $excelData['RateText'] .= ' +'.$firstCInvoice['RatePercent'];
                 }
             }
         }
@@ -1494,14 +1507,14 @@ class Shipment extends ModuleAbstract
             $excelData['InsuranceCurrencyISO'] = '';
         }
 
-        $xls = new XlsWriter(__DIR__ . "/$exceltemplate");
+        $xls = new XlsWriter(__DIR__."/$exceltemplate");
         $xls->replaceData($excelData);
 
         $filenameWithoutExt = 'Заявка №'
-            . $shipmentObj['ShipmentRequestNo']
-            . '-' . $shipmentRequestYearShort
-            . ' ' . $shipmentObj['MAWBNumber']
-            . ' (' . FieldDate::beautify($shipmentRequestDate) . ')';
+            .$shipmentObj['ShipmentRequestNo']
+            .'-'.$shipmentRequestYearShort
+            .' '.$shipmentObj['MAWBNumber']
+            .' ('.FieldDate::beautify($shipmentRequestDate).')';
 
         $filenameWithoutExt = File::getValidFilename($filenameWithoutExt);
 
@@ -1517,9 +1530,9 @@ class Shipment extends ModuleAbstract
 
         } catch (\Exception $e) {
             Session::flashError(
-                'Не удалось сохранить файл <strong>' . htmlspecialchars(
-                    $filenameWithoutExt . ".pdf"
-                ) . '</strong> в папку перевозки, возможно, он открыт в Excel?'
+                'Не удалось сохранить файл <strong>'.htmlspecialchars(
+                    $filenameWithoutExt.".pdf",
+                ).'</strong> в папку перевозки, возможно, он открыт в Excel?',
             );
         }
 
@@ -1537,9 +1550,9 @@ class Shipment extends ModuleAbstract
             $xls->save($filepathAbsXlsx);
         } catch (\Exception $e) {
             Session::flashError(
-                'Не удалось сохранить файл <strong>' . htmlspecialchars(
-                    $filenameWithoutExt . ".xlsx"
-                ) . '</strong> в папку "' . htmlspecialchars($requestFolder) . '", возможно, он открыт в Excel?'
+                'Не удалось сохранить файл <strong>'.htmlspecialchars(
+                    $filenameWithoutExt.".xlsx",
+                ).'</strong> в папку "'.htmlspecialchars($requestFolder).'", возможно, он открыт в Excel?',
             );
         }
 
@@ -1589,6 +1602,7 @@ class Shipment extends ModuleAbstract
         $resultFilepath = $sd->generateZip($ids, false);
         if (!$resultFilepath) {
             $this->redirectToView();
+
             return;
         }
 
@@ -1606,10 +1620,11 @@ class Shipment extends ModuleAbstract
         $resultFilepath = $sd->generateZip(
             $ids,
             false,
-            [Constant::FOLDER_REQUEST, Constant::FOLDER_CINVOICE, Constant::FOLDER_CACT]
+            [Constant::FOLDER_REQUEST, Constant::FOLDER_CINVOICE, Constant::FOLDER_CACT],
         );
         if (!$resultFilepath) {
             $this->redirectToView();
+
             return;
         }
 
@@ -1627,14 +1642,15 @@ class Shipment extends ModuleAbstract
                 , ShipmentRequestPhone as {$fieldKeyPrefix}Phone
               FROM $dbtable
               WHERE ID = $id
-            "
+            ",
         );
     }
 
     private static function getDateInText(string $mysqlDate)
     {
         [$year, $month, $day] = explode('-', $mysqlDate);
-        return (int)$day . ' ' . Translate::monthRu($month, true) . ' ' . $year . ' г.';
+
+        return (int) $day.' '.Translate::monthRu($month, true).' '.$year.' г.';
     }
 
     protected function viewPostCs()
@@ -1643,10 +1659,10 @@ class Shipment extends ModuleAbstract
     }
 
     /**
-     * Этот метод запускается, если в GET запросе есть парамеры id=...&func=cs - срабатывает метод движка ModuleAbstract::proceedViewFunc()
-     * т.е. загружается сам объект перевозки в $this->_obj и управление передаётся внутрь viewFuncCs()
-     * Здесь полностью делегируем дальнейший разбор url параметров в класс CostSheetRouter - он уже определит, что нужно
-     * делать с текущим кост-шитом (отрендрить, сохранить или обновить через ajax)
+     * Этот метод запускается, если в GET запросе есть парамеры id=...&func=cs - срабатывает метод движка
+     * ModuleAbstract::proceedViewFunc() т.е. загружается сам объект перевозки в $this->_obj и управление передаётся
+     * внутрь viewFuncCs() Здесь полностью делегируем дальнейший разбор url параметров в класс CostSheetRouter - он уже
+     * определит, что нужно делать с текущим кост-шитом (отрендрить, сохранить или обновить через ajax)
      */
     protected function viewGetCs()
     {
@@ -1682,28 +1698,28 @@ class Shipment extends ModuleAbstract
         $shipmentObj = $this->_obj;
         if (CostSheetRouter::hasAccessWriteCostSheet($shipmentObj)) {
             $this->addSubmenuLink(
-                Link::create(self::class, Ico::edit() . ' Edit Cost-sheet')
-                    ->cssClass('cs-edit-btn')
+                Link::create(self::class, Ico::edit().' Edit Cost-sheet')
+                    ->cssClass('cs-edit-btn'),
             );
 
             $this->addSubmenuLink(
-                Link::create(self::class, Ico::upload() . ' Create Customer Invoice')
-                    ->cssClass('cs-cinvoice-btn')
+                Link::create(self::class, Ico::upload().' Create Customer Invoice')
+                    ->cssClass('cs-cinvoice-btn'),
             );
 
             $this->addSubmenuLink(
-                Link::create(self::class, Ico::download() . ' Register Vendor Invoice')
-                    ->cssClass('cs-vinvoice-btn')
+                Link::create(self::class, Ico::download().' Register Vendor Invoice')
+                    ->cssClass('cs-vinvoice-btn'),
             );
 
             $this->addSubmenuLink(
-                Link::create(self::class, Ico::copy() . ' Copy')
-                    ->cssClass('cs-copy-btn display-none')
+                Link::create(self::class, Ico::copy().' Copy')
+                    ->cssClass('cs-copy-btn display-none'),
             );
 
             $this->addSubmenuLink(
-                Link::create(self::class, Ico::search() . ' Quotation / Standart Rate')
-                    ->cssClass('cs-fillquotation-btn display-none')
+                Link::create(self::class, Ico::search().' Quotation / Standart Rate')
+                    ->cssClass('cs-fillquotation-btn display-none'),
             );
         }
 
@@ -1724,19 +1740,19 @@ class Shipment extends ModuleAbstract
                 $this->_obj['GrossWeight'],
                 $this->_obj['ChargeableWeight'],
                 $this->_obj['Pieces'],
-                $this->_obj->getId()
+                $this->_obj->getId(),
             );
         } else {
             $newCsLines = $this->getCsLinesFromStandartRate(
                 $_GET['QuotationID'],
                 $this->_obj['ChargeableWeight'],
-                $this->_obj->getId()
+                $this->_obj->getId(),
             );
         }
 
         if (!$newCsLines) {
             // Возвращаем пустой массив, тогда на стороне JS будет понятно, что котировка не найдена
-            Response::abort(404, 'Quotation ' . $_GET['QuotationID'] . ' not found');
+            Response::abort(404, 'Quotation '.$_GET['QuotationID'].' not found');
         }
 
         Response::json($newCsLines);
@@ -1745,7 +1761,7 @@ class Shipment extends ModuleAbstract
     protected function getAccessSqlWhere(): string
     {
         return BuAccess::getSqlWhereBu()
-            . " AND " . CustomerAccess::getSqlWhere()
-            . " AND " . Constant::getCreatedDateSqlWhere();
+            ." AND ".CustomerAccess::getSqlWhere()
+            ." AND ".Constant::getCreatedDateSqlWhere();
     }
 }
