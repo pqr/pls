@@ -41,10 +41,12 @@ class Constant
 
     const USER_PETR = 28;
     const USER_OLGA = 29;
+    const USER_ALEXANDRA = 25;
 
     const USER_START_DATE = [
         self::USER_PETR => '2022-07-01',
         self::USER_OLGA => '2022-08-01',
+        self::USER_ALEXANDRA => '2024-01-01',
     ];
 
     public static $onecCompany = [
@@ -105,19 +107,21 @@ class Constant
 
     /**
      * Возвращает массив с шаблонными переменными для вывода информации о компании в различные печатные формы
+     *
      * @param int $companyId
      * @param int $bankId
+     *
      * @return array
      */
     public static function getCompanyTplData($companyId, $bankId)
     {
         $company = Db::getRow(
             "SELECT Name, Address FROM ourcompany WHERE ID = @i",
-            $companyId
+            $companyId,
         );
         $bank = Db::getRow(
             "SELECT BeneficiaryBank, CorrespondentBank FROM ourcompanybank WHERE ID = @i",
-            $bankId
+            $bankId,
         );
 
         return [
@@ -134,6 +138,7 @@ class Constant
         if ($parPos) {
             $companyName = trim(substr($companyName, 0, $parPos));
         }
+
         return $companyName;
     }
 
@@ -146,12 +151,12 @@ class Constant
     ) {
         $parts = [
             (new \DateTime($date))->format('dmy'),
-            $departureIata . $arrivalIata,
+            $departureIata.$arrivalIata,
         ];
 
         if ($chargeableWeight) {
             $interval = Constant::getWeightInterval($chargeableWeight);
-            $parts[] = $interval ? 'Q' . $interval : 'MIN';
+            $parts[] = $interval ? 'Q'.$interval : 'MIN';
         }
 
         $parts[] = $airlineAplhaCode;
@@ -165,7 +170,7 @@ class Constant
             [2000, 1000, 750, 500, 300, 200, 100, 45],
             function ($interval) use ($weight) {
                 return $weight >= $interval;
-            }
+            },
         );
     }
 
