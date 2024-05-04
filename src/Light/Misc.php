@@ -218,7 +218,7 @@ class Misc
     public static function validateEmails($string)
     {
         $regex = "/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/iu";
-        $result = preg_split("/,|;/", preg_replace("/\s/", "", (string) $string));
+        $result = preg_split("/,|;/", (string) preg_replace("/\s/", "", (string) $string));
         foreach ($result as $value) {
             if (!preg_match($regex, $value)) {
                 return false;
