@@ -2,8 +2,6 @@
 
 namespace Light\Module\Autolaunch;
 
-use Carbon\Carbon;
-use Cron\CronExpression;
 use Light\Config;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
@@ -63,10 +61,7 @@ class AutolaunchMenuTable extends Table
 
                         if (strpos($line, $cliClass)) {
                             $cron = substr($line, 0, strpos($line, ' php'));
-                            $outHtml = '<code title="' . htmlspecialchars($line) . '">' . $cron . '</code>';
-                            $carbon = new Carbon(CronExpression::factory($cron)->getNextRunDate()->format('Y-m-d H:i:s'));
-                            $outHtml .= '<br><span class="note">Следующий запуск: ' . $carbon->diffForHumans() . '</span>';
-                            return $outHtml;
+                            return '<code title="' . htmlspecialchars($line) . '">' . $cron . '</code>';
                         }
                     }
 
