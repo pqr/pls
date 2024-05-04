@@ -1,1 +1,0 @@
-ALTER TABLE shipment ADD DocsPrintedDate date NOT NULL;

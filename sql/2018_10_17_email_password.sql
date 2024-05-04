@@ -1,1 +1,0 @@
-ALTER TABLE user ADD EmailPassword VARCHAR(50) NOT NULL;
