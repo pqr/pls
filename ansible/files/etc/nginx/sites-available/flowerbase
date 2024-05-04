@@ -18,10 +18,8 @@ server {
 	root {{ project_dir_flowerbase }}/public;
 	index index.php index.html index.htm;
 
-    access_log on;
-
-    location = /favicon.ico { access_log off; log_not_found off; }
-    location = /robots.txt  { access_log off; log_not_found off; }
+    access_log off;
+    log_not_found off;
 
 	location / {
         try_files $uri $uri/ =404;

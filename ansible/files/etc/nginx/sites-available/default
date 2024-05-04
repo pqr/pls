@@ -3,6 +3,7 @@ server {
     listen [::]:80;
     server_name forwardlog.net;
 
+    charset utf-8;
     sendfile on;
     tcp_nopush on;
     client_max_body_size 0;
@@ -18,10 +19,9 @@ server {
 	root {{ project_dir_pls }}/public;
 	index index.php index.html index.htm;
 
-	access_log on;
-
-    location = /favicon.ico { access_log off; log_not_found off; }
-    location = /robots.txt  { access_log off; log_not_found off; }
+    access_log off;
+    log_not_found off;
+    add_header X-Robots-Tag "noindex, nofollow, nosnippet, noarchive";
 
     location / {
         try_files $uri $uri/ =404;

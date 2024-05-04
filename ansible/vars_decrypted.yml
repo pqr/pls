@@ -1,5 +1,5 @@
 # PHP переменные
-php_version: "7.4"
+php_version: "8.3"
 php_use_ppa: "ppa:ondrej/php"
 
 ansible_user: "ubuntu"

@@ -5,12 +5,6 @@
    - vars_decrypted.yml
 
   tasks:
-  # Обновить apt cache:
-  - name: Update cache
-    apt: update_cache=true
-    changed_when: no
-    tags: cache
-
   # Установить репозиторий php:
   - name: Add repository for Ubuntu
     apt_repository: repo={{ php_use_ppa }}
@@ -51,8 +45,8 @@
 
   - name: Create link for 99-forwardlog.ini into conf.d (fpm and cli)
     file:
-      src: "/etc/php/{{ php_version }}/mods-available/99-forwardlog.ini"
-      dest: "{{ item }}/99-forwardlog.ini"
+      src: "/etc/php/{{ php_version }}/mods-available/99-basis.ini"
+      dest: "{{ item }}/99-basis.ini"
       state: link
     loop:
       - "/etc/php/{{ php_version }}/fpm/conf.d"
