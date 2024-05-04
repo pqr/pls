@@ -1,0 +1,16 @@
+delete from dblog where CreatedDateTime < '2021-01-01 00:00:00';
+delete from dblog_trace where CreatedDateTime < '2021-01-01 00:00:00';
+delete from dblog_table WHERE ID < (SELECT MIN(ID) FROM dblog_table);
+delete from metric where CreatedDateTime < '2024-01-01';
+delete from phpsession;
+delete from log_onecimport where CreatedDateTime < '2024-01-01';
+delete from log_filter where CreatedDateTime < '2024-01-01';
+delete from log_autolaunch where CreatedDateTime < '2024-01-01';
+delete from log_autolaunch_text where ID < (SELECT MIN(ID) FROM log_autolaunch_text);
+delete from log_email where CreatedDateTime < '2024-01-01';
+delete from log_email_text where ID < (SELECT MIN(ID) FROM log_email);
+delete from deleted where CreatedDateTime < '2023-01-01';
+delete from deleted_trace where CreatedDateTime < '2023-01-01';
+delete from deleted_text where deletedID  < (SELECT MIN(ID) FROM deleted);
+delete from log_access WHERE CreatedDateTime < '2024-01-01';
+delete from cshistory where ShipmentID NOT IN (SELECT ID FROM shipment);
