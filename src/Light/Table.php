@@ -152,8 +152,8 @@ class Table implements \JsonSerializable
         if ($tableName) {
             $this->tableName = $tableName;
         } else {
-            $tableClass = get_class($this);
-            if (strpos($tableClass, 'class@anonymous') === 0) {
+            $tableClass = static::class;
+            if (str_starts_with($tableClass, 'class@anonymous')) {
                 $tableClass = 'Table' . uniqid('Table', true);
             }
             $this->tableName = str_replace('\\', '_', $tableClass);
@@ -167,8 +167,8 @@ class Table implements \JsonSerializable
     protected function createObj()
     {
         // Если объект не задан явно, попробуем найти соответсвующий класс рядом с текущим файлом модуля
-        $tableClass = get_class($this);
-        if (strpos($tableClass, 'class@anonymous') !== 0) {
+        $tableClass = static::class;
+        if (!str_starts_with($tableClass, 'class@anonymous')) {
             $objClass = $tableClass . 'Obj';
             if (Misc::classExists($objClass)) {
                 //Файл найден, создаём объект именно этого класса
@@ -201,7 +201,6 @@ class Table implements \JsonSerializable
 
     /**
      * Регристрирует переданный массив $fields во внутренней переменной $this->fieldsFirst
-     * @param Fieldset $fieldset
      */
     public function setFieldsetFirst(Fieldset $fieldset): void
     {
@@ -210,7 +209,6 @@ class Table implements \JsonSerializable
 
     /**
      * Регристрирует переданный массив $fields во внутренней переменной $this->fieldsLast
-     * @param Fieldset $fieldset
      */
     public function setFieldsetLast(Fieldset $fieldset): void
     {
@@ -330,7 +328,6 @@ class Table implements \JsonSerializable
     /**
      * Проверяет, отображется ли поле в режиме таблицы?
      * Поле должно иметь mode F::MODE_LIST и быть среди отображаемых в текущих настроках Table layout settings (массив $this->tableFieldsShow)
-     * @param string $fieldKey
      * @return bool
      */
     public function isFieldShowed(string $fieldKey): bool
@@ -633,7 +630,6 @@ class Table implements \JsonSerializable
 
     /**
      * Возвращает массив из строк, которые должны быть помещены в thead. Обычно это одна строка
-     * @param array $allFields
      * @return string
      */
     protected function getHtmlTableThead(array $allFields)
@@ -665,7 +661,6 @@ class Table implements \JsonSerializable
     }
 
     /**
-     * @param F $field
      * @return string
      */
     protected function getHtmlTableTheadThContent(F $field)
@@ -727,8 +722,6 @@ class Table implements \JsonSerializable
      * Метод для переопределения в классах потомках.
      * Он вызывается на всех строках, кроме последней total строки, поэтому $rowNum указан как int
      * (для последней total строки агрумент $rowNum был бы 'total', но этот метод не вызывается для total строки)
-     * @param array $rowDataCalculated
-     * @param int $rowNum
      * @return string
      */
     protected function getTableRowCssClass(array $rowDataCalculated, int $rowNum): string
@@ -750,8 +743,6 @@ class Table implements \JsonSerializable
      * Возвращает url-параметры для строки. Они будут вставлены в аттрибут data-urlparams в теге tr,
      * Эти url-параметры в итоге будут использованы при двойном клике на строке (см. Table.js)
      * и при клике на одну из ссылок $this->_listLinkFieldKeys
-     * @param array $rowDataCalculated
-     * @param int $rowNum
      * @return array
      */
     protected function getTableRowLinkUrlParams(array $rowDataCalculated, int $rowNum): array
@@ -760,8 +751,6 @@ class Table implements \JsonSerializable
     }
 
     /**
-     * @param array $rowDataCalculated
-     * @param int $rowNum
      * @return string
      */
     protected function getTableRowTagParams(array $rowDataCalculated, int $rowNum): string
@@ -773,10 +762,6 @@ class Table implements \JsonSerializable
 
     /**
      * Метод переопределяется в Subtable, когда в режиме редактирования нужно выводить поля в режиме редактирования
-     * @param array $rowDataCalculated
-     * @param int $rowNum
-     * @param F $field
-     * @param array $fullLinkParams
      * @return string
      */
     protected function getHtmlTableCell(array $rowDataCalculated, int $rowNum, F $field, array $fullLinkParams): string
@@ -866,7 +851,7 @@ class Table implements \JsonSerializable
             /** @var \Light\Field\FieldAbstract $field */
             $fieldKey = $field->key;
             $value = $rowDataCalculated[$fieldKey];
-            if ($field->groupconcat && strpos($value, "\n") !== false) {
+            if ($field->groupconcat && str_contains($value, "\n")) {
                 //Если было объединение нескольких значений, то накладывать css class на всю ячейку TD не стоит
                 //В этом случае каждое значение должно быть подсвечено отдельно
                 $tdCssClass = '';
@@ -905,7 +890,6 @@ class Table implements \JsonSerializable
 
     /**
      * Возвращает значения для total строки таблицы
-     * @param array $dataCalculated
      * @param array|null $fields опционально можно передать массив полей, по которым делать подсчёт
      * этот массив передаётся явно при рендеринге в html для оптимизации
      * @return array
@@ -952,7 +936,6 @@ class Table implements \JsonSerializable
      * Функция проверяет, нужно ли выводить total строку?
      * Этот метод переопределяется в Subtable, где в режиме Edit строка total выводится обязательно,
      * если есть хотя бы одно поле со свойством total
-     * @param array $dataTotal
      * @return bool
      */
     public function hasTotalRow(array $dataTotal): bool
@@ -980,7 +963,7 @@ class Table implements \JsonSerializable
             $fieldKey = $field->key;
 
             $totalValue = $dataTotal[$fieldKey] ?? null;
-            if ($field->groupconcat && strpos($totalValue, "\n") !== false) {
+            if ($field->groupconcat && str_contains($totalValue, "\n")) {
                 //Если было объединение нескольких значений, то накладывать css class на всю ячейку TD не стоит
                 //В этом случае каждое значение должно быть подсвечено отдельно
                 $tdCssClass = '';
@@ -997,7 +980,7 @@ class Table implements \JsonSerializable
             // иначе можем получить total строку из большого кол-ва значений по умолчанию (нули, No, и т.п)
             if (array_key_exists($fieldKey, $dataTotal)) {
                 $totalValue = $dataTotal[$fieldKey];
-                if ($field->getType() === F::TYPE_MONEY_WITH_CURRENCY && strpos($totalValue, "\n") !== false) {
+                if ($field->getType() === F::TYPE_MONEY_WITH_CURRENCY && str_contains($totalValue, "\n")) {
                     // Текущая колонка имеет тип TYPE_MONEY_WITH_CURRENCY, а total значение содержит перевод строки
                     // значит в таблице были разные валюты и мы в итоге получаем разбивку по валютам
                     // нужно применить groupconcat подход
@@ -1034,7 +1017,7 @@ class Table implements \JsonSerializable
                 $findIdFields = explode('+', $findIdFromRequest);
                 foreach ($findIdFields as $part) {
 
-                    if (strpos($part, '|') !== false) {
+                    if (str_contains($part, '|')) {
                         [$key, $val] = explode('|', $part);
                         $this->findId[$key] = $val;
                     } else {
@@ -1065,8 +1048,6 @@ class Table implements \JsonSerializable
      * Тут может быть нюанс: если поле типа MONEY_WITH_CURRENCY, то считать total нужно только в том случае, если все
      * значения имеют одинаковую валюту.
      * Также при типе MONEY_WITH_CURRENCY меняется тип возвращаемого значения - это уже не просто число, но строка
-     * @param F $field
-     * @param array $dataCalculated
      * @return float|string $total
      */
     public function tableCalcFieldTotal(F $field, array $dataCalculated)

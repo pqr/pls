@@ -163,9 +163,6 @@ class Select2ajaxController
      * По полученному из ajax запроса массиву $parentFieldValuesFromAjax отфильтруем опции текущего FieldSelect
      * (который является child)
      *
-     * @param FieldSelect $field
-     * @param array $options
-     * @param array $parentFieldValuesFromAjax
      * @return array
      */
     private function filterChildOptions(FieldSelect $field, array $options, array $parentFieldValuesFromAjax): array
@@ -249,8 +246,6 @@ class Select2ajaxController
 
     /**
      * Проходит ли текущий элемент проверку по массиву связей parent-child?
-     * @param array $relationsForThisChildValue
-     * @param array $parentFieldValuesFromAjax
      * @return bool
      */
     private function isParentChildPass(array $relationsForThisChildValue, array $parentFieldValuesFromAjax): bool
@@ -264,7 +259,7 @@ class Select2ajaxController
                 // Проверяем только те поля, которые реально пришли с ajax запросом
                 if (isset($parentFieldValuesFromAjax[$relationParentFieldKey])) {
                     $valueFromAjax = $parentFieldValuesFromAjax[$relationParentFieldKey];
-                    if (strpos($valueFromAjax, '|') !== false) {
+                    if (str_contains($valueFromAjax, '|')) {
                         $multipleValuesFromAjax = PipeSeparatedIdsTrait::parseValue($valueFromAjax);
                         if (!in_array($relationParentFieldValue, $multipleValuesFromAjax)) {
                             // Текущая комбинация relations загруженная из базы провалила проверку, попробуем в цикле найти следующую

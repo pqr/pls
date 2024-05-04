@@ -25,7 +25,6 @@ abstract class MassactionAbstract
     public $blank = false;
 
     /**
-     * @param array $ids
      * @return mixed
      */
     abstract public function __invoke(array $ids);
@@ -43,7 +42,6 @@ abstract class MassactionAbstract
 
     /**
      * Возвращает объект Link на текущий Massaction - удобно для формирования form action
-     * @param array $params
      * @return Link
      */
     protected function getLink(array $params = []): Link

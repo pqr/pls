@@ -65,7 +65,6 @@ abstract class ActionAbstract
 
     /**
      * Возвращает объект Link на текущий Action - удобно для формирования form action
-     * @param array $params
      * @return Link
      */
     protected function getLink(array $params = []): Link
@@ -74,7 +73,7 @@ abstract class ActionAbstract
         if ($this->obj->getId()) {
             $link->view($this->obj->getId());
         }
-        $link->action(get_class($this))
+        $link->action(static::class)
             ->ajax($this->onlyAjax)
             ->post($this->onlyPost)
             ->params($params);

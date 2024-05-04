@@ -95,7 +95,7 @@ class Html
      */
     public static function showHide($linkHtml, $hiddenHtml)
     {
-        if (strpos($hiddenHtml, 'truncated-full') !== false) {
+        if (str_contains($hiddenHtml, 'truncated-full')) {
             // Если переданный текст уже содержит html код для скрытия-отображения, то второй раз не оборачиваем (актуально для вывода логов)
             return $hiddenHtml;
         }
@@ -108,7 +108,7 @@ class Html
 
     public static function getTruncatedText($text, $maxlength = 30)
     {
-        if (strpos($text, 'truncated-full') !== false) {
+        if (str_contains($text, 'truncated-full')) {
             // Если переданный текст уже содержит html код для скрытия-отображения, то второй раз не оборачиваем (актуально для вывода логов)
             return $text;
         }
@@ -122,7 +122,7 @@ class Html
 
     public static function getPartlyTruncatedText($text, $lettersShown = 200)
     {
-        if (strpos($text, 'truncated-full') !== false) {
+        if (str_contains($text, 'truncated-full')) {
             // Если переданный текст уже содержит html код для скрытия-отображения, то второй раз не оборачиваем (актуально для вывода логов)
             return $text;
         }
@@ -150,7 +150,7 @@ class Html
     public static function getTruncatedList(array $lines, string $label, int $maxElements = 4): string
     {
         $outHtml = implode('<br>', $lines);
-        if (strpos($outHtml, 'truncated-full') !== false) {
+        if (str_contains($outHtml, 'truncated-full')) {
             // Если переданный текст уже содержит html код для скрытия-отображения, то второй раз не оборачиваем (актуально для вывода логов)
             return $outHtml;
         }

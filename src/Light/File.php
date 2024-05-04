@@ -88,7 +88,6 @@ class File
 
     /**
      * Создаёт временную директорию в папке LIGHT_DIR_TEMP и автоматически удаляет её после окончания работы скрипта
-     * @param string $prefix
      * @return string
      * @throws IOException On any directory creation failure
      */
@@ -120,7 +119,6 @@ class File
     }
 
     /**
-     * @param string $dir
      * @return array SplFileInfo[]
      */
     public static function scandirRecurcive(string $dir): array
@@ -144,7 +142,6 @@ class File
 
     /**
      * Подсчитывает размер директории или файла в байтах включая вложенные директории
-     * @param string $path
      * @return int
      */
     public static function size(string $path): int
@@ -169,7 +166,6 @@ class File
 
     /**
      * Возвращает количество файлов включая вложенные поддиректории
-     * @param string $path
      * @return int
      */
     public static function filesCount(string $path): int
@@ -190,7 +186,6 @@ class File
     /**
      * Принимает имя файла вместе путём до него и проверяет - если такой файл уже есть, то меняет имя файла,
      * чтобы оно стало уникально, добавляя в конец индекс в скобках, как это делает проводник.
-     * @param string $filepath
      * @return string
      */
     public static function getUniqueFilename(string $filepath): string

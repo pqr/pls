@@ -234,7 +234,7 @@ trait TableSortable
                 // Сначала попробуем узнать внешнюю таблицу по свойству optionsView
                 // это самое надёжное свойство, оно хранит ссылку на внешнюю таблицу для отображения справочника
                 $optionsView = $sortField->optionsView;
-                if ($optionsView && !is_callable($optionsView) && is_string($optionsView) && strpos($optionsView, ' ') === false) {
+                if ($optionsView && !is_callable($optionsView) && is_string($optionsView) && !str_contains($optionsView, ' ')) {
                     $foreignTable = explode('|', $optionsView)[0];
                 }
             }
@@ -242,7 +242,7 @@ trait TableSortable
                 // Если по optionsView не удалось определить внешнюю таблицу, то попробуем по options
                 // options должен быть строковый, также нужно отделить первую часть до вертикальной черты
                 $options = $sortField->options;
-                if ($options && !is_callable($options) && is_string($options) && strpos($options, ' ') === false) {
+                if ($options && !is_callable($options) && is_string($options) && !str_contains($options, ' ')) {
                     $foreignTable = explode('|', $options)[0];
                 }
             }
@@ -283,7 +283,7 @@ trait TableSortable
     public function sortWithPhp($defaultSortField, $defaultSortOrder)
     {
         $sortField = $this->getSortField();
-
+    
         if (!$sortField) {
             $sortby = $defaultSortField;
             $sortorder = $defaultSortOrder;
@@ -291,7 +291,7 @@ trait TableSortable
             $sortby = $sortField->tableOrderBy;
             $sortorder = $this->getSortOrder();
         }
-
+    
         if ($sortby) {
             //Соберём значения поля по которому сортировать в отдельный массив
             $multisort = true;
@@ -303,7 +303,7 @@ trait TableSortable
                 }
                 $tmpvalues[] = $row[$sortby]; //Запомним значение поля для сортировки
             }
-
+    
             if ($multisort) //Если подготовка $tmpvalues прошла успешно, то сортируем
             {
                 if ($sortorder == 'ASC') {
@@ -311,7 +311,7 @@ trait TableSortable
                 } else {
                     $sortorder = SORT_DESC;
                 }
-
+    
                 //Необходимо приести все массивы к одной размерности, чтобы сделать array_multisort
                 //Для этого пройдёмся по основному массиву $this->Data и создадим NULL элементы в других массивах
                 //NULL удобен тем, что isset(NULL) == false и empty(NULL) == false, значит все механизмы вывода на экран и в excel не заметят подмены
@@ -323,16 +323,16 @@ trait TableSortable
                         $this->tableDataParams[$rownum] = NULL;
                     }
                 }
-
+    
                 ksort($this->tableDataFormated);
                 ksort($this->tableDataParams);
-
+    
                 //Отсортируем все массивы
                 array_multisort($tmpvalues, $sortorder, $this->tableData, $this->tableDataFormated,
                     $this->tableDataParams);
             }
         }
-
+    
         //Генерируем возвращаемый массив из ID
         $returnIds = array();
         foreach ($this->tableData as $rownum => $row) {
@@ -342,13 +342,11 @@ trait TableSortable
                 $returnIds[] = $row['ID'];
             }
         }
-
+    
         return $returnIds;
     }
     */
-
     /**
-     * @param F $field
      * @return string
      */
     protected function getHtmlTableTheadThContent(F $field)

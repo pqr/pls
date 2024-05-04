@@ -286,8 +286,6 @@ class InvoiceFields
 
     /**
      * Поле-фильтр по статусу счёта. Используется в модулях CInvoice и VInvoice
-     * @param array $statuses
-     * @param array $mixedOptions
      * @return \Light\Field\FieldSelect
      */
     public static function filterStatus(array $statuses, array $mixedOptions)
@@ -359,33 +357,18 @@ class InvoiceFields
             ],
             'sqlWhere' => function ($value) use ($firstLetter) {
 
-                switch ($value) {
-                    case 'NotDue':
-                        $query = "CURDATE() < DueDate";
-                        break;
-                    case 'Overdue':
-                        $query = "CURDATE() > DueDate";
-                        break;
-                    case 'OverdueLess30':
-                        $query = "(CURDATE() > DueDate AND CURDATE() < DATE_ADD(DueDate, INTERVAL 30 DAY))";
-                        break;
-                    case 'Overdue3069':
-                        $query = "(CURDATE() >= DATE_ADD(DueDate, INTERVAL 30 DAY)
-                                                AND CURDATE() < DATE_ADD(DueDate, INTERVAL 60 DAY))";
-                        break;
-                    case 'Overdue6089':
-                        $query = "(CURDATE() >= DATE_ADD(DueDate, INTERVAL 60 DAY)
-                                                AND CURDATE() < DATE_ADD(DueDate, INTERVAL 90 DAY))";
-                        break;
-                    case 'Overdue90179':
-                        $query = "(CURDATE() >= DATE_ADD(DueDate, INTERVAL 90 DAY)
-                                                AND CURDATE() < DATE_ADD(DueDate, INTERVAL 180 DAY))";
-                        break;
-                    case 'Overdue180':
-                    default:
-                        $query = "CURDATE() >= DATE_ADD(DueDate, INTERVAL 180 DAY)";
-                        break;
-                }
+                $query = match ($value) {
+                    'NotDue' => "CURDATE() < DueDate",
+                    'Overdue' => "CURDATE() > DueDate",
+                    'OverdueLess30' => "(CURDATE() > DueDate AND CURDATE() < DATE_ADD(DueDate, INTERVAL 30 DAY))",
+                    'Overdue3069' => "(CURDATE() >= DATE_ADD(DueDate, INTERVAL 30 DAY)
+                                                AND CURDATE() < DATE_ADD(DueDate, INTERVAL 60 DAY))",
+                    'Overdue6089' => "(CURDATE() >= DATE_ADD(DueDate, INTERVAL 60 DAY)
+                                                AND CURDATE() < DATE_ADD(DueDate, INTERVAL 90 DAY))",
+                    'Overdue90179' => "(CURDATE() >= DATE_ADD(DueDate, INTERVAL 90 DAY)
+                                                AND CURDATE() < DATE_ADD(DueDate, INTERVAL 180 DAY))",
+                    default => "CURDATE() >= DATE_ADD(DueDate, INTERVAL 180 DAY)",
+                };
 
                 $openStatues = $firstLetter === 'C' ? Finance::$cinvoiceOpenStatuses : Finance::$vinvoiceOpenStatuses;
                 $query .= " AND Status IN (" . implode(',', $openStatues) . ")";

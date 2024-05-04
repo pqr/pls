@@ -16,7 +16,7 @@ trait FirstLetterTrait
     public function getFirstLetter(): string
     {
         if (!$this->firstLetter) {
-            $parts = explode("\\", get_class($this));
+            $parts = explode("\\", $this::class);
             $this->firstLetter = end($parts)[0];
         }
 

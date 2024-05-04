@@ -22,8 +22,8 @@ class BuAccess
         // Текущий объект каким-то образом относится к MOW и у пользователя есть роль BU: MOW
         // или
         // Текущий объект каким-то образом относится к LED и у пользователя есть роль BU: LED
-        return strpos($buids, '|' . Constant::BU_MOW . '|') !== false && User::hasResponsibleRole(Application::ROLE_BUMOW)
-            || strpos($buids, '|' . Constant::BU_LED . '|') !== false && User::hasResponsibleRole(Application::ROLE_BULED);
+        return str_contains($buids, '|' . Constant::BU_MOW . '|') && User::hasResponsibleRole(Application::ROLE_BUMOW)
+            || str_contains($buids, '|' . Constant::BU_LED . '|') && User::hasResponsibleRole(Application::ROLE_BULED);
     }
 
     public static function hasAccessAll()

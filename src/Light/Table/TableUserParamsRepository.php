@@ -8,9 +8,6 @@ use Light\Db;
 
 class TableUserParamsRepository
 {
-    private $tableNameForSettings;
-    private $userId;
-
     private $isLoaded;
 
     // Кеширующие поля
@@ -20,10 +17,8 @@ class TableUserParamsRepository
     private $fieldsWidth = [];
     private $showAll = false;
 
-    public function __construct(string $tableNameForSettings, int $userId)
+    public function __construct(private string $tableNameForSettings, private int $userId)
     {
-        $this->tableNameForSettings = $tableNameForSettings;
-        $this->userId = $userId;
     }
 
     /**
@@ -54,9 +49,6 @@ class TableUserParamsRepository
         return $this->sortOrder;
     }
 
-    /**
-     * @param string $sortOrder
-     */
     public function saveSortOrder(string $sortOrder): void
     {
         $this->sortOrder = $sortOrder;
@@ -81,9 +73,6 @@ class TableUserParamsRepository
         return $this->fieldsWidth;
     }
 
-    /**
-     * @param string $fieldsShow
-     */
     public function saveFieldsShow(string $fieldsShow): void
     {
         $this->fieldsShow = $fieldsShow;
@@ -105,9 +94,6 @@ class TableUserParamsRepository
         return $this->showAll;
     }
 
-    /**
-     * @param bool $showAll
-     */
     public function saveShowAll(bool $showAll): void
     {
         $this->showAll = $showAll;

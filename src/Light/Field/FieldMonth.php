@@ -48,7 +48,7 @@ class FieldMonth extends FieldInputAbstract
                 $date = new \DateTime($value);
                 $out = $date->format("M'y");
             }
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $out = '';
         }
 
@@ -86,7 +86,7 @@ class FieldMonth extends FieldInputAbstract
         if (self::empty($value)) {
             return '';
         }
-        if (strpos($value, '-') !== false) {
+        if (str_contains($value, '-')) {
             [$year, $month] = explode('-', $value);
             return "$month/$year";
         }
@@ -122,7 +122,6 @@ class FieldMonth extends FieldInputAbstract
     /**
      * Вспомагательный статический метод - может пригодиться при ручном конструировании различных
      * запросов с фильтром по месяцу
-     * @param string $fieldKey
      * @param $value
      * @return string
      */

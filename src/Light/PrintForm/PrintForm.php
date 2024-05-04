@@ -36,8 +36,7 @@ class PrintForm
     public const OUT_SAVE_AND_STREAM = 0b11;
 
     protected $key; // условное название этой печатной формы (выводится на кнопке и в выпадающем списке)
-    protected $title; // начало текста, который попадёт в начало имени файла и в заголовок html страницы (при выводе в браузер)
-    protected $format; // в каком формате в итоге генерировать документ
+    protected $title; // в каком формате в итоге генерировать документ
     protected $templateFormat;
     protected $out; // что сделать с резульатом? Сохранить в папку объекта или отправить в браузер пользователю или и то и другое?
     protected $pdfLandscape = false;
@@ -50,27 +49,20 @@ class PrintForm
     public $allowMultiple = true;
     public $allowMultipleAsOne = false;
 
-    public function __construct(string $key, string $title, $format = self::FORMAT_HTML, int $out = self::OUT_STREAM)
+    public function __construct(string $key, string $title, protected $format = self::FORMAT_HTML, int $out = self::OUT_STREAM)
     {
         $this->key = $key;
         $this->title = $title;
-        $this->format = $format;
         $this->out = $out;
 
         // На основе выходного формата определим формат шаблона по умолчанию (можно переопределить в конструкторе потомка)
-        switch ($format) {
-            case self::FORMAT_EXCEL:
-                $this->templateFormat = self::TEMPLATE_FORMAT_EXCEL;
-                break;
-            case self::FORMAT_DOCX:
-                $this->templateFormat = self::TEMPLATE_FORMAT_DOCX;
-                break;
+        $this->templateFormat = match ($this->format) {
+            self::FORMAT_EXCEL => self::TEMPLATE_FORMAT_EXCEL,
+            self::FORMAT_DOCX => self::TEMPLATE_FORMAT_DOCX,
+            default => self::TEMPLATE_FORMAT_PHP,
+        };
 
-            default:
-                $this->templateFormat = self::TEMPLATE_FORMAT_PHP;
-        }
-
-        if ($format === self::FORMAT_DOCX) {
+        if ($this->format === self::FORMAT_DOCX) {
             $this->allowMultiple = false;
         }
     }
@@ -119,7 +111,6 @@ class PrintForm
     /**
      * Метод для переопределения в классах потомках - проверяет, подходит ли данная печатная форма для данного объекта?
      * Этот метод вызывается при формировании меню из кнопок на печать ModuleAbstract::getSubmenuItemsTplData
-     * @param ObjAbstract $obj
      * @return bool
      */
     public function testForObj(ObjAbstract $obj): bool
@@ -140,7 +131,6 @@ class PrintForm
 
     /**
      * Возвращает текст, который попадёт в заголовок html страницы
-     * @param ObjAbstract $obj
      * @return string
      */
     protected function getTitleHtml(ObjAbstract $obj): string
@@ -150,7 +140,6 @@ class PrintForm
 
     /**
      * Возвращает текст, который попадёт в название Excel листа
-     * @param ObjAbstract $obj
      * @return string
      */
     protected function getTitleExcelSheet(ObjAbstract $obj): string
@@ -160,7 +149,6 @@ class PrintForm
 
     /**
      * Возвращает текст, который попадёт в заголовок html страницы, если на печать выведено одновременно несколько объектов
-     * @param int $count
      * @return string
      */
     protected function getTitleHtmlMultiple(int $count): string
@@ -176,23 +164,15 @@ class PrintForm
      * По умолчанию в базовом классе PrintForm подразумеваем, что шаблоны должны лежать в папке PrintForms внутри папки
      * текущего модуля
      *
-     * @param ObjAbstract $obj
      * @return string
      */
     protected function getTemplate(ObjAbstract $obj): string
     {
-        switch ($this->templateFormat) {
-            case self::TEMPLATE_FORMAT_EXCEL:
-                $ext = 'xlsx';
-                break;
-
-            case self::TEMPLATE_FORMAT_DOCX:
-                $ext = 'docx';
-                break;
-
-            default:
-                $ext = 'tpl.php';
-        }
+        $ext = match ($this->templateFormat) {
+            self::TEMPLATE_FORMAT_EXCEL => 'xlsx',
+            self::TEMPLATE_FORMAT_DOCX => 'docx',
+            default => 'tpl.php',
+        };
 
         $validFilename = File::getValidFilename($this->key, true);
         $module = Misc::getModule($obj);
@@ -205,7 +185,6 @@ class PrintForm
      *
      * Делаем public - иногда нужно доступаться из вне
      *
-     * @param ObjAbstract $obj
      * @return string
      */
     public function getFilename(ObjAbstract $obj): string
@@ -223,23 +202,15 @@ class PrintForm
     /**
      * Для переопределения в классах потомках, если нужно добавить какие-то дополнительные данные для вывода на печать
      * в зависимости от полученного объекта
-     * @param ObjAbstract $obj
      * @return array
      */
     protected function getTplData(ObjAbstract $obj): array
     {
-        switch ($this->templateFormat) {
-            case self::TEMPLATE_FORMAT_EXCEL:
-                $data = $this->getTplDataForExcel($obj);
-                break;
-
-            case self::TEMPLATE_FORMAT_DOCX:
-                $data = $this->getTplDataForDocx($obj);
-                break;
-
-            default:
-                $data = $obj->getTplData(F::MODE_VIEW);
-        }
+        $data = match ($this->templateFormat) {
+            self::TEMPLATE_FORMAT_EXCEL => $this->getTplDataForExcel($obj),
+            self::TEMPLATE_FORMAT_DOCX => $this->getTplDataForDocx($obj),
+            default => $obj->getTplData(F::MODE_VIEW),
+        };
 
         $data['_printForm'] = $this->key;
         $data = $this->getDialogDataFromRequest() + $data;
@@ -250,7 +221,6 @@ class PrintForm
     /**
      * Для переопределения в классах потомках, если нужно добавить какие-то дополнительные данные для вывода на печать
      * в зависимости от полученного объекта
-     * @param array $objects
      * @return array
      */
     protected function getTplDataForMultipleAsOne(array $objects): array
@@ -292,7 +262,6 @@ class PrintForm
 
     /**
      * Можно переопределить в классе потомке для заполнения диалога печати начальными данными
-     * @param ObjAbstract $obj
      * @return array
      */
     public function getDataForAjaxDialog(ObjAbstract $obj): array
@@ -302,8 +271,6 @@ class PrintForm
 
     /**
      * Можно переопределить в классах потомках для заполнения диалогоа массовой печати начальными данными
-     * @param array $ids
-     * @param array $objects
      * @return array
      */
     public function getDataForAjaxDialogMultiple(array $ids, array $objects): array
@@ -361,8 +328,6 @@ class PrintForm
     }
 
     /**
-     * @param ObjAbstract $obj
-     * @param string $targetDir
      * @throws \Exception
      */
     public function proceedPrint(ObjAbstract $obj, string $targetDir): void
@@ -423,8 +388,6 @@ class PrintForm
     }
 
     /**
-     * @param array $objects
-     * @param array $targetDirs
      * @throws \Exception
      */
     public function proceedPrintMultiple(array $objects, array $targetDirs): void
@@ -581,8 +544,6 @@ class PrintForm
     }
 
     /**
-     * @param string $templateFilepathAbs
-     * @param ObjAbstract $obj
      * @return TemplaterAbstract
      */
     private function createTemplater(string $templateFilepathAbs, ObjAbstract $obj): TemplaterAbstract
@@ -602,8 +563,6 @@ class PrintForm
     }
 
     /**
-     * @param TemplaterAbstract $templateWriter
-     * @param string $dest
      * @throws \Exception
      */
     private function save(TemplaterAbstract $templateWriter, string $dest): void
@@ -656,19 +615,12 @@ class PrintForm
      */
     private function createConcatinater(): ConcatinaterInterface
     {
-        switch ($this->format) {
-            case self::FORMAT_DOC:
-            case self::FORMAT_HTML:
-                return new ConcatinaterHtml(new Filesystem());
-
-            case self::FORMAT_EXCEL:
-                return new ConcatinaterExcel();
-
-            case self::FORMAT_PDF:
-                return new ConcatinaterPdf();
-        }
-
-        throw new \Exception('No Concatinater class for format ' . $this->format);
+        return match ($this->format) {
+            self::FORMAT_DOC, self::FORMAT_HTML => new ConcatinaterHtml(new Filesystem()),
+            self::FORMAT_EXCEL => new ConcatinaterExcel(),
+            self::FORMAT_PDF => new ConcatinaterPdf(),
+            default => throw new \Exception('No Concatinater class for format ' . $this->format),
+        };
     }
 
     public function isLinkBlank()
@@ -678,19 +630,12 @@ class PrintForm
 
     public function getIcon()
     {
-        switch ($this->format) {
-            case self::FORMAT_EXCEL:
-                return Ico::excel();
-
-            case self::FORMAT_PDF:
-                return Ico::pdf();
-
-            case self::FORMAT_DOC:
-            case self::FORMAT_DOCX:
-                return Ico::word();
-
-        }
-        return Ico::print();
+        return match ($this->format) {
+            self::FORMAT_EXCEL => Ico::excel(),
+            self::FORMAT_PDF => Ico::pdf(),
+            self::FORMAT_DOC, self::FORMAT_DOCX => Ico::word(),
+            default => Ico::print(),
+        };
     }
 
 }

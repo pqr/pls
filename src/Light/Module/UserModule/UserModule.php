@@ -128,7 +128,7 @@ class UserModule
     {
         $out = [];
         foreach (ApplicationAbstract::$app->getUserRolesList() as $roleKey => $_) {
-            $out[$roleKey] = strpos($userResponsibleRoles, '|' . $roleKey . '|') !== false;
+            $out[$roleKey] = str_contains($userResponsibleRoles, '|' . $roleKey . '|');
         }
         return $out;
     }

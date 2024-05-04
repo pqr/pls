@@ -44,7 +44,7 @@ if (isset($_GET['elfinder'])) {
                     'URL' => "?a=Help&elfinder=download&file=",
 // URL to files (REQUIRED)
                     'accessControl' => function ($attr, $path, $data, $volume) {
-                        if (strpos(basename($path), '.') === 0) {
+                        if (str_starts_with(basename($path), '.')) {
 // Для путей начинающихся с .., если запрошен атрибут read или write - сразу вернём false
                             if ($attr === 'read' || $attr === 'write') {
                                 return false;
@@ -98,7 +98,7 @@ if (isset($_GET['elfinder'])) {
 
 // Проверим, чтобы в имени скачиваемого файла file не было ..
         $test = '/' . str_replace('\\', '/', $_GET['file']) . '/';
-        if (strpos($test, '/../') !== false) {
+        if (str_contains($test, '/../')) {
             throw new \InvalidArgumentException("file contains ..: " . $_GET['file']);
         }
 

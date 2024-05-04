@@ -189,7 +189,7 @@ class CMUDict_original {
      * @return bool
      */
     private static function contains($value, $str) {
-        return strstr($str, (string) $value) !== false;
+        return str_contains($str, (string) $value);
     }
 
     /**
@@ -211,7 +211,7 @@ class CMUDict_original {
      * @return bool
      */
     private static function ends_with($suffix, $str) {
-        return substr($str, -strlen($suffix)) === $suffix;
+        return str_ends_with($str, $suffix);
     }
 
     /**

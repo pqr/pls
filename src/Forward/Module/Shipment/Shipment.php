@@ -100,7 +100,7 @@ class Shipment extends ModuleAbstract
         };
 
         $getHtmlFunctionInvoices = function ($value, array $data, $outHtml, $forTable, $field) {
-            if (strpos($value, '|') !== false) {
+            if (str_contains($value, '|')) {
                 [$invoice, $contragent, $status] = explode('|', $value, 3);
                 /** @var FieldAbstract $field */
                 if ($field->key === 'CustomerInvoices') {
@@ -117,7 +117,7 @@ class Shipment extends ModuleAbstract
         };
 
         $getExcelFunctionInvoices = function ($value, array $data, $out) {
-            if (strpos($value, '|') !== false) {
+            if (str_contains($value, '|')) {
                 [$invoice, $contragent] = explode('|', $value, 2);
                 $out = $invoice.' ('.$contragent.')';
             }
@@ -1007,10 +1007,6 @@ class Shipment extends ModuleAbstract
     /**
      * Автоматическое E-mail уведомление из базы на адрес бухгалтерии по тем перевозкам,
      * где просталена дата прилёта и если у клиента указана опция "Акт на дату прилёта".
-     *
-     * @param ObjAbstract $obj
-     * @param array       $oldData
-     * @param Msg         $msgBuff
      */
     private function emailOnAtaChange(ObjAbstract $obj, array $oldData, Msg $msgBuff): void
     {
@@ -1129,22 +1125,12 @@ class Shipment extends ModuleAbstract
             foreach ($quotationLines as $quotationLine) {
                 //Подготовим массив данных для вставки в строку Cost-sheet'а
                 //Для начала нужно расчитать Amount, который может зависеть от веса или числа мест
-                switch ($quotationLine['Per']) {
-                    case 'GW':
-                        $multiplier = $grossWeight;
-                        break;
-
-                    case 'CW':
-                        $multiplier = $chargeableWeight;
-                        break;
-
-                    case 'Piece':
-                        $multiplier = $pieces;
-                        break;
-
-                    default:
-                        $multiplier = 1;
-                }
+                $multiplier = match ($quotationLine['Per']) {
+                    'GW' => $grossWeight,
+                    'CW' => $chargeableWeight,
+                    'Piece' => $pieces,
+                    default => 1,
+                };
 
                 $price = $quotationLine['Price'];
                 $amount = $price * $multiplier;
@@ -1540,7 +1526,7 @@ class Shipment extends ModuleAbstract
 
         try {
             $xls->save($filepathAbsXlsx);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             Session::flashError(
                 'Не удалось сохранить файл <strong>'.htmlspecialchars(
                     $filenameWithoutExt.".xlsx",

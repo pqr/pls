@@ -205,7 +205,6 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     }
 
     /**
-     * @param F $field
      * @param bool $clone
      * @return FieldSet
      */
@@ -248,7 +247,6 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * Возвращает Fieldset из полей, у которых параметр 'modes' удовлетворяет переданному
      * Поля при этом не клонинуются, используются ссылки на поля текущего Fieldset
      * @param int $testMode битовая маска FieldAbstract::MODE_* - будут возвращены поля с удовлетворяющим параметром Modes
-     * @param array $data
      * @return Fieldset|F[]
      */
     public function filterByMode(int $testMode, array $data = [])
@@ -292,7 +290,6 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
     /**
      * Возвращает Fieldset, который содержит поля только с указанными ключами
-     * @param array $fieldsKeys
      * @return Fieldset|F[]
      */
     public function filterByKeys(array $fieldsKeys)
@@ -309,7 +306,6 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
     /**
      * Проверяет, существует ли поле с таким key (в массиве $this->_fields)
-     * @param string $fieldKey
      * @return bool
      */
     public function hasField(string $fieldKey)
@@ -319,7 +315,6 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
     /**
      * Меняет определённый параметр у всех полей
-     * @param string $paramName
      * @param $paramValue
      * @return $this
      */
@@ -334,7 +329,6 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
     /**
      * Меняет набор параметров у всех полей
-     * @param array $params
      * @return $this
      */
     public function setParams(array $params)
@@ -349,7 +343,6 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     /**
      * Функция должна использоваться там, где невозможно разименовать объект как массив
      * Например: $table->getFieldsetFirst()->getField(...)
-     * @param string $fieldKey
      * @return F
      */
     public function getField(string $fieldKey)
@@ -359,7 +352,6 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
     /**
      * Возвращает массив данных, в котором остаются только те поля, которые присутсвуют в этом Fieldset
-     * @param array $fieldsData
      * @return array $outData
      */
     public function getOnlyExistsFieldsData(array $fieldsData)
@@ -377,7 +369,6 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
     /**
      * Для каждого поля выполняет метод $field->getValue($data[$field->key]) и результат кладёт в выходной массив
-     * @param array $rowData
      * @param bool $forTable
      * @return array
      */
@@ -395,7 +386,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
     private function parseFieldValueFromDb(F $field, $value)
     {
-        if ($field->groupconcat && strpos($value, "\n") !== false) {
+        if ($field->groupconcat && str_contains($value, "\n")) {
             $lines = explode("\n", $value);
             //Если число линий больше 1 - будем рекурсивно обрабатывать каждую линию
             if (count($lines) > 1) {
@@ -497,7 +488,6 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     /**
      * Возвращает строку для SELECT запроса состояющую из полей в массиве $fieldsShow и зависимых от них полей
      * Некоторые поля могут быть вычисляемыми или состоять из подзапроса (FieldAbstract параметр 'sqlSelect')
-     * @param array $fieldsShow
      * @return string
      */
     public function getSqlSelect(array $fieldsShow = null, string $table = null)
@@ -561,8 +551,6 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
     /**
      * Рекурсивная функция, собирает в массив $selectFieldsArr поле $fieldKey и все поля от которых зависит $fieldKey
-     * @param string $fieldKey
-     * @param array $selectFieldsArr
      */
     private function makeSelectFieldsArr(string $fieldKey, array &$selectFieldsArr): void
     {
@@ -670,7 +658,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
     public function proceedSelect2ajax(string $fieldKey): ?array
     {
-        if (substr($fieldKey, -2) === '[]') {
+        if (str_ends_with($fieldKey, '[]')) {
             $fieldKey = substr($fieldKey, 0, -2);
         }
 

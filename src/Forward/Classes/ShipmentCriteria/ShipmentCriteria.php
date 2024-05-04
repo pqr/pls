@@ -248,7 +248,6 @@ class ShipmentCriteria
 
     /**
      * Обновляет несколько критериев по указанной перевозке
-     * @param array $criteriaIds
      * @param int $shipmentId если ID перевозки не задан - обновление идёт по всем перевозкам
      * @param string $dbLogMsg
      */
@@ -277,7 +276,6 @@ class ShipmentCriteria
     /**
      * @desc обвновляет критерии связанные с Customer Invoices
      * вызывается при сохранении инвойсов
-     * @param array $fileNumbers
      * @param string $dbLogMsg
      */
     public static function updateRelatedCInvByFileNumbers(array $fileNumbers, $dbLogMsg = ''): void
@@ -304,7 +302,6 @@ class ShipmentCriteria
     /**
      * @desc обновляет критерии связанные с Vendor Invoices
      * вызывается при сохранении инвойсов
-     * @param array $fileNumbers
      * @param string $dbLogMsg
      */
     public static function updateRelatedVInvByFileNumbers(array $fileNumbers, $dbLogMsg = ''): void

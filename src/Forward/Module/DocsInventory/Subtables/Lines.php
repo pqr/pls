@@ -43,7 +43,7 @@ class Lines extends Subtable
                 'tableWidthExcel' => 15,
                 'modes' => F::MODE_READONLY,
                 'getHtmlFunction' => function ($value, array $data, $outHtml) {
-                    if (strpos($value, '|') === false) {
+                    if (!str_contains($value, '|')) {
                         return $outHtml;
                     }
 
@@ -53,7 +53,7 @@ class Lines extends Subtable
                         ->getHtml();
                 },
                 'getExcelFunction' => function ($value, array $data, $out) {
-                    if (strpos($value, '|') === false) {
+                    if (!str_contains($value, '|')) {
                         return $out;
                     }
 

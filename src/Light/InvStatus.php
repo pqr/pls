@@ -264,9 +264,6 @@ class InvStatus
 
     /**
      * Возвращает подходящий cssClass для полей Overdue и DueDate. Используется в VInvoiceObj, CInvoiceObj
-     * @param string $firstLetter
-     * @param int $status
-     * @param int $overdue
      * @return string
      */
     public static function getOverdueViewCssClass(string $firstLetter, int $status, int $overdue)

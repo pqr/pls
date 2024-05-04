@@ -80,7 +80,7 @@ class CommonFields
                     return null;
                 }
 
-                if (substr($field->key, -4) !== 'From') {
+                if (!str_ends_with($field->key, 'From')) {
                     // У этого поля окончание НЕ From, не будем проверят на Until
                     return null;
                 }
@@ -121,7 +121,7 @@ class CommonFields
                     return null;
                 }
 
-                if (substr($field->key, -5) !== 'Until') {
+                if (!str_ends_with($field->key, 'Until')) {
                     // У этого поля окончание НЕ From, не будем проверят на Until
                     return null;
                 }
@@ -146,7 +146,6 @@ class CommonFields
 
     /**
      * @param string $prefix
-     * @param array $params
      * @return FieldMoney
      * @deprecated не удобно то, что при использовании этой функции в месте вызова не видно полное имя поля - невозможно найти поиском по тексту
      */
@@ -166,7 +165,6 @@ class CommonFields
     /**
      * не удобно то, что при использовании этой функции в месте вызова не видно полное имя поля - невозможно найти поиском по тексту
      * @param string $prefix
-     * @param array $params
      * @return FieldMoneyWithCurrency
      * @deprecated
      */
@@ -185,7 +183,6 @@ class CommonFields
 
     /**
      * @param string $prefix
-     * @param array $params
      * @param string $postfix
      * @return \Light\Field\FieldSelect
      */
@@ -598,10 +595,6 @@ class CommonFields
     /**
      * Возвращает колонку со списком файлов из таблицы с описанием файлов относящейся к указанному модулю
      * (например, shipmentfile). Дополнительно можно отфильтровать файлы с помощью $filesSqlWhere
-     * @param string $fieldKey
-     * @param string $name
-     * @param string $module
-     * @param string $filesSqlWhere
      * @return FieldString
      */
     public static function moduleFiles(string $fieldKey, string $name, string $module, string $filesSqlWhere = '')
@@ -664,7 +657,6 @@ class CommonFields
 
     /**
      * При использовании этого поля нужно также задавать ->setSqlWhere(...) или ->setFilterFieldKeys(...)
-     * @param string $optionsSqlWhere
      * @return FieldSelect
      */
     public static function filterResponsibleId(string $optionsSqlWhere = '1'): FieldSelect

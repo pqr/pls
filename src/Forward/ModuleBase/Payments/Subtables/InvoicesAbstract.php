@@ -71,7 +71,6 @@ abstract class InvoicesAbstract extends Subtable
      * Create Payment, то он попадает в модуль Payment с параметром $_REQUEST['invoices']
      * Наличие этого параметра проверяется в методе init и, если он есть, то вызывается данный метод,
      * чтобы получить более подробную информацию по счетам
-     * @param array $invIds
      * @return array
      */
     final protected function getInvoices(array $invIds)

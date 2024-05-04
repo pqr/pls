@@ -20,39 +20,21 @@ class StandartRateDialog
 {
     /**
      * Не обычный метод для подтаблицы - здесь происходит роутинг ajax действий с записями подтаблицы
-     * @param CustomerObj $customerObj
      */
     public static function proceed(CustomerObj $customerObj): void
     {
-        switch ($_GET['action']) {
-            case "new":
-                self::proceedNew($customerObj);
-                break;
-
-            case "edit":
-                self::proceedEdit($customerObj);
-                break;
-
-            case "applyaddon":
-                self::proceedShowApplyAddonDialog($customerObj);
-                break;
-
-            case "submit":
-                self::proceedSubmit($customerObj);
-                break;
-
-            case "del":
-                self::proceedDel($customerObj);
-                break;
-
-            default:
-                Response::abort(400, 'Unknown action ' . $_GET['action']);
-        }
+        match ($_GET['action']) {
+            "new" => self::proceedNew($customerObj),
+            "edit" => self::proceedEdit($customerObj),
+            "applyaddon" => self::proceedShowApplyAddonDialog($customerObj),
+            "submit" => self::proceedSubmit($customerObj),
+            "del" => self::proceedDel($customerObj),
+            default => Response::abort(400, 'Unknown action ' . $_GET['action']),
+        };
     }
 
     /**
      * При ajax запросе при нажатии ссылки New Standart Rate - диалоговое окно
-     * @param CustomerObj $customerObj
      */
     private static function proceedNew(CustomerObj $customerObj): void
     {
@@ -137,7 +119,6 @@ class StandartRateDialog
 
     /**
      * При ajax запросе на удаление какого-то тарифа
-     * @param CustomerObj $customerObj
      */
     private static function proceedDel(CustomerObj $customerObj): void
     {

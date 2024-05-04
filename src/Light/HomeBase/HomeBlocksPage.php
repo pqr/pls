@@ -14,7 +14,6 @@ use Light\Request;
 class HomeBlocksPage
 {
     /**
-     * @param string $homeClass
      * @return string
      */
     private static function getHomeFullClass(string $homeClass): string

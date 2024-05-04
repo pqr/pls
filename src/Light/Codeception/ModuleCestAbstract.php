@@ -67,7 +67,7 @@ abstract class ModuleCestAbstract
     {
         static $module;
         if ($module === null) {
-            $parts = explode('\\', get_class($this));
+            $parts = explode('\\', static::class);
             $class = end($parts);
             $module = substr($class, 0, -4); //remove 'Cest' suffix
         }
@@ -236,7 +236,6 @@ abstract class ModuleCestAbstract
 
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
-     * @param string $action
      */
     protected function testMassaction($I, string $action)
     {
@@ -346,7 +345,6 @@ abstract class ModuleCestAbstract
      * @group pdf
      *
      * @param \AcceptanceTester | \FunctionalTester $I
-     * @param \Codeception\Example $example
      *
      * @dataProvider printFormsDataProvider
      */

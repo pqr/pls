@@ -19,7 +19,6 @@ class ShipmentGp
 
     /**
      * Вспомагательный метод, который принимает массив номеров файлов и последовательно вызывает метод  self::updateGpEgpDeviation()
-     * @param array $fileNumbers
      */
     public static function updateGpEgpDeviationByFileNumbers(array $fileNumbers): void
     {

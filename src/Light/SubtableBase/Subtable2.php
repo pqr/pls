@@ -121,7 +121,7 @@ abstract class Subtable2
     protected function initObj()
     {
         // Если объект не задан явно, попробуем найти соответсвующий класс рядом с текущим файлом модуля
-        $objClass = get_class($this) . 'Obj';
+        $objClass = static::class . 'Obj';
         if (Misc::classExists($objClass)) {
             //Файл найден, создаём объект именно этого класса
             $this->_obj = new $objClass();
@@ -139,14 +139,13 @@ abstract class Subtable2
     protected function getMasterModule()
     {
         //Массив неймспейсов будет выглять так: <ProjectNamespace>\Module\<ModuleNamespace>\Subtables\ClassName
-        $namespaces = explode('\\', get_class($this));
+        $namespaces = explode('\\', static::class);
 
         return $namespaces[2] ?? '';
     }
 
     /**
      * Метод пригождается при копировании в ModuleAbstract
-     * @param ObjAbstract $masterObj
      */
     public function setMasterObj(ObjAbstract $masterObj): void
     {
@@ -159,7 +158,7 @@ abstract class Subtable2
     public function getTableName()
     {
         if ($this->_subtableName === null) {
-            $parts = explode('\\', get_class($this));
+            $parts = explode('\\', static::class);
             $this->_subtableName = end($parts);
         }
         return $this->_subtableName;
@@ -277,7 +276,7 @@ abstract class Subtable2
     {
         if ($this->_masterFieldKey === null) {
             //<projectNamespace>\Module\<moduleNamespace>\Sutables\<subtableClass>
-            $class = get_class($this);
+            $class = static::class;
             $class = explode('\\', $class);
             $masterModule = $class[2];
             $this->_masterFieldKey = $masterModule . 'ID';
@@ -363,7 +362,7 @@ abstract class Subtable2
     protected function getBlockTemplate()
     {
         if ($this->_blockTemplate === null) {
-            $subtableClass = get_class($this);
+            $subtableClass = static::class;
             $filepath = str_replace('\\', '/', $subtableClass) . '.tpl.php';
             if (file_exists(LIGHT_DIR_ROOT . "/src/$filepath")) {
                 $this->_blockTemplate = $filepath;
@@ -487,7 +486,6 @@ abstract class Subtable2
 
     /**
      * Возвращает массив данных основанный на $blockData, в котором все отсутсвующие поля заполнены default значениями
-     * @param array $blockData
      * @return array
      */
     protected function getEditBlockDataWithDefaults(array $blockData)
@@ -724,7 +722,6 @@ abstract class Subtable2
 
     /**
      * @param int $id
-     * @param array $rowDataFromPost
      * @return int $affectedRows
      */
     protected function proceedUpdateObj($id, array $rowDataFromPost)
@@ -734,7 +731,6 @@ abstract class Subtable2
     }
 
     /**
-     * @param array $rowDataFromPost
      * @return int ID новой строки
      */
     protected function proceedInsertObj(array $rowDataFromPost)

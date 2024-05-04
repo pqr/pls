@@ -33,7 +33,6 @@ class AjaxChangeField extends ActionAbstract
      * 2. можно полностью переопределить логику проверики прав для конкретных полей в классе потомке
      * например, разрешить редактировать поле, даже если у пользователя нет доступа на редактирование всего объекта
      *
-     * @param string $fieldKey
      * @return bool
      */
     public function hasAccessAjaxChangeField(string $fieldKey): bool

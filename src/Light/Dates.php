@@ -72,8 +72,6 @@ class Dates
 
     /**
      * Возвращает разницу в днях $endDate - $startDate с учётом знака
-     * @param string $startDate
-     * @param string $endDate
      * @return int|null
      */
     public static function diff(string $startDate, string $endDate): ?int
@@ -89,7 +87,7 @@ class Dates
         // %a - Общее количество дней
         try {
             return (int)date_diff(new \DateTime($startDate), new \DateTime($endDate))->format('%r%a');
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return 0;
         }
     }

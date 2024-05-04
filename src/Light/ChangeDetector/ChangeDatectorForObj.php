@@ -11,8 +11,6 @@ class ChangeDatectorForObj
     /**
      * Определяет, измелось ли хотя бы одно поле в объекте?
      * Опционально можно передать списко полей, которые проверять. Если не передан, то проверяются все поля из $obj
-     * @param ObjAbstract $obj
-     * @param array $fieldKeys
      * @param callable|null $compareFunc
      * @return bool
      */

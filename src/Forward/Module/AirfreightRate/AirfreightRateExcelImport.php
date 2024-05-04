@@ -86,7 +86,6 @@ class AirfreightRateExcelImport
     /**
      * Проходит по всему листу и возвращает двумерный массив с данными
      * Каждая строка при этом имеет дополнительный элемент с ключём '_excelRowNum' - оригинальный номер строки
-     * @param Worksheet $sheet
      * @return array
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
@@ -129,8 +128,6 @@ class AirfreightRateExcelImport
      * Принимает сырую строку из Excle файла и создаёт на её основе структуру с полями для шапки и массивом надбавок
      * При этом текстовые представления портов и перевозчиков конвертируются в их ID из базы.
      * Если текст не удалось опознать
-     * @param array $sheetRawData
-     * @param Msg $msgBuff
      * @return array
      */
     private function convertRowsForDb(array $sheetRawData, Msg $msgBuff)
@@ -290,7 +287,6 @@ class AirfreightRateExcelImport
     }
 
     /**
-     * @param array $data
      * @param int $rateId
      * @return int affectedRows
      */

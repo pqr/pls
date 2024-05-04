@@ -16,18 +16,11 @@ class SearchAirfreightRateDialog
      */
     public function __invoke(): void
     {
-        switch ($_GET['action']) {
-            case "render":
-                $this->proceedRender();
-                break;
-
-            case "ajaxSearch":
-                $this->proceedAjaxSearch();
-                break;
-
-            default:
-                Response::abort(400, 'Unknown action ' . $_GET['action']);
-        }
+        match ($_GET['action']) {
+            "render" => $this->proceedRender(),
+            "ajaxSearch" => $this->proceedAjaxSearch(),
+            default => Response::abort(400, 'Unknown action ' . $_GET['action']),
+        };
     }
 
     /**

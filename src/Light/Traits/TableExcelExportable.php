@@ -146,7 +146,6 @@ trait TableExcelExportable
 
     /**
      * Для переопределения в классах потомках
-     * @param array $rowData
      * @param $rowNum
      * @return array
      */

@@ -112,7 +112,7 @@ class FieldDate extends FieldInputAbstract
         try {
             $date = new \DateTime($value);
             $out = Date::PHPToExcel($date);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $out = FieldDate::beautify($value);
         }
 
@@ -161,7 +161,7 @@ class FieldDate extends FieldInputAbstract
     {
         // Одно из полей тандема "From ... until ..."
         $dbKey = preg_replace('/(From|Until)$/', '', $this->getFilterFieldKeys()[0]);
-        if (substr($this->key, -4) === 'From') {
+        if (str_ends_with($this->key, 'From')) {
             if (strlen($value) === 10) {
                 $value .= ' 00:00';
             }
@@ -172,7 +172,7 @@ class FieldDate extends FieldInputAbstract
             return "$dbKey >= '" . Db::esc($value) . "'";
         }
 
-        if (substr($this->key, -5) === 'Until') {
+        if (str_ends_with($this->key, 'Until')) {
             if (strlen($value) === 10) {
                 $value .= ' 23:59';
             }

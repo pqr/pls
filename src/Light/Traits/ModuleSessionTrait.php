@@ -82,7 +82,6 @@ trait ModuleSessionTrait
     }
 
     /**
-     * @param int $currentId
      * @param string $idUrlParam
      * @param array $additionalUrlParams дополнительные параметры для ссылок next/prev - нужно в Autolaunch log и Import log
      */
@@ -123,7 +122,6 @@ trait ModuleSessionTrait
     /**
      * @param int $index текущая позиция в массиве $this->_moduleSessionObjectsIds
      * @param string $idUrlParam имя url параметра в который нужно положить ID следущего и предыдущего объекта
-     * @param array $additionalUrlParams
      * @return string
      */
     private function getModuleSessionNextPrevLink(

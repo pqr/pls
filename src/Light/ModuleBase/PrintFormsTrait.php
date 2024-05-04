@@ -35,7 +35,6 @@ trait PrintFormsTrait
     /**
      * Метод используется для добавления печатной формы описанной в собственном классе
      * В качестве единственного параметра нужно передать класс унаследованный от PrintForm
-     * @param PrintForm $printForm
      */
     final protected function addPrintForm(PrintForm $printForm)
     {
@@ -176,7 +175,6 @@ trait PrintFormsTrait
     /**
      * Выводи диалоговое окно где пользователь должен выбрать одну из доступных печатных форм
      * Алогритм проходит по всем отмеченным объектам и находит такое подмножество форм, которое удовлетворяет всем
-     * @param array $ids
      * @throws \Exception
      */
     protected function massactionPrint(array $ids)
@@ -354,11 +352,6 @@ trait PrintFormsTrait
      *
      * Этот метод как раз выводит такой диалог. Он запускается после того, как пользователь выбран конкретную печатную
      * форму которую хочет массво распечатать по отмеченным галочками объектам
-     *
-     * @param array $ids
-     * @param array $objects
-     * @param PrintForm $printForm
-     * @param bool $multipleAsOne
      */
     private function massactionPrintShowFieldsDialog(
         array $ids,

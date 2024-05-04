@@ -185,8 +185,6 @@ abstract class FieldAbstract implements \JsonSerializable
     public const FILTER_EQUAL = '=';
     public const FILTER_LIKE = 'LIKE';
 
-    public $key;
-
     /**
      * @var string имя для отображения в заголовках таблицы и на формах (если не задано, используется key)
      */
@@ -601,15 +599,13 @@ abstract class FieldAbstract implements \JsonSerializable
     /** @var string $typeCache кеширующее поле для метода getType() */
     private $typeCache;
 
-    final public function __construct($key, array $params = [])
+    final public function __construct(public $key, array $params = [])
     {
         if (isset($params['key'])) {
             unset($params['key']);
         }
 
         $this->initialParams = $params;
-
-        $this->key = $key;
         $this->initDefaultParams();
 
         // Внесём userDefinedParams во внутренние переменные класса
@@ -625,7 +621,7 @@ abstract class FieldAbstract implements \JsonSerializable
         $this->editName = $this->key;
         $this->tableOrderBy = $this->key;
 
-        if (strpos($this->key, 'Name') === 0) {
+        if (str_starts_with($this->key, 'Name')) {
             //Если поле начинается со слова Name - установим некую стандартную ширину для экспорта в Excel = 30
             $this->tableWidthExcel = 30;
         }
@@ -656,7 +652,7 @@ abstract class FieldAbstract implements \JsonSerializable
 
         }
 
-        $class = get_class($this);
+        $class = static::class;
         $trace = debug_backtrace();
         $file = $trace[0]['file'];
         $line = $trace[0]['line'];
@@ -680,7 +676,6 @@ abstract class FieldAbstract implements \JsonSerializable
     }
 
     /**
-     * @param array $params
      * @return $this
      */
     final public function setParams(array $params)
@@ -694,7 +689,7 @@ abstract class FieldAbstract implements \JsonSerializable
     public function getType()
     {
         if ($this->typeCache === null) {
-            $this->typeCache = substr(get_class($this), strlen('\\Light\\Field\\Field') - 1);
+            $this->typeCache = substr(static::class, strlen('\\Light\\Field\\Field') - 1);
         }
 
         return $this->typeCache;
@@ -708,7 +703,6 @@ abstract class FieldAbstract implements \JsonSerializable
     /**
      * Вызывает $this->accessFunction (если задана), чтобы проверить, есть ли у пользователя доступ на просмотр
      * этого поля на основе данных текущей записи (array $data)
-     * @param array $data
      * @return bool
      */
     final public function checkAccessFunction(array $data)
@@ -725,7 +719,6 @@ abstract class FieldAbstract implements \JsonSerializable
     /**
      * Вызывает $this->editAccessFunction (если задана), чтобы проверить, есть ли у пользователя доступ на редактирование
      * этого поля на основе данных текущей записи (array $data)
-     * @param array $data
      * @return bool
      */
     final public function checkEditAccessFunction(array $data)
@@ -748,7 +741,7 @@ abstract class FieldAbstract implements \JsonSerializable
         //Используем временную анонимную функцию, чтобы добавить префиксы к четырём свойствам
         $add = function ($currentValue) use ($prefix) {
             //Если текущее значение поля не начинается с этого префикса, добавим префикс в начало
-            if (strpos($currentValue, (string) $prefix) !== 0) {
+            if (!str_starts_with($currentValue, (string) $prefix)) {
                 return $prefix . "\n" . $currentValue;
             }
             return $currentValue;
@@ -879,13 +872,11 @@ abstract class FieldAbstract implements \JsonSerializable
 
     /**
      * Метод для переопределения в классах потоках - превращает поле в режимах list/view в редакитруемое через ajax
-     * @param mixed $value
-     * @param array $data
      * @param bool $forTable
      * @param string $outHtml
      * @return mixed
      */
-    protected function ajaxify($value, array $data, $forTable, $outHtml)
+    protected function ajaxify(mixed $value, array $data, $forTable, $outHtml)
     {
         if ($this->groupconcat) {
             if ($this->groupconcatIsSpecialAjaxibleFunction && is_callable($this->groupconcatIsSpecialAjaxibleFunction)) {
@@ -983,7 +974,7 @@ abstract class FieldAbstract implements \JsonSerializable
 
         $calcFunction = $this->calcFunction;
 
-        if ($this->groupconcat && strpos($value, "\n") !== false) {
+        if ($this->groupconcat && str_contains($value, "\n")) {
             $lines = explode("\n", $value);
             //Если число линий больше 1 - будем рекурсивно обрабатывать каждую линию
             if (count($lines) > 1) {
@@ -1084,7 +1075,6 @@ abstract class FieldAbstract implements \JsonSerializable
      * Возвращает клон объекта-поля.
      * Опционально можно заменить ключ
      * @param string $newKey
-     * @param array $newParams
      * @return $this
      */
     public function getClone($newKey = null, array $newParams = [])
@@ -1204,9 +1194,6 @@ abstract class FieldAbstract implements \JsonSerializable
 
     /**
      * @static
-     * @param string $fieldKey
-     * @param string $type
-     * @param array $params
      * @return FieldAbstract
      */
     final public static function create(string $fieldKey, string $type, array $params = [])
@@ -1218,12 +1205,11 @@ abstract class FieldAbstract implements \JsonSerializable
     /**
      * Метод для быстрого создания полей разного типа вместо универсального create
      * @param string $method
-     * @param array $args
      * @return null|FieldAbstract
      */
     public static function __callStatic($method, array $args)
     {
-        if (strpos($method, 'create') === 0) {
+        if (str_starts_with($method, 'create')) {
             //Это один из методов создания поля определённого типа!
             //Проверим, что существует обязательный первый параметр (который должен быть $fieldKey) в массиве $args
             if (!isset($args[0])) {
@@ -1457,7 +1443,7 @@ abstract class FieldAbstract implements \JsonSerializable
             && $this->acSource
             && !$this->acReadonly
             && $this->acSource[0] !== '?'
-            && strpos($this->acSource, ',') === false
+            && !str_contains($this->acSource, ',')
         ) {
 
             $formatFunction = $this->acFormatValueOnSaveFunction;

@@ -53,7 +53,7 @@ class Migrate extends AutolaunchAbstract
 
     private function migrageSqlFile(string $dir, string $file)
     {
-        if (strpos($file, '.') === 0) {
+        if (str_starts_with($file, '.')) {
             return self::RESULT_SKIPPED;
         }
 
@@ -81,7 +81,7 @@ class Migrate extends AutolaunchAbstract
         $queries = array_filter(array_map('trim', explode(';', $content)));
         foreach ($queries as $query) {
             try {
-                if (strpos($query, '-- AUTOLAUNCH') === 0) {
+                if (str_starts_with($query, '-- AUTOLAUNCH')) {
 
                     $autolaunchCliName = trim(str_replace('-- AUTOLAUNCH', '', $query));
                     $out = shell_exec('php ' . LIGHT_DIR_PUBLIC . '/index.php ' . $autolaunchCliName);

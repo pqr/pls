@@ -14,30 +14,19 @@ class TemplaterExcel extends TemplaterAbstract
      * @var XlsWriter
      */
     public $xlsWriter;
-
-    /**
-     * @var Fieldset
-     */
-    private $fieldset;
     /**
      * @var string
      */
     private $titleExcelSheet;
-    /**
-     * @var int
-     */
-    private $tableOpts;
 
-    public function __construct(string $templateFilepathAbs, string $titleExcelSheet, Fieldset $fieldset, int $tableOpts)
+    public function __construct(string $templateFilepathAbs, string $titleExcelSheet, private Fieldset $fieldset, private int $tableOpts)
     {
         parent::__construct($templateFilepathAbs);
 
         $this->xlsWriter = new XlsWriter($templateFilepathAbs);
-        $this->fieldset = $fieldset;
 
         $titleExcelSheet = mb_substr($titleExcelSheet, 0, 30);
         $this->titleExcelSheet = str_replace('/', '_', $titleExcelSheet);
-        $this->tableOpts = $tableOpts;
     }
 
     public function writeData(array $data): void

@@ -59,7 +59,7 @@ class Misc
 
     public static function encodeMailtoLinkText($text)
     {
-        if (strpos($_SERVER['HTTP_USER_AGENT'], 'Windows NT 5.2') !== false) {
+        if (str_contains($_SERVER['HTTP_USER_AGENT'], 'Windows NT 5.2')) {
             //Outlook 2003 не понимает utf8
             $text = mb_convert_encoding($text, "windows-1251", "UTF-8");
         }
@@ -112,7 +112,7 @@ class Misc
 
     public static function getClass($classNameOrObj): string
     {
-        if (is_string($classNameOrObj) && strpos($classNameOrObj, '\\') === false) {
+        if (is_string($classNameOrObj) && !str_contains($classNameOrObj, '\\')) {
             // Имя класса задано простой строкой без неймспейсов - тут уже ничего сделать нельзя
             return $classNameOrObj;
         }
@@ -132,12 +132,12 @@ class Misc
         if (is_string($classNameOrObj)) {
             $className = $classNameOrObj;
         } elseif (is_object($classNameOrObj)) {
-            $className = get_class($classNameOrObj);
+            $className = $classNameOrObj::class;
         } else {
             throw new \InvalidArgumentException('Misc::getModule invalid $classNameOrObj type (should be string or object)');
         }
 
-        if (strpos($className, '\\') === false) {
+        if (!str_contains($className, '\\')) {
             return $className;
         }
 
@@ -176,7 +176,6 @@ class Misc
     /**
      * Проверим, если пользователь ввёл что-то похожее на номер MAWB (а именно 11 цифр с неважно какими разделителями)
      * То этот номер MAWB нужно отформатировать по образцу XXX-XXXX XXXX
-     * @param string $mawb
      * @return string
      */
     public static function normalizeMawb(string $mawb): string
@@ -255,7 +254,6 @@ class Misc
      * Разделяет сумму $amount на несколько частей в пропорциях, которые переданы в массивве $proportions.
      * При этом сумма всех частей равна $amount, а погрешности округления равномерное распределены между всеми частями
      * @param float $amount
-     * @param array $proportions
      * @return array
      */
     public static function splitMoneyInProroption($amount, array $proportions): array

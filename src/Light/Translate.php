@@ -48,8 +48,6 @@ class Translate
     /**
      * Перевод через Яндекс.Переводчик API
      * https://tech.yandex.ru/translate/doc/dg/reference/translate-docpage/
-     * @param string $text
-     * @param string $lang
      * @return null|string
      */
     public static function translateByYandex(string $text, string $lang = 'ru-en'): ?string
@@ -155,30 +153,22 @@ class Translate
     public static function currencyWordsRu(string $currencyIso, $amount = 0): string
     {
         $amount = (int)$amount;
-        switch ($currencyIso) {
-            case 'RUB':
-                return self::morph($amount, 'рубль', 'рубля', 'рублей');
-            case 'USD':
-                return self::morph($amount, 'доллар США', 'доллара США', 'долларов США');
-            case 'EUR':
-                return 'евро';
-        }
-
-        return '';
+        return match ($currencyIso) {
+            'RUB' => self::morph($amount, 'рубль', 'рубля', 'рублей'),
+            'USD' => self::morph($amount, 'доллар США', 'доллара США', 'долларов США'),
+            'EUR' => 'евро',
+            default => '',
+        };
     }
 
     public static function centWordsRu(string $currencyIso, $cents): string
     {
         $cents = (int)$cents;
-        switch ($currencyIso) {
-            case 'RUB':
-                return self::morph($cents, 'копейка', 'копейки', 'копеек');
-            case 'USD':
-            case 'EUR':
-                return self::morph($cents, 'цент', 'цента', 'центов');
-        }
-
-        return '';
+        return match ($currencyIso) {
+            'RUB' => self::morph($cents, 'копейка', 'копейки', 'копеек'),
+            'USD', 'EUR' => self::morph($cents, 'цент', 'цента', 'центов'),
+            default => '',
+        };
     }
 
     /**

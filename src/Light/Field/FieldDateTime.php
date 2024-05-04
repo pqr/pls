@@ -48,9 +48,9 @@ class FieldDateTime extends FieldInputAbstract
 
         if (!$value) {
             $outHtml = '';
-        } elseif (strpos($value, '0000-00-00') === 0) {
+        } elseif (str_starts_with($value, '0000-00-00')) {
             $outHtml = '';
-        } elseif (strpos($value, '2099-01-01') === 0) {
+        } elseif (str_starts_with($value, '2099-01-01')) {
             $outHtml = 'until further notice';
         } else {
             $outHtml = FieldDateTime::beautify($value);
@@ -63,7 +63,7 @@ class FieldDateTime extends FieldInputAbstract
     {
         if (!$value) {
             $out = '';
-        } elseif (strpos($value, '0000-00-00') === 0) {
+        } elseif (str_starts_with($value, '0000-00-00')) {
             $out = '';
         } else {
             if ($this->groupconcat && $groupconcatLinesCount > 1) {
@@ -90,7 +90,7 @@ class FieldDateTime extends FieldInputAbstract
 
     public static function beautify($mysqlDateTime)
     {
-        if ($mysqlDateTime === '' || strpos($mysqlDateTime, '0000-00-00') === 0) {
+        if ($mysqlDateTime === '' || str_starts_with($mysqlDateTime, '0000-00-00')) {
             return '';
         }
 
@@ -101,7 +101,7 @@ class FieldDateTime extends FieldInputAbstract
     {
         $value = parent::getDataFromRequestInner($requset);
 
-        if ($value !== null && strpos($value, ' ') !== false) {
+        if ($value !== null && str_contains($value, ' ')) {
             [$date, $time] = explode(' ', $value);
             $date = FieldDate::parse($date);
 
@@ -140,7 +140,7 @@ class FieldDateTime extends FieldInputAbstract
     {
         // Одно из полей тандема "From ... until ..."
         $dbKey = preg_replace('/(From|Until)$/', '', $this->getFilterFieldKeys()[0]);
-        if (substr($this->key, -4) === 'From') {
+        if (str_ends_with($this->key, 'From')) {
             if (strlen($value) === 10) {
                 $value .= ' 00:00:00';
             }
@@ -148,7 +148,7 @@ class FieldDateTime extends FieldInputAbstract
             return $dbKey . " >= '" . Db::esc($value) . "'";
         }
 
-        if (substr($this->key, -5) === 'Until') {
+        if (str_ends_with($this->key, 'Until')) {
             if (strlen($value) === 10) {
                 $value .= ' 23:59:59';
             }

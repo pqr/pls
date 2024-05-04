@@ -31,9 +31,9 @@ class Autolaunch
             $className = $_GET['class'];
             // Базовая проверка: класс должен начинаться либо с неймспейса проекта, либо с Light\\
             // и не должен содержать точек внутри
-            if (strpos($className, 'Light\\') === false
+            if (!str_contains($className, 'Light\\')
                 && strpos($className, (string) PROJECT_NAMESPACE)
-                || strpos($className, '.') !== false
+                || str_contains($className, '.')
             ) {
                 throw new \InvalidArgumentException("Invalid autolaunch class $className");
             }
@@ -83,7 +83,6 @@ class Autolaunch
 
     /**
      * Отображает форму запуска отдельного Autolaunch скрипта и таблицу с историей его запусков
-     * @param string $className
      * @throws \Exception
      */
     private function renderFormAndHistory(string $className): void
@@ -132,7 +131,6 @@ class Autolaunch
 
     /**
      * Запускает Autolaunch, когда пользователь нажал на форме Run
-     * @param string $className
      */
     private function run(string $className): void
     {
@@ -148,8 +146,6 @@ class Autolaunch
 
     /**
      * Отображает детальные логи отдельно взятого запуска
-     * @param string $className
-     * @param int $logId
      * @throws \Exception
      */
     private function renderOneLog(string $className, int $logId): void

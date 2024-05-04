@@ -51,7 +51,6 @@ class CInvoiceCommon
     /**
      * Возворащает поля POLName, PODName на основе переданных Shipment IDs (несколько значений)
      * Если было несколько перевозок с разными POL/POD, то значения конкатинируются через запятую
-     * @param array $shipmentIds
      * @return array
      */
     public static function getPolPodBlFromShipments(array $shipmentIds)

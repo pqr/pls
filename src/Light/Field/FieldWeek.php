@@ -20,7 +20,7 @@ class FieldWeek extends FieldInputAbstract
         $week = '';
         $year = '';
 
-        if ($value !== '-' && strpos($value, '-') !== false) {
+        if ($value !== '-' && str_contains($value, '-')) {
 
             [$year, $week] = explode('-', $value);
 
@@ -120,7 +120,7 @@ class FieldWeek extends FieldInputAbstract
                 $value = $request[$this->key];
                 if ($value === '-') {
                     $value = null;
-                } elseif (strpos($value, '-') !== false) {
+                } elseif (str_contains($value, '-')) {
                     [$year, $week] = explode('-', $value);
                 }
             }

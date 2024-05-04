@@ -52,7 +52,6 @@ trait MassactionCollectPdfs
     }
 
     /**
-     * @param array $ids
      * @param string $filenameIncludes текст, который должен содержаться в имени файла.
      * Если начать с восклицательного знака, то будем искать файлы НЕ содержащие этот текст
      * @return array

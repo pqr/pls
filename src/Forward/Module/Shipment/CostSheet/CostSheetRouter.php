@@ -27,7 +27,6 @@ class CostSheetRouter
      * Метод формирует переменные для шаблона Cost-sheet'а - для его шапки с общей информацией по перевозке
      * Выносим в отдельный метод, т.к. используется в двух местах: при первичном рендринге страницы Cost-sheet и
      * при рендринге статичной версии в History
-     * @param ShipmentObj $shipmentObj
      * @return array
      */
     public static function getCsHeadTplData(ShipmentObj $shipmentObj)
@@ -55,7 +54,6 @@ class CostSheetRouter
 
     /**
      * При входе в раздел Cost-sheet нужно целую страницу
-     * @param ShipmentObj $shipmentObj
      * @return string
      */
     private static function proceedView(ShipmentObj $shipmentObj)
@@ -133,7 +131,6 @@ class CostSheetRouter
     /**
      * Возвращает HTML код для редактирования.
      * Поскольку редактируем две подтаблицы - возвращается json с двумя html блоками: Income и Expenses
-     * @param ShipmentObj $shipmentObj
      */
     private static function proceedAjaxEdit(ShipmentObj $shipmentObj): void
     {
@@ -178,7 +175,6 @@ class CostSheetRouter
      * Обрабатывает сохранение одной из вкладок, после чего возвращает HTML код для просмотра изменённых данных
      * Поскольку возвращать HTML код нужно для как минимум двух подтаблиц Income и Excepnses - оборачиваем ответ в JSON
      * В дополнение к этому отправим в барузер новый HTML код для подтаблицы History, новый EGP и новый Deviation
-     * @param ShipmentObj $shipmentObj
      */
     private static function proceedAjaxSubmit(ShipmentObj $shipmentObj): void
     {
@@ -216,7 +212,6 @@ class CostSheetRouter
     /**
      * Диспетчер запроса - смотрит на GET параметры и запускает соотвествующие методы
      * В этот метод мы попадаем из Shipment::viewFuncCs(), т.к. в url присутсвуют параметры id=...&func=cs
-     * @param ShipmentObj $shipmentObj
      * @return null|string
      */
     public static function proceed(ShipmentObj $shipmentObj)

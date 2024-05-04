@@ -15,9 +15,6 @@ class ReportAccess
 
     /**
      * Проверяет, есть ли у указанного пользователя доступ к указанному отчёту?
-     * @param int $userId
-     * @param int $groupId
-     * @param string $reportClass
      * @return bool
      */
     public function checkAccess(int $userId, int $groupId, string $reportClass)
@@ -66,7 +63,6 @@ class ReportAccess
 
     /**
      * Используется для вывода списка пользователей, которым разрешен доступ, в диалоговое окно редактирования доступа
-     * @param string $reportClass
      * @return array
      */
     public function getReportUsers(string $reportClass): array
@@ -76,7 +72,6 @@ class ReportAccess
 
     /**
      * Используется для вывода списка групп, которым разрешен доступ, в диалоговое окно редактирования доступа
-     * @param string $reportClass
      * @return array
      */
     public function getReportGroups(string $reportClass): array
@@ -87,8 +82,6 @@ class ReportAccess
     /**
      * Устанавливает новый список из пользователей, кому разрешен доступ к отчёту
      * записывая UserID+ReportClass в таблицу reportaccess_user
-     * @param array $newUserIds
-     * @param string $reportClass
      * @throws \Exception
      */
     public function setNewUsers(array $newUserIds, string $reportClass): void
@@ -122,8 +115,6 @@ class ReportAccess
     /**
      * Устанавливает новый список из пользователей, кому разрешен доступ к отчёту
      * записывая GroupID+ReportClass в таблицу reportaccess_group
-     * @param array $newGroupIds
-     * @param string $reportClass
      * @throws \Exception
      */
     public function setNewGroups(array $newGroupIds, string $reportClass): void

@@ -11,14 +11,9 @@ class ConcatinaterHtml implements ConcatinaterInterface
 {
     public const PLACEHOLDER_BEGIN = '<!-- PRINT FORM BODY BEGIN -->';
     public const PLACEHOLDER_END = '<!-- PRINT FORM BODY END -->';
-    /**
-     * @var Filesystem
-     */
-    private $fs;
 
-    public function __construct(Filesystem $fs)
+    public function __construct(private Filesystem $fs)
     {
-        $this->fs = $fs;
     }
 
     public function concat(array $files, string $resultFile, string $title): void

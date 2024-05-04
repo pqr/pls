@@ -82,7 +82,6 @@ class AutolaunchMenuTable extends Table
 
     /**
      * Загружает все классы из указанного неймспйса в $this->tableData
-     * @param string $namespace
      */
     private function scanNamespace(string $namespace): void
     {

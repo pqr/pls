@@ -11,9 +11,6 @@ class ChangeDetector
     /**
      * Возвращает true, если объект был только что создан (insertDb()) или в процессе updateDb() изменилось значение
      * этого поля
-     * @param string $fieldKey
-     * @param array|null $newData
-     * @param array|null $oldData
      * @return bool
      */
     public static function isChanged(string $fieldKey, ?array $newData, ?array $oldData): bool
@@ -54,10 +51,6 @@ class ChangeDetector
 
     /**
      * Возвращает true, если поле изменило своё значение с пустого на заполненное
-     * @param string $fieldKey
-     * @param array|null $newData
-     * @param array|null $oldData
-     * @param FieldAbstract $field
      * @return bool
      */
     public static function isFilled(string $fieldKey, ?array $newData, ?array $oldData, FieldAbstract $field): bool
@@ -77,10 +70,6 @@ class ChangeDetector
 
     /**
      * Возвращает true, если поле изменило своё значение с заполненного на пустое
-     * @param string $fieldKey
-     * @param array|null $newData
-     * @param array|null $oldData
-     * @param FieldAbstract $field
      * @return bool
      */
     public static function isCleared(string $fieldKey, ?array $newData, ?array $oldData, FieldAbstract $field): bool

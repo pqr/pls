@@ -93,7 +93,7 @@ class FieldMoney extends FieldFloat
         }
 
         //Если внутри получились пробелы - оберём всё в класс nobr, чтобы не было переводов строк
-        if (strpos($outHtml, ' ') !== false) {
+        if (str_contains($outHtml, ' ')) {
             $outHtml = '<span class="nobr">' . $outHtml . '</span>';
         }
 

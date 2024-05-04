@@ -48,7 +48,7 @@ class AirfreightRate extends ModuleAbstract
 
     protected function getListButtons()
     {
-        $out = parent::getListButtons();
+        $out = null;
 
         $out[] = [
             'text' => 'Upload Excel',

@@ -70,7 +70,6 @@ class PaymentFields
      * Shipments: "Файл: 3 Акт без подписи" и "Файл: 4 Акт подписанный".
      * Если оплата содержит в себе несколько счетов и по некоторым счетам акты есть, а по другим нет,
      * в этом случае нужно выводить слово "Частично".
-     * @param int $folderNo
      * @return \Light\Field\FieldSelect
      */
     public static function shipmentFileField(int $folderNo)

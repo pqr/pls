@@ -37,7 +37,7 @@ class ElfinderPage
                     'tmbPath' => LIGHT_DIR_TEMP . '/elfinder_thumbnails',
                     // URL to files (REQUIRED)
                     'accessControl' => static function ($attr, $path, $data, $volume) use ($hasWriteAccess) {
-                        if (strpos(basename($path), '.') === 0) {
+                        if (str_starts_with(basename($path), '.')) {
                             // Для путей начинающихся с .., если запрошен атрибут read или write - сразу вернём false
                             if ($attr === 'read' || $attr === 'write') {
                                 return false;

@@ -226,7 +226,6 @@ class FilesManagerAbstract
     /**
      * Метод для переопределения в классах потомках - при обнаружении нового файла в папке запускается этот метод
      * чтобы определить какие-то параметры файла (описание, тип документа, различные галочки) по его имени
-     * @param string $newFileRelativePath
      * @return array
      */
     protected function autodetectNewFileInfo(string $newFileRelativePath): array
@@ -244,14 +243,13 @@ class FilesManagerAbstract
 
         try {
             return Pdf::getNumberOfPages($filepathAbs);
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return 0;
         }
     }
 
     /**
      * Метод для переопределения в классе потомке
-     * @param ObjAbstract $fileObj
      */
     protected function afterSubmit(ObjAbstract $fileObj)
     {
@@ -276,7 +274,6 @@ class FilesManagerAbstract
 
     /**
      * Метод для переопределения в классе потомке
-     * @param ObjAbstract $fileObj
      */
     protected function afterDelete(ObjAbstract $fileObj)
     {
@@ -284,7 +281,6 @@ class FilesManagerAbstract
     }
 
     /**
-     * @param string $relative
      * @param array $dataFromPost сырые данные по текущему файлу из post запроса
      * @return int affectedRows
      * @throws \Exception

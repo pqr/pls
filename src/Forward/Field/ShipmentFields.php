@@ -188,14 +188,14 @@ class ShipmentFields
                                 FROM cinvoice_file_amount cfa, cinvoice ci
                                 WHERE ci.ID = cfa.CInvoiceID AND cfa.FileNumber = shipment.Name AND ci.CActName != ''",
             'getHtmlFunction' => function ($value) {
-                if (strpos($value, '|') === false) {
+                if (!str_contains($value, '|')) {
                     return '';
                 }
                 [$actName, $actDate, $actAmount, $currencyIso] = explode('|', $value);
                 return htmlspecialchars($actName) . ' <small class="gray"> от ' . FieldDate::beautify($actDate) . '</small> <small> на ' . FieldMoney::beautify($actAmount) . ' ' . $currencyIso . '</small>';
             },
             'getExcelFunction' => function ($value) {
-                if (strpos($value, '|') === false) {
+                if (!str_contains($value, '|')) {
                     return '';
                 }
                 [$actName, $actDate, $actAmount, $currencyIso] = explode('|', $value);
@@ -216,7 +216,7 @@ class ShipmentFields
                                 FROM docsinventory di, docsinventoryline dil
                                 WHERE di.ID = dil.DocsInventoryID AND dil.FileNumber = shipment.Name",
             'getHtmlFunction' => function ($value, array $data, $outHtml, $forTable) {
-                if (strpos($value, '|') === false) {
+                if (!str_contains($value, '|')) {
                     return '';
                 }
                 [$diId, $diSentDate] = explode('|', $value);
@@ -229,7 +229,7 @@ class ShipmentFields
                     ->getHtml();
             },
             'getExcelFunction' => function ($value) {
-                if (strpos($value, '|') === false) {
+                if (!str_contains($value, '|')) {
                     return '';
                 }
                 $diSentDate = explode('|', $value)[1];

@@ -42,8 +42,8 @@ trait TableFilterable
         // Реализация по умолчанию будет искать файл с таким же именем, что текущий класс,
         // с добавлением слова Filter в конце
         // Если объект не задан явно, попробуем найти соответсвующий класс рядом с текущим файлом модуля
-        $tableClass = get_class($this);
-        if (strpos($tableClass, 'class@anonymous') !== 0) {
+        $tableClass = $this::class;
+        if (!str_starts_with($tableClass, 'class@anonymous')) {
             $filtersClass = $tableClass . 'Filters';
             if (Misc::classExists($filtersClass)) {
                 $interfaces = class_implements($filtersClass);
@@ -77,7 +77,6 @@ trait TableFilterable
 
     /**
      * @param string|array $fieldKeys
-     * @param array $params
      * @return $this
      */
     public function addFilterText($fieldKeys, array $params = [])
@@ -89,7 +88,6 @@ trait TableFilterable
     /**
      * Добавляет сразу два фильтра: <$fieldKey>From и <$fieldKey>Until
      * @param string|F $field
-     * @param array $params
      * @return $this
      */
     public function addFiltersDatesFromUntil($field, array $params = [])
@@ -104,10 +102,6 @@ trait TableFilterable
      * 1) либо заданием таблицы и имени пол, по которым необходимо найти минимальный и максимальный год
      * 2) либо значением минимального и максимального года в явном виде
      * Явный вид имеет приоритет над таблица+поле (если вдруг все 4 параметра будут переданы в функцию)
-     * @param string $tableName
-     * @param string $dateField
-     * @param int $yearFrom
-     * @param int $yearTill
      * @return FieldSelect
      * @deprecated use addFilterYear2()
      */
@@ -172,7 +166,6 @@ trait TableFilterable
     /**
      * Возвращает значение определённого фильтра. Если у пользователя данное значение не задано явно, то будет
      * возвращено значение по умолчанию
-     * @param string $fieldKey
      * @return null|number|string
      */
     public function getFilterValue(string $fieldKey)

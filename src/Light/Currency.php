@@ -82,7 +82,6 @@ class Currency
 
     /**
      * Всегда выполняет запрос к таблице currencyrate
-     * @param string $date
      * @return array
      */
     private static function getRatesFromDb(string $date): array
@@ -108,8 +107,6 @@ class Currency
 
     /**
      * Возвращает отношение курсов валют на указанную дату, подгружает из базы при необходимости
-     * @param string $from
-     * @param string $to
      * @param null $date дата на которую загрузить курсы из базы
      * @param array|null $rates можно передать собственный массив ставок - массивк инстансов класса CurrencyRate
      * в этом случае параметр $date не используется
@@ -176,7 +173,6 @@ class Currency
      * Возвращает реальную дату курса, который удовлетворяет переданным параметрам $currencyIso, $date
      * Например, если запросить курс за воскресенье ($date), а реально в базе есть курс только за предшествующую пятницу,
      * то эта функция вернёт дату пятницы
-     * @param string $currencyIso
      * @param string $date
      * @return string
      */
@@ -198,7 +194,6 @@ class Currency
 
     /**
      * Возвращает числовой код валюты, который нужен в оснвном для 1С
-     * @param string $currencyIso
      * @return string
      */
     public static function getCurrencyCode(string $currencyIso): string

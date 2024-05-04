@@ -265,7 +265,7 @@ abstract class ApplicationAbstract
 
     public static function getAutolaunchFullClassName(string $cliName)
     {
-        if (strpos($cliName, 'Light/') === 0) {
+        if (str_starts_with($cliName, 'Light/')) {
             // Если имя Autolaunch скприта начинается с Light/, значит будем искать соответсвующий класс в папке движке
             return 'Light\\Autolaunch\\' . str_replace('Light/', '', $cliName);
         }

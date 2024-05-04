@@ -147,7 +147,6 @@ trait DeleteTrait
 
     /**
      * Этот метод удобно переопределять в классах потоках, если нужны дополнительные дейтсвия по удалению чего-либо
-     * @param ObjAbstract $obj
      * @param string $dbLogMsg
      */
     protected function proceedDeleteObj(ObjAbstract $obj, $dbLogMsg = '')
@@ -158,9 +157,6 @@ trait DeleteTrait
         $obj->deleteDb($dbLogMsg);
     }
 
-    /**
-     * @param ObjAbstract $obj
-     */
     private function proceedDeleteSubtables(ObjAbstract $obj): void
     {
         foreach ($this->subtables as $subtableClass => ['readonly' => $readonly]) {
@@ -211,8 +207,6 @@ trait DeleteTrait
      * Метод возвращает массив ID записей указанного класса связанных с удаляемоей записью.
      * Например, если удаляем клеиента, то этот метод будет последовательно вызыван с именами классов
      * ShipmentObj::class, CInvoice::class, CPayment::class и т.п.
-     * @param string $className
-     * @param int $deletingId
      * @return array
      */
     protected function whileDeleteGetLinkedIds(string $className, int $deletingId): array
@@ -264,8 +258,6 @@ trait DeleteTrait
      * Этот метод можно переопределить в классах потомках, если для формирования ссылки нужно указать какие-то
      * хитрые фильтры
      *
-     * @param string $className
-     * @param int $deletingId
      * @return string|bool
      */
     protected function whileDeleteGetLinkViewMore(string $className, int $deletingId): string
@@ -292,7 +284,6 @@ trait DeleteTrait
      *
      * Возвращает HTML код для вывода элемента выбора новой записи вместо удаляемой. Обычно это выпадающий список
      *
-     * @param int $deletingId
      * @return F
      */
     protected function whileDeleteFieldForReplacement(int $deletingId): F
@@ -427,17 +418,13 @@ trait DeleteTrait
      * Обновляет одну указанную запись в связанной таблице. Метод может быть переопределён, если нужно как-то хитро
      * обновлять
      *
-     * @param string $className
-     * @param int $linkedId
-     * @param mixed $newValue
-     * @param string $dbLogMsg
      * @return int affectedRows
      * @throws \Exception
      */
     protected function whileDeleteUpdateLinkedRecord(
         string $className,
         int $linkedId,
-        $newValue,
+        mixed $newValue,
         string $dbLogMsg
     ): int {
         /** @var ObjAbstract $obj */
@@ -459,8 +446,6 @@ trait DeleteTrait
      * В дополнение к этому метод получает в качестве единственного параметра массив $oldData - это результат работы
      * метода $this->getOldDateBeforeSubmitOrDelete(), который можно переопределить в классах потмоках, чтобы насытить его
      * дополнительными данными (например, данными подтаблиц)
-     * @param ObjAbstract $obj
-     * @param array $oldData
      */
     protected function afterDelete(ObjAbstract $obj, array $oldData)
     {

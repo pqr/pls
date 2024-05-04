@@ -98,7 +98,6 @@ abstract class FieldOptionsAbstract extends FieldAbstract
 
     /**
      * Метод вызывается в ModuleAbstract в режимах View и List, чтобы предзагрузить только нужные записи из базы
-     * @param array $ids
      */
     public function prefetchOptions(array $ids): void
     {
@@ -118,7 +117,7 @@ abstract class FieldOptionsAbstract extends FieldAbstract
         // Получим полный список раздельных значений:
         $ids = explode(',', str_replace("\n", ',', implode(',', $ids)));
 
-        if (is_string($this->optionsView) && strpos($this->optionsView, ' ') !== false) {
+        if (is_string($this->optionsView) && str_contains($this->optionsView, ' ')) {
             // Это некий SQL запрос без WHERE части
             $optionsViewQuery = $this->optionsView . ' WHERE ID IN (@a)';
             $this->prefetchedOptions = Db::getAssoc($optionsViewQuery, $ids);
@@ -133,7 +132,7 @@ abstract class FieldOptionsAbstract extends FieldAbstract
 
         // Если специальный параметр 'optionsView' не задан, то попробуем использовать стандартный options
         // только если это имя таблицы (а не callable или какой-то кастомный sql запрос)
-        if (!$dbtable && is_string($this->options) && strpos($this->options, ' ') === false) {
+        if (!$dbtable && is_string($this->options) && !str_contains($this->options, ' ')) {
 
             $dbtable = $this->options;
         }
@@ -162,7 +161,6 @@ abstract class FieldOptionsAbstract extends FieldAbstract
      * Возвращает текстовое значение для полей типа Select на основе индекса $value
      * Ищет значение в массиве $this->options
      * @param string|int|null $value
-     * @param int $mode
      * @return string
      */
     public function getOption($value, int $mode = self::MODE_EDIT)
@@ -216,7 +214,7 @@ abstract class FieldOptionsAbstract extends FieldAbstract
 
         // Это может быть имя таблицы или полноценный sql запрос SELECT ID, Name FROM ...
         // Можно определить по наличию пробела
-        if (strpos($optionsAsString, ' ') === false) {
+        if (!str_contains($optionsAsString, ' ')) {
             //Пробела нет, значит это имя таблицы
             //Здесь также может быть вертикальная черта, после которой указывается поле для сортировки
             //Например: usergroup|OrderID

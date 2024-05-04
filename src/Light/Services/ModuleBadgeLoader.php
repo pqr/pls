@@ -46,7 +46,6 @@ class ModuleBadgeLoader
      * Приватый метод, инстанциирует и возвращает объекты отвечающие за бейджи в указанном модуле
      * Чтобы этот метод вернул объект имплементирующий ModuleBadgeInterface, в папке модуля должен быть файл {module}Badge.php
      * А также при регистрации модуля в Application::registerModules() должен был быть указан послдений параметр ModuleRegister::MODULE_HASBADGE
-     * @param string $module
      * @return ModuleBadgeInterface|null
      */
     private static function getModuleBadgeObj(string $module): ?ModuleBadgeInterface

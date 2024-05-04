@@ -39,7 +39,6 @@ trait TableWithFoldersTrait
     /**
      * Возвращает модуль имя которого будет использоваться в качестве папки. По умолчанию возвращает $this->folderModule
      * но можно переопределить в классе потомке, если нужно вернуть что-то особенное (зависящее от $data - текущего объекта)
-     * @param array $data
      * @return string
      */
     protected function getFolderModule(array $data): string
@@ -50,7 +49,6 @@ trait TableWithFoldersTrait
     /**
      * Возвращает ID папки на основе параметра $this->folderIdFieldKey, но может быть переопределено в классе потомке
      * если нужно вычислять ID каким-то хитрым способом
-     * @param array $data
      * @return int
      */
     protected function getFolderId(array $data): int

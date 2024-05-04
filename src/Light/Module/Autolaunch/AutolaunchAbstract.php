@@ -50,7 +50,7 @@ abstract class AutolaunchAbstract
         //Запишем в таблицу логов строку с базовыми данными, чтобы получить ID строки
         //Этот ID потом будет использоваться при формировании отчёта импорта/автозапуска для ссылок на этот лог
         $initialLogData = [
-            'ClassName' => get_class($this),
+            'ClassName' => static::class,
             'CreatedBy' => User::getId(),
         ];
 
@@ -69,7 +69,7 @@ abstract class AutolaunchAbstract
         $this->saveLogToDb($workTime);
 
         $hasError = $this->_msgBuff->hasError() || $this->_msgBuffShort->hasError();
-        $attributes = ['WorkTime' => $workTime, 'HasError' => $hasError, 'ClassName' => get_class($this)];
+        $attributes = ['WorkTime' => $workTime, 'HasError' => $hasError, 'ClassName' => static::class];
         Metric::newrelicEvent('Autolaunch', $attributes);
     }
 
@@ -104,7 +104,7 @@ abstract class AutolaunchAbstract
             . "\n\n" . $logText
             . "\n\n\n\n";
 
-        $folder = str_replace('\\', '/', get_class($this));
+        $folder = str_replace('\\', '/', static::class);
         $folderpathAbs = LIGHT_DIR_LOGS . "/autolaunch/$folder";
 
         $date = date('Y-m-d');

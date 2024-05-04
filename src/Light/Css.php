@@ -23,7 +23,7 @@ class Css
 
     public static function add(string $file): void
     {
-        if (strpos($file, '//') !== 0) {
+        if (!str_starts_with($file, '//')) {
             $file = "css/$file";
         }
         self::$projectFiles[] = $file;
@@ -56,10 +56,10 @@ class Css
 
         // Добавим метки времени, чтобы обновлять закешированные файлы
         foreach($out as &$file) {
-            if (strpos($file, '//') !== 0) {
+            if (!str_starts_with($file, '//')) {
                 // Добавим метку времени для уникальности
                 // но только если имя файла не начинается с // - это глобальные интернет пути
-                if (strpos($file, 'lightpublic/') === 0) {
+                if (str_starts_with($file, 'lightpublic/')) {
                     $srcFile = LIGHT_DIR_LIGHTPUBLIC . '/' . str_replace('lightpublic/', '', $file);
                 } else {
                     $srcFile = LIGHT_DIR_PUBLIC . "/$file";

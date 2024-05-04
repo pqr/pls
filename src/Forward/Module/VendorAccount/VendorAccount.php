@@ -39,20 +39,11 @@ class VendorAccount extends ModuleAbstract
             $id = $this->_obj->getId();
             $vendorAccountName = $this->_obj['Name'];
             $ourCompanyName = $this->_obj->getFieldText('CompanyID');
-            switch ($this->_obj['CompanyID']) {
-                case Constant::OC_PLS_OOO:
-                case Constant::OC_PLS12_OOO:
-                    $mailto = 'accounting@proactive-ls.com';
-                    break;
-
-                case Constant::OC_PGL_OOO:
-                case Constant::OC_PGL11_OOO:
-                    $mailto = 'pgl-accounting@proactive-gl.ru';
-                    break;
-
-                default:
-                    $mailto = '';
-            }
+            $mailto = match ($this->_obj['CompanyID']) {
+                Constant::OC_PLS_OOO, Constant::OC_PLS12_OOO => 'accounting@proactive-ls.com',
+                Constant::OC_PGL_OOO, Constant::OC_PGL11_OOO => 'pgl-accounting@proactive-gl.ru',
+                default => '',
+            };
 
             $subject = "Новый подрядчик $vendorAccountName для $ourCompanyName, ID=$id";
             $body = "Внесите, пожалуйста, нового подрядчика $vendorAccountName в 1С для нашей компании $ourCompanyName, ID=$id. Договор во вложении.";

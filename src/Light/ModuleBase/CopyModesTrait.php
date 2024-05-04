@@ -67,8 +67,6 @@ trait CopyModesTrait
 
     /**
      * @desc инициализирует $this->_obj переменные данными из файла id=$copyfrom
-     * @param string $copymode
-     * @param int $copyfrom
      * @return void
      * @throws \Exception
      */

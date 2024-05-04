@@ -18,7 +18,7 @@ class Template
      */
     public static function findfile(string $templateName): string
     {
-        if (strpos($templateName, '/') === 0) {
+        if (str_starts_with($templateName, '/')) {
             // Если имя шаблона начинается с /, значит это абсолютный путь к файлу
             return $templateName;
         }
@@ -185,7 +185,7 @@ class Template
         $html = static::html($fieldKey);
 
         if (!$currencyKey) {
-            if (substr($fieldKey, -6) === 'Amount') {
+            if (str_ends_with($fieldKey, 'Amount')) {
                 $amountKey = substr($fieldKey, 0, -6);
             } else {
                 $amountKey = $fieldKey;

@@ -14,8 +14,6 @@ class FilesFolder
      * Если не передан параметр $forceHasFiles, то функция проверит реальное состояние в файловой системе
      * и после этого обновит значение в базе.
      *
-     * @param string $module
-     * @param int $id
      * @param bool|null $forceHasFiles
      * @return bool возвращает обновлённое значение HasFiles для данной директории
      */
@@ -92,8 +90,6 @@ class FilesFolder
      * При этом используется кеширующий массив self::$folderStatus
      * Но если в нём нет информации, то запускается процедура обновления статуса по фактическому состоянию директории
      * с помощью метода self::updateFolderStatus()
-     * @param string $module
-     * @param int $id
      * @return bool
      */
     public static function hasFilesModule(string $module, int $id): bool
@@ -112,7 +108,6 @@ class FilesFolder
      * Метод проверяет фактическое наличие файлов в диектории. Поскольку метод работает с $relative путём,
      * а не с обектами и модулями, он не опирается на кеширующие значения из базы из таблицы folderstatus
      * и не обновляет их.
-     * @param string $relative
      * @return bool
      */
     public static function hasFiles(string $relative): bool
@@ -133,7 +128,7 @@ class FilesFolder
                 // Директории не учитываем
                 continue;
             }
-            if (strpos($splFileInfo->getFilename(), '.') === 0) {
+            if (str_starts_with($splFileInfo->getFilename(), '.')) {
                 // Скрытые файлы не считаем за значимые
                 continue;
             }
@@ -150,8 +145,6 @@ class FilesFolder
      * (используется в режиме таблицы в ModuleAbstract и в Subtable)
      * Загруженная информация сохраняется во внутренний массив self::$folderStatus,
      * который позже используется в методе FilesFolder::hasFilesModule($module, $id)
-     * @param string $module
-     * @param array $ids
      */
     public static function loadFoldersStatus(string $module, array $ids): void
     {
@@ -222,7 +215,6 @@ class FilesFolder
 
     /**
      * Возвращает url для указанной папки внутри filesfolder
-     * @param string $relative
      * @return string
      */
     public static function getUrl(string $relative): string
@@ -296,7 +288,7 @@ class FilesFolder
         static $isUserAgentNix;
         if ($isUserAgentNix === null) {
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-            $isUserAgentNix = strpos($userAgent, 'OS X') !== false || strpos($userAgent, 'Linux') !== false;
+            $isUserAgentNix = str_contains($userAgent, 'OS X') || str_contains($userAgent, 'Linux');
         }
 
         return $isUserAgentNix;
@@ -309,9 +301,9 @@ class FilesFolder
 
             // Если дошли до этого момента, значит мы в локальной сети и под Windows - тут всё зависит от браузера
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-            $isFirefox = strpos($userAgent, 'Firefox') !== false;
-            $isIe = strpos($userAgent, 'Trident') !== false;
-            $isEdge = strpos($userAgent, 'Edge') !== false;
+            $isFirefox = str_contains($userAgent, 'Firefox');
+            $isIe = str_contains($userAgent, 'Trident');
+            $isEdge = str_contains($userAgent, 'Edge');
             if (!$isFirefox && !$isIe && !$isEdge) {
                 // У нас какой-то бразуер, но точно не Firefox и не IE - значит расшаренные папки не будут работать нативно
                 $isWindowsSharedFolderAllowed = false;
@@ -416,7 +408,6 @@ class FilesFolder
      * 2) в массиве не будет директорий (только файлы)
      * 3) не будет скрытых файлов (начинающихся с точки)
      * 4) не будет файла 'Thumbs.db'
-     * @param string $relative
      * @param string|null $filterExtension
      * @return array
      */
@@ -468,7 +459,6 @@ class FilesFolder
 
     /**
      * Возвращает абсолютный путь в файловой системе
-     * @param string $relative
      * @return string
      */
     public static function getAbsolute(string $relative): string
@@ -487,7 +477,6 @@ class FilesFolder
 
     /**
      * Удаляет абсолютный путь в файловой системе
-     * @param string $abs
      * @return string
      */
     public static function getRelative(string $abs): string
@@ -532,7 +521,6 @@ class FilesFolder
      * сделать редирект на Location: file:///...сетевой путь до файла
      * Если же у пользователя такой браузер, который не поддерживает прямой доступ к папкам
      * тогда отправляется копия файла по http
-     * @param string $relative
      */
     public static function streamFileTryWindowsShared(string $relative): void
     {

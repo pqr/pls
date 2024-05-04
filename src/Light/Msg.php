@@ -8,7 +8,6 @@ class Msg implements \Countable, \JsonSerializable
 
     /**
      * @deprecated
-     * @param string $prefix
      */
     public function addPrefxToAll(string $prefix): void
     {

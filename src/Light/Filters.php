@@ -19,17 +19,14 @@ use Light\Traits\FieldsetAwareTrait;
 class Filters
 {
     use FieldsetAwareTrait;
-
-    private $tableName;
     private $tableId;
     private $fieldset;
     private $data = [];
 
-    public function __construct(string $tableName)
+    public function __construct(private string $tableName)
     {
         $this->fieldset = new Fieldset();
-        $this->tableName = $tableName;
-        $this->tableId = (int)DbLog::getTableId($tableName);
+        $this->tableId = (int)DbLog::getTableId($this->tableName);
     }
 
     public function getFieldset(): Fieldset
@@ -132,7 +129,6 @@ class Filters
 
     /**
      * @param string|array $fieldKeys
-     * @param array $params
      */
     public function addManyText($fieldKeys, array $params): void
     {
@@ -152,7 +148,6 @@ class Filters
     /**
      * Добавляет сразу два фильтра: <$fieldKey>From и <$fieldKey>Until
      * @param string|F $field
-     * @param array $params
      */
     public function addDatesFromUntil($field, array $params = []): void
     {
@@ -178,10 +173,6 @@ class Filters
 
     /**
      * Добавляет фильтр по году
-     * @param string $fieldKey
-     * @param int $yearFrom
-     * @param int $yearUntill
-     * @param array $params
      */
     public function addYear(string $fieldKey, string $filterFieldKey, int $yearFrom, int $yearUntill = null, array $params = []): void
     {
@@ -216,7 +207,6 @@ class Filters
 
     /**
      * Заполняет массив $this->data новыми значениями фильтров, но только такими, которые реально существуют в fieldset
-     * @param array $newFilterValues
      */
     public function setValues(array $newFilterValues): void
     {
@@ -235,7 +225,6 @@ class Filters
 
     /**
      * Дополняет массив сырых значений значениями по умолчанию для полей FieldInputAbstract отмеченных как editMandatory
-     * @param array $values
      * @return array
      */
     private function fillDefaultForEditMandatory(array $values): array
@@ -326,7 +315,6 @@ class Filters
 
     /**
      * Сохраняет текущие значения фильтров в таблицу user_filter
-     * @param array $notDefaultValues
      */
     private function saveAsCurrent(array $notDefaultValues): void
     {
@@ -359,9 +347,9 @@ class Filters
             $fieldName = $field->getName();
             $fieldType = $field->getType();
             if ($fieldType === 'Date' || $fieldType === 'DateTime') {
-                if (substr($fieldKey, -4) === 'From') {
+                if (str_ends_with($fieldKey, 'From')) {
                     $fieldName .= ' from';
-                } elseif (substr($fieldKey, -5) === 'Until') {
+                } elseif (str_ends_with($fieldKey, 'Until')) {
                     $fieldName .= ' until';
                 }
             }
@@ -456,7 +444,7 @@ class Filters
         foreach ($this->fieldset as $field) {
 
 
-            if (strpos($field->key, 'Not') === 0) {
+            if (str_starts_with($field->key, 'Not')) {
                 // Ключ этого поля начинается с Not - подозрительная ситуация,
                 // возможно это автосгенерированное поле на основе другого поля у которого стоит признак filterNot?
                 $originalFieldKey = substr($field->key, 3);
@@ -474,12 +462,12 @@ class Filters
             if (property_exists($field, 'filterFromUntil')
                 && $field->filterFromUntil) {
 
-                if (substr($field->key, -4) === 'From') {
+                if (str_ends_with($field->key, 'From')) {
                     // Нашли поле, которое является либо датой From либо датой Until
                     // В колонку будем долавлять только поле From, причём нужно отрезать суффикс From
                     // Да, имеем дело с полем типа From, отрезаем суффикс From
                     $templateKey = substr($field->key, 0, -4);
-                } elseif (substr($field->key, -5) === 'Until') {
+                } elseif (str_ends_with($field->key, 'Until')) {
                     // Поле Until вообще не добавляем в эту автосгенерированную колонку
                     continue;
                 }
@@ -622,7 +610,6 @@ class Filters
     }
 
     /**
-     * @param bool $allowLayoutChange
      * @param array $filtersLayout - это массив настроек заданный внутри метода $this->initFilters(), он имеет не совсем верную стуктуру с числовыми ключами
      * @return string
      * @throws \Exception

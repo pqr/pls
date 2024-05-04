@@ -157,7 +157,7 @@ class CustomerObj extends ObjAbstract
             //Cделаем сложение отдельных полей OpenAmount, OverdueAmount, ...
             /** @var array $amounts */
             foreach ($amounts as $key => $value) {
-                if (strpos($key, 'Amount') !== false) {
+                if (str_contains($key, 'Amount')) {
                     if (!isset($amountsPerCurrency[$currencyIso][$key])) {
                         $amountsPerCurrency[$currencyIso][$key] = 0;
                     }

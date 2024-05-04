@@ -33,7 +33,7 @@ class Reportmenu
         $out = [];
         foreach (glob(LIGHT_DIR_PROJECT . '/Reportmenu/*.php') as $file) {
 
-            if (substr($file, -8) == '.tpl.php') {
+            if (str_ends_with($file, '.tpl.php')) {
                 continue;
             }
 
@@ -46,9 +46,6 @@ class Reportmenu
 
     /**
      * Возвращает массив из имён классов отчётов (без неймспейсов) к которым у указанного пользователя есть доступ
-     * @param int $userId
-     * @param int $groupId
-     * @param array $allReports
      * @return array
      */
     private function getReportsForUser(int $userId, int $groupId, array $allReports): array
@@ -71,7 +68,6 @@ class Reportmenu
 
     /**
      * Делаем метод публичным, чтобы его можно было вызвать из тестов
-     * @param string $reportClass
      * @return string
      */
     public static function getReportTitle(string $reportClass): string
@@ -83,7 +79,6 @@ class Reportmenu
 
     /**
      * Делаем метод публичным, чтобы его можно было вызвать из тестов
-     * @param string $reportClass
      * @return string
      */
     public static function getReportDescription(string $reportClass): string

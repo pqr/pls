@@ -42,11 +42,11 @@ class FieldText extends FieldAbstract
         $rows = $this->rows;
         if ($rows) {
             //Специальный хак для FF - указать высоту в em единицах внутри style
-            if (strpos($tdata['tagParams'], 'height:') === false
+            if (!str_contains($tdata['tagParams'], 'height:')
             ) {
                 //в $tagParams нет явного указания height, значит можем переопределить сами
                 $height = ($rows * 1.5) . 'em';
-                if (strpos($tdata['tagParams'], 'style="') === false) {
+                if (!str_contains($tdata['tagParams'], 'style="')) {
                     //В $tagParams вообще нету параметра style, определим его
                     $tdata['tagParams'] .= ' style="height: ' . $height . ';"';
                 } else {

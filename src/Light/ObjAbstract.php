@@ -8,7 +8,7 @@ use Light\Field\FieldMoneyWithCurrency;
 use Light\SubtableBase\Subtable;
 use Light\Traits\FieldsetAwareTrait;
 
-abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
+abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable, \Stringable
 {
     use FieldsetAwareTrait;
 
@@ -219,7 +219,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
             // или <projectNamespace>\Module\<module>\Subtables\<some>Obj
 
             // Получим класс текущего объекта без неймспейсов
-            $class = get_class($this);
+            $class = static::class;
             $parts = explode('\\', $class);
             if (!empty($parts[3]) && $parts[3] === 'Subtables') {
                 // Получим модуль, в которм находится текущий объект
@@ -245,7 +245,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         // Обычно имя талицы не задаётся, т.к. его легко можно вычислить из имени класса
         if ($this->dbTable === null) {
             $className = Misc::getClass($this);
-            if ($className !== 'Obj' && substr($className, -3) === 'Obj') {
+            if ($className !== 'Obj' && str_ends_with($className, 'Obj')) {
                 $className = substr($className, 0, -3);
                 //Имя таблицы обычно совпадает с именем класса за вычетом суффикса Obj
                 $this->dbTable = strtolower($className);
@@ -270,7 +270,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     }
 
     /**
-     * @param array $fieldsData
      * @param string $dbLogMsg
      * @return int кол-во обновлённых строк
      * @throws \Exception
@@ -333,7 +332,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      * Этот метод вызывается внутри insertDb() и updateDb() - он подготавливает данные перед передачей в Db::insertRow()
      * или Db::updateRow(). Некоторые типы полей нужно предварительно переформатировать, например, MoneyWithCurrency может
      * прийти в качестве строки 'EUR 123.22' - нужно разделить на два поля для вставки в базу
-     * @param array $fieldsData
      * @return array
      */
     private function prepareFieldsDataForDb(array $fieldsData)
@@ -364,7 +362,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     /**
      * Возвращает true, если объект был только что создан (insertDb()) или в процессе updateDb() изменилось значение
      * этого поля
-     * @param string $fieldKey
      * @return bool
      */
     public function isChanged(string $fieldKey): bool
@@ -400,7 +397,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     /**
      * Возвращает true, если поле было изменено в процессе updateDb()
      * Но при вставке нового объекта через insertDb() этот метод всегда будет возвращать false
-     * @param string $fieldKey
      * @return bool
      */
     public function isUpdated(string $fieldKey): bool
@@ -414,7 +410,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
     /**
      * Возвращает true, если поле изменило своё значение с пустого на заполненное
-     * @param string $fieldKey
      * @return bool
      */
     public function isFilled(string $fieldKey): bool
@@ -431,7 +426,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
     /**
      * Возвращает true, если поле изменило своё значение с заполненного на пустое
-     * @param string $fieldKey
      * @return bool
      */
     public function isCleared(string $fieldKey): bool
@@ -682,7 +676,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         }
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return strip_tags($this->getDescriptionHtml());
     }
@@ -721,7 +715,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     }
 
     /**
-     * @param array $fieldsData
      * @param string $dbLogMsg
      * @return int $id вставленного объекта
      * @throws \Exception
@@ -825,7 +818,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
     /**
      * Оставляет только те данные в $fieldsData, поля у которых имеют F::MODE_SUBMIT
-     * @param array $fieldsData
      * @return array
      */
     final public function filterDataByModeSubmit(array $fieldsData): array
@@ -861,7 +853,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
     /**
      * Оставляет только те данные в $fieldsData, поля у которых имеют проходят проверку через editAccessFunction
-     * @param array $fieldsData
      * @return array
      */
     final public function filterDataByEditAccessFunction(array $fieldsData): array
@@ -914,7 +905,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     private function getAmountFieldKeyFromCurrencyFieldKey(string $currencyFieldKey): ?string
     {
         // Пример: TruckingBuyingRateAmount и TruckingBuyingRateCurrencyISO
-        if (strpos($currencyFieldKey, 'CurrencyISO') !== false) {
+        if (str_contains($currencyFieldKey, 'CurrencyISO')) {
             // Это часть составного поля MoneyWithCurrency, тогда всё зависит от прав доступа на основное поле
             $baseFieldKey = str_replace('CurrencyISO', '', $currencyFieldKey);
             if (!$this->hasField($baseFieldKey)) {
@@ -941,7 +932,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
 
         }
 
-        $class = get_class($this);
+        $class = static::class;
         $trace = debug_backtrace();
         $file = $trace[0]['file'];
         $line = $trace[0]['line'];
@@ -970,7 +961,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      * Запускается автоматически в ModuleAbstract после того как сохранён сам объект и все подтаблицы
      * Удобен для пересчёта различных кеширующих полей, когда подтаблицы уже сохранены.
      * При вызове этого метода мы по сути принимаем текущий объект корнем агрегата
-     * @param Msg $msgBuff
      */
     public function afterSubmit(Msg $msgBuff): void
     {
@@ -982,7 +972,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      * По умолчанию он запускает более общий метод afterSubmit()
      * Можно переопределить это поведение в классах потомках,
      * если требуется какое-то особое поведение после Multiple Update
-     * @param Msg $msgBuff
      */
     public function afterMultipleUpdate(Msg $msgBuff): void
     {
@@ -994,7 +983,6 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      * Запускается автоматически в ModuleAbstract после того как удалён сам объект и все подтаблицы
      * Удобен для удаления различных кеширующих полей, когда подтаблицы уже очищены.
      * При вызове этого метода мы по сути принимаем текущий объект корнем агрегата
-     * @param Msg $msgBuff
      */
     public function afterDelete(Msg $msgBuff): void
     {

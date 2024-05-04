@@ -161,9 +161,6 @@ class ImportCPayment extends ImporterAbstract
     /**
      * Эта функция вызывается только если из 1С пришла не пустая оплата
      * (массив Lines в JSON не пуст), чтобы не стересть случайно вручную разнесённые оплаты
-     * @param array $linesFromJson
-     * @param CPaymentObj $cpaymentObj
-     * @param string $dbLogMsg
      * @return int
      */
     private function importLinesFromJson(

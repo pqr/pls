@@ -59,7 +59,6 @@ abstract class PaymentObjAbstract extends ObjAbstract
      * Обновляет кеши указанных счетов. Вызывается из updateCacheAfterSubmit() и из updateCacheAfterDelete()
      * В случае вызова из updateCacheAfterSubmit() получаем также второй параметр - массив счетов по которым нужно
      * обновить статус Open / Part Cleared, Cleared
-     * @param array $invoicesIds
      */
     protected function updateInvoicesCache(array $invoicesIds)
     {

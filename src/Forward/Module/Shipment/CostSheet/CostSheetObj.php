@@ -26,17 +26,13 @@ use Light\User;
  */
 class CostSheetObj
 {
-    private $_shipmentObj;
-
     private $_income;
     private $_expenses;
 
-    public function __construct(ShipmentObj $shipmentObj)
+    public function __construct(private ShipmentObj $_shipmentObj)
     {
-        $this->_shipmentObj = $shipmentObj;
-
-        $this->_income = new Income($shipmentObj);
-        $this->_expenses = new Expenses($shipmentObj);
+        $this->_income = new Income($this->_shipmentObj);
+        $this->_expenses = new Expenses($this->_shipmentObj);
     }
 
     public function getHtmlView()

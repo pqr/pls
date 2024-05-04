@@ -92,7 +92,6 @@ abstract class HomeBlockAbstract extends Table
 
     /**
      * Метод для переопределеняи в классах потомках
-     * @param int $userId
      * @return Link|null
      */
     protected function getViewAllLink(int $userId): ?Link
@@ -102,7 +101,6 @@ abstract class HomeBlockAbstract extends Table
 
     /**
      * метод для переопределения в классах потомках
-     * @param int $userId
      * @return mixed
      */
     protected function getDataQuery(int $userId)

@@ -92,13 +92,13 @@ class MassUpdate extends MassactionAbstract
 
     protected function getTemplate(): ?string
     {
-        if (get_class($this) === MassUpdate::class) {
+        if (static::class === MassUpdate::class) {
 
             // Если это стандартный класс MassUpdate из движка, то попробуем найти файл шаблона рядом с объектом
             // в папке Massactions
             $namespace = Misc::getNamespace($this->objBase);
             $objClass = Misc::getClass($this->objBase);
-            if (substr($objClass, -3) === 'Obj') {
+            if (str_ends_with($objClass, 'Obj')) {
                 $objClass = substr($objClass, 0, -3);
             }
             $filepath = LIGHT_DIR_ROOT . '/src/'
@@ -108,7 +108,7 @@ class MassUpdate extends MassactionAbstract
         } else {
 
             // Этот класс является наследником от MassUpdate - будем искать файл непосредственно рядом с текущим классом
-            $massactionClassWithNamespace = get_class($this);
+            $massactionClassWithNamespace = static::class;
             $filepath = LIGHT_DIR_ROOT . '/src/'
                 . str_replace('\\', '/', $massactionClassWithNamespace)
                 . '.tpl.php';
@@ -132,7 +132,6 @@ class MassUpdate extends MassactionAbstract
      * Метод для переопределения в классах потомках
      * Иногда к полям выводимым для редакитирования на форме Multiple Update нужно добавить какие-то особенные поля
      * Например, поля связанные с подтаблицами
-     * @param array $ids
      * @return Fieldset
      */
     protected function getFieldset(array $ids): Fieldset
@@ -183,8 +182,6 @@ class MassUpdate extends MassactionAbstract
 
     /**
      * @param $id
-     * @param array $dataFromPost
-     * @param Msg $msgBuff
      * @return int affectedRows
      * @throws \Exception
      */
@@ -212,9 +209,6 @@ class MassUpdate extends MassactionAbstract
     /**
      * Выполняет обновление еденичной записи
      * Функция удобна для переопределения в классах потмоках
-     * @param ObjAbstract $obj
-     * @param array $dataFromPost
-     * @param Msg $msgBuff
      * @return int affectedRows
      * @throws \Exception
      */
@@ -268,10 +262,6 @@ class MassUpdate extends MassactionAbstract
 
     /**
      * Для переопределения в классах потомках
-     * @param array $ids
-     * @param int $updated
-     * @param int $nothingChanged
-     * @param Msg $msgBuff
      */
     protected function afterMassUpdate(array $ids, int $updated, int $nothingChanged, Msg $msgBuff)
     {

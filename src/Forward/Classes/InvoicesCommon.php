@@ -8,7 +8,6 @@ class InvoicesCommon
     /**
      * Метод вызывается при создании счёта из Cost-sheet'а - заполняет поля CompanyID и CurrencyISO на основе отмеченных
      * галочками линий Cost-sheet'а из которых создаётся этот счёт
-     * @param array $csLineIds
      * @param string $cstable
      * @return array
      */

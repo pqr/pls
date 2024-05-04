@@ -195,11 +195,10 @@ class Db
     /**
      * Возвращает данные в виде массивов с индексами (не ассоциативных с ключами)
      * @param $query
-     * @param mixed ...$params
      * @return array
      * @throws \Exception
      */
-    public static function getAllValues($query, ...$params): array
+    public static function getAllValues($query, mixed ...$params): array
     {
         $res = self::query($query, ...$params);
         if (!$res) {
@@ -330,9 +329,6 @@ class Db
      * разделённые запятыми. Эти значения затем удобно подставить в какой-нибудь IN(...) запрос.
      * Если у казанной таблице нет значений, тогда этом метод вернёт строку '0', которую также
      * можно безопасно подставить в IN(...)
-     * @param string $fieldKey
-     * @param string $dbTable
-     * @param string $sqlWhere
      * @return string
      */
     public static function getUniqueValuesComa(string $fieldKey, string $dbTable, string $sqlWhere = '')
@@ -351,7 +347,6 @@ class Db
     /**
      * Добавляет экранирующие кавычки к имени таблицы.
      * Это нужно сделать аккуратно, т.к. имя таблицы может содержать имя базы через точку
-     * @param string $table
      * @return string
      */
     public static function quote(string $table): string
@@ -417,7 +412,6 @@ class Db
      * @param string $table
      * @param bool $replace
      * @param bool $ignore
-     * @param array $onDuplicateUpdateFieldKeys
      * @return int
      * @throws \Exception
      */
@@ -456,8 +450,6 @@ class Db
     }
 
     /**
-     * @param array $fieldValues
-     * @param string $table
      * @param  $id
      * @return int affected rows
      * @throws \Exception
@@ -614,7 +606,7 @@ class Db
 
             $filterComaSeparatedArr[] = $elem;
 
-            if (strpos($elem, '-') !== false) {
+            if (str_contains($elem, '-')) {
                 [$from, $to] = explode('-', $elem, 2);
                 if (is_numeric($from) && is_numeric($to)) {
 
@@ -654,7 +646,7 @@ class Db
                     }
 
                     //Ещё вариант - удаляем пробелы
-                    if (strpos($cv, ' ') !== false) {
+                    if (str_contains($cv, ' ')) {
                         $cv = str_replace(' ', '', $cv);
                         if ($normalStrLen === -1 || strlen($cv) === $normalStrLen) {
                             $valuesEqual[] = $cv;
@@ -796,7 +788,7 @@ class Db
         foreach ($data as &$value) {
             if ($value === null) {
                 $value = 'NULL';
-            } elseif (!is_numeric($value) || strpos($value, "0") === 0) {
+            } elseif (!is_numeric($value) || str_starts_with($value, "0")) {
                 // Если это НЕ число или это чисно, но начинаетс с 0 - тогда оборачиваем в кавычки
                 $value = "'" . self::$mysqli->real_escape_string($value) . "'";
             }

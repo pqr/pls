@@ -145,7 +145,7 @@ class Core
             }
 
             //Проверим таблицу на допустимые значения для таблиц (иначе можно сформировать запрос на выборку `user`.Password)
-            if (strpos($dbTable, 'list_') === 0 || User::hasReadAccess(ucfirst($dbTable))) {
+            if (str_starts_with($dbTable, 'list_') || User::hasReadAccess(ucfirst($dbTable))) {
 
                 $likeValue = Db::esc($value);
                 if ($likeType === 'startwith') {
@@ -471,19 +471,12 @@ class Core
 
         $imageSize = getimagesize($tmpFileName);
 
-        switch ($imageSize[2]) {
-            case 1:
-                $image = \imagecreatefromgif($tmpFileName);
-                break;
-            case 2:
-                $image = \imagecreatefromjpeg($tmpFileName);
-                break;
-            case 3:
-                $image = \imagecreatefrompng($tmpFileName);
-                break;
-            default:
-                $image = false;
-        }
+        $image = match ($imageSize[2]) {
+            1 => \imagecreatefromgif($tmpFileName),
+            2 => \imagecreatefromjpeg($tmpFileName),
+            3 => \imagecreatefrompng($tmpFileName),
+            default => false,
+        };
 
         if (!$image) {
             Response::json(['error' => true, 'text' => 'Не опознано расширение'], 500);
@@ -697,7 +690,6 @@ class Core
 
     /**
      * Для переопределения в классах потомках, если нужно добавить ещё какой-то html код в карточку пользователя
-     * @param int $userId
      * @return string
      */
     protected static function getUserDialogAdditionalHtml(int $userId): string

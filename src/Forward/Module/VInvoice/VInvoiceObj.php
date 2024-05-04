@@ -175,7 +175,6 @@ class VInvoiceObj extends InvoiceObjAbstract
      * Алгоритм пытается сравнить строки Cost-sheet'а со строками счёта по суммам Amount
      *
      * Метод вызывается при сохранении инвойса в модуле VInvoice через вызов updateAllCache
-     * @param Msg $msgBuff
      */
     private function guessAndUpdateCostSheetsInvNum(Msg $msgBuff): void
     {

@@ -395,7 +395,7 @@ class FieldSelect extends FieldOptionsAbstract
             $editName = $this->editName;
             // Для случая Subtable, когда атрибут name принимает значение типа subtablename[2][FieldKey], нам нужно добавить
             // слово New внутрь вторых квадратных скобок
-            if (substr($editName, -1) === ']') {
+            if (str_ends_with($editName, ']')) {
                 $editName = substr($editName, 0, -1) . 'New]';
             } else {
                 $editName .= 'New';
@@ -513,7 +513,7 @@ class FieldSelect extends FieldOptionsAbstract
 
     protected function getSqlWhereInner($value): string
     {
-        if ($this->multiple && strpos($value, '|') !== false) {
+        if ($this->multiple && str_contains($value, '|')) {
             $values = $this->parsePipeSeparatedValue($value);
             if (!$values) {
                 return 'TRUE';

@@ -195,7 +195,6 @@ trait FilesDialogTrait
 
     /**
      * Этот метод вызывается как из Multiple диалога, так из карточки View
-     * @param ObjAbstract $masterObj
      * @throws \Exception
      */
     private function filesDialogSubmitOneMaster(ObjAbstract $masterObj): void
@@ -221,7 +220,7 @@ trait FilesDialogTrait
     {
         if (!isset($this->filesManager[$masterId])) {
             // ['Basis', 'Module', 'Shipment', 'Shipment']
-            $parts = explode('\\', get_class($this));
+            $parts = explode('\\', $this::class);
             // Последний элемент превращаем из 'Shipment' в 'ShipmentFiles'
             $parts[3] .= 'Files';
             $class = implode('\\', $parts);

@@ -20,9 +20,6 @@ class Mailer
     private $customFrom;
 
     /** @var array|string */
-    private $to;
-
-    /** @var array|string */
     private $cc;
 
     /** @var array|string */
@@ -30,12 +27,6 @@ class Mailer
 
     /** @var string */
     private $replyTo;
-
-    /** @var string */
-    private $subject;
-
-    /** @var string */
-    private $body;
 
     /** @var array */
     private $attachements = [];
@@ -55,20 +46,13 @@ class Mailer
     /**
      * Mailer constructor.
      * @param string | array $to
-     * @param string $subject
-     * @param string $body
      */
-    public function __construct($to, string $subject, string $body = '')
+    public function __construct(private $to, private string $subject, private string $body = '')
     {
-        $this->to = $to;
-        $this->subject = $subject;
-        $this->body = $body;
     }
 
     /**
      * @param string | array $to
-     * @param string $subject
-     * @param string $body
      * @return Mailer
      */
     public static function create($to, string $subject, string $body = '')
@@ -221,7 +205,6 @@ class Mailer
      * Вызывается из Autolaunch Light/Email, когда сообщения достаются из очереди queue_email
      * А также можно вызывать вручную, если нужно отправить E-mail здесь и сейчас (без добавления в очередь)
      *
-     * @param Msg $msgBuff
      * @return int число отправленных писем
      */
     public function sendNow(Msg $msgBuff): int

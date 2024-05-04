@@ -40,7 +40,7 @@ class Response
      */
     public static function header($header): void
     {
-        if (strpos($header, ':') !== false) {
+        if (str_contains($header, ':')) {
             [$name, $value] = explode(':', $header, 2);
             self::withHeader($name, $value);
         }
@@ -52,7 +52,6 @@ class Response
     }
 
     /**
-     * @param string $name
      * @param string|string[] $value
      */
     public static function withHeader(string $name, $value): void
@@ -86,8 +85,6 @@ class Response
 
     /**
      * Перенаправляет пользователя на другую страницу и завершает приложение
-     * @param string $module
-     * @param array $params
      * @param bool $blank
      */
     public static function redirect(string $module, array $params = [], $blank = false): void
@@ -360,50 +357,19 @@ class Response
     public static function streamFileFromContent(string $content, string $downloadFilename): void
     {
         $extension = pathinfo($downloadFilename, PATHINFO_EXTENSION);
-        switch (mb_strtolower($extension, 'UTF-8')) {
-            case 'pdf':
-                $contentType = 'application/pdf';
-                break;
-
-            case 'doc':
-                $contentType = 'application/msword';
-                break;
-
-            case 'docx':
-                $contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-                break;
-
-            case 'xlsx':
-                $contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-                break;
-
-            case 'xls':
-                $contentType = 'application/vnd.ms-excel';
-                break;
-
-            case 'gif':
-                $contentType = 'image/gif';
-                break;
-
-            case 'png':
-                $contentType = 'image/png';
-                break;
-
-            case 'jpg':
-                $contentType = 'image/jpg';
-                break;
-
-            case 'zip':
-                $contentType = 'application/zip';
-                break;
-
-            case 'json':
-                $contentType = 'application/json';
-                break;
-
-            default:
-                $contentType = 'text/plain';
-        }
+        $contentType = match (mb_strtolower($extension, 'UTF-8')) {
+            'pdf' => 'application/pdf',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'xls' => 'application/vnd.ms-excel',
+            'gif' => 'image/gif',
+            'png' => 'image/png',
+            'jpg' => 'image/jpg',
+            'zip' => 'application/zip',
+            'json' => 'application/json',
+            default => 'text/plain',
+        };
 
         Response::withHeader('Content-Type', $contentType);
         Response::withHeader('Content-Disposition',

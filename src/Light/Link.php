@@ -5,7 +5,7 @@ namespace Light;
 use Light\Module\Core\Core;
 use Light\Module\Reportmenu\Reportmenu;
 
-class Link
+class Link implements \Stringable
 {
     /**
      * Обычно адрес ссылки формируется на основе $module и $params,
@@ -364,7 +364,7 @@ class Link
             . '</a>';
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return $this->innerHtml !== '' ? $this->getHtml() : $this->getHref();
     }

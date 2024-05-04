@@ -29,7 +29,6 @@ class Login
     }
 
     /**
-     * @param array $postData
      * @return array
      */
     protected function checkPostData(array $postData): array

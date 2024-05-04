@@ -87,7 +87,6 @@ class XlsWriter
 
     /**
      * Возвращает объект Writer (xls, xlsx) нужного типа в зависимости от имени файла
-     * @param string $filename
      * @return IWriter
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
@@ -106,7 +105,6 @@ class XlsWriter
     /**
      * Сохраняет результат в поток (в браузер)
      * Тип документа в зависимости от расширения: xls или xlsx
-     * @param string $filename
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
     public function send(string $filename): void
@@ -129,7 +127,6 @@ class XlsWriter
     }
 
     /**
-     * @param string $filename
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
@@ -153,7 +150,6 @@ class XlsWriter
     /**
      * Сохраняет результат в файл
      * Тип документа в зависимости от расширения: xls или xlsx
-     * @param string $filepath
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
     public function save(string $filepath): void
@@ -182,9 +178,7 @@ class XlsWriter
     /**
      * Заменяет ключевые слова в ячейках данными из ассоциативного массива
      * Ключевое слово в Excel должно быть обёрнуто в два процента %FieldName%
-     * @param array $data
      * @param Fieldset|null $fieldset
-     * @param int $tableOpts
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function replaceData(array $data, Fieldset $fieldset = null, int $tableOpts = 0): void
@@ -357,9 +351,6 @@ class XlsWriter
     /**
      * Вставляет таблицу по указанным координатам, добавляя новые строки (раздвигая шаблон по вертикали)
      *
-     * @param int $col
-     * @param int $row
-     * @param Table $table
      * @param int $tableOpts битовая маска опция для таблицы
      * @param bool $insertRows вставлять ли новые строки в Excel лист, чтобы уместить таблицу? Иногда, когда таблица пишется в конец,
      * нет смысла вставлять новые строки
@@ -434,9 +425,6 @@ class XlsWriter
     /**
      * Пишет текст начиная со строки $row и дальше вниз каждую линию на новую строку
      * При этом новые строки НЕ добавляются в шаблон, т.е. этот метод потенциально может перезаписать данные ниже
-     * @param int $col
-     * @param int $row
-     * @param string $text
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function writeTextPerRows(int $col, int $row, string $text): void
@@ -452,9 +440,6 @@ class XlsWriter
     /**
      * Пишет заголовок таблицы по указанным координатам (набор полей берётся из $fieldset)
      *
-     * @param int $col
-     * @param int $row
-     * @param Fieldset $fieldset
      * @param int $tableOpts битовая маска, в этом методе используется только одна опция XlsWriter::FREEZE_PANES
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
@@ -497,10 +482,6 @@ class XlsWriter
 
     /**
      * Применяет стили описанные в $fieldset к колонкам таблицы начиная со строки $row и заканчивая строкой $lastRow
-     * @param int $col
-     * @param int $row
-     * @param int $lastRow
-     * @param Fieldset $fieldset
      * @param int $tableOpts битовая маска, в этом методе используется только одна опция XlsWriter::ADJUST_WIDTH
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
@@ -521,7 +502,7 @@ class XlsWriter
             $colRange = $colLetter . $row . ':' . $colLetter . $lastRow;
 
             // Устанавливаем выравнивание left|center|right
-            if (strpos($field->key, 'CurrencyISO') !== false) {
+            if (str_contains($field->key, 'CurrencyISO')) {
                 //Валюту всегда выравниваем по левому краю с добавлением indent
                 $ws->getStyle($colRange)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
             } else {
@@ -555,11 +536,6 @@ class XlsWriter
      *
      * Если нужно вставлять данные таблицы с добавлением новых строк, используйте метод insertTable()
      *
-     * @param int $col
-     * @param int $row
-     * @param array $dataCalculated
-     * @param array $dataTotal
-     * @param Fieldset $fieldset
      * @param callable|null $rowStyleFunction
      * @param int $tableOpts битовая маска, определяет нужно ли писать заголовок таблицы, фиксировать первую строку, накладывать автофильтры, менять ширину колонок
      * @return int $insertedRows
@@ -622,10 +598,6 @@ class XlsWriter
 
     /**
      * Записывает данные в строку, форматируя ячейки в соответвие с типами полей описанными в $fieldset
-     * @param int $col
-     * @param int $row
-     * @param array $rowDataCalculated
-     * @param Fieldset $fieldset
      * @param callable|null $rowStyleFunction
      * @param null $rowNum
      * @throws \PhpOffice\PhpSpreadsheet\Exception
@@ -653,7 +625,7 @@ class XlsWriter
                 if (
                     $fieldType === F::TYPE_TEXT ||
                     $fieldType === F::TYPE_HTML ||
-                    ($field->groupconcat && strpos($value, "\n") !== false)
+                    ($field->groupconcat && str_contains($value, "\n"))
                 ) {
                     $hasTextField = true;
                 }
@@ -682,11 +654,8 @@ class XlsWriter
     /**
      * Записывает значение одной ячейки ($value) применяя форматирование описанное в $field
      *
-     * @param int $col
-     * @param int $row
      * @param $value
      * @param array $rowDataCalculated массив всех данных строки может пригодится при определении форматирования для данной ячейки
-     * @param F $field
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function writeCellDataByColumnAndRow(int $col, int $row, $value, array $rowDataCalculated, F $field): void
@@ -698,10 +667,7 @@ class XlsWriter
     }
 
     /**
-     * @param string $coordinate
      * @param $value
-     * @param array $rowDataCalulated
-     * @param F $field
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function writeCellData(string $coordinate, $value, array $rowDataCalulated, F $field): void
@@ -717,7 +683,7 @@ class XlsWriter
 
         //Если это числовой тип безе перевода строк внутри (т.е не groupconcat)
         //то можно записать обычной функцией setCellValueByColumnAndRow - Excel сам распознает число
-        $noNewLine = strpos($excelVal, "\n") === false;
+        $noNewLine = !str_contains($excelVal, "\n");
         if ($noNewLine &&
             ($type === F::TYPE_INT
                 || $type === F::TYPE_FLOAT

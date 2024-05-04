@@ -14,8 +14,6 @@ class Pdf
      * @param string $html
      * @param string $filepathAbs абсолютный путь до файла (с именем файла и расширением .pdf)
      * @param bool $landscape
-     * @param Msg $msgBuff
-     * @param bool $recall
      * @return bool
      */
     public static function save($html, $filepathAbs, $landscape = false, Msg $msgBuff = null, bool $recall = false)

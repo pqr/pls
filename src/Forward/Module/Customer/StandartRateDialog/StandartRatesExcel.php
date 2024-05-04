@@ -105,9 +105,6 @@ class StandartRatesExcel extends Table
 
     /**
      * Переопределяем метод, чтобы подставить таблицу в шаблон
-     * @param string $customerName
-     * @param int $companyId
-     * @param string $lang
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception

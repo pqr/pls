@@ -107,7 +107,7 @@ class Session implements \SessionHandlerInterface
 
     public static function __callStatic($name, $arguments)
     {
-        if (strpos($name, 'flash') === 0) {
+        if (str_starts_with($name, 'flash')) {
             $type = strtolower(substr($name, 5));
             self::flashAdd($type, $arguments[0] ?? '');
             return;

@@ -11,8 +11,6 @@ class MailSender
     /**
      * Читает указанную запись из очереди queue_email и реально отправляет по указанному адресу
      *
-     * @param int $queueId
-     * @param Msg $msgBuff
      * @return int кол-во отправленных сообщений
      */
     public static function sendFromQueue(int $queueId, Msg $msgBuff): int

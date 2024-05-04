@@ -32,7 +32,7 @@ class CustomerFields
                     return $outHtml;
                 },
                 'viewCssClass' => function ($value, array $data, $forTable) {
-                    if ($value && $forTable !== 'total' && isset($data['CreditAmount']) && strpos($data['CreditAmount'], ' ') !== false) {
+                    if ($value && $forTable !== 'total' && isset($data['CreditAmount']) && str_contains($data['CreditAmount'], ' ')) {
                         [$currencyIso, $amount] = explode(' ', $value);
                         [$creditCurrencyIso, $creditAmount] = explode(' ', $data['CreditAmount']);
                         if ($amount > 0 && $creditCurrencyIso == $currencyIso) {

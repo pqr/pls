@@ -37,7 +37,6 @@ trait FieldsetAwareTrait
     }
 
     /**
-     * @param string $fieldKey
      * @return F
      */
     public function getField(string $fieldKey)

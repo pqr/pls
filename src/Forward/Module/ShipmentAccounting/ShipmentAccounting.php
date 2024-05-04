@@ -93,7 +93,7 @@ class ShipmentAccounting extends ModuleAbstract
                         AND cfa.FileNumber = shipment.Name
                         AND ci.CompanyID IN ($onecCompanyIdsSql)",
                 'getHtmlFunction' => function ($value) {
-                    if (strpos($value, '|') === false) {
+                    if (!str_contains($value, '|')) {
                         return '';
                     }
 
@@ -109,7 +109,7 @@ class ShipmentAccounting extends ModuleAbstract
 
                 },
                 'getExcelFunction' => function ($value, $out) {
-                    if (strpos($value, '|') === false) {
+                    if (!str_contains($value, '|')) {
                         return '';
                     }
 
@@ -266,7 +266,7 @@ class ShipmentAccounting extends ModuleAbstract
 
     public function __call($name, $arguments)
     {
-        if (strpos($name, 'massactionDownloadDocs') === 0) {
+        if (str_starts_with($name, 'massactionDownloadDocs')) {
             $folderNo = str_replace('massactionDownloadDocs', '', $name);
             if (isset(Constant::$standardFolders[$folderNo])) {
                 $ids = $arguments[0];

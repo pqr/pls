@@ -17,29 +17,14 @@ use Symfony\Component\Process\Process;
 class ShipmentDownloadDocs
 {
     public const ONLY_SHIPMENT_REQUESTS_XLSX = -1;
-    /**
-     * @var Filesystem
-     */
-    private $fs;
-    /**
-     * @var Msg
-     */
-    private $msgBuff;
 
     /**
      * @var string
      */
     private $tmpDir;
-    /**
-     * @var Process
-     */
-    private $process;
 
-    public function __construct(Filesystem $fs, Process $process, Msg $msgBuff)
+    public function __construct(private Filesystem $fs, private Process $process, private Msg $msgBuff)
     {
-        $this->fs = $fs;
-        $this->process = $process;
-        $this->msgBuff = $msgBuff;
     }
 
     public static function create(Msg $msgBuff)
@@ -48,8 +33,6 @@ class ShipmentDownloadDocs
     }
 
     /**
-     * @param array $shipmentIds
-     * @param bool $withPassword
      * @param array|null $onlyFoldersNo
      * @return null|string полный путь к созданному zip файлу
      */

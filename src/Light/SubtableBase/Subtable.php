@@ -193,7 +193,6 @@ abstract class Subtable extends Table
 
     /**
      * Метод пригождается при копировании в ModuleAbstract
-     * @param ObjAbstract $masterObj
      */
     public function setMasterObj(ObjAbstract $masterObj): void
     {
@@ -946,7 +945,6 @@ abstract class Subtable extends Table
     /**
      * Метод proceedSubmit в Subtable делаем final
      * Если нужны какие-то дополнительные действия после сохранения, нужно переопределить afterSubmit
-     * @param Msg $msgBuff
      * @param array|null $dataFromRequest
      * @return int
      * @throws \Exception
@@ -1035,8 +1033,6 @@ abstract class Subtable extends Table
 
     /**
      * @param int $id - может быть 0, если это новая строка
-     * @param array $rowDataFromRequest
-     * @param Msg $msgBuff
      * @return int
      * @throws \Exception
      */
@@ -1075,10 +1071,7 @@ abstract class Subtable extends Table
     /**
      * Метод для переопределения в классах потоках, когда нужно сделать какие-то дополнительные действия над строками
      * подтаблицы после сохранения в базу
-     * @param array $dataFromPost
      * @param int $affectedRows
-     * @param array $oldData
-     * @param Msg $msgBuff
      */
     protected function afterSubmit(
         array $dataFromPost,
@@ -1092,7 +1085,6 @@ abstract class Subtable extends Table
     private $_delRows;
 
     /**
-     * @param array $dataFromRequest
      * @return array
      */
     protected function getRowsToBeDeleted(array $dataFromRequest)
@@ -1326,7 +1318,6 @@ abstract class Subtable extends Table
 
     /**
      * Изменение поля через ajax
-     * @param Msg $msgBuff
      * @return int affectedRows
      * @throws \Exception
      */
@@ -1435,8 +1426,6 @@ abstract class Subtable extends Table
     /**
      * Возвращает true, если объект был только что создан (insertDb()) или в процессе updateDb() изменилось значение
      * этого поля
-     * @param int $id
-     * @param string $fieldKey
      * @return bool
      */
     public function isChanged(int $id, string $fieldKey): bool
@@ -1530,8 +1519,6 @@ abstract class Subtable extends Table
     /**
      * Возвращает true, если поле было изменено в процессе updateDb()
      * Но при вставке нового объекта через insertDb() этот метод всегда будет возвращать false
-     * @param int $id
-     * @param string $fieldKey
      * @return bool
      */
     public function isUpdated(int $id, string $fieldKey): bool
@@ -1551,8 +1538,6 @@ abstract class Subtable extends Table
 
     /**
      * Возвращает true, если поле изменило своё значение с пустого на заполненное
-     * @param int $id
-     * @param string $fieldKey
      * @return bool
      */
     public function isFilled(int $id, string $fieldKey): bool
@@ -1579,8 +1564,6 @@ abstract class Subtable extends Table
 
     /**
      * Возвращает true, если поле изменило своё значение с заполненного на пустое
-     * @param int $id
-     * @param string $fieldKey
      * @return bool
      */
     public function isCleared(int $id, string $fieldKey): bool
@@ -1606,8 +1589,6 @@ abstract class Subtable extends Table
     }
 
     /**
-     * @param int $id
-     * @param string $fieldKey
      * @return bool
      */
     public function isFieldEmpty(int $id, string $fieldKey): bool

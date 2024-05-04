@@ -20,31 +20,16 @@ class Bot extends ModuleBotAbstract
 
     protected function getWizardMessageForCommand(string $command)
     {
-        switch ($command) {
-            case 'file':
-                return 'Введите номер перевозки (File Number) для получения всей информации';
-
-            case 'cont':
-                return 'Введите номер контейнера';
-
-            case 'truck':
-                return 'Введите номер машины';
-
-            case 'mawb':
-                return 'Введите номер MAWB';
-
-            case 'month':
-                return 'Введите месяц в формате 12/2017 или просто номер месяца в текущем году';
-
-            case 'cs':
-                return 'Введите фрагмент имени или логина ответсвенного Customer Service. Можно ввести просто "me", чтобы показать все "свои" перевозки';
-
-            case 'cust':
-                return 'Введите фрагмент названия клиента (Customer или Customer Account)';
-
-        }
-
-        return false;
+        return match ($command) {
+            'file' => 'Введите номер перевозки (File Number) для получения всей информации',
+            'cont' => 'Введите номер контейнера',
+            'truck' => 'Введите номер машины',
+            'mawb' => 'Введите номер MAWB',
+            'month' => 'Введите месяц в формате 12/2017 или просто номер месяца в текущем году',
+            'cs' => 'Введите фрагмент имени или логина ответсвенного Customer Service. Можно ввести просто "me", чтобы показать все "свои" перевозки',
+            'cust' => 'Введите фрагмент названия клиента (Customer или Customer Account)',
+            default => false,
+        };
     }
 
     protected function runCommands(array $commands)

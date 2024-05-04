@@ -105,7 +105,7 @@ class DailyMaintainance extends AutolaunchAbstract
             }
 
             // Если папка начинается с нужного нам префикса  Pdf::CONCAT_TMPDIR_PREFIX, то удаляем её!
-            if (strpos($dir, Pdf::CONCAT_TMPDIR_PREFIX) === 0) {
+            if (str_starts_with($dir, Pdf::CONCAT_TMPDIR_PREFIX)) {
 
                 try {
 

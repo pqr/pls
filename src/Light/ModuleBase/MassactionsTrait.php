@@ -46,9 +46,7 @@ trait MassactionsTrait
      * @param string $action уникальный ключ этого massaction
      * @param string $text текст отображаемый в выпадающем списке
      * @param string $cssClass класс которым подсветить элемент в выпадающем списке
-     * @param string $optgroup
      * @param bool $blank открывать при сабмите в новом окне браузера
-     * @param array $options
      */
     protected function addMassaction(
         $action,
@@ -183,7 +181,7 @@ trait MassactionsTrait
             $handler = 'massaction' . ucfirst($action);
             if (!method_exists($this, $handler)) {
                 $this->{$handler}($ids);
-                throw new \BadMethodCallException("Unknown function $handler in class " . get_class($this));
+                throw new \BadMethodCallException("Unknown function $handler in class " . $this::class);
             }
 
             $options = $this->massactions[$action]['options'];

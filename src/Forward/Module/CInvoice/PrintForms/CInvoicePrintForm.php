@@ -15,7 +15,7 @@ class CInvoicePrintForm extends PrintForm
     {
         parent::__construct($key, $title, $format, self::OUT_SAVE_AND_STREAM);
 
-        $this->stamp = strpos($key, 'Stamp') !== false;
+        $this->stamp = str_contains($key, 'Stamp');
     }
 
     public function testForObj(ObjAbstract $obj): bool
@@ -39,17 +39,11 @@ class CInvoicePrintForm extends PrintForm
     {
         //Определим файл шаблона на основе компании и языка
         //Компания определяет папку в которой искать файл
-        switch ($obj['CompanyID']) {
-            case Constant::OC_PLS:
-            case Constant::OC_PLS_USD:
-                return 'PrintForms/PLS/CInvoicePrintPls.tpl.php';
-
-            case Constant::OC_GTS:
-                return 'PrintForms/GTS/CInvoicePrintGts.tpl.php';
-
-            default:
-                throw new \Exception('No print form for CompanyID = ' . $obj['CompanyID']);
-        }
+        return match ($obj['CompanyID']) {
+            Constant::OC_PLS, Constant::OC_PLS_USD => 'PrintForms/PLS/CInvoicePrintPls.tpl.php',
+            Constant::OC_GTS => 'PrintForms/GTS/CInvoicePrintGts.tpl.php',
+            default => throw new \Exception('No print form for CompanyID = ' . $obj['CompanyID']),
+        };
     }
 
     protected function getTplData(ObjAbstract $obj): array

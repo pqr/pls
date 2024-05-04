@@ -12,7 +12,6 @@ trait ModuleCestWithPrintFormsTrait
 
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
-     * @param \Codeception\Example $example
      */
     private function printHtmlInternal($I, Example $example): void
     {
@@ -59,7 +58,6 @@ trait ModuleCestWithPrintFormsTrait
 
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
-     * @param \Codeception\Example $example
      */
     private function printPdfInternal($I, Example $example): void
     {
@@ -79,7 +77,6 @@ trait ModuleCestWithPrintFormsTrait
 
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
-     * @param \Codeception\Example $example
      */
     private function testPrintButtonsInternal($I, Example $example): void
     {
@@ -115,7 +112,6 @@ trait ModuleCestWithPrintFormsTrait
 
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
-     * @param \Codeception\Example $example
      */
     private function testPrintButtonsMultipleInternal($I, Example $example): void
     {

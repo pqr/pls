@@ -37,7 +37,6 @@ class Metric
      * Do not use words reserved for use by NRQL and Insights.
      *
      * @param string $eventName Can be a combination of alphanumeric characters, _ underscores, and : colons.
-     * @param array $attributes
      */
     public static function newrelicEvent(string $eventName, array $attributes = []): void
     {

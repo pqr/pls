@@ -172,7 +172,7 @@ class User
         }
 
         // Если внутри текста $responsibleRoles есть вхождение запрашиваемой роли, вернём true
-        return strpos($responsibleRoles, '|' . $role . '|') !== false;
+        return str_contains($responsibleRoles, '|' . $role . '|');
     }
 
     public static function hasResponsibleRoleSql(string $role): string
@@ -221,7 +221,7 @@ class User
 
             $user = self::getUserById($userId);
 
-        } catch (\Exception $e) {
+        } catch (\Exception) {
 
             // Если не удалось загрузить пользователя из базы, то возвращаем 0 - доступ запрещён
             return 0;
@@ -271,7 +271,7 @@ class User
 
             $user = self::getUserById($userId);
 
-        } catch (\Exception $e) {
+        } catch (\Exception) {
 
             // Если не удалось загрузить пользователя из базы, то возвращаем 0 - доступ запрещён
             return 0;

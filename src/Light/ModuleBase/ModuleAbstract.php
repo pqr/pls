@@ -514,7 +514,6 @@ abstract class ModuleAbstract extends Table
     /**
      * Загружает данные в объект $this->_obj, проверяет права доступа к нему у текущего пользователя
      * Если объект не найден или нет доступа, то перенаправляет на режим List
-     * @param int $id
      * @return bool
      */
     protected function loadObjAndCheck(int $id): bool
@@ -678,7 +677,7 @@ abstract class ModuleAbstract extends Table
 
             // Проверим, чтобы в имени скачиваемого файла file не было ..
             $test = '/' . str_replace('\\', '/', $_GET['file']) . '/';
-            if (strpos($test, '/../') !== false) {
+            if (str_contains($test, '/../')) {
                 throw new InvalidArgumentException("file contains ..: " . $_GET['file']);
             }
 
@@ -1403,7 +1402,6 @@ abstract class ModuleAbstract extends Table
      * Старые данные сохраняются во временную переменную, чтобы потом быть передаными в метод afterSubmit()
      * Иногда, старые данные нужно расширить, например, данными из подтаблиц - тогда этот метод можно переопределить в
      * классах потомках
-     * @param ObjAbstract $obj
      * @return array
      * @deprecated
      */
@@ -1569,7 +1567,6 @@ abstract class ModuleAbstract extends Table
      * Метод для переопределения в классах потомках, если нужно сделать что-то особенное после валидации данных
      * Например, если нет ошибок отправить пользователю ещё какой-то промежуточный диалог-подтверждение или записать логи
      *
-     * @param array $dataFromPost
      * @param array $saveErrors ошибки, которые были найдены привалидации, передаются сюда в явном виде для удобства.
      * Их можно было бы не передавать, т.к. доступ к ошибкам можно получить через $this->_saveErrors, но это менее наглядно
      */
@@ -1614,11 +1611,7 @@ abstract class ModuleAbstract extends Table
      * Вызывается после создания ноыой записи из Add New и при редактировании записи через Edit или Multiple Update
      * (иными словами самый универсальный метод - вызывается всегда! Если нужно сделать какое-то обновление кеширующих
      * данных во всех случаях, этот метод подходит лучше всего)
-     * @param ObjAbstract $obj
-     * @param array $dataFromPost
      * @param int $affectedRows
-     * @param array $oldData
-     * @param Msg $msgBuff
      * @param bool $fromMultipleUpdate
      *
      */
@@ -2090,7 +2083,6 @@ abstract class ModuleAbstract extends Table
 
     /**
      * Метод для переопределения в классах потоках - здесь проверяются права доступа к объекту в режимах View/Edit/Log/Delete
-     * @param ObjAbstract $obj
      * @return bool
      */
     protected function hasAccessRightToObj(ObjAbstract $obj)
@@ -2132,8 +2124,6 @@ abstract class ModuleAbstract extends Table
     /**
      * В режиме List иногда удобно превратить обычное поле типа Money в поле типа MoneyWithCurrency
      * чтобы внизу total считался с учётом валюты
-     * @param string $moneyFieldKey
-     * @param string $currencyFieldKey
      */
     protected function addListFieldMoneyWithCurrency(string $moneyFieldKey, string $currencyFieldKey = 'CurrencyISO')
     {
@@ -2336,7 +2326,6 @@ abstract class ModuleAbstract extends Table
     /**
      * Формирует SQL запрос для выборки реальных данных на основе отображаемых у пользователя колонок
      * и выбирает только указнные $ids (эти ids были определены ранее)
-     * @param array $ids
      * @return string
      */
     protected function getDataQuery(array $ids): string
@@ -2422,7 +2411,6 @@ abstract class ModuleAbstract extends Table
 
     /**
      * Метод для переопределения в классах потоках - здесь проверяются права доступа к объекту в режиме Log
-     * @param ObjAbstract $obj
      * @return bool
      */
     protected function hasLogAccessRightToObj(ObjAbstract $obj)
@@ -2432,7 +2420,6 @@ abstract class ModuleAbstract extends Table
 
     /**
      * Метод для переопределения в классах потоках - здесь проверяются права доступа к объекту в режиме Edit
-     * @param ObjAbstract $obj
      * @return bool
      */
     protected function hasWriteAccessRightToObj(ObjAbstract $obj)
@@ -2446,7 +2433,6 @@ abstract class ModuleAbstract extends Table
     }
 
     /**
-     * @param ObjAbstract $obj
      * @return bool
      */
     protected function hasDeleteAccessRightToObj(ObjAbstract $obj)
@@ -2476,7 +2462,7 @@ abstract class ModuleAbstract extends Table
     {
         $out = [];
         foreach ($_GET as $key => $value) {
-            if (substr($key, -7) === '_findid') {
+            if (str_ends_with($key, '_findid')) {
                 $out[$key] = $value;
             }
         }
@@ -2495,7 +2481,7 @@ abstract class ModuleAbstract extends Table
             return;
         }
 
-        if (strpos($realpath, $examplesDir) !== 0) {
+        if (!str_starts_with($realpath, $examplesDir)) {
             Response::redirect(Request::getModule());
             return;
         }

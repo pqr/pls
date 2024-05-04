@@ -150,7 +150,7 @@ class UserAccess extends ModuleAbstract
 
                 $right = User::getAccess($module, $row['UserID']);
 
-                if ($filterRight !== '%' && strpos($filterRight, '|' . $right . '|') === false) {
+                if ($filterRight !== '%' && !str_contains($filterRight, '|' . $right . '|')) {
                     continue;
                 }
 

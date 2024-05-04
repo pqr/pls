@@ -213,7 +213,6 @@ class Finance
     }
 
     /**
-     * @param array $fileNumbers
      * @param string $dbLogMsg
      * @param $firstLetter 'C' или 'V' - нужно для правильного вызова обновления критериев
      */
@@ -233,7 +232,6 @@ class Finance
     /**
      * Обновляет кеширующие поля CacheLastPaymentDate, CachePaymentsReference, CachePaymentsTotalAmount, CacheOutstandingAmount
      * в таблице cinvoice или vinvoice
-     * @param string $firstLetter
      * @param int $invId ID в таблице vinvoice или cinvoice
      * @return void
      * @throws \Exception
@@ -311,7 +309,6 @@ class Finance
      * Эта проврка на текущий статус сделана для того, чтобы случайно не закрыть Delted или Creadit Noted счёт,
      * а также чтобы не делать переход Cleared -> Part Clerared, т.к. иногда счета закрывают вручную, даже если они не полностью оплачены
      *
-     * @param string $firstLetter
      * @param int $invId ID в таблице vinvoice или cinvoice
      * @throws \Exception
      */
@@ -342,17 +339,11 @@ class Finance
         //Автоматически обновмм статус до Part Cleared или Cleared, если текущий статус среди открытх статуосв
         //Если abs($outstandingAmount) < 1 руб., счёт можно автоматически закрыть
         //Если $outstandingAmount != 0, но $paymentsTotalAmount != 0, значит Part Cleared
-        switch ($invInfo['CurrencyISO']) {
-            case 'USD':
-                $limitForClearence = 0.04;
-                break;
-            case 'EUR':
-                $limitForClearence = 0.03;
-                break;
-            case 'RUB':
-            default:
-                $limitForClearence = 1;
-        }
+        $limitForClearence = match ($invInfo['CurrencyISO']) {
+            'USD' => 0.04,
+            'EUR' => 0.03,
+            default => 1,
+        };
         $newStatus = null;
         if ($invInfo['CacheOutstandingAmount'] < $limitForClearence) {
             $newStatus = Finance::INVOICESTATUS_CLEARED;

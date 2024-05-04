@@ -59,7 +59,7 @@ class FieldColor extends FieldAbstract
     private function getHtmlImg(array $data)
     {
         $source = $this->source;
-        if ($source && strpos($source, '{id}') !== false) {
+        if ($source && str_contains($source, '{id}')) {
             //Если среди данных был параметр ID и в строке source есть плейсхолдер {id}, нужно его заменить
             if (isset($data['ID'])) {
                 $source = str_replace('{id}', $data['ID'], $source);

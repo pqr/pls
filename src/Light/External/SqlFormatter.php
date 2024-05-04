@@ -535,7 +535,7 @@ class SqlFormatter
                 }
 
                 // If the token may have extra whitespace
-                if (strpos($token[self::TOKEN_VALUE],' ')!==false || strpos($token[self::TOKEN_VALUE],"\n")!==false || strpos($token[self::TOKEN_VALUE],"\t")!==false) {
+                if (str_contains($token[self::TOKEN_VALUE],' ') || str_contains($token[self::TOKEN_VALUE],"\n") || str_contains($token[self::TOKEN_VALUE],"\t")) {
                     $highlighted = preg_replace('/\s+/',' ',$highlighted);
                 }
                 //if SQL 'LIMIT' clause, start variable to reset newline
@@ -570,7 +570,7 @@ class SqlFormatter
                 }
 
                 // If the token may have extra whitespace
-                if (strpos($token[self::TOKEN_VALUE],' ')!==false || strpos($token[self::TOKEN_VALUE],"\n")!==false || strpos($token[self::TOKEN_VALUE],"\t")!==false) {
+                if (str_contains($token[self::TOKEN_VALUE],' ') || str_contains($token[self::TOKEN_VALUE],"\n") || str_contains($token[self::TOKEN_VALUE],"\t")) {
                     $highlighted = preg_replace('/\s+/',' ',$highlighted);
                 }
             }

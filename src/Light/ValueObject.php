@@ -1,13 +1,10 @@
 <?php
 namespace Light;
 
-class ValueObject implements \JsonSerializable
+class ValueObject implements \JsonSerializable, \Stringable
 {
-    private $value;
-
-    public function __construct($value)
+    public function __construct(private $value)
     {
-        $this->value = $value;
     }
 
     public function __invoke()
@@ -15,7 +12,7 @@ class ValueObject implements \JsonSerializable
         return $this->value;
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return (string)$this->value;
     }

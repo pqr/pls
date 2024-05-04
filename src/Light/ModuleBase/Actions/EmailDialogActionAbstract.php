@@ -394,7 +394,6 @@ abstract class EmailDialogActionAbstract extends ActionAbstract
 
     /**
      * Метод для переопределения в классах потомках
-     * @param int $sentCount
      */
     protected function afterSendAll(int $sentCount)
     {
