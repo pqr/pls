@@ -135,7 +135,7 @@ class CostSheetRouter
      * Поскольку редактируем две подтаблицы - возвращается json с двумя html блоками: Income и Expenses
      * @param ShipmentObj $shipmentObj
      */
-    private static function proceedAjaxEdit(ShipmentObj $shipmentObj)
+    private static function proceedAjaxEdit(ShipmentObj $shipmentObj): void
     {
         if (!self::hasAccessWriteCostSheet($shipmentObj)) {
             Response::abort(403, 'Нет прав на редактирование Cost-sheet в перевозках в статусе Blocked или Closed');
@@ -154,7 +154,7 @@ class CostSheetRouter
     /**
      * Возвращает JSON данные для копирования из другого кост-шита
      */
-    public static function proceedAjaxCopyFromCs()
+    public static function proceedAjaxCopyFromCs(): void
     {
         //Узнаем ShipmentID по переданному номеру файла
         $out = [];
@@ -180,7 +180,7 @@ class CostSheetRouter
      * В дополнение к этому отправим в барузер новый HTML код для подтаблицы History, новый EGP и новый Deviation
      * @param ShipmentObj $shipmentObj
      */
-    private static function proceedAjaxSubmit(ShipmentObj $shipmentObj)
+    private static function proceedAjaxSubmit(ShipmentObj $shipmentObj): void
     {
         if (!self::hasAccessWriteCostSheet($shipmentObj)) {
             Response::abort(403, 'Нет прав на редактирование Cost-sheet в перевозках в статусе Blocked или Closed');
@@ -204,7 +204,7 @@ class CostSheetRouter
         Response::json($out);
     }
 
-    private static function proceedShowHistory(ShipmentObj $shipmentObj)
+    private static function proceedShowHistory(ShipmentObj $shipmentObj): void
     {
         $histId = (int)$_GET['histid'];
         $cs = new CostSheetObj($shipmentObj);

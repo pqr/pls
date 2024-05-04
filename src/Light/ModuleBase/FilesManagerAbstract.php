@@ -47,11 +47,9 @@ class FilesManagerAbstract
             F::createString('RelativePath', [
                 'name' => Config::$lang === 'ru' ? 'Файл' : 'File',
                 'modes' => F::MODE_READONLY,
-                'getHtmlFunction' => function ($value, array $data, $outHtml) {
-                    return Link::create($this->module, $outHtml)
-                        ->filePreview($this->masterId, $value)
-                        ->getHtml();
-                }
+                'getHtmlFunction' => fn($value, array $data, $outHtml) => Link::create($this->module, $outHtml)
+                    ->filePreview($this->masterId, $value)
+                    ->getHtml()
             ]),
             F::createString('Name', [
                 'name' => Config::$lang === 'ru' ? 'Описание' : 'Description',

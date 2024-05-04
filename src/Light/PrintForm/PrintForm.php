@@ -21,19 +21,19 @@ class PrintForm
 {
     use FieldsetAwareTrait;
 
-    const FORMAT_HTML = 'html';
-    const FORMAT_PDF = 'pdf';
-    const FORMAT_DOC = 'doc';
-    const FORMAT_DOCX = 'docx';
-    const FORMAT_EXCEL = 'xlsx';
+    public const FORMAT_HTML = 'html';
+    public const FORMAT_PDF = 'pdf';
+    public const FORMAT_DOC = 'doc';
+    public const FORMAT_DOCX = 'docx';
+    public const FORMAT_EXCEL = 'xlsx';
 
-    const TEMPLATE_FORMAT_PHP = 'php';
-    const TEMPLATE_FORMAT_EXCEL = 'xlsx';
-    const TEMPLATE_FORMAT_DOCX = 'docx';
+    public const TEMPLATE_FORMAT_PHP = 'php';
+    public const TEMPLATE_FORMAT_EXCEL = 'xlsx';
+    public const TEMPLATE_FORMAT_DOCX = 'docx';
 
-    const OUT_SAVE = 0b01;
-    const OUT_STREAM = 0b10;
-    const OUT_SAVE_AND_STREAM = 0b11;
+    public const OUT_SAVE = 0b01;
+    public const OUT_STREAM = 0b10;
+    public const OUT_SAVE_AND_STREAM = 0b11;
 
     protected $key; // условное название этой печатной формы (выводится на кнопке и в выпадающем списке)
     protected $title; // начало текста, который попадёт в начало имени файла и в заголовок html страницы (при выводе в браузер)
@@ -95,12 +95,12 @@ class PrintForm
         return $this->out;
     }
 
-    public function setOut(int $out)
+    public function setOut(int $out): void
     {
         $this->out = $out;
     }
 
-    public function setPdfLandscape(bool $isLandscape = true)
+    public function setPdfLandscape(bool $isLandscape = true): void
     {
         $this->pdfLandscape = $isLandscape;
     }
@@ -311,7 +311,7 @@ class PrintForm
         return [];
     }
 
-    public function proceedPrintMultipeAsOne(array $objects)
+    public function proceedPrintMultipeAsOne(array $objects): void
     {
         $timer = new Timer();
 
@@ -365,7 +365,7 @@ class PrintForm
      * @param string $targetDir
      * @throws \Exception
      */
-    public function proceedPrint(ObjAbstract $obj, string $targetDir)
+    public function proceedPrint(ObjAbstract $obj, string $targetDir): void
     {
         $timer = new Timer();
 
@@ -427,7 +427,7 @@ class PrintForm
      * @param array $targetDirs
      * @throws \Exception
      */
-    public function proceedPrintMultiple(array $objects, array $targetDirs)
+    public function proceedPrintMultiple(array $objects, array $targetDirs): void
     {
         $timer = new Timer();
 
@@ -606,7 +606,7 @@ class PrintForm
      * @param string $dest
      * @throws \Exception
      */
-    private function save(TemplaterAbstract $templateWriter, string $dest)
+    private function save(TemplaterAbstract $templateWriter, string $dest): void
     {
         switch ($this->format) {
             case self::FORMAT_HTML:

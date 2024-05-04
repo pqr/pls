@@ -161,7 +161,7 @@ class MailSender
         return $message;
     }
 
-    private static function moveFromQueueToLog(array $emailDataFromQueue, string $reportHtml, string $from)
+    private static function moveFromQueueToLog(array $emailDataFromQueue, string $reportHtml, string $from): void
     {
         $record = $emailDataFromQueue;
         unset($record['ID'], $record['PID'], $record['Report'], $record['Body']);
@@ -184,7 +184,7 @@ class MailSender
         Db::query("DELETE FROM queue_email WHERE ID = @i", $emailDataFromQueue['ID']);
     }
 
-    private static function incRetryCount(int $queueId, string $reportHtml)
+    private static function incRetryCount(int $queueId, string $reportHtml): void
     {
         Db::query(
             "UPDATE queue_email 
@@ -242,7 +242,7 @@ class MailSender
         return $msg;
     }
 
-    private static function copyAttachementsToLogDir(int $logId, string $attachements)
+    private static function copyAttachementsToLogDir(int $logId, string $attachements): void
     {
         $attachementsArr = explode("\n", $attachements);
         if (!$attachementsArr) {

@@ -50,7 +50,7 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
      */
     private static function getInvoicesForAjax($keyField, $value)
     {
-        $parts = explode("\\", get_called_class());
+        $parts = explode("\\", static::class);
         if (end($parts) === 'CPayment') {
             $customerOrVendor = 'Customer';
         } else {

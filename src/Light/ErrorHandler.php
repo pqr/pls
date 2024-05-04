@@ -10,7 +10,7 @@ class ErrorHandler
     private static $hasRollbar = false;
     private static $hasSentry = false;
 
-    public static function init()
+    public static function init(): void
     {
         if (defined("CODECEPTION_FUNCTIONAL_TEST")) {
             return;
@@ -29,7 +29,7 @@ class ErrorHandler
         }
     }
 
-    public static function setUser(int $userId, string $username, string $email)
+    public static function setUser(int $userId, string $username, string $email): void
     {
         if (self::$hasRollbar) {
             Rollbar::configure([
@@ -52,7 +52,7 @@ class ErrorHandler
         }
     }
 
-    public static function reportSqlError($query, $errMsg)
+    public static function reportSqlError($query, $errMsg): void
     {
         if (self::$hasRollbar) {
             Rollbar::log(Level::ERROR, new \Exception('SQL: ' . $errMsg), ['query' => $query]);
@@ -70,7 +70,7 @@ class ErrorHandler
         }
     }
 
-    public static function reportException(\Throwable $e, array $extra = [])
+    public static function reportException(\Throwable $e, array $extra = []): void
     {
         if (self::$hasRollbar) {
             Rollbar::log(Level::ERROR, $e, $extra);
@@ -84,7 +84,7 @@ class ErrorHandler
         }
     }
 
-    public static function reportError($message, array $extra = [])
+    public static function reportError($message, array $extra = []): void
     {
         if (self::$hasRollbar) {
             Rollbar::log(Level::ERROR, $message, $extra);
@@ -95,7 +95,7 @@ class ErrorHandler
         }
     }
 
-    private static function reportSentryException(\Throwable $e, array $extra = [])
+    private static function reportSentryException(\Throwable $e, array $extra = []): void
     {
         \Sentry\withScope(function (\Sentry\State\Scope $scope) use ($e, $extra): void {
             if ($extra) {
@@ -107,7 +107,7 @@ class ErrorHandler
         });
     }
 
-    private static function initRollar()
+    private static function initRollar(): void
     {
         $config = Config::$rollbar;
         $config += [
@@ -125,7 +125,7 @@ class ErrorHandler
         self::$hasRollbar = true;
     }
 
-    private static function initSentry()
+    private static function initSentry(): void
     {
         $options = Config::$sentry['options'] ?? [];
         $options += [
@@ -143,7 +143,7 @@ class ErrorHandler
         self::$hasSentry = true;
     }
 
-    private static function initCsv()
+    private static function initCsv(): void
     {
         //Используем старую добрую схему с запись ошибок в csv файлы
         set_error_handler(self::class . '::recordCsv', E_ALL & ~E_DEPRECATED);

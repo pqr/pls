@@ -8,15 +8,15 @@ use Light\DbLog;
 
 class ShipmentCriteria
 {
-    const NoVInv = 4;
-    const NotAllVInv = 5;
-    const NoCInv = 6;
-    const NotAllCInv = 7;
-    const AllInv = 8;
-    const AllInvCleared = 9;
-    const ToBeClosed = 10;
-    const OpenCInv = 11;
-    const PartClearedCInv = 12;
+    public const NoVInv = 4;
+    public const NotAllVInv = 5;
+    public const NoCInv = 6;
+    public const NotAllCInv = 7;
+    public const AllInv = 8;
+    public const AllInvCleared = 9;
+    public const ToBeClosed = 10;
+    public const OpenCInv = 11;
+    public const PartClearedCInv = 12;
 
     private static $criteria = [
 
@@ -96,7 +96,7 @@ class ShipmentCriteria
      * @param int $shipmentId если ID перевозки не задан - обновление идёт по всем перевозкам
      * @param string $dbLogMsg
      */
-    public static function update($criterionId, $shipmentId = 0, $dbLogMsg = '')
+    public static function update($criterionId, $shipmentId = 0, $dbLogMsg = ''): void
     {
         //Если буфер ещё не инициалирован, значит это вообще первое обращение к ShipmentCriteria::update()
         //Одновременно с этим регистрируем обработчик ApplicationAbstract::addFlushOnTerminate()
@@ -241,7 +241,7 @@ class ShipmentCriteria
      * @param int $shipmentId если ID перевозки не задан - обновление идёт по всем перевозкам
      * @param string $dbLogMsg
      */
-    public static function updateAll($shipmentId = 0, $dbLogMsg = '')
+    public static function updateAll($shipmentId = 0, $dbLogMsg = ''): void
     {
         self::updateSeveral(array_keys(self::$criteria), $shipmentId, $dbLogMsg);
     }
@@ -252,7 +252,7 @@ class ShipmentCriteria
      * @param int $shipmentId если ID перевозки не задан - обновление идёт по всем перевозкам
      * @param string $dbLogMsg
      */
-    public static function updateSeveral(array $criteriaIds, $shipmentId = 0, $dbLogMsg = '')
+    public static function updateSeveral(array $criteriaIds, $shipmentId = 0, $dbLogMsg = ''): void
     {
         foreach ($criteriaIds as $criterionId) {
             self::update($criterionId, $shipmentId, $dbLogMsg);
@@ -265,7 +265,7 @@ class ShipmentCriteria
      * @param int $shipmentId
      * @param string $dbLogMsg
      */
-    public static function updateRelatedBasicData($shipmentId = 0, $dbLogMsg = '')
+    public static function updateRelatedBasicData($shipmentId = 0, $dbLogMsg = ''): void
     {
         self::updateSeveral(
             [self::ToBeClosed],
@@ -280,7 +280,7 @@ class ShipmentCriteria
      * @param array $fileNumbers
      * @param string $dbLogMsg
      */
-    public static function updateRelatedCInvByFileNumbers(array $fileNumbers, $dbLogMsg = '')
+    public static function updateRelatedCInvByFileNumbers(array $fileNumbers, $dbLogMsg = ''): void
     {
         if ($fileNumbers) {
 
@@ -307,7 +307,7 @@ class ShipmentCriteria
      * @param array $fileNumbers
      * @param string $dbLogMsg
      */
-    public static function updateRelatedVInvByFileNumbers(array $fileNumbers, $dbLogMsg = '')
+    public static function updateRelatedVInvByFileNumbers(array $fileNumbers, $dbLogMsg = ''): void
     {
         if ($fileNumbers) {
 
@@ -332,7 +332,7 @@ class ShipmentCriteria
      * @param int $shipmentId
      * @param string $dbLogMsg
      */
-    public static function updateRelatedInv($shipmentId = 0, $dbLogMsg = '')
+    public static function updateRelatedInv($shipmentId = 0, $dbLogMsg = ''): void
     {
         self::updateSeveral(
             [

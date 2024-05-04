@@ -21,7 +21,7 @@ class EmailNoticeSettings
         );
     }
 
-    public function proceedSubmit()
+    public function proceedSubmit(): void
     {
         $fieldset = $this->getFieldset();
         $data = $fieldset->getDataFromRequest($_POST);
@@ -33,7 +33,7 @@ class EmailNoticeSettings
         Response::redirect('EmailNoticeSettings');
     }
 
-    public function __invoke()
+    public function __invoke(): void
     {
         Response::setPageHeadHtml('<strong>E-Mail Notice Settings</strong>');
         Response::setPageTitle('E-Mail Notice Settings');

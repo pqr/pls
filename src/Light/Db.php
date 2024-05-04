@@ -14,7 +14,7 @@ class Db
     /** @var \mysqli */
     public static $mysqli;
 
-    public static function connect()
+    public static function connect(): void
     {
         try {
             self::$mysqli = new \mysqli(Config::$mysqlHost, Config::$mysqlUser, Config::$mysqlPassword,
@@ -152,7 +152,7 @@ class Db
      * @param $errMsg
      * @throws \RuntimeException
      */
-    private static function riseError($query, $errMsg)
+    private static function riseError($query, $errMsg): void
     {
         $msg = 'SQL error: ' . $query . "\n\n" . $errMsg;
 
@@ -390,7 +390,7 @@ class Db
         $ignore = false,
         array $onDuplicateUpdateFieldKeys = []
     ) {
-        $fieldKeys = implode(',', array_map(__CLASS__ . '::quote', array_keys($fieldValues)));
+        $fieldKeys = implode(',', array_map(self::class . '::quote', array_keys($fieldValues)));
 
         $query = ($replace ? 'REPLACE' : 'INSERT')
             . (!$replace && $ignore ? ' IGNORE' : '')
@@ -433,16 +433,14 @@ class Db
         }
 
         $firstRow = reset($rows);
-        $fieldKeys = implode(',', array_map(__CLASS__ . '::quote', array_keys($firstRow)));
+        $fieldKeys = implode(',', array_map(self::class . '::quote', array_keys($firstRow)));
 
         $query = ($replace ? 'REPLACE' : 'INSERT')
             . (!$replace && $ignore ? ' IGNORE' : '')
             . " INTO " . self::quote($table)
             . " (" . $fieldKeys . ")"
             . " VALUES "
-            . implode(',', array_map(function ($fieldValues) {
-                return "(" . self::createIn($fieldValues) . ")";
-            }, $rows));
+            . implode(',', array_map(fn($fieldValues) => "(" . self::createIn($fieldValues) . ")", $rows));
 
         if (!$replace && $onDuplicateUpdateFieldKeys) {
             $query .= self::getOnDuplicateQuery($onDuplicateUpdateFieldKeys);
@@ -763,22 +761,22 @@ class Db
         return $query;
     }
 
-    public static function begin()
+    public static function begin(): void
     {
         self::query("BEGIN");
     }
 
-    public static function commit()
+    public static function commit(): void
     {
         self::query("COMMIT");
     }
 
-    public static function rollback()
+    public static function rollback(): void
     {
         self::query("ROLLBACK");
     }
 
-    public static function truncate($table)
+    public static function truncate($table): void
     {
         self::query("TRUNCATE TABLE " . Db::quote($table));
     }

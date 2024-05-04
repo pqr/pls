@@ -68,7 +68,7 @@ class Lines extends Subtable
         return parent::getHtmlEdit();
     }
 
-    private function loadFromCostSheet(array $csLineIds, $shipmentId)
+    private function loadFromCostSheet(array $csLineIds, $shipmentId): void
     {
         $linesData = [];
         if ($csLineIds) {

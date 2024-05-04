@@ -29,16 +29,14 @@ class CPayment extends PaymentModuleAbstract
             F::createText('FilterName', [
                 'name' => 'Ref. / Comments',
                 'title' => 'Reference or Comments',
-                'sqlWhere' => function ($value) {
-                    return "(" . Db::getSqlWhereSeparatedByComa(
-                            $value,
-                            'Name',
-                            0,
-                            true,
-                            false,
-                            0
-                        ) . " OR Comments LIKE '%{value}%')";
-                }
+                'sqlWhere' => fn($value) => "(" . Db::getSqlWhereSeparatedByComa(
+                        $value,
+                        'Name',
+                        0,
+                        true,
+                        false,
+                        0
+                    ) . " OR Comments LIKE '%{value}%')"
             ]),
 
             GeneralFields::filterCompanyId(),

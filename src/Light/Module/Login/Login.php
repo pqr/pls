@@ -14,7 +14,7 @@ use Light\User;
 
 class Login
 {
-    public function __invoke()
+    public function __invoke(): void
     {
         if (Request::getMehod() === 'POST') {
 

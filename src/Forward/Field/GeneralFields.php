@@ -580,10 +580,8 @@ class GeneralFields
      */
     public static function filterTemplateLocation(string $prefix)
     {
-        return function () use ($prefix) {
-            return '<span title="IATA">' . Template::html($prefix . 'IATA') . '</span>'
-                . '<span title="Location">' . Template::html($prefix . 'LocationName') . '</span>';
-        };
+        return fn() => '<span title="IATA">' . Template::html($prefix . 'IATA') . '</span>'
+            . '<span title="Location">' . Template::html($prefix . 'LocationName') . '</span>';
     }
 
     public static function docsAddress()

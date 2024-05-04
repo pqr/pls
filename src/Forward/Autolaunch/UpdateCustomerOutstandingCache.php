@@ -10,7 +10,7 @@ class UpdateCustomerOutstandingCache extends AutolaunchAbstract
     protected static $title = 'Daily Update Customer Outstanding Cache';
     protected static $description = 'customer_openinvoices, customer_openinvoicespercompany';
 
-    public function run(array $params)
+    public function run(array $params): void
     {
         $customerObjBase = new CustomerObj();
         $customerIds = Db::getCol("SELECT ID FROM customer");

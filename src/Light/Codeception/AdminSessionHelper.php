@@ -13,7 +13,7 @@ class AdminSessionHelper extends Module
     private $csrf;
 
     // HOOK: before each suite
-    public function _initialize()
+    public function _initialize(): void
     {
         /** @var PhpBrowser $phpBrowser */
         $phpBrowser = $this->getModule('PhpBrowser');
@@ -32,7 +32,7 @@ class AdminSessionHelper extends Module
     }
 
     // HOOK: before test
-    public function _before(\Codeception\TestInterface $test)
+    public function _before(\Codeception\TestInterface $test): void
     {
         /** @var PhpBrowser $phpBrowser */
         $phpBrowser = $this->getModule('PhpBrowser');
@@ -41,7 +41,7 @@ class AdminSessionHelper extends Module
         //$phpBrowser->setCookie('XDEBUG_SESSION', 'PHPSTORM');
     }
 
-    public function hasHeaderXLightRedirect($url)
+    public function hasHeaderXLightRedirect($url): void
     {
         /** @var PhpBrowser $phpBrowser */
         $phpBrowser = $this->getModule('PhpBrowser');

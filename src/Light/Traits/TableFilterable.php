@@ -55,12 +55,12 @@ trait TableFilterable
         }
     }
 
-    public function addFilters(...$fields)
+    public function addFilters(...$fields): void
     {
         $this->filters->addFilters($fields);
     }
 
-    public function addFilter(F $field)
+    public function addFilter(F $field): void
     {
         $this->filters->add($field);
     }
@@ -200,12 +200,12 @@ trait TableFilterable
         return $this->filters->getField($fieldKey);
     }
 
-    public function setFiltersValues(array $newFilterValues)
+    public function setFiltersValues(array $newFilterValues): void
     {
         $this->filters->setValues($newFilterValues);
     }
 
-    public function setFilterValue(string $fieldKey, $newValue)
+    public function setFilterValue(string $fieldKey, $newValue): void
     {
         $this->filters->setValue($fieldKey, $newValue);
     }
@@ -213,7 +213,7 @@ trait TableFilterable
     /**
      * Загружает значения фильтров из POST переменных
      */
-    public function proceedFilters()
+    public function proceedFilters(): void
     {
         // В методе initFilters() в классе потомке должны были быть определены все фильтры
         $this->filters = new Filters($this->getTableName());

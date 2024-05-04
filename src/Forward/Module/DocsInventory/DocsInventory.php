@@ -86,7 +86,7 @@ class DocsInventory extends ModuleAbstract
         parent::proceedAddNew();
     }
 
-    private function loadFromShipments(array $shipmentIds)
+    private function loadFromShipments(array $shipmentIds): void
     {
         $query = "SELECT s.ID AS ShipmentID
                       , s.Name AS FileNumber

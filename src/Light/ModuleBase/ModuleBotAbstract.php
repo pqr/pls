@@ -12,7 +12,7 @@ abstract class ModuleBotAbstract
 {
     protected $telegramId;
 
-    public function __invoke()
+    public function __invoke(): void
     {
         $token = $_GET['token'] ?? '';
         if (!$token) {
@@ -112,7 +112,7 @@ abstract class ModuleBotAbstract
 
     abstract protected function getWizardMessageForCommand(string $command);
 
-    public function sendResponse(string $message, $status = 200)
+    public function sendResponse(string $message, $status = 200): void
     {
         Db::insertRow([
             'CreatedBy' => User::getId(),

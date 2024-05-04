@@ -65,7 +65,7 @@ class CPaymentObj extends PaymentObjAbstract
         Msg $msgBuff = null,
         $updateShipmentsGpAndCriteria = true,
         $dbLogMsg = ''
-    ) {
+    ): void {
         $this->autoname();
 
         // Вызываем стандартный метод в классе предке (в абстрактном PaymentObjAbstract)
@@ -81,7 +81,7 @@ class CPaymentObj extends PaymentObjAbstract
      * Автоматически заполняет поле Reference у текущей оплаты на основе номеров счетов (через пробел)
      * но только если reference пуст
      */
-    private function autoname()
+    private function autoname(): void
     {
         if ($this->_data['Name'] === '') {
 
@@ -94,7 +94,7 @@ class CPaymentObj extends PaymentObjAbstract
         }
     }
 
-    private function updateCustomerStatistic(array $oldData)
+    private function updateCustomerStatistic(array $oldData): void
     {
         // Если изменился клиент, сначала обновим задолженность старого клиента
         if (isset($oldData['CustomerID']) && $oldData['CustomerID'] != $this->_data['CustomerID']) {
@@ -113,7 +113,7 @@ class CPaymentObj extends PaymentObjAbstract
         $customerObj->updateCacheOpenAndOverdueInvoicesAmount();
     }
 
-    public function updateCacheAfterDelete(array $oldInvoiceIds, $dbLogMsg)
+    public function updateCacheAfterDelete(array $oldInvoiceIds, $dbLogMsg): void
     {
         parent::updateCacheAfterDelete($oldInvoiceIds, $dbLogMsg);
 
@@ -125,7 +125,7 @@ class CPaymentObj extends PaymentObjAbstract
         $customerObj->updateCacheOpenAndOverdueInvoicesAmount();
     }
 
-    private function updateShipmentsDocsPrintedDate(array $oldData, ?Msg $msgBuff)
+    private function updateShipmentsDocsPrintedDate(array $oldData, ?Msg $msgBuff): void
     {
         $oldPrintedDate = $oldData['PrintedDate'] ?? '0000-00-00';
         $newPrintedDate = $this->_data['PrintedDate'];

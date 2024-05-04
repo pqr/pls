@@ -13,7 +13,7 @@ class DailyMaintainance extends AutolaunchAbstract
     protected static $title = 'System: Daily Database Maintainance';
     protected static $description = 'Очищает modulesession, удаляет log_autolaunch > 3000шт, log_filter старше 6 мес., удаляет temp/concatenate_pdfs, очищает папки *_pdfs и *_massaction, зипует старые логи';
 
-    public function run(array $params)
+    public function run(array $params): void
     {
         $this->clearModulesession();
         $this->clearLogAutolaunch();
@@ -23,7 +23,7 @@ class DailyMaintainance extends AutolaunchAbstract
         $this->zipLastMonthLogs();
     }
 
-    private function clearModulesession()
+    private function clearModulesession(): void
     {
         $rows = Db::getOne("SELECT count(*) FROM modulesession");
         Db::query("TRUNCATE modulesession");
@@ -32,7 +32,7 @@ class DailyMaintainance extends AutolaunchAbstract
         $this->_msgBuffShort->addSuccessOrInfo($msg, $rows);
     }
 
-    private function clearLogAutolaunch()
+    private function clearLogAutolaunch(): void
     {
         $deleted = 0;
         $classes = Db::getCol("SELECT DISTINCT(ClassName) FROM log_autolaunch");
@@ -54,7 +54,7 @@ class DailyMaintainance extends AutolaunchAbstract
         $this->_msgBuffShort->addSuccessOrInfo($msg, $deleted);
     }
 
-    private function clearLogFilter()
+    private function clearLogFilter(): void
     {
         $deleted = 0;
         Db::query("DELETE FROM log_filter WHERE CreatedDateTime < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)");
@@ -65,7 +65,7 @@ class DailyMaintainance extends AutolaunchAbstract
         $this->_msgBuffShort->addSuccessOrInfo($msg, $deleted);
     }
 
-    private function clearMassactions()
+    private function clearMassactions(): void
     {
         $pdfsLen = strlen("_pdfs");
         $massLen = strlen("_massaction");
@@ -93,7 +93,7 @@ class DailyMaintainance extends AutolaunchAbstract
         }
     }
 
-    private function clearConcatenatePdfs()
+    private function clearConcatenatePdfs(): void
     {
         // После работы функции Pdf::concatenatePdfs() могли остаться не пустые папки concatenate_pdfs_1, concatenate_pdfs_2, ...
         // В нормальном режиме эти папки должны были бы автоматически удалиться после выполнения скрипта, но если этого
@@ -124,7 +124,7 @@ class DailyMaintainance extends AutolaunchAbstract
         }
     }
 
-    private function zipLastMonthLogs()
+    private function zipLastMonthLogs(): void
     {
         exec('7z', $_, $return);
         if ($return !== 0) {

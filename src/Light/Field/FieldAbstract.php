@@ -128,62 +128,62 @@ use Light\User;
  */
 abstract class FieldAbstract implements \JsonSerializable
 {
-    const MODE_LIST = 0b000001;
-    const MODE_VIEW = 0b000010;
-    const MODE_EDIT = 0b000100;
-    const MODE_LOG = 0b001000;
-    const MODE_MULTIPLEUPDATE = 0b010000;
-    const MODE_SUBMIT = 0b100000;
+    public const MODE_LIST = 0b000001;
+    public const MODE_VIEW = 0b000010;
+    public const MODE_EDIT = 0b000100;
+    public const MODE_LOG = 0b001000;
+    public const MODE_MULTIPLEUPDATE = 0b010000;
+    public const MODE_SUBMIT = 0b100000;
 
-    const MODE_READONLY = 0b000011;
-    const MODE_EDITSUBMIT = 0b100100; // MODE_EDIT + MODE_SUBMIT
-    const MODE_ALL = 0b111111;
+    public const MODE_READONLY = 0b000011;
+    public const MODE_EDITSUBMIT = 0b100100; // MODE_EDIT + MODE_SUBMIT
+    public const MODE_ALL = 0b111111;
 
-    const TABLEALIGN_LEFT = 'left';
-    const TABLEALIGN_CENTER = 'center';
-    const TABLEALIGN_RIGHT = 'left';
+    public const TABLEALIGN_LEFT = 'left';
+    public const TABLEALIGN_CENTER = 'center';
+    public const TABLEALIGN_RIGHT = 'left';
 
-    const TYPE_HTML = 'Html';
+    public const TYPE_HTML = 'Html';
 
-    const TYPE_CHECKBOX = 'Checkbox';
-    const TYPE_CHECKBOX_SET = 'CheckboxSet';
+    public const TYPE_CHECKBOX = 'Checkbox';
+    public const TYPE_CHECKBOX_SET = 'CheckboxSet';
 
-    const TYPE_STRING = 'String';
+    public const TYPE_STRING = 'String';
 
-    const TYPE_TEXT = 'Text';
+    public const TYPE_TEXT = 'Text';
 
-    const TYPE_DATE = 'Date';
-    const TYPE_DATE_TIME = 'DateTime';
-    const TYPE_COLOR = 'Color';
-    const TYPE_WEEK = 'Week';
+    public const TYPE_DATE = 'Date';
+    public const TYPE_DATE_TIME = 'DateTime';
+    public const TYPE_COLOR = 'Color';
+    public const TYPE_WEEK = 'Week';
 
-    const TYPE_INT = 'Int';
-    const TYPE_FLOAT = 'Float';
-    const TYPE_MONEY = 'Money';
-    const TYPE_MONEY_WITH_CURRENCY = 'MoneyWithCurrency';
+    public const TYPE_INT = 'Int';
+    public const TYPE_FLOAT = 'Float';
+    public const TYPE_MONEY = 'Money';
+    public const TYPE_MONEY_WITH_CURRENCY = 'MoneyWithCurrency';
 
-    const TYPE_SELECT = 'Select';
-    const TYPE_SELECT_CHILD = 'SelectChild';
-    const TYPE_SELECT2_MULTIPLE = 'Select2Multiple';
-    const TYPE_YES_NO = 'YesNo';
-    const TYPE_MONTH = 'Month';
+    public const TYPE_SELECT = 'Select';
+    public const TYPE_SELECT_CHILD = 'SelectChild';
+    public const TYPE_SELECT2_MULTIPLE = 'Select2Multiple';
+    public const TYPE_YES_NO = 'YesNo';
+    public const TYPE_MONTH = 'Month';
 
-    const PARAM_AC_READONLY = 'acReadonly';
-    const PARAM_AC_SOURCE = 'acSource';
-    const PARAM_AC_SOURCEJSFUNCTION = 'acSourceJsFunction';
-    const PARAM_AC_DELIMCHAR = 'acDelimChar';
-    const PARAM_AC_WIDTH = 'acWidth';
-    const PARAM_AC_RESULTFORMATTERJSFUNCTION = 'acResultFormatterJsFunction';
-    const PARAM_AC_ONSELECTJSFUNCTION = 'acOnSelectJsFunction';
-    const PARAM_AC_FORMATVALUEONSAVEFUNCTION = 'acFormatValueOnSaveFunction';
+    public const PARAM_AC_READONLY = 'acReadonly';
+    public const PARAM_AC_SOURCE = 'acSource';
+    public const PARAM_AC_SOURCEJSFUNCTION = 'acSourceJsFunction';
+    public const PARAM_AC_DELIMCHAR = 'acDelimChar';
+    public const PARAM_AC_WIDTH = 'acWidth';
+    public const PARAM_AC_RESULTFORMATTERJSFUNCTION = 'acResultFormatterJsFunction';
+    public const PARAM_AC_ONSELECTJSFUNCTION = 'acOnSelectJsFunction';
+    public const PARAM_AC_FORMATVALUEONSAVEFUNCTION = 'acFormatValueOnSaveFunction';
 
-    const PARAM_TEXTTRUNCATE = 'textTruncate';
-    const TEXTTRUNCATE_FULL = 'full';
-    const TEXTTRUNCATE_PART = 'part';
-    const TEXTTRUNCATE_LIST = 'list';
+    public const PARAM_TEXTTRUNCATE = 'textTruncate';
+    public const TEXTTRUNCATE_FULL = 'full';
+    public const TEXTTRUNCATE_PART = 'part';
+    public const TEXTTRUNCATE_LIST = 'list';
 
-    const FILTER_EQUAL = '=';
-    const FILTER_LIKE = 'LIKE';
+    public const FILTER_EQUAL = '=';
+    public const FILTER_LIKE = 'LIKE';
 
     public $key;
 
@@ -739,7 +739,7 @@ abstract class FieldAbstract implements \JsonSerializable
         return true;
     }
 
-    final public function addNamePrefix($prefix)
+    final public function addNamePrefix($prefix): void
     {
         if (!$prefix) {
             return;
@@ -748,7 +748,7 @@ abstract class FieldAbstract implements \JsonSerializable
         //Используем временную анонимную функцию, чтобы добавить префиксы к четырём свойствам
         $add = function ($currentValue) use ($prefix) {
             //Если текущее значение поля не начинается с этого префикса, добавим префикс в начало
-            if (strpos($currentValue, $prefix) !== 0) {
+            if (strpos($currentValue, (string) $prefix) !== 0) {
                 return $prefix . "\n" . $currentValue;
             }
             return $currentValue;
@@ -903,7 +903,7 @@ abstract class FieldAbstract implements \JsonSerializable
             return $outHtml;
         }
 
-        if (!$this->hasMode(self::MODE_EDIT, $data)) {
+        if (!$this->hasMode(self::MODE_EDIT)) {
             return $outHtml;
         }
 
@@ -1246,7 +1246,7 @@ abstract class FieldAbstract implements \JsonSerializable
             return self::create($fieldKey, $type, $params);
         }
 
-        $class = __CLASS__;
+        $class = self::class;
         $trace = debug_backtrace();
         $file = $trace[0]['file'];
         $line = $trace[0]['line'];

@@ -17,8 +17,8 @@ class FiltersLog extends Table
 {
     use TableFilterable, TableExcelExportable;
 
-    const STATE_LIST = 'list';
-    const STATE_EXCEL = 'excel';
+    public const STATE_LIST = 'list';
+    public const STATE_EXCEL = 'excel';
 
     protected $_state;
 
@@ -120,7 +120,7 @@ class FiltersLog extends Table
         }
     }
 
-    public function __invoke()
+    public function __invoke(): void
     {
         if (isset($_GET['xls'])) {
             $this->_state = self::STATE_EXCEL;

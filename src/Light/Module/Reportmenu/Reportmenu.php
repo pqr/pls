@@ -54,9 +54,7 @@ class Reportmenu
     private function getReportsForUser(int $userId, int $groupId, array $allReports): array
     {
         $ra = new ReportAccess();
-        return array_filter($allReports, function ($reportClass) use ($ra, $userId, $groupId) {
-            return $ra->checkAccess($userId, $groupId, $reportClass);
-        });
+        return array_filter($allReports, fn($reportClass) => $ra->checkAccess($userId, $groupId, $reportClass));
     }
 
     private static function getReportFullClass(string $reportClass): string
@@ -154,7 +152,7 @@ class Reportmenu
 
     }
 
-    public function proceedMassaction()
+    public function proceedMassaction(): void
     {
         if (isset($_GET['class'])) {
 
@@ -173,7 +171,7 @@ class Reportmenu
         }
     }
 
-    public function __invoke()
+    public function __invoke(): void
     {
         if (isset($_GET['class'])) {
 
@@ -248,7 +246,7 @@ class Reportmenu
         return Db::getAll("SELECT ID, Name, GroupID FROM user WHERE Active = 1 ORDER BY Name");
     }
 
-    public function proceedAccessAudit()
+    public function proceedAccessAudit(): void
     {
         $module = 'Reportmenu';
 
@@ -347,7 +345,7 @@ class Reportmenu
         );
     }
 
-    public function proceedAccessDialog()
+    public function proceedAccessDialog(): void
     {
         if (!User::hasWriteAccess()) {
             Response::abort(403);
@@ -387,7 +385,7 @@ class Reportmenu
     /**
      * @throws \Exception
      */
-    public function proceedAccessDialogSubmit()
+    public function proceedAccessDialogSubmit(): void
     {
         if (!User::hasWriteAccess()) {
             Response::abort(403);

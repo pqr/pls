@@ -49,7 +49,7 @@ class MassactionDownloadAsZip extends MassactionAbstract
         return 'DownloadAsZip' . implode('', $this->options);
     }
 
-    public function __invoke(array $ids)
+    public function __invoke(array $ids): void
     {
         $tmpDir = File::mkdirTmp('massactionDownloadAsZip');
         if (!$tmpDir) {
@@ -144,7 +144,7 @@ class MassactionDownloadAsZip extends MassactionAbstract
         return 1;
     }
 
-    private function redirectToList()
+    private function redirectToList(): void
     {
         Response::redirect(Request::getModule());
     }

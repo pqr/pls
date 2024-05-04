@@ -6,7 +6,7 @@ use Light\Response;
 
 class Logout
 {
-    public function __invoke()
+    public function __invoke(): void
     {
         if (!Request::isPost()) {
 

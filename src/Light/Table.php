@@ -203,7 +203,7 @@ class Table implements \JsonSerializable
      * Регристрирует переданный массив $fields во внутренней переменной $this->fieldsFirst
      * @param Fieldset $fieldset
      */
-    public function setFieldsetFirst(Fieldset $fieldset)
+    public function setFieldsetFirst(Fieldset $fieldset): void
     {
         $this->fieldsetFirst = $fieldset;
     }
@@ -212,7 +212,7 @@ class Table implements \JsonSerializable
      * Регристрирует переданный массив $fields во внутренней переменной $this->fieldsLast
      * @param Fieldset $fieldset
      */
-    public function setFieldsetLast(Fieldset $fieldset)
+    public function setFieldsetLast(Fieldset $fieldset): void
     {
         $this->fieldsetLast = $fieldset;
     }
@@ -245,7 +245,7 @@ class Table implements \JsonSerializable
      * @desc проверяет переданную строку на соответствие реальному набору полей. Заносит существующие в FieldsShow
      * @param string $fieldsKeysString ключи полей разделённые знаком |
      */
-    public function setTableFieldsShow($fieldsKeysString)
+    public function setTableFieldsShow($fieldsKeysString): void
     {
         if ($fieldsKeysString === null) {
             $this->tableFieldsShow = null;
@@ -338,12 +338,12 @@ class Table implements \JsonSerializable
         return $this->getFieldsetShowed()->hasField($fieldKey);
     }
 
-    public function setTableData(array $data)
+    public function setTableData(array $data): void
     {
         $this->tableData = $data;
     }
 
-    public function setTableDataTotal(array $dataTotal)
+    public function setTableDataTotal(array $dataTotal): void
     {
         $this->tableDataTotal = $dataTotal;
     }
@@ -353,7 +353,7 @@ class Table implements \JsonSerializable
         return $this->tableName;
     }
 
-    public function setTableName($name)
+    public function setTableName($name): void
     {
         $this->tableName = $name;
     }
@@ -607,9 +607,7 @@ class Table implements \JsonSerializable
             $fieldsWidth = $this->tableUserParams->loadFieldsWidth();
             if (is_array($fieldsWidth)) {
                 // Проверим, есть ли хотя бы для одного из отображаемых полей настрока пользователя с не нулевой шириной?
-                $hasWidthSettings = A::some($allFields, function ($field) use ($fieldsWidth) {
-                    return isset($fieldsWidth[$field->key]) && $fieldsWidth[$field->key];
-                });
+                $hasWidthSettings = A::some($allFields, fn($field) => isset($fieldsWidth[$field->key]) && $fieldsWidth[$field->key]);
                 if ($hasWidthSettings) {
                     // Пользователь задал какие-то настройки хотя бы для одного поля - значит всю таблицу переводим в режим layout:fixed
                     $class .= ' layoutfixed';
@@ -1144,7 +1142,7 @@ class Table implements \JsonSerializable
         return count($this->tableData);
     }
 
-    public static function writeDbUserTableParam(string $tableName, $paramName, $value)
+    public static function writeDbUserTableParam(string $tableName, $paramName, $value): void
     {
         $query = "INSERT INTO user_tableparam (
                       CreatedBy,
@@ -1161,7 +1159,7 @@ class Table implements \JsonSerializable
         Db::query($query);
     }
 
-    private function lazyLoadTableUserParams()
+    private function lazyLoadTableUserParams(): void
     {
         if ($this->tableUserParams === null) {
             $this->tableUserParams = Db::getRow(
@@ -1199,12 +1197,12 @@ class Table implements \JsonSerializable
         return $this->_obj->getDbTable();
     }
 
-    public function setDbTable($dbTable)
+    public function setDbTable($dbTable): void
     {
         $this->_obj->setDbTable($dbTable);
     }
 
-    public function setNameFieldKey($nameFieldKey)
+    public function setNameFieldKey($nameFieldKey): void
     {
         $this->_obj->setNameFieldKey($nameFieldKey);
     }

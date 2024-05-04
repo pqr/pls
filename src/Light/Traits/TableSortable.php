@@ -37,7 +37,7 @@ trait TableSortable
         $this->initSortOrder();
     }
 
-    private function initSortFieldKey()
+    private function initSortFieldKey(): void
     {
         /** @var TableUserParamsRepository $tableUserParams */
         // Отдельный объект, которых заведует сохранением настроек в базу для данного пользователя
@@ -60,7 +60,7 @@ trait TableSortable
         $this->tableSortFieldKey = $tableUserParams->loadSortFieldKey();
     }
 
-    private function initSortOrder()
+    private function initSortOrder(): void
     {
         /** @var TableUserParamsRepository $tableUserParams */
         // Отдельный объект, которых заведует сохранением настроек в базу для данного пользователя

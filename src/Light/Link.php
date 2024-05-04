@@ -406,7 +406,7 @@ class Link
     ) {
         if ($filterValues) {
             $filterValuesUrlParam = self::filterValuesUlrParam($filterValues);
-            $urlParams = $urlParams ?? [];
+            $urlParams ??= [];
             $urlParams = self::mergeUrlParams($urlParams, $filterValuesUrlParam);
         }
 

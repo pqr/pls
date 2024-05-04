@@ -69,7 +69,7 @@ trait TableLayoutable
 
     }
 
-    private function setTableFieldsWidth(array $userParamsFieldsWidth)
+    private function setTableFieldsWidth(array $userParamsFieldsWidth): void
     {
         foreach($userParamsFieldsWidth as $fieldKey => $fieldWidth) {
             $fieldWidth = (int)$fieldWidth;

@@ -49,9 +49,6 @@ class Customers extends Many2ManyAbstract
 
     protected function getFolderName(array $data)
     {
-        if (isset($data['CustomerID'])) {
-            return $data['CustomerID'];
-        }
-        return false;
+        return $data['CustomerID'] ?? false;
     }
 }

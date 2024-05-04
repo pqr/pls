@@ -156,9 +156,7 @@ class UserAccess extends ModuleAbstract
 
                 $row['Right'] = $right;
 
-                $saList = array_filter($specialAccess, static function ($access) use ($module) {
-                    return $access[0] === $module;
-                });
+                $saList = array_filter($specialAccess, static fn($access) => $access[0] === $module);
 
                 $saIndexes = array_column($saList, 1);
 

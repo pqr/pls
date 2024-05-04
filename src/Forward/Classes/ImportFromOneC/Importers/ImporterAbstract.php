@@ -12,12 +12,12 @@ use Light\Msg;
 abstract class ImporterAbstract
 {
 
-    const RESULT_INCORRECT = 'incorrect';
-    const RESULT_NOTFOUND = 'notfound';
-    const RESULT_INSERTED = 'inserted';
-    const RESULT_UPDATED = 'updated';
-    const RESULT_DELETED = 'deleted';
-    const RESULT_NOTCHANGED = 'notchanged';
+    public const RESULT_INCORRECT = 'incorrect';
+    public const RESULT_NOTFOUND = 'notfound';
+    public const RESULT_INSERTED = 'inserted';
+    public const RESULT_UPDATED = 'updated';
+    public const RESULT_DELETED = 'deleted';
+    public const RESULT_NOTCHANGED = 'notchanged';
 
     protected $importId;
     protected $msgBuff;

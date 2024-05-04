@@ -14,18 +14,18 @@ use Light\Request;
 class Finance
 {
     //Open process
-    const INVOICESTATUS_OPEN = 11;
-    const INVOICESTATUS_UNDERDISPUTE = 12;
-    const INVOICESTATUS_ACCEPTED = 13;
+    public const INVOICESTATUS_OPEN = 11;
+    public const INVOICESTATUS_UNDERDISPUTE = 12;
+    public const INVOICESTATUS_ACCEPTED = 13;
     //Part Cleated/Cleared
-    const INVOICESTATUS_PARTCLEARED = 21;
-    const INVOICESTATUS_CLEARED = 22;
+    public const INVOICESTATUS_PARTCLEARED = 21;
+    public const INVOICESTATUS_CLEARED = 22;
     //Canceled/Deleted
-    const INVOICESTATUS_CREDITNOTED = 31;
-    const INVOICESTATUS_DELETED = 32;
+    public const INVOICESTATUS_CREDITNOTED = 31;
+    public const INVOICESTATUS_DELETED = 32;
 
-    const DOCTYPE_INVOICE = 1;
-    const DOCTYPE_CREDITNOTE = -1;
+    public const DOCTYPE_INVOICE = 1;
+    public const DOCTYPE_CREDITNOTE = -1;
 
     public static $docType = [
         self::DOCTYPE_INVOICE => 'Invoice',
@@ -217,7 +217,7 @@ class Finance
      * @param string $dbLogMsg
      * @param $firstLetter 'C' или 'V' - нужно для правильного вызова обновления критериев
      */
-    public static function updateShipmentsGpAndCriteria(array $fileNumbers, $dbLogMsg, $firstLetter)
+    public static function updateShipmentsGpAndCriteria(array $fileNumbers, $dbLogMsg, $firstLetter): void
     {
         ShipmentGp::updateGpEgpDeviationByFileNumbers($fileNumbers);
 
@@ -238,7 +238,7 @@ class Finance
      * @return void
      * @throws \Exception
      */
-    public static function updateInvoiceCacheClearingFields(string $firstLetter, int $invId)
+    public static function updateInvoiceCacheClearingFields(string $firstLetter, int $invId): void
     {
         $firstLetterLower = strtolower($firstLetter);
         $invInfo = Db::getRow(
@@ -315,7 +315,7 @@ class Finance
      * @param int $invId ID в таблице vinvoice или cinvoice
      * @throws \Exception
      */
-    public static function autoClearInvoice(string $firstLetter, int $invId)
+    public static function autoClearInvoice(string $firstLetter, int $invId): void
     {
         $firstLetterLower = strtolower($firstLetter);
         //Загрузим сам инвойс

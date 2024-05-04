@@ -29,7 +29,7 @@ class Home
         HomeBlocksPage::printHomeBlocks(User::getId());
     }
 
-    public function __invoke()
+    public function __invoke(): void
     {
         if (isset($_GET['class'])) {
 

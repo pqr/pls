@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 
 class PdfTest extends TestCase
 {
-    public function testSave()
+    public function testSave(): void
     {
         $msgBuff = new Msg();
         $html = file_get_contents(__DIR__ . '/PdfAssets/Html2PdfExample.html');

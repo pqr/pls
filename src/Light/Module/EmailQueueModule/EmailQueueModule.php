@@ -30,9 +30,7 @@ class EmailQueueModule extends ModuleAbstract
             CF::id(),
 
             F::createString('PID', [
-                'viewCssClass' => function ($value) {
-                    return $value ? 'bad' : '';
-                },
+                'viewCssClass' => fn($value) => $value ? 'bad' : '',
             ]),
             F::createString('CustomFrom', ['name' => 'Custom From']),
             F::createSelect('EmailAccountID', [

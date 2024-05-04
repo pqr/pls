@@ -16,14 +16,14 @@ use Light\Response;
  */
 class CompanyChild
 {
-    public static function initJsCompanyChildFromCustomer()
+    public static function initJsCompanyChildFromCustomer(): void
     {
         $customersCompanyId = Db::getAssoc("SELECT ID, CompanyID FROM customer WHERE CompanyID != 0");
         Response::addJsData(['CustomersCompanyID' => $customersCompanyId]);
         Js::add('CompanyChildFromCustomer.js');
     }
 
-    public static function initJsCompanyChildFromVendor()
+    public static function initJsCompanyChildFromVendor(): void
     {
         $vendorsCompanyId = Db::getAssoc("SELECT ID, CompanyID FROM vendor WHERE CompanyID != 0");
         Response::addJsData(['VendorsCompanyID' => $vendorsCompanyId]);

@@ -136,7 +136,7 @@ trait MassactionsTrait
     /**
      * Метод вызывается напрямую из браузера через url `?a=${_lightModule}&p=massaction&action=${action}`;
      */
-    public function proceedMassaction()
+    public function proceedMassaction(): void
     {
         $this->initMassactions();
 

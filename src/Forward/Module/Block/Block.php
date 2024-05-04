@@ -10,7 +10,7 @@ use Light\User;
 
 class Block
 {
-    public function __invoke()
+    public function __invoke(): void
     {
         $title = 'Block Base';
         Response::setPageTitle($title);
@@ -27,7 +27,7 @@ class Block
         print '<a href="?a=Block&ps=Block" class="btn bgcolor-btn-danger">Block Database</a>';
     }
 
-    public static function proceedBlock()
+    public static function proceedBlock(): void
     {
         Application::setParam('blocked', '1');
         Db::query("TRUNCATE phpsession");
@@ -35,7 +35,7 @@ class Block
         Response::redirectUrl('http://yandex.ru');
     }
 
-    public static function proceedUnblock()
+    public static function proceedUnblock(): void
     {
         if (User::hasSpecialAccess(Application::SA_UNBLOCK)) {
 

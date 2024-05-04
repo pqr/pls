@@ -3,7 +3,7 @@ namespace Light;
 
 class Metric
 {
-    public static function record(string $actionType, int $timeMs, $payload = '')
+    public static function record(string $actionType, int $timeMs, $payload = ''): void
     {
         if (!is_string($payload)) {
             $payload = json_encode($payload);
@@ -19,7 +19,7 @@ class Metric
         self::newrelicMetric($actionType, $timeMs);
     }
 
-    public static function newrelicMetric($metricName, $timeMs)
+    public static function newrelicMetric($metricName, $timeMs): void
     {
         if (extension_loaded('newrelic')) {
             // https://docs.newrelic.com/docs/agents/php-agent/php-agent-api/newreliccustommetric-php-agent-api
@@ -39,7 +39,7 @@ class Metric
      * @param string $eventName Can be a combination of alphanumeric characters, _ underscores, and : colons.
      * @param array $attributes
      */
-    public static function newrelicEvent(string $eventName, array $attributes = [])
+    public static function newrelicEvent(string $eventName, array $attributes = []): void
     {
         if (extension_loaded('newrelic')) { // Ensure PHP agent is available
             newrelic_record_custom_event("Custom_$eventName", $attributes);

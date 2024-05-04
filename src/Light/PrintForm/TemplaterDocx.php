@@ -20,14 +20,14 @@ class TemplaterDocx extends TemplaterAbstract
         $this->templateProcessor = new TemplateProcessor($templateFilepathAbs);
     }
 
-    public function writeData(array $data)
+    public function writeData(array $data): void
     {
         $keys = array_keys($data);
         $values = array_values($data);
         $this->templateProcessor->setValue($keys, $values);
     }
 
-    public function saveDocx(string $dest)
+    public function saveDocx(string $dest): void
     {
         $this->templateProcessor->saveAs($dest);
     }

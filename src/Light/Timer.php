@@ -11,7 +11,7 @@ class Timer
         $this->restart();
     }
 
-    public function restart()
+    public function restart(): void
     {
         $this->_time = microtime(true);
     }

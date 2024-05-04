@@ -30,7 +30,7 @@ abstract class PaymentObjAbstract extends ObjAbstract
         Msg $msgBuff = null,
         $updateShipmentsGpAndCriteria = true,
         $dbLogMsg = ''
-    ) {
+    ): void {
         if (isset($oldData['InvoiceIds'])) {
             $oldInvoiceIds = $oldData['InvoiceIds'];
         } else {
@@ -121,7 +121,7 @@ abstract class PaymentObjAbstract extends ObjAbstract
         return $this->updateDb(['CacheOverpayAmount' => $overpayAmount]);
     }
 
-    public function updateCacheAfterDelete(array $oldInvoiceIds, $dbLogMsg)
+    public function updateCacheAfterDelete(array $oldInvoiceIds, $dbLogMsg): void
     {
         $this->updateInvoicesCache($oldInvoiceIds);
         $this->updateFilesCache($oldInvoiceIds, $dbLogMsg);

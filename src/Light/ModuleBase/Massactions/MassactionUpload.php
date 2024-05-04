@@ -43,7 +43,7 @@ trait MassactionUpload
         Response::showDialog($html, $buttonOkText, null, null, null, 500);
     }
 
-    public function proceedMassactionUploadSubmit()
+    public function proceedMassactionUploadSubmit(): void
     {
         if (!$this->allowEdit || !$this->folders || !User::hasWriteAccess()) {
             Session::flashError('No access to upload');

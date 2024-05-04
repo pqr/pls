@@ -31,7 +31,7 @@ class CreateCPayments
         return $errors;
     }
 
-    public static function showPaymentDateDialog(array $cinvoiceIds)
+    public static function showPaymentDateDialog(array $cinvoiceIds): void
     {
         $body = '<form action="?a=CInvoice&ps=CreateCPayments" method="post">'
             . Template::csrfHidden()
@@ -42,7 +42,7 @@ class CreateCPayments
         Response::showDialog($body, 'Create Customer Payments');
     }
 
-    public static function create(array $cinvoiceIds, string $paymentDate)
+    public static function create(array $cinvoiceIds, string $paymentDate): void
     {
         $msgBuff = new Msg();
         $createdCPaymentNames = [];
@@ -98,7 +98,7 @@ class CreateCPayments
                 ], $dbLogMsg);
             }
 
-            $cpaymentObj->updateCacheAfterSubmit([], $msgBuff, true, null, $dbLogMsg);
+            $cpaymentObj->updateCacheAfterSubmit([], $msgBuff, true, null);
 
             $createdCPaymentNames[] = $cpaymentObj['Name'];
 

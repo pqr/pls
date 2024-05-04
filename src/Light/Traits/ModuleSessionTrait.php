@@ -21,7 +21,7 @@ trait ModuleSessionTrait
     /** @var array массив ID объектов в текущей сессии */
     private $moduleSessionObjectsIds;
 
-    private function lazyInitModuleSessionFromRequest()
+    private function lazyInitModuleSessionFromRequest(): void
     {
         if ($this->moduleSessionInited) {
             return;
@@ -50,7 +50,7 @@ trait ModuleSessionTrait
         return ModuleSession::getModuleSessionUrlParams();
     }
 
-    private function createModuleSession(array $ids, $tablePage)
+    private function createModuleSession(array $ids, $tablePage): void
     {
         $this->moduleSessionId = Db::insertRow(['IDs' => implode(',', $ids), 'StartPage' => (int)$tablePage], 'modulesession');
         $this->moduleSessionStartPage = (int)$tablePage;

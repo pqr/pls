@@ -12,7 +12,7 @@ class DownloadProductionCalendarFromXML extends AutolaunchAbstract
     protected static $title = 'Скачать производственный календарь';
     protected static $description = 'Скачивает производственный календарь в формате XML с сайта xmlcalendar.ru';
 
-    public function initFieldset()
+    public function initFieldset(): void
     {
         $this->addFields(
             F::createInt('Year', [

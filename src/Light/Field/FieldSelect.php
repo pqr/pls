@@ -534,7 +534,7 @@ class FieldSelect extends FieldOptionsAbstract
         return parent::getSqlWhereInner($value);
     }
 
-    public function prefetchOptions(array $ids)
+    public function prefetchOptions(array $ids): void
     {
         parent::prefetchOptions($ids);
         if (is_array($this->prefetchedOptions)) {

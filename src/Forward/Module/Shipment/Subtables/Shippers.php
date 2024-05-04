@@ -79,7 +79,7 @@ class Shippers extends Subtable
      * При полном копиовании перевозки (кнопка Full Copy) нужно скопировать и всех отправителей
      * @return void
      */
-    private function loadFromShipmentRequest()
+    private function loadFromShipmentRequest(): void
     {
         if (isset($_GET['copymode']) && $_GET['copymode'] === 'Full Copy') {
 

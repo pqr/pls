@@ -12,13 +12,13 @@ use Light\User;
 
 class CommonFields
 {
-    const VAT_EMPTY = -2;
-    const VAT_BEZNDS = -1;
-    const VAT_0 = 0;
-    const VAT_18 = 18;
-    const VAT_20 = 20;
+    public const VAT_EMPTY = -2;
+    public const VAT_BEZNDS = -1;
+    public const VAT_0 = 0;
+    public const VAT_18 = 18;
+    public const VAT_20 = 20;
 
-    const VAT_OPTIONS = [
+    public const VAT_OPTIONS = [
         self::VAT_EMPTY => '',
         self::VAT_BEZNDS => 'Без НДС',
         self::VAT_0 => '0%',
@@ -396,9 +396,7 @@ class CommonFields
     {
         return F::createHtml('Checkbox', [
             'nameTable' => '<input type="checkbox" class="cb-all">',
-            'getHtmlFunction' => function ($value, array $data) use ($name, $valueFieldKey) {
-                return '<input type="checkbox" class="cb" value="' . htmlspecialchars($data[$valueFieldKey]) . '" name="' . $name . '[]">';
-            },
+            'getHtmlFunction' => fn($value, array $data) => '<input type="checkbox" class="cb" value="' . htmlspecialchars($data[$valueFieldKey]) . '" name="' . $name . '[]">',
         ]);
     }
 

@@ -15,7 +15,7 @@ class Js
     private static $lightFiles = [];
     private static $projectFiles = [];
 
-    public static function reset()
+    public static function reset(): void
     {
         self::$select2 = false;
         self::$choices = false;
@@ -29,12 +29,12 @@ class Js
         self::$projectFiles = [];
     }
 
-    public static function addLight(string $file)
+    public static function addLight(string $file): void
     {
         self::$lightFiles[] = "lightpublic/js/$file";
     }
 
-    public static function add(string $file)
+    public static function add(string $file): void
     {
         if (strpos($file, '//') !== 0) {
             $file = "js/$file";

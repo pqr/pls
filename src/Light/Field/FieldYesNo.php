@@ -26,12 +26,10 @@ class FieldYesNo extends FieldSelect
 
         // используем функцию, чтобы подставить текст который пользователь возможно позже заполнил
         // в $this->textNo и $this->textYes
-        $this->options = function () {
-            return [
-                0 => ['text' => $this->textNo, 'cssClass' => $this->cssClassNo],
-                1 => ['text' => $this->textYes, 'cssClass' => $this->cssClassYes],
-            ];
-        };
+        $this->options = fn() => [
+            0 => ['text' => $this->textNo, 'cssClass' => $this->cssClassNo],
+            1 => ['text' => $this->textYes, 'cssClass' => $this->cssClassYes],
+        ];
 
         $this->editWidth = 'small';
     }

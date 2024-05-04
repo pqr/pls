@@ -120,14 +120,12 @@ class CostSheetObj
         $table->getFieldsetLast()->addField(
             F::createHtml('View', [
                 'name' => '',
-                'getHtmlFunction' => function ($value, $data) {
-                    return Link::create(Shipment::class, 'View')
-                        ->view($this->_shipmentObj->getId())
-                        ->func('cs')
-                        ->blank()
-                        ->params(['histid' => $data['ID']])
-                        ->getHtml();
-                }
+                'getHtmlFunction' => fn($value, $data) => Link::create(Shipment::class, 'View')
+                    ->view($this->_shipmentObj->getId())
+                    ->func('cs')
+                    ->blank()
+                    ->params(['histid' => $data['ID']])
+                    ->getHtml()
             ])
         );
 
@@ -143,7 +141,7 @@ class CostSheetObj
      * Метод вызывается из CostSheetRouter::proceedAjaxSubmit() при сохранении Cost-sheet'а пользователем
      * Метод берёт данные из POST и записывает в базу
      */
-    public function saveFromPost()
+    public function saveFromPost(): void
     {
         $dummyMsgBuff = new Msg();
         $this->_income->proceedSubmit($dummyMsgBuff);
@@ -165,7 +163,7 @@ class CostSheetObj
      * Обновляет поля с EGP, Total, CSCount и проч...
      * @return void
      */
-    public function updateShipmentCache()
+    public function updateShipmentCache(): void
     {
         //Обновляем GP, EGP и Deviation
         ShipmentGp::updateGpEgpDeviation($this->_shipmentObj['Name']);
@@ -197,7 +195,7 @@ class CostSheetObj
         return FilesFolder::getAbsolute($filepath);
     }
 
-    public function saveToHistory()
+    public function saveToHistory(): void
     {
         //Сохраним в базу
         $fieldValues = [

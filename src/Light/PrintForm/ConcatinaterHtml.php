@@ -21,7 +21,7 @@ class ConcatinaterHtml implements ConcatinaterInterface
         $this->fs = $fs;
     }
 
-    public function concat(array $files, string $resultFile, string $title)
+    public function concat(array $files, string $resultFile, string $title): void
     {
         $bodyHtmls = [];
         foreach ($files as $file) {

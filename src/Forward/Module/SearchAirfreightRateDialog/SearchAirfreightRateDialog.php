@@ -14,7 +14,7 @@ class SearchAirfreightRateDialog
     /**
      * Основная точка входа
      */
-    public function __invoke()
+    public function __invoke(): void
     {
         switch ($_GET['action']) {
             case "render":
@@ -33,12 +33,12 @@ class SearchAirfreightRateDialog
     /**
      * Метод вызывается из внешних модулей, поэтому пишем абсолютный путь до js файла относительно папки js
      */
-    public static function initCssJs()
+    public static function initCssJs(): void
     {
         Js::add('Module/SearchAirfreightRateDialog/SearchAirfreightRateDialog.js');
     }
 
-    private function proceedRender()
+    private function proceedRender(): void
     {
         $resultsTable = new ResultsTable();
         $tdata = [
@@ -50,7 +50,7 @@ class SearchAirfreightRateDialog
         Response::showDialog($body, 'Choose', 'SearchAirfreightRateDialog.buttonOkHandler', 'Cancel', null, 1200, '90%', 0);
     }
 
-    private function proceedAjaxSearch()
+    private function proceedAjaxSearch(): void
     {
         $resultsTable = new ResultsTable();
         print $resultsTable->getHtmlTableForAjax();

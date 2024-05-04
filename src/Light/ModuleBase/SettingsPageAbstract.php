@@ -28,7 +28,7 @@ class SettingsPageAbstract
     /** @var array */
     protected $data;
 
-    public function __invoke()
+    public function __invoke(): void
     {
         // Отображение в режиме View
         $this->loadData();
@@ -103,7 +103,7 @@ class SettingsPageAbstract
         return $this->fieldset;
     }
 
-    public function proceedSubmit()
+    public function proceedSubmit(): void
     {
         if (!Request::isPost()) {
             Response::redirect(Request::getModule());

@@ -9,7 +9,7 @@ use Light\Services\ModuleBadgeLoader;
 
 class Mainmenu
 {
-    const PARAM_PINNED = 'Mainmenu_pinned';
+    public const PARAM_PINNED = 'Mainmenu_pinned';
 
     private static $unpinnedForThisPage = false;
 
@@ -22,7 +22,7 @@ class Mainmenu
         return Db::getAssoc($query);
     }
 
-    public static function proceedMainmenuSettings()
+    public static function proceedMainmenuSettings(): void
     {
         if (Request::isPost()) {
             self::proceedMainmenuSettingsSubmit();
@@ -32,7 +32,7 @@ class Mainmenu
         self::proceedMainmenuSettingsShowDialog();
     }
 
-    public static function proceedMainmenuSettingsShowDialog()
+    public static function proceedMainmenuSettingsShowDialog(): void
     {
         $favorites = self::loadFavoriteModules();
 
@@ -76,7 +76,7 @@ class Mainmenu
         return $favorites;
     }
 
-    public static function proceedMainmenuSettingsSubmit()
+    public static function proceedMainmenuSettingsSubmit(): void
     {
         // Список избранных модулей приходит через запятую, так и сохраняем
         $newFavorites = $_POST['favorites'] ?? '';
@@ -225,7 +225,7 @@ class Mainmenu
         return Template::parseTpl(LIGHT_DIR_LIGHT . '/templates/Mainmenu.tpl.php', $tdata);
     }
 
-    public static function setUnpinnedForThisPage()
+    public static function setUnpinnedForThisPage(): void
     {
         self::$unpinnedForThisPage = true;
     }

@@ -27,7 +27,7 @@ class ColorHint
         return $fs;
     }
 
-    public function __invoke()
+    public function __invoke(): void
     {
         Response::setPageHeadHtml('Color Hints');
         Response::setPageTitle('Color Hints');
@@ -38,7 +38,7 @@ class ColorHint
         Template::includeTpl('ColorHint.tpl.php', $tdata);
     }
 
-    public function proceedSave()
+    public function proceedSave(): void
     {
         $fs = $this->getFieldset();
         $hints = $fs->getDataFromRequest($_POST);

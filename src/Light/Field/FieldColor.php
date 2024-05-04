@@ -39,7 +39,7 @@ class FieldColor extends FieldAbstract
         $this->tableAlign = 'center';
     }
 
-    private static function initColorPallete()
+    private static function initColorPallete(): void
     {
         if (!self::$colorPalleteInited) {
             self::$colorPalleteInited = true;

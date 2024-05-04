@@ -37,7 +37,7 @@ class Filters
         return $this->fieldset;
     }
 
-    public function addFilters(...$fields)
+    public function addFilters(...$fields): void
     {
         if (count($fields) !== 0) {
             if (is_array($fields[0]) && count($fields) === 1) {
@@ -52,7 +52,7 @@ class Filters
         }
     }
 
-    public function add(F $field)
+    public function add(F $field): void
     {
         // В зависимости от типа поля, навесим доп параметры
         if ($field instanceof FieldSelect2Multiple || $field instanceof FieldSelect2ChildMultiple) {
@@ -134,7 +134,7 @@ class Filters
      * @param string|array $fieldKeys
      * @param array $params
      */
-    public function addManyText($fieldKeys, array $params)
+    public function addManyText($fieldKeys, array $params): void
     {
         $deafultParams = [
             'name' => Config::$lang === 'ru' ? 'Поиск' : 'Search',
@@ -154,7 +154,7 @@ class Filters
      * @param string|F $field
      * @param array $params
      */
-    public function addDatesFromUntil($field, array $params = [])
+    public function addDatesFromUntil($field, array $params = []): void
     {
         // Первым параметром может быть передано готовое поле (FieldAbstract) со всеми настройами
         // а может быть передан только ключ (string)
@@ -183,7 +183,7 @@ class Filters
      * @param int $yearUntill
      * @param array $params
      */
-    public function addYear(string $fieldKey, string $filterFieldKey, int $yearFrom, int $yearUntill = null, array $params = [])
+    public function addYear(string $fieldKey, string $filterFieldKey, int $yearFrom, int $yearUntill = null, array $params = []): void
     {
         $this->add(CommonFields::filterYear($fieldKey, $filterFieldKey, $yearFrom, $yearUntill, $params));
     }
@@ -218,7 +218,7 @@ class Filters
      * Заполняет массив $this->data новыми значениями фильтров, но только такими, которые реально существуют в fieldset
      * @param array $newFilterValues
      */
-    public function setValues(array $newFilterValues)
+    public function setValues(array $newFilterValues): void
     {
         $this->data = [];
         foreach ($newFilterValues as $fieldKey => $newValue) {
@@ -226,7 +226,7 @@ class Filters
         }
     }
 
-    public function setValue(string $fieldKey, $newValue)
+    public function setValue(string $fieldKey, $newValue): void
     {
         if ($this->hasField($fieldKey)) {
             $this->data[$fieldKey] = $newValue;
@@ -258,7 +258,7 @@ class Filters
         return $outValues;
     }
 
-    public function proceedFromRequestJson(string $filterValuesJson)
+    public function proceedFromRequestJson(string $filterValuesJson): void
     {
         $values = json_decode($filterValuesJson, true);
         if (!is_array($values)) {
@@ -287,7 +287,7 @@ class Filters
         });
     }
 
-    public function loadCurrentFromDb()
+    public function loadCurrentFromDb(): void
     {
         $currentValues = [];
         $currentFiltersJson = Db::getOne(
@@ -328,7 +328,7 @@ class Filters
      * Сохраняет текущие значения фильтров в таблицу user_filter
      * @param array $notDefaultValues
      */
-    private function saveAsCurrent(array $notDefaultValues)
+    private function saveAsCurrent(array $notDefaultValues): void
     {
         try {
             // Сначала сохраним фильтры в таблице user_filter (таблица со знаениями текущих фильтров)
@@ -339,7 +339,7 @@ class Filters
         }
     }
 
-    private function saveToHistory(array $notDefaultValues)
+    private function saveToHistory(array $notDefaultValues): void
     {
         if (!$notDefaultValues) {
             return;
@@ -395,7 +395,7 @@ class Filters
         }
     }
 
-    private function saveToLog(array $notDefaultValues)
+    private function saveToLog(array $notDefaultValues): void
     {
         if ($this->tableName === 'FiltersLog') {
             // Это особая таблица по которой лог не ведём

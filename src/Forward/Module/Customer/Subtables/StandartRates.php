@@ -40,15 +40,13 @@ class StandartRates extends Subtable
             'tableWidthHtml' => 20,
             'nameTable' => '',
             'tableAlign' => 'center',
-            'getHtmlFunction' => function ($value, $data) {
-                return Link::create(Customer::class, Ico::delete())
-                    ->view($data['CustomerID'])
-                    ->func('StandartRateDialog')
-                    ->params(['action' => 'del', 'srid' => $data['ID']])
-                    ->ajax()
-                    ->title('Delete')
-                    ->getHtml();
-            }
+            'getHtmlFunction' => fn($value, $data) => Link::create(Customer::class, Ico::delete())
+                ->view($data['CustomerID'])
+                ->func('StandartRateDialog')
+                ->params(['action' => 'del', 'srid' => $data['ID']])
+                ->ajax()
+                ->title('Delete')
+                ->getHtml()
         ]);
     }
 }

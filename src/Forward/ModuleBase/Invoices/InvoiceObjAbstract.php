@@ -124,7 +124,7 @@ abstract class InvoiceObjAbstract extends ObjAbstract
      * Метод вызывается из модулей CPayment и VPayment для каждого привязанного счёта, чтобы обновить нужные
      * кешируюище поля внутри счёта
      */
-    public function updateCacheAfterPaymentSubmitOrDelete()
+    public function updateCacheAfterPaymentSubmitOrDelete(): void
     {
         //Прежде всего нужно обновить поля AmountinUSD, AmountinRUB, RateToUSD, RateToRUB в таблицах
         //cinvoice_file_amount и vinvoice_file_amount, т.к. перечёт в другую валюту делается по курсу на дату оплаты
@@ -132,14 +132,14 @@ abstract class InvoiceObjAbstract extends ObjAbstract
         $this->updateAmountPerFileCurrencyRate();
     }
 
-    public function updateShipmentsGpAndCriteria(array $oldFileNumbers, $dbLogMsg)
+    public function updateShipmentsGpAndCriteria(array $oldFileNumbers, $dbLogMsg): void
     {
         $newFileNumbers = $this->getFileNumbresFromCacheTable();
         $allFileNumbers = array_filter(array_unique(array_merge($oldFileNumbers, $newFileNumbers)));
         Finance::updateShipmentsGpAndCriteria($allFileNumbers, $dbLogMsg, $this->getFirstLetter());
     }
 
-    public function updateCacheAfterDelete(array $oldFileNumbers, $dbLogMsg)
+    public function updateCacheAfterDelete(array $oldFileNumbers, $dbLogMsg): void
     {
         $this->updateShipmentsGpAndCriteria($oldFileNumbers, $dbLogMsg);
 
@@ -169,7 +169,7 @@ abstract class InvoiceObjAbstract extends ObjAbstract
     /**
      * Обновляет поля cinvoice_file_amount.Amount или vinvoice_file_amount.Amount
      */
-    public function updateAmountPerFile()
+    public function updateAmountPerFile(): void
     {
         $firstLetter = $this->getFirstLetter();
         $firstLetterLower = strtolower($firstLetter);
@@ -203,7 +203,7 @@ abstract class InvoiceObjAbstract extends ObjAbstract
      * зависит от наличия оплат. При создании новых Customer Payment или Vendor Payment этот метод вызывается
      * для каждого счёта относящегося к оплате, чтобы обновить курсы (поэтому метод публичный)
      */
-    public function updateAmountPerFileCurrencyRate()
+    public function updateAmountPerFileCurrencyRate(): void
     {
         //Сумму счёта нужно пересчитать в USD и в RUB для отчётности
         //В качестве даты пересчёта используем дату оплаты или дату счёта, если оплаты ещё не было
@@ -318,7 +318,7 @@ abstract class InvoiceObjAbstract extends ObjAbstract
      * @param string $oldName
      * @param string $newName
      */
-    public function renameAfterInsertUpdate($oldName, $newName)
+    public function renameAfterInsertUpdate($oldName, $newName): void
     {
         $firstLetter = $this->getFirstLetter();
         $firstLetterLower = strtolower($firstLetter);

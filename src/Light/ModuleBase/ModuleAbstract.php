@@ -54,22 +54,22 @@ abstract class ModuleAbstract extends Table
         TableWithFoldersTrait, ModuleSessionTrait, MassactionsTrait,
         ViewEditDialogsTrait, PrintFormsTrait, CopyModesTrait, BadgesTrait, DeleteTrait;
 
-    const STATE_LIST = 'list';
-    const STATE_LIST_EXCEL = 'excel';
-    const STATE_ADDNEW = 'addnew';
-    const STATE_VIEW = 'view';
-    const STATE_EDIT = 'edit';
-    const STATE_LOG = 'log';
-    const STATE_DELETE = 'delete';
-    const STATE_SUBMIT = 'submit';
-    const STATE_LIST_FUNC = 'list_func';
-    const STATE_VIEW_ELFINDER = 'view_elfinder';
-    const STATE_VIEW_FUNC = 'view_func';
-    const STATE_ACTION = 'action';
-    const STATE_MULTIPLEUPDATESUBMIT = 'multiupdate';
-    const STATE_SUBTABLE_RELOAD = 'subtable_reload';
-    const STATE_SUBTABLE_EXCEL = 'subtable_excel';
-    const STATE_SUBTABLE_FUNC = 'subtable_func';
+    public const STATE_LIST = 'list';
+    public const STATE_LIST_EXCEL = 'excel';
+    public const STATE_ADDNEW = 'addnew';
+    public const STATE_VIEW = 'view';
+    public const STATE_EDIT = 'edit';
+    public const STATE_LOG = 'log';
+    public const STATE_DELETE = 'delete';
+    public const STATE_SUBMIT = 'submit';
+    public const STATE_LIST_FUNC = 'list_func';
+    public const STATE_VIEW_ELFINDER = 'view_elfinder';
+    public const STATE_VIEW_FUNC = 'view_func';
+    public const STATE_ACTION = 'action';
+    public const STATE_MULTIPLEUPDATESUBMIT = 'multiupdate';
+    public const STATE_SUBTABLE_RELOAD = 'subtable_reload';
+    public const STATE_SUBTABLE_EXCEL = 'subtable_excel';
+    public const STATE_SUBTABLE_FUNC = 'subtable_func';
 
     //Общие настройки для всех режимов
     protected $allowAdd = true;
@@ -552,7 +552,7 @@ abstract class ModuleAbstract extends Table
         return true;
     }
 
-    private function proceedViewSubtable()
+    private function proceedViewSubtable(): void
     {
         $subtableName = $_GET['subtable'];
         $subtableClass = PROJECT_NAMESPACE . '\\Module\\' . $this->getModule() . '\\Subtables\\' . $subtableName;
@@ -775,7 +775,7 @@ abstract class ModuleAbstract extends Table
         return new $className($this->_obj, $this->flash);
     }
 
-    private function redirectWhenWrongAction()
+    private function redirectWhenWrongAction(): void
     {
         if ($this->_obj->getId()) {
             $this->redirectToView();
@@ -1421,7 +1421,7 @@ abstract class ModuleAbstract extends Table
         return $obj->getDataWithSubtables($subtablesToLoad);
     }
 
-    private function abortSubmit(int $code)
+    private function abortSubmit(int $code): void
     {
         Response::json($this->_saveErrors, $code);
     }
@@ -1784,7 +1784,7 @@ abstract class ModuleAbstract extends Table
     /**
      * Метод вызывается после изменения поля в строке с помощью ajax
      */
-    public function proceedListRenderRowForAjax()
+    public function proceedListRenderRowForAjax(): void
     {
         $id = (int)$_GET['rowId'];
         if (!$id) {
@@ -2484,7 +2484,7 @@ abstract class ModuleAbstract extends Table
         return $out;
     }
 
-    public static function proceedDownloadExampleFile()
+    public static function proceedDownloadExampleFile(): void
     {
         $file = $_GET['file'];
         $examplesDir = LIGHT_DIR_PROJECT . '/Module/' . Request::getModule() . '/Examples';

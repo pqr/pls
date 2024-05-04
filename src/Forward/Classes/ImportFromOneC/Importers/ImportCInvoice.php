@@ -164,7 +164,7 @@ class ImportCInvoice extends ImporterAbstract
         return $result;
     }
 
-    private function saveFiles(CInvoiceObj $cinvObj, array $data)
+    private function saveFiles(CInvoiceObj $cinvObj, array $data): void
     {
         $cinvId = $cinvObj->getId();
         $cinvLink = $cinvObj->getLinkView();

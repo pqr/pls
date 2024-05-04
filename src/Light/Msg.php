@@ -10,7 +10,7 @@ class Msg implements \Countable, \JsonSerializable
      * @deprecated
      * @param string $prefix
      */
-    public function addPrefxToAll(string $prefix)
+    public function addPrefxToAll(string $prefix): void
     {
         foreach ($this->messages as &$message) {
             $message['msg'] = $prefix . $message['msg'];
@@ -18,7 +18,7 @@ class Msg implements \Countable, \JsonSerializable
         unset($message);
     }
 
-    public function add($type, $msg)
+    public function add($type, $msg): void
     {
         $this->messages[] = ['type' => $type, 'msg' => $msg];
     }
@@ -28,7 +28,7 @@ class Msg implements \Countable, \JsonSerializable
         return count($this->messages);
     }
 
-    public function merge(Msg $anotherMsgBuff, string $prefix = '')
+    public function merge(Msg $anotherMsgBuff, string $prefix = ''): void
     {
         foreach ($anotherMsgBuff->getAll() as $message) {
             if ($prefix) {
@@ -38,37 +38,37 @@ class Msg implements \Countable, \JsonSerializable
         }
     }
 
-    public function addMessagess(array $messagess)
+    public function addMessagess(array $messagess): void
     {
         $this->messages = array_merge($this->messages, $messagess);
     }
 
-    public function addInfo($msg)
+    public function addInfo($msg): void
     {
         $this->add('info', $msg);
     }
 
-    public function addSuccess($msg)
+    public function addSuccess($msg): void
     {
         $this->add('success', $msg);
     }
 
-    public function addError($msg)
+    public function addError($msg): void
     {
         $this->add('error', $msg);
     }
 
-    public function addWarning($msg)
+    public function addWarning($msg): void
     {
         $this->add('warning', $msg);
     }
 
-    public function addSkipp($msg)
+    public function addSkipp($msg): void
     {
         $this->add('skipp', $msg);
     }
 
-    public function addSuccessOrInfo($msg, $successCondition)
+    public function addSuccessOrInfo($msg, $successCondition): void
     {
         if ($successCondition) {
             $this->addSuccess($msg);
@@ -77,12 +77,12 @@ class Msg implements \Countable, \JsonSerializable
         }
     }
 
-    public function addHtml($msg)
+    public function addHtml($msg): void
     {
         $this->add('html', $msg);
     }
 
-    public function addEmptyLine()
+    public function addEmptyLine(): void
     {
         $this->addInfo('&nbsp;');
     }
@@ -159,7 +159,7 @@ class Msg implements \Countable, \JsonSerializable
     /**
      * Сохраняет все сообщения в Session::flash
      */
-    public function putIntoSessionFlash()
+    public function putIntoSessionFlash(): void
     {
         foreach($this->messages as ['type' => $type, 'msg' => $msg]) {
             Session::flashAdd($type, $msg);

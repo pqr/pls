@@ -76,7 +76,7 @@ class Mailer
         return new Mailer($to, $subject, $body);
     }
 
-    public function setFromQueue(int $createdBy, string $createdDateTime, int $retryCount)
+    public function setFromQueue(int $createdBy, string $createdDateTime, int $retryCount): void
     {
         $this->createdBy = $createdBy;
         $this->createdDateTime = $createdDateTime;
@@ -331,12 +331,8 @@ class Mailer
             $emails = preg_split("/,|;|\s/", $emails);
         }
         $emails = array_unique(array_filter(array_map('trim', $emails)));
-        $emails = array_map(static function ($email) {
-            return str_replace(['<', '>'], '', trim($email));
-        }, $emails);
-        $emails = array_filter($emails, static function ($email) {
-            return filter_var($email, FILTER_VALIDATE_EMAIL);
-        });
+        $emails = array_map(static fn($email) => str_replace(['<', '>'], '', trim($email)), $emails);
+        $emails = array_filter($emails, static fn($email) => filter_var($email, FILTER_VALIDATE_EMAIL));
         return array_values(array_unique($emails));
     }
 

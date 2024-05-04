@@ -22,7 +22,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
  */
 class FieldDate extends FieldInputAbstract
 {
-    const UNTIL_FUTURE_NOTICE = '2099-01-01';
+    public const UNTIL_FUTURE_NOTICE = '2099-01-01';
 
     private const EXCEL_DATE_2000 = 36526; // // 01.01.2000 в формате Excel
 

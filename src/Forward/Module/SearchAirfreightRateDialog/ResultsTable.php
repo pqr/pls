@@ -114,12 +114,10 @@ class ResultsTable extends Table
             $this->getFieldsetLast()->addField(
                 F::createHtml('AirfreightRateLink')
                     ->setName('')
-                    ->setGetHtmlFunction(function ($value, array $data) {
-                        return Link::create(AirfreightRate::class, 'View')
-                            ->view($data['ID'])
-                            ->blank()
-                            ->getHtml();
-                    }));
+                    ->setGetHtmlFunction(fn($value, array $data) => Link::create(AirfreightRate::class, 'View')
+                        ->view($data['ID'])
+                        ->blank()
+                        ->getHtml()));
         }
 
         //Сразу загружаем данные
@@ -184,7 +182,7 @@ class ResultsTable extends Table
         ];
     }
 
-    private function loadSurcharges()
+    private function loadSurcharges(): void
     {
         $baseQuery = "SELECT ID, Name, Comments, BaseAmount, MinAmount, MaxAmount, PerKgAmount, CurrencyISO
                       FROM airfreightsurcharge

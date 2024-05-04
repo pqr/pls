@@ -27,24 +27,24 @@ abstract class HomeBlockAbstract extends Table
 {
     use TableExcelExportable, SubmoduleTrait;
 
-    const CSSCLASS_RED = 'red';
-    const CSSCLASS_RED2 = 'red2';
-    const CSSCLASS_ORANGE = 'orange';
-    const CSSCLASS_ORANGE2 = 'orange2';
-    const CSSCLASS_YELLOW = 'yellow';
-    const CSSCLASS_YELLOW2 = 'yellow2';
-    const CSSCLASS_GREEN = 'green';
-    const CSSCLASS_GREEN2 = 'green2';
-    const CSSCLASS_CYAN = 'cyan';
-    const CSSCLASS_CYAN2 = 'cyan2';
-    const CSSCLASS_BLUE = 'blue';
-    const CSSCLASS_BLUE2 = 'blue2';
-    const CSSCLASS_DARKBLUE = 'darkblue';
-    const CSSCLASS_DARKBLUE2 = 'darkblue2';
-    const CSSCLASS_PURPLE = 'purple';
-    const CSSCLASS_PURPLE2 = 'purple2';
-    const CSSCLASS_PINK = 'pink';
-    const CSSCLASS_PINK2 = 'pink2';
+    public const CSSCLASS_RED = 'red';
+    public const CSSCLASS_RED2 = 'red2';
+    public const CSSCLASS_ORANGE = 'orange';
+    public const CSSCLASS_ORANGE2 = 'orange2';
+    public const CSSCLASS_YELLOW = 'yellow';
+    public const CSSCLASS_YELLOW2 = 'yellow2';
+    public const CSSCLASS_GREEN = 'green';
+    public const CSSCLASS_GREEN2 = 'green2';
+    public const CSSCLASS_CYAN = 'cyan';
+    public const CSSCLASS_CYAN2 = 'cyan2';
+    public const CSSCLASS_BLUE = 'blue';
+    public const CSSCLASS_BLUE2 = 'blue2';
+    public const CSSCLASS_DARKBLUE = 'darkblue';
+    public const CSSCLASS_DARKBLUE2 = 'darkblue2';
+    public const CSSCLASS_PURPLE = 'purple';
+    public const CSSCLASS_PURPLE2 = 'purple2';
+    public const CSSCLASS_PINK = 'pink';
+    public const CSSCLASS_PINK2 = 'pink2';
 
     /** @var string маленькая серая надпись под общим описанием, в которй указано для кого предназначено это напоминание */
     protected static $informationFor;
@@ -120,7 +120,7 @@ abstract class HomeBlockAbstract extends Table
         Metric::record(Request::getModule() . '/' . Misc::getClass($this), $timer->getMs(), ['UserID' => $userId]);
     }
 
-    public function proceedSendExcel()
+    public function proceedSendExcel(): void
     {
         $this->tableLoadData($this->userId);
         $this->sendExcel();

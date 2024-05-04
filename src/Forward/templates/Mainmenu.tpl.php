@@ -19,12 +19,12 @@ $usdRub = \Light\Db::getRow("SELECT ValidDate, BuyingForUSD, SellingForUSD FROM 
     </tr>
     <tr title="<?= isset($eurUsd['ValidDate']) ? \Light\Field\FieldDate::beautify($eurUsd['ValidDate']) : '' ?>">
         <td>EUR / USD</td>
-        <td><?= isset($eurUsd['SellingForEUR']) ? $eurUsd['SellingForEUR'] : '' ?></td>
-        <td><?= isset($eurUsd['BuyingForEUR']) ? $eurUsd['BuyingForEUR'] : '' ?></td>
+        <td><?= $eurUsd['SellingForEUR'] ?? '' ?></td>
+        <td><?= $eurUsd['BuyingForEUR'] ?? '' ?></td>
     </tr>
     <tr title="<?= isset($usdRub['ValidDate']) ? \Light\Field\FieldDate::beautify($usdRub['ValidDate']) : '' ?>">
         <td>USD / RUB</td>
-        <td><?= isset($usdRub['BuyingForUSD']) ? $usdRub['BuyingForUSD'] : '' ?></td>
-        <td><?= isset($usdRub['SellingForUSD']) ? $usdRub['SellingForUSD'] : '' ?></td>
+        <td><?= $usdRub['BuyingForUSD'] ?? '' ?></td>
+        <td><?= $usdRub['SellingForUSD'] ?? '' ?></td>
     </tr>
 </table>

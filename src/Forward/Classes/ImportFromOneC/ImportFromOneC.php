@@ -26,7 +26,7 @@ class ImportFromOneC
     protected $msgBuff;
     protected $importId;
 
-    public function __invoke()
+    public function __invoke(): void
     {
         Db::query("INSERT INTO log_onecimport () VALUES ()");
         $this->importId = Db::getInsertId();
@@ -153,7 +153,7 @@ class ImportFromOneC
         return $json;
     }
 
-    private function saveOriginalTextToLogFile(string $text)
+    private function saveOriginalTextToLogFile(string $text): void
     {
         $relativePath = FilesFolder::getRelativeModule('log_onecimport', $this->importId);
         FilesFolder::mkdir($relativePath);

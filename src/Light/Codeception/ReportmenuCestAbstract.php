@@ -10,7 +10,7 @@ abstract class ReportmenuCestAbstract
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
      */
-    public function reportmenu($I)
+    public function reportmenu($I): void
     {
         $I->amOnPage('?a=Reportmenu');
         $I->cantSeeXdebugError();
@@ -20,7 +20,7 @@ abstract class ReportmenuCestAbstract
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
      */
-    public function accessAudit($I)
+    public function accessAudit($I): void
     {
         $I->amOnPage('?a=Reportmenu&p=AccessAudit');
         $I->cantSeeXdebugError();
@@ -32,7 +32,7 @@ abstract class ReportmenuCestAbstract
      * @param Example $example
      * @dataprovider reportsProvider
      */
-    public function report($I, \Codeception\Example $example)
+    public function report($I, \Codeception\Example $example): void
     {
         $reportClass = $example['reportClass'];
         $I->amOnPage("?a=Reportmenu&class=$reportClass");

@@ -35,10 +35,10 @@ abstract class Subtable extends Table
         getHtmlTableTheadThContent as getHtmlTableTheadThContentAlias;
     }
 
-    const STATE_VIEW = 'view';
-    const STATE_EXCEL = 'excel';
-    const STATE_EDIT = 'edit';
-    const STATE_SUBMIT = 'submit';
+    public const STATE_VIEW = 'view';
+    public const STATE_EXCEL = 'excel';
+    public const STATE_EDIT = 'edit';
+    public const STATE_SUBMIT = 'submit';
 
     // Выставим некоторые настроки базового класса Table в значения удобные для подтаблиц
     // Для подтаблиц специально не делаем закреплённый заголок (position: sticky)
@@ -195,7 +195,7 @@ abstract class Subtable extends Table
      * Метод пригождается при копировании в ModuleAbstract
      * @param ObjAbstract $masterObj
      */
-    public function setMasterObj(ObjAbstract $masterObj)
+    public function setMasterObj(ObjAbstract $masterObj): void
     {
         $this->_masterObj = $masterObj;
     }
@@ -255,7 +255,7 @@ abstract class Subtable extends Table
      * @param array $data
      * @return void
      */
-    public function setSubtableDataAdditional($data)
+    public function setSubtableDataAdditional($data): void
     {
         $this->subtableDataAdditional = $data;
     }
@@ -431,7 +431,7 @@ abstract class Subtable extends Table
         return $query;
     }
 
-    public function loadData()
+    public function loadData(): void
     {
         if ($this->subtableData !== null && $this->subtableOldData === null) {
             // Данные ранее уже загружались но только один один раз (т.к. массив oldData ещё пуст)
@@ -455,7 +455,7 @@ abstract class Subtable extends Table
         }
     }
 
-    public function initFolderStatuses()
+    public function initFolderStatuses(): void
     {
         if ($this->subtableData && $this->folders && $this->folderModule) {
             // Загрузим специальный массив с закешированным состоянием непустых папок
@@ -473,7 +473,7 @@ abstract class Subtable extends Table
      *
      * Этот метод вызывается только в тех случаях, когда реально нужно отобразить подтаблицу (в режиме Vie/Edit/Excel)
      */
-    public function copySubtableDataToTableData()
+    public function copySubtableDataToTableData(): void
     {
         if ($this->subtableData) {
             $this->tableData = array_values($this->subtableData);
@@ -498,7 +498,7 @@ abstract class Subtable extends Table
         return $count;
     }
 
-    public function setSubtableData(array $data)
+    public function setSubtableData(array $data): void
     {
         $this->subtableData = $data;
     }
@@ -801,12 +801,12 @@ abstract class Subtable extends Table
         }
     }
 
-    public function setViewLayout($fieldsKeysString)
+    public function setViewLayout($fieldsKeysString): void
     {
         $this->subtableLayoutView = $fieldsKeysString;
     }
 
-    public function setEditLayout($fieldsKeysString)
+    public function setEditLayout($fieldsKeysString): void
     {
         $this->subtableLayoutEdit = $fieldsKeysString;
     }
@@ -857,7 +857,7 @@ abstract class Subtable extends Table
             . "&func=ChangeField&subid=";
     }
 
-    final public function proceedExcel()
+    final public function proceedExcel(): void
     {
         $this->_state = self::STATE_EXCEL;
         $this->initLayoutable();
@@ -955,7 +955,7 @@ abstract class Subtable extends Table
     {
         $this->_state = self::STATE_SUBMIT;
 
-        $dataFromRequest = $dataFromRequest ?? $_POST[$this->getTableName() . 'Subtable'] ?? null;
+        $dataFromRequest ??= $_POST[$this->getTableName() . 'Subtable'] ?? null;
 
         if ($dataFromRequest === null) {
             //Таблица вообще не пришла в запросе - нечего сохранять
@@ -998,7 +998,7 @@ abstract class Subtable extends Table
                 $id = $this->getRowIdFromPost($rowNum, $dataFromRequest);
                 if ($id && isset($this->subtableData[$id])) {
                     // Если ID существует среди текущих данных, удалим объект
-                    $this->proceedDeleteRow($id, $msgBuff);
+                    $this->proceedDeleteRow($id);
                     // Удалим непосредсвенно из массива Data
                     unset($this->subtableData[$id]);
                 }
@@ -1155,7 +1155,7 @@ abstract class Subtable extends Table
         }
     }
 
-    public function deleteAll()
+    public function deleteAll(): void
     {
         $this->loadData();
         foreach ($this->subtableData as $id => $row) {
@@ -1171,7 +1171,7 @@ abstract class Subtable extends Table
 
     public function getNotDeletedDataFromReqeust(array $dataFromRequest = null)
     {
-        $dataFromRequest = $dataFromRequest ?? $this->getDataFromPost();
+        $dataFromRequest ??= $this->getDataFromPost();
         if (!$dataFromRequest) {
             return [];
         }
@@ -1207,7 +1207,7 @@ abstract class Subtable extends Table
      * Поля из массива $this->_cacheFieldsKeys - по ним собираются все данные и выполняет UPDATE запрос
      * на таблицу $this->_masterObj->getDbTable(), для каждого поля, добавляя префикс Cache<Имя класса без Subtable>
      */
-    public function updateCache()
+    public function updateCache(): void
     {
         if ($this->subtableData === null) {
             $this->loadData();
@@ -1267,7 +1267,7 @@ abstract class Subtable extends Table
         return $this->textSubtableTitle;
     }
 
-    public function proceedAjaxReload()
+    public function proceedAjaxReload(): void
     {
         $this->_state = self::STATE_VIEW;
 
@@ -1293,7 +1293,7 @@ abstract class Subtable extends Table
         ApplicationAbstract::terminate();
     }
 
-    public function proceedRenderRowForAjax()
+    public function proceedRenderRowForAjax(): void
     {
         $id = (int)$_GET['rowId'];
         if (!$id) {

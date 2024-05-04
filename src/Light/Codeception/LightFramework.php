@@ -9,17 +9,17 @@ class LightFramework extends Framework
     /*
      * Create the client connector. Called before each test
      */
-    public function _createClient()
+    public function _createClient(): void
     {
         $this->client = new LightConnector();
     }
 
-    public function _before(TestInterface $test)
+    public function _before(TestInterface $test): void
     {
         $this->_createClient();
     }
 
-    public function _after(TestInterface $test)
+    public function _after(TestInterface $test): void
     {
         $_SESSION = [];
         $_FILES = [];

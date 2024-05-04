@@ -19,8 +19,8 @@ class Logviewer extends Table
 {
     use TablePaginatable, TableFilterable, TableExcelExportable;
 
-    const STATE_LIST = 'list';
-    const STATE_EXCEL = 'excel';
+    public const STATE_LIST = 'list';
+    public const STATE_EXCEL = 'excel';
 
     protected $_state;
 
@@ -47,9 +47,7 @@ class Logviewer extends Table
     {
         parent::__construct('Logviewer');
 
-        $formatExcel = function ($value) {
-            return html_entity_decode(strip_tags($value));
-        };
+        $formatExcel = fn($value) => html_entity_decode(strip_tags($value));
 
         $this->addFields(
 
@@ -222,7 +220,7 @@ class Logviewer extends Table
 
     }
 
-    public function __invoke()
+    public function __invoke(): void
     {
         if (Request::isXls()) {
             $this->_state = self::STATE_EXCEL;

@@ -4,8 +4,8 @@ namespace Light;
 
 class ModuleRegister
 {
-    const MODULE_HIDDEN = 0b01;
-    const MODULE_HASBADGE = 0b10;
+    public const MODULE_HIDDEN = 0b01;
+    public const MODULE_HASBADGE = 0b10;
 
     private static $coreModules = [
         'Core' => 'Core',
@@ -126,7 +126,7 @@ class ModuleRegister
         return static::$defaultModule;
     }
 
-    public static function setDefaultModule(string $defaultModule)
+    public static function setDefaultModule(string $defaultModule): void
     {
         // Приводим к короткому имени класса
         $defaultModule = Misc::getModule($defaultModule);
@@ -151,9 +151,7 @@ class ModuleRegister
     {
         return array_filter(
             self::getModulesKeys(),
-            static function ($module) {
-                return !isset(self::$hiddenModules[$module]);
-            }
+            static fn($module) => !isset(self::$hiddenModules[$module])
         );
     }
 
@@ -197,7 +195,7 @@ class ModuleRegister
         return self::$modules[$module]['section'] ?? '';
     }
 
-    public static function addModule(string $module, string $name, string $section = '', int $binOptions = 0)
+    public static function addModule(string $module, string $name, string $section = '', int $binOptions = 0): void
     {
         static $autoorder = 0;
         $autoorder++;
@@ -220,7 +218,7 @@ class ModuleRegister
         }
     }
 
-    public static function setTitle(string $module, string $title)
+    public static function setTitle(string $module, string $title): void
     {
         // Приводим к короткому имени класса
         $module = Misc::getModule($module);
@@ -228,7 +226,7 @@ class ModuleRegister
         self::$titles[$module] = $title;
     }
 
-    public static function removeModule(string $module)
+    public static function removeModule(string $module): void
     {
         // Приводим к короткому имени класса
         $module = Misc::getModule($module);

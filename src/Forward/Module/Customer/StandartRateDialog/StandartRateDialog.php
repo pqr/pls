@@ -22,7 +22,7 @@ class StandartRateDialog
      * Не обычный метод для подтаблицы - здесь происходит роутинг ajax действий с записями подтаблицы
      * @param CustomerObj $customerObj
      */
-    public static function proceed(CustomerObj $customerObj)
+    public static function proceed(CustomerObj $customerObj): void
     {
         switch ($_GET['action']) {
             case "new":
@@ -54,7 +54,7 @@ class StandartRateDialog
      * При ajax запросе при нажатии ссылки New Standart Rate - диалоговое окно
      * @param CustomerObj $customerObj
      */
-    private static function proceedNew(CustomerObj $customerObj)
+    private static function proceedNew(CustomerObj $customerObj): void
     {
         $srObj = new StandartRatesObj();
         $tdata = self::getTplData($srObj, $customerObj);
@@ -63,7 +63,7 @@ class StandartRateDialog
         Response::showDialog($bodyHtml, 'Save', null, 'Cancel', null, 1080, '90%', 10);
     }
 
-    private static function proceedEdit(CustomerObj $customerObj)
+    private static function proceedEdit(CustomerObj $customerObj): void
     {
         $srObj = self::loadObjAndCheck($_GET['srid'], $customerObj->getId());
         $tdata = self::getTplData($srObj, $customerObj);
@@ -95,7 +95,7 @@ class StandartRateDialog
         return $tdata;
     }
 
-    private static function proceedSubmit(CustomerObj $customerObj)
+    private static function proceedSubmit(CustomerObj $customerObj): void
     {
         $srId = (int)$_GET['srid'];
         if ($srId) {
@@ -139,7 +139,7 @@ class StandartRateDialog
      * При ajax запросе на удаление какого-то тарифа
      * @param CustomerObj $customerObj
      */
-    private static function proceedDel(CustomerObj $customerObj)
+    private static function proceedDel(CustomerObj $customerObj): void
     {
         $srObj = self::loadObjAndCheck($_GET['srid'], $customerObj->getId());
 
@@ -197,7 +197,7 @@ class StandartRateDialog
         return $srObj;
     }
 
-    private static function proceedShowApplyAddonDialog(CustomerObj $customerObj)
+    private static function proceedShowApplyAddonDialog(CustomerObj $customerObj): void
     {
         //Подготовим форму с полями для ввода addon
         $currencyIso = $_GET['CurrencyISO'];

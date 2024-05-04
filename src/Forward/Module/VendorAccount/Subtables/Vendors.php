@@ -49,10 +49,7 @@ class Vendors extends Many2ManyAbstract
 
     protected function getFolderName(array $data)
     {
-        if (isset($data['VendorID'])) {
-            return $data['VendorID'];
-        }
-        return false;
+        return $data['VendorID'] ?? false;
     }
 }
 

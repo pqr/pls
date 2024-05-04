@@ -114,7 +114,7 @@ class TableUserParamsRepository
         $this->saveToDb('ShowAll', $showAll ? 1 : 0);
     }
 
-    private function lazyLoadTableUserParams()
+    private function lazyLoadTableUserParams(): void
     {
         if (!$this->isLoaded) {
             $params = Db::getRow(
@@ -139,7 +139,7 @@ class TableUserParamsRepository
         }
     }
 
-    private function saveToDb(string $paramName, string $value)
+    private function saveToDb(string $paramName, string $value): void
     {
         $query = "INSERT INTO user_tableparam (
                       CreatedBy,

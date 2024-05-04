@@ -128,7 +128,7 @@ class CInvoiceObj extends InvoiceObjAbstract
         $this->addStandrtFields();
     }
 
-    public function updateAmount($dbLogMsg = '')
+    public function updateAmount($dbLogMsg = ''): void
     {
         $amount = Db::getOne("SELECT SUM(Amount) FROM cinvoiceline WHERE CInvoiceID = @i", $this->getId());
         $this->updateDb(['Amount' => $amount], $dbLogMsg);
@@ -142,7 +142,7 @@ class CInvoiceObj extends InvoiceObjAbstract
      * Метод вызывается при сохранении инвойса в модуле CInvoice и при добавлении счёта из 1С через вызов updateAllCache
      *
      */
-    private function guessAndUpdateCostSheetsInvNum()
+    private function guessAndUpdateCostSheetsInvNum(): void
     {
         //Загрузим информацию по всем строкам счёта
         $invLines = Db::getAll(
@@ -231,7 +231,7 @@ class CInvoiceObj extends InvoiceObjAbstract
         Msg $msgBuff = null,
         $updateShipmentsGpAndCriteria = true,
         $dbLogMsg = ''
-    ) {
+    ): void {
         if (isset($oldData['FileNumbers'])) {
             $oldFileNumbers = $oldData['FileNumbers'];
         } else {
@@ -286,7 +286,7 @@ class CInvoiceObj extends InvoiceObjAbstract
         $this->updateCustomerCacheOpenAndOverdueInvoicesAmount();
     }
 
-    public function updateCustomerCacheOpenAndOverdueInvoicesAmount()
+    public function updateCustomerCacheOpenAndOverdueInvoicesAmount(): void
     {
         $customerObj = new CustomerObj();
         $customerObj->setId($this->_data['CustomerID']);
@@ -298,7 +298,7 @@ class CInvoiceObj extends InvoiceObjAbstract
     /**
      * Записывает в поле Name занчение поля ID - нужно для счетов создаваемых в базе от офшорных компаний
      */
-    public function autogenerateName()
+    public function autogenerateName(): void
     {
         $name = $this->getId();
         if ($this['CompanyID'] == Constant::OC_MAXVEL) {

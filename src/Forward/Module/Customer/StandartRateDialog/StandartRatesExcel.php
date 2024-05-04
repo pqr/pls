@@ -44,7 +44,7 @@ class StandartRatesExcel extends Table
         $this->loadData($customerId, $rateIds);
     }
 
-    private function loadData(int $customerId, array $rateIds)
+    private function loadData(int $customerId, array $rateIds): void
     {
         $data = Db::getAll(
             "SELECT *
@@ -112,7 +112,7 @@ class StandartRatesExcel extends Table
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
-    public function sendStandartRatesExcel(string $customerName, int $companyId, string $lang)
+    public function sendStandartRatesExcel(string $customerName, int $companyId, string $lang): void
     {
         if ($companyId === Constant::OC_PGL_OOO || $companyId === Constant::OC_PGL11_OOO) {
             $companyName = 'pgl';

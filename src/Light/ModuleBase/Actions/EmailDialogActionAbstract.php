@@ -31,10 +31,10 @@ abstract class EmailDialogActionAbstract extends ActionAbstract
     /** @var Fieldset */
     protected $fieldset;
 
-    const ICON_DEFAULT = 'icon-mail';
-    const ICON_RED = 'icon-red';
-    const ICON_BLUE = 'icon-blue';
-    const ICON_GREEN = 'icon-green';
+    public const ICON_DEFAULT = 'icon-mail';
+    public const ICON_RED = 'icon-red';
+    public const ICON_BLUE = 'icon-blue';
+    public const ICON_GREEN = 'icon-green';
 
     public $onlyAjax = true;
     public $submenuEmailIconColor = self::ICON_DEFAULT;
@@ -53,7 +53,7 @@ abstract class EmailDialogActionAbstract extends ActionAbstract
         return Ico::i('fa-envelope ' . $this->submenuEmailIconColor) . ' ' . $this->submenuTitle;
     }
 
-    public function __invoke()
+    public function __invoke(): void
     {
         if (!Request::isAjax()) {
             Response::redirect(Misc::getModule($this->obj), ['id' => $this->obj->getId()]);

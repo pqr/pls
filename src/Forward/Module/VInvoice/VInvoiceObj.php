@@ -117,7 +117,7 @@ class VInvoiceObj extends InvoiceObjAbstract
         Msg $msgBuff = null,
         $updateShipmentsGpAndCriteria = true,
         $dbLogMsg = ''
-    )
+    ): void
     {
 
         if (isset($oldData['FileNumbers'])) {
@@ -163,7 +163,7 @@ class VInvoiceObj extends InvoiceObjAbstract
         }
     }
 
-    private function updateAmount($dbLogMsg = '')
+    private function updateAmount($dbLogMsg = ''): void
     {
         $amount = Db::getOne("SELECT SUM(FinalAmount) FROM vinvoiceline WHERE VInvoiceID = @i", $this->getId());
         $this->updateDb(['Amount' => $amount], $dbLogMsg);
@@ -177,7 +177,7 @@ class VInvoiceObj extends InvoiceObjAbstract
      * Метод вызывается при сохранении инвойса в модуле VInvoice через вызов updateAllCache
      * @param Msg $msgBuff
      */
-    private function guessAndUpdateCostSheetsInvNum(Msg $msgBuff)
+    private function guessAndUpdateCostSheetsInvNum(Msg $msgBuff): void
     {
         //Загрузим информацию по всем строкам счёта
         $invLines = Db::getAll("SELECT FileNumber, FinalAmount FROM vinvoiceline

@@ -73,7 +73,7 @@ abstract class AutolaunchAbstract
         Metric::newrelicEvent('Autolaunch', $attributes);
     }
 
-    private function saveLogToDb($workTime)
+    private function saveLogToDb($workTime): void
     {
         try {
 
@@ -92,7 +92,7 @@ abstract class AutolaunchAbstract
         }
     }
 
-    private function saveLogToFile($workTime)
+    private function saveLogToFile($workTime): void
     {
         $logText = $this->_msgBuff->getText();
         $shortLogText = $this->_msgBuffShort->getText();
@@ -170,7 +170,7 @@ abstract class AutolaunchAbstract
         return $this->getDataFromRequest($_POST);
     }
 
-    private function proceedRun($params)
+    private function proceedRun($params): void
     {
         $this->createLogDbRecord();
 
@@ -226,7 +226,7 @@ abstract class AutolaunchAbstract
     /**
      * Запуск из консоли
      */
-    public function proceedAutomaticRun()
+    public function proceedAutomaticRun(): void
     {
         if (!$this->getFieldset()->isEmpty()) {
 

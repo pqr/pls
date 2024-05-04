@@ -43,9 +43,7 @@ class EmailAccount extends ModuleAbstract
             F::createString('Password', [
                 'name' => 'Password',
                 'modes' => F::MODE_ALL & ~F::MODE_LOG,
-                'getHtmlFunction' => function ($value, array $data, $outHtml) {
-                    return Html::showHide('Show', $outHtml);
-                },
+                'getHtmlFunction' => fn($value, array $data, $outHtml) => Html::showHide('Show', $outHtml),
             ])
 
         );

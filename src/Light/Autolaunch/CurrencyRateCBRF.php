@@ -16,7 +16,7 @@ class CurrencyRateCBRF extends AutolaunchAbstract
     protected static $_title = 'Обновить курсы валют ЦБРФ';
     protected static $_description = 'Обновляет курсы валют с сайта ЦБРФ';
 
-    public function initFieldset()
+    public function initFieldset(): void
     {
         $this->addFields(
             F::createDate('ValidDate', [

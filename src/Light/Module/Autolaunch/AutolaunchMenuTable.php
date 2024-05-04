@@ -59,7 +59,7 @@ class AutolaunchMenuTable extends Table
                         $replaceTo = ['', '', 'Light/'];
                         $cliClass = str_replace($replaceFrom, $replaceTo, $data['ClassName']);
 
-                        if (strpos($line, $cliClass)) {
+                        if (strpos($line, (string) $cliClass)) {
                             $cron = substr($line, 0, strpos($line, ' php'));
                             return '<code title="' . htmlspecialchars($line) . '">' . $cron . '</code>';
                         }
@@ -74,7 +74,7 @@ class AutolaunchMenuTable extends Table
         $this->tableLoadData();
     }
 
-    private function tableLoadData()
+    private function tableLoadData(): void
     {
         $this->scanNamespace(PROJECT_NAMESPACE . '\\Autolaunch');
         $this->scanNamespace('Light\\Autolaunch');
@@ -84,7 +84,7 @@ class AutolaunchMenuTable extends Table
      * Загружает все классы из указанного неймспйса в $this->tableData
      * @param string $namespace
      */
-    private function scanNamespace(string $namespace)
+    private function scanNamespace(string $namespace): void
     {
         $pathAbs = LIGHT_DIR_ROOT . "/src/" . str_replace('\\', '/', $namespace);
         if (!is_dir($pathAbs)) {

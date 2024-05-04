@@ -45,9 +45,7 @@ class ModuleAbstractLog extends Table
         );
         $this->_masterId = (int)$masterId;
 
-        $formatExcel = function ($value) {
-            return html_entity_decode(strip_tags($value));
-        };
+        $formatExcel = fn($value) => html_entity_decode(strip_tags($value));
 
         $this->addFields(
 

@@ -34,7 +34,7 @@ use Light\User;
 
 class Core
 {
-    public function __invoke()
+    public function __invoke(): void
     {
         //Если по какой-то причине был запрос на ?a=Core без параметров (и это не ajax), просто перенправляем пользователя
         //на default модуль
@@ -43,7 +43,7 @@ class Core
         }
     }
 
-    public static function proceedUserparam()
+    public static function proceedUserparam(): void
     {
         if (!isset($_REQUEST['param'])) {
             Response::abort(400);
@@ -68,7 +68,7 @@ class Core
         ApplicationAbstract::terminate();
     }
 
-    public static function proceedTable()
+    public static function proceedTable(): void
     {
         if (Request::getMehod() === 'POST') {
 
@@ -117,7 +117,7 @@ class Core
         ApplicationAbstract::terminate();
     }
 
-    public static function acCore($value)
+    public static function acCore($value): void
     {
         $out = [];
 
@@ -180,7 +180,7 @@ class Core
         Response::json($out);
     }
 
-    public static function proceedJslog()
+    public static function proceedJslog(): void
     {
         $head = [
             'DateTime',
@@ -214,7 +214,7 @@ class Core
         ApplicationAbstract::terminate();
     }
 
-    public static function proceedMetric()
+    public static function proceedMetric(): void
     {
         if (isset($_POST['ActionType'])) {
             $payload = $_POST['Payload'] ?? '';
@@ -225,7 +225,7 @@ class Core
     /**
      * Вспомогательная функция для сохранения сортировки в потдаблице в режиме Edit/AddNew
      */
-    public static function proceedSetTableUserParams()
+    public static function proceedSetTableUserParams(): void
     {
         if (isset($_POST['table'], $_POST['sortFieldKey'], $_POST['sortOrder'])) {
             $tableUserParams = new TableUserParamsRepository($_POST['table'], User::getId());
@@ -234,7 +234,7 @@ class Core
         }
     }
 
-    public static function proceedFiltersGetHistoryHtml()
+    public static function proceedFiltersGetHistoryHtml(): void
     {
         if (!isset($_GET['TableName'])) {
             Response::abort(400, 'No GET TableName');
@@ -274,7 +274,7 @@ class Core
         print $html;
     }
 
-    public static function proceedFiltersSaveLikeReset()
+    public static function proceedFiltersSaveLikeReset(): void
     {
         if (!isset($_GET['TableName'])) {
             Response::abort(400, 'No GET TableName');
@@ -312,7 +312,7 @@ class Core
         Response::sendToast('success', $msg);
     }
 
-    public static function proceedFiltersGetSavedHtml()
+    public static function proceedFiltersGetSavedHtml(): void
     {
         if (!isset($_GET['TableName'])) {
             Response::abort(400, 'No GET TableName');
@@ -362,7 +362,7 @@ class Core
         print $html;
     }
 
-    public static function proceedFiltersSave()
+    public static function proceedFiltersSave(): void
     {
         if (!isset($_GET['TableName'])) {
             Response::abort(400, 'No GET TableName');
@@ -391,7 +391,7 @@ class Core
         self::proceedFiltersGetSavedHtml();
     }
 
-    public static function proceedFiltersDelete()
+    public static function proceedFiltersDelete(): void
     {
         if (!isset($_GET['TableName'])) {
             Response::abort(400, 'No GET TableName');
@@ -421,7 +421,7 @@ class Core
         self::proceedFiltersGetSavedHtml();
     }
 
-    public static function proceedFiltersSaveLayout()
+    public static function proceedFiltersSaveLayout(): void
     {
         if (!isset($_GET['TableName'])) {
             Response::abort(400, 'No GET TableName');
@@ -460,7 +460,7 @@ class Core
         Response::sendToast('success', $msg);
     }
 
-    public static function proceedUploadUserAvatar()
+    public static function proceedUploadUserAvatar(): void
     {
         if (!isset($_FILES['avatar']['tmp_name'])) {
             Response::json(['error' => true, 'text' => 'Произошла внутренняя ошибка'], 500);
@@ -517,7 +517,7 @@ class Core
         Response::json(['success' => true]);
     }
 
-    public static function proceedGetUserAvatar()
+    public static function proceedGetUserAvatar(): void
     {
         $userId = $_GET['UserID'] ?? User::getId();
 
@@ -537,7 +537,7 @@ class Core
         Response::redirectUrl('lightpublic/i/user.png');
     }
 
-    public static function proceedGetUserPhoto()
+    public static function proceedGetUserPhoto(): void
     {
         $userId = $_GET['UserID'] ?? User::getId();
         $relative = FilesFolder::getRelativeModule('User', $userId);
@@ -568,7 +568,7 @@ class Core
         ApplicationAbstract::terminate();
     }
 
-    public static function proceedGetCurrRate()
+    public static function proceedGetCurrRate(): void
     {
         if (!isset($_GET['from']) || !isset($_GET['to']) || !isset($_GET['date'])) {
             Response::abort(400, 'Not enought GET parameters');
@@ -596,12 +596,12 @@ class Core
         return Db::getAll($query);
     }
 
-    public static function proceedMainmenuSettings()
+    public static function proceedMainmenuSettings(): void
     {
         Mainmenu::proceedMainmenuSettings();
     }
 
-    public static function proceedParseCsv()
+    public static function proceedParseCsv(): void
     {
         $input = file_get_contents('php://input');
         $csv = Reader::createFromString($input);
@@ -609,7 +609,7 @@ class Core
         Response::json($csv);
     }
 
-    public static function proceedShowUserDialog()
+    public static function proceedShowUserDialog(): void
     {
         if (!Request::isAjax()) {
             Response::abort(400);

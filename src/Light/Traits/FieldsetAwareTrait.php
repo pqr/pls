@@ -11,27 +11,27 @@ trait FieldsetAwareTrait
      */
     abstract public function getFieldset();
 
-    public function addField(F $field, $clone = false)
+    public function addField(F $field, $clone = false): void
     {
         $this->getFieldset()->addField($field, $clone);
     }
 
-    public function addFields(...$fields)
+    public function addFields(...$fields): void
     {
         $this->getFieldset()->addFields(...$fields);
     }
 
-    public function addFieldsUpdatedBy()
+    public function addFieldsUpdatedBy(): void
     {
         $this->getFieldset()->addFieldsUpdatedBy();
     }
 
-    public function addFieldsCreatedBy()
+    public function addFieldsCreatedBy(): void
     {
         $this->getFieldset()->addFieldsCreatedBy();
     }
 
-    public function createField($fieldKey, $type, array $params = [])
+    public function createField($fieldKey, $type, array $params = []): void
     {
         $this->getFieldset()->createField($fieldKey, $type, $params);
     }

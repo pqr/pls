@@ -81,9 +81,7 @@ class CInvoice extends InvoiceModuleAbstract
                 'InvoiceNumbers',
                 [
                     'name' => 'Invoice No',
-                    'sqlWhere' => function ($value) {
-                        return Db::getSqlWhereSeparatedByComa($value, 'cinvoice.Name', -1, false, false);
-                    },
+                    'sqlWhere' => fn($value) => Db::getSqlWhereSeparatedByComa($value, 'cinvoice.Name', -1, false, false),
                 ]
             ),
             F::createText(
@@ -105,18 +103,14 @@ class CInvoice extends InvoiceModuleAbstract
                 'ShippingDocuments',
                 [
                     'name' => 'Shipping Documents',
-                    'sqlWhereFormatFunction' => function ($value) {
-                        return str_replace(' ', '', str_replace('-', '', $value));
-                    },
-                    'sqlWhere' => function ($value) {
-                        return Db::getSqlWhereSeparatedByComa(
-                            $value,
-                            'REPLACE(cinvoice.ShippingDocument, "-", "")',
-                            0,
-                            true,
-                            false
-                        );
-                    },
+                    'sqlWhereFormatFunction' => fn($value) => str_replace(' ', '', str_replace('-', '', $value)),
+                    'sqlWhere' => fn($value) => Db::getSqlWhereSeparatedByComa(
+                        $value,
+                        'REPLACE(cinvoice.ShippingDocument, "-", "")',
+                        0,
+                        true,
+                        false
+                    ),
                 ]
             ),
             CF::currency(),
@@ -163,35 +157,33 @@ class CInvoice extends InvoiceModuleAbstract
                 'DocDate',
                 'Overdue',
                 'ResponsibleSales',
-                'Status' => function () {
-                    return Template::html('Status')
-                        . '<div><table id="statuses-checkboxes-table"'
-                        . ((is_numeric(Template::value('Status')) || Template::value(
-                                'Status'
-                            ) == '%') ? ' class="display-none"' : '')
-                        . '><tr valign="top"><td>'
-                        . '<div class="invopen">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_OPEN)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_OPEN)
-                        . '</div>'
-                        . '<div class="invpartcleared">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_PARTCLEARED)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_PARTCLEARED)
-                        . '</div>'
-                        . '<div class="invcleared">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_CLEARED)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_CLEARED)
-                        . '</div>'
-                        . '<div class="invcreditnoted">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_CREDITNOTED)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_CREDITNOTED)
-                        . '</div>'
-                        . '<div class="invdeleted">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_DELETED)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_DELETED)
-                        . '</div>'
-                        . '</td></tr></table></div>';
-                },
+                'Status' => fn() => Template::html('Status')
+                    . '<div><table id="statuses-checkboxes-table"'
+                    . ((is_numeric(Template::value('Status')) || Template::value(
+                            'Status'
+                        ) == '%') ? ' class="display-none"' : '')
+                    . '><tr valign="top"><td>'
+                    . '<div class="invopen">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_OPEN)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_OPEN)
+                    . '</div>'
+                    . '<div class="invpartcleared">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_PARTCLEARED)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_PARTCLEARED)
+                    . '</div>'
+                    . '<div class="invcleared">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_CLEARED)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_CLEARED)
+                    . '</div>'
+                    . '<div class="invcreditnoted">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_CREDITNOTED)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_CREDITNOTED)
+                    . '</div>'
+                    . '<div class="invdeleted">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_DELETED)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_DELETED)
+                    . '</div>'
+                    . '</td></tr></table></div>',
             ],
 
         ];
@@ -342,14 +334,14 @@ class CInvoice extends InvoiceModuleAbstract
         CreateCPayments::showPaymentDateDialog($ids);
     }
 
-    public static function proceedCreateCPayments()
+    public static function proceedCreateCPayments(): void
     {
         $cinvocieIds = explode(',', $_POST['ids']);
         $paymentDate = FieldDate::parse($_POST['PaymentDate']);
         CreateCPayments::create($cinvocieIds, $paymentDate);
     }
 
-    public static function proceedGetCustomerAccountInvoiceTo()
+    public static function proceedGetCustomerAccountInvoiceTo(): void
     {
         if (!isset($_GET['CustomerAccountID'])) {
             Response::abort('400', 'Mandatory GET parameter CustomerAccountID missing');
@@ -367,10 +359,9 @@ class CInvoice extends InvoiceModuleAbstract
     {
         if ($updatedObjects) {
             $updatedIds = array_map(
-                function ($cinvObj) {
+                fn($cinvObj) =>
                     /** @var CInvoiceObj $cinvObj */
-                    return $cinvObj->getId();
-                },
+                    $cinvObj->getId(),
                 $updatedObjects
             );
 
@@ -383,7 +374,7 @@ class CInvoice extends InvoiceModuleAbstract
         }
     }
 
-    public static function proceedTry()
+    public static function proceedTry(): void
     {
         //Проверим на наличие параметра try - попытка открыть конкретного отправителя по имени
         $id = Db::getOne("SELECT ID FROM cinvoice WHERE Name = '" . Db::esc($_GET['try']) . "'");
@@ -716,7 +707,7 @@ class CInvoice extends InvoiceModuleAbstract
         $this->redirectToView();
     }
 
-    public static function proceedGetRate()
+    public static function proceedGetRate(): void
     {
         if (!isset($_GET['date'], $_GET['currency'])) {
             Response::abort(400);

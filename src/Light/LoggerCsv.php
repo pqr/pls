@@ -6,7 +6,7 @@ class LoggerCsv
 {
     public static $delim = ',';
 
-    public static function logVisit()
+    public static function logVisit(): void
     {
         $header = [
             'DateTime',
@@ -39,7 +39,7 @@ class LoggerCsv
         self::write('visit', $header, $data);
     }
 
-    public static function logSqlQueries()
+    public static function logSqlQueries(): void
     {
         $header = [
             'DateTime',
@@ -65,7 +65,7 @@ class LoggerCsv
         }
     }
 
-    public static function logSqlError(string $queryFormated, string $errMsg)
+    public static function logSqlError(string $queryFormated, string $errMsg): void
     {
         // Запишем логи об ошибке в SQL запросе в CSV файл
         $header = [
@@ -90,7 +90,7 @@ class LoggerCsv
         self::write('sqlerror', $header, $data);
     }
 
-    public static function write($dir, array $header, array $data)
+    public static function write($dir, array $header, array $data): void
     {
         //Определим директорию и создадим её, если её ещё нет
         $path = LIGHT_DIR_LOGS . "/$dir";

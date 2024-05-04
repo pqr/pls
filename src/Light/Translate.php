@@ -6,7 +6,7 @@ namespace Light;
 
 class Translate
 {
-    const OPPOSITE_LETTERS = [
+    public const OPPOSITE_LETTERS = [
         ["q", "й"],
         ["w", "ц"],
         ["e", "у"],
@@ -486,7 +486,7 @@ class Translate
             ['миллиард', 'милиарда', 'миллиардов', 0],
         ];
 
-        list($rub, $kop) = explode('.', sprintf("%015.2f", (float)$num));
+        [$rub, $kop] = explode('.', sprintf("%015.2f", (float)$num));
         $out = [];
         if ((int)$rub > 0) {
             foreach (str_split($rub, 3) as $uk => $v) { // by 3 symbols
@@ -495,7 +495,7 @@ class Translate
                 }
                 $uk = 2 - $uk; // unit key
                 $gender = isset($unit[$uk]) ? $unit[$uk][3] : 0;
-                list($i1, $i2, $i3) = array_map('intval', str_split($v, 1));
+                [$i1, $i2, $i3] = array_map('intval', str_split($v, 1));
                 // mega-logic
                 $out[] = $hundred[$i1]; # 1xx-9xx
                 if ($i2 > 1) {

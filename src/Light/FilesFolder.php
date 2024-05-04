@@ -47,7 +47,7 @@ class FilesFolder
             // Нужно записать новое состояние в базу данных (или обновить существующую строку в базе данных)
             // это обновление будет произведено отложенно в ApplicationAbstract::onAfterSend
             if (!self::$onAfterSendRegistered) {
-                ApplicationAbstract::onAfterSend([__CLASS__, 'flushFoldersStatus']);
+                ApplicationAbstract::onAfterSend([self::class, 'flushFoldersStatus']);
             }
             self::$newFoldersStatus[$key] = [$module, $id, $hasFiles];
 
@@ -66,7 +66,7 @@ class FilesFolder
      * все новые состояния из массива self::$newFoldersStatus
      * @throws \Exception
      */
-    public static function flushFoldersStatus()
+    public static function flushFoldersStatus(): void
     {
         if (!self::$newFoldersStatus) {
             return;
@@ -153,7 +153,7 @@ class FilesFolder
      * @param string $module
      * @param array $ids
      */
-    public static function loadFoldersStatus(string $module, array $ids)
+    public static function loadFoldersStatus(string $module, array $ids): void
     {
         if (!$module || !$ids) {
             return;
@@ -374,7 +374,7 @@ class FilesFolder
         return File::copy($origin, $target);
     }
 
-    public static function moveToDeleted(string $relative)
+    public static function moveToDeleted(string $relative): void
     {
         // Перемещаем папку в специальную директорию deleted
         FilesFolder::rename($relative, "deleted/$relative");
@@ -534,7 +534,7 @@ class FilesFolder
      * тогда отправляется копия файла по http
      * @param string $relative
      */
-    public static function streamFileTryWindowsShared(string $relative)
+    public static function streamFileTryWindowsShared(string $relative): void
     {
         if (Config::$filesfolder && self::isWindowsSharedFolderAllowed()) {
             Response::redirectUrl(self::getUrl($relative));
@@ -543,7 +543,7 @@ class FilesFolder
         }
     }
 
-    public static function streamFile(string $relative, bool $preview = false)
+    public static function streamFile(string $relative, bool $preview = false): void
     {
         $filepathAbs = self::getAbsolute($relative);
         if (!Request::isAjax()) {

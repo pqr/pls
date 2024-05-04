@@ -29,7 +29,7 @@ abstract class IncomeExpensesAbstract extends Subtable
         return 'Shipment';
     }
 
-    public function loadData()
+    public function loadData(): void
     {
         parent::loadData();
 

@@ -56,7 +56,7 @@ class EmailLogModule extends ModuleAbstract
 
     }
 
-    public static function proceedGetBody()
+    public static function proceedGetBody(): void
     {
         $id = (int)$_GET['id'];
         $body = Db::getOne("SELECT Body FROM log_email_text WHERE ID = $id");

@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 
 class DbTest extends TestCase
 {
-    public function testParse()
+    public function testParse(): void
     {
         $query = " @n \n";
         $query .= " @n_WithComment \n";
@@ -78,14 +78,14 @@ class DbTest extends TestCase
 
     }
 
-    public function testParseErr1()
+    public function testParseErr1(): void
     {
         //Передаём больше переменных, чем плейсхолдеров
         $this ->expectException(\Exception::class);
         Db::parse("@i", 1, 2);
     }
 
-    public function testParseErr2()
+    public function testParseErr2(): void
     {
         $this ->expectException(\Exception::class);
         //Передаём меньше переменных, чем плейсхолдеров

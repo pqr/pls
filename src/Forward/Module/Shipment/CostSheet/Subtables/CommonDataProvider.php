@@ -24,7 +24,7 @@ class CommonDataProvider
      * @param string $dbTable 'cinvoice' или 'vinvoice'
      * @param int $fileNumber
      */
-    private static function load($dbTable, $fileNumber)
+    private static function load($dbTable, $fileNumber): void
     {
         //Проверим, были ли данные уже загружены из базы?
         if (isset(self::$_invoices[$dbTable][$fileNumber])) {

@@ -15,7 +15,7 @@ class DbLog
         $fieldKey,
         $fieldDescription,
         array $textData
-    ) {
+    ): void {
         // Если буфер ещё не инициалирован, значит это вообще первое обращение к DbLog::write()
         // Одновременно с этим инициализируем register_shutdown_function
         if (self::$_buffer === null) {
@@ -39,7 +39,7 @@ class DbLog
     /**
      * Метод, который реально записывает накопившиеся логи в базу
      */
-    public static function flush()
+    public static function flush(): void
     {
         if (!self::$_buffer) {
             //Нечего записывать в базу

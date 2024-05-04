@@ -100,7 +100,7 @@ class Session implements \SessionHandlerInterface
         return $out;
     }
 
-    public static function flashAdd(string $type, string $msg)
+    public static function flashAdd(string $type, string $msg): void
     {
         self::getMsgBuff()->add($type, $msg);
     }
@@ -115,7 +115,7 @@ class Session implements \SessionHandlerInterface
         throw new \InvalidArgumentException("Unknown method Session::$name");
     }
 
-    public static function writeFlash()
+    public static function writeFlash(): void
     {
         if (self::$msgBuff && count(self::$msgBuff) && User::getId()) {
             // Есть какие-то новые flash сообщения, запишем их в таблицу user_flash

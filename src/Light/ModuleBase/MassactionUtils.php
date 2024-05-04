@@ -55,7 +55,7 @@ class MassactionUtils
         return (string)$errors;
     }
 
-    public static function sendSuccessDialog(string $bodyHtml, $reloadTable = true)
+    public static function sendSuccessDialog(string $bodyHtml, $reloadTable = true): void
     {
         //Обновим таблицу, отправив специальный заголовок, который на стороне клиента вызовет перезагрузку
         //Перезагрузка таблицы будет происходить в фоновом режиме, пока пользователь читает диалоговое окно о результатах

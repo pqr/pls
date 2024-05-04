@@ -26,20 +26,20 @@ use PhpOffice\PhpSpreadsheet\Writer\IWriter;
  */
 class XlsWriter
 {
-    const TABLES_WITH_HEADER = 0b00001;
-    const FREEZE_PANES = 0b00010;
-    const ADJUST_WIDTH = 0b00100;
-    const AUTOFILTER = 0b01000;
-    const TABLES_WITH_TOTAL = 0b10000;
+    public const TABLES_WITH_HEADER = 0b00001;
+    public const FREEZE_PANES = 0b00010;
+    public const ADJUST_WIDTH = 0b00100;
+    public const AUTOFILTER = 0b01000;
+    public const TABLES_WITH_TOTAL = 0b10000;
 
-    const ALLOPTS = self::TABLES_WITH_HEADER | self::FREEZE_PANES | self::ADJUST_WIDTH | self::AUTOFILTER | self::TABLES_WITH_TOTAL;
+    public const ALLOPTS = self::TABLES_WITH_HEADER | self::FREEZE_PANES | self::ADJUST_WIDTH | self::AUTOFILTER | self::TABLES_WITH_TOTAL;
 
     /**
      * @var Spreadsheet
      */
     private $spreadsheet;
 
-    const STYLE_HEADER = [
+    public const STYLE_HEADER = [
         'font' => [
             'bold' => true,
         ],
@@ -49,7 +49,7 @@ class XlsWriter
         ],
     ];
 
-    const STYLE_SEPARATOR = [
+    public const STYLE_SEPARATOR = [
         'fill' => [
             'fillType' => Fill::FILL_SOLID,
             'color' => ['rgb' => 'f9f9cf'],
@@ -60,7 +60,7 @@ class XlsWriter
         ],
     ];
 
-    const STYLE_TOTAL = [
+    public const STYLE_TOTAL = [
         'font' => [
             'bold' => true,
         ],
@@ -312,7 +312,7 @@ class XlsWriter
         $this->spreadsheet->setActiveSheetIndex($rememberActiveSheetIndex);
     }
 
-    public function clearPlaceholders()
+    public function clearPlaceholders(): void
     {
         $count = $this->spreadsheet->getSheetCount();
         for ($sheetIndex = 0; $sheetIndex < $count; $sheetIndex++) {
@@ -666,7 +666,7 @@ class XlsWriter
             // Для $rowStyleFunction вторым параметром нужно передать номер строки в текущем массиве данных
             // Это значение обычно приходит извне, но если оно не передано (null),
             // то используем текущий номер строки в самом Excel ($row)
-            $rowNum = $rowNum ?? $row;
+            $rowNum ??= $row;
             $rowStyle = $rowStyleFunction($rowDataCalculated, $rowNum);
             if ($rowStyle) {
                 $ws->getStyleByColumnAndRow($col, $row, count($fieldset) + $col - 1, $row)

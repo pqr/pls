@@ -22,7 +22,7 @@ class HomeBlocksPage
         return PROJECT_NAMESPACE . "\\Home\\$homeClass";
     }
 
-    public static function printHomeBlocks(int $userId)
+    public static function printHomeBlocks(int $userId): void
     {
         Css::addLight('Home.css');
 
@@ -38,7 +38,7 @@ class HomeBlocksPage
         print '</tr></table>';
     }
 
-    public static function proceedOneHomeBlockClass(int $userId, string $homeClass)
+    public static function proceedOneHomeBlockClass(int $userId, string $homeClass): void
     {
         $homeFullClass = self::getHomeFullClass($homeClass);
         /** @var HomeBlockAbstract $homeBlock */

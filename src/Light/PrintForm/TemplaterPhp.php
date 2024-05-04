@@ -29,19 +29,19 @@ class TemplaterPhp extends TemplaterAbstract
         $this->titleHtml = $titleHtml;
     }
 
-    public function writeData(array $data)
+    public function writeData(array $data): void
     {
         $this->bodyHtml = Template::parseTpl($this->templateFilepathAbs, $data);
     }
 
-    public function saveHtml(string $dest)
+    public function saveHtml(string $dest): void
     {
         $fullHtml = $this->getFullHtml();
         $fs = new Filesystem();
         $fs->dumpFile($dest, $fullHtml);
     }
 
-    public function savePdf(string $dest, bool $landscape)
+    public function savePdf(string $dest, bool $landscape): void
     {
         $fullHtml = $this->getFullHtml();
         $fullHtml = Misc::makeLinksAbsolute($fullHtml);
@@ -65,7 +65,7 @@ class TemplaterPhp extends TemplaterAbstract
         return $proc;
     }
 
-    public function saveDoc(string $dest)
+    public function saveDoc(string $dest): void
     {
         $fullHtml = $this->getFullHtml();
         $fullHtml = Misc::makeLinksAbsolute($fullHtml);

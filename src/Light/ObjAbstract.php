@@ -70,12 +70,12 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
     {
     }
 
-    public function setDescriptionFunction($function)
+    public function setDescriptionFunction($function): void
     {
         $this->_descriptionFunction = $function;
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         if ($offset === null) {
             $this->_data[] = $value;
@@ -89,7 +89,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return isset($this->_data[$offset]);
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         unset($this->_data[$offset]);
     }
@@ -207,7 +207,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this->masterModuleForDbLog;
     }
 
-    public function setMasterFieldKey(string $fieldKey)
+    public function setMasterFieldKey(string $fieldKey): void
     {
         $this->masterFieldKey = $fieldKey;
     }
@@ -254,7 +254,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this->dbTable;
     }
 
-    public function setDbTable(string $dbTable)
+    public function setDbTable(string $dbTable): void
     {
         $this->dbTable = $dbTable;
     }
@@ -264,7 +264,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $this->hasField($this->nameFieldKey) ? $this->nameFieldKey : 'ID';
     }
 
-    public function setNameFieldKey(string $fieldKey)
+    public function setNameFieldKey(string $fieldKey): void
     {
         $this->nameFieldKey = $fieldKey;
     }
@@ -500,7 +500,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return false;
     }
 
-    public function calcData()
+    public function calcData(): void
     {
         // Для каждого поля описанного в $this->_fieldset дополнительно вызовем метод getCalculatedValue()
         // Сохраним результат обратно в массив $this->_data
@@ -532,7 +532,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
      * В итоге это позволит сравнить данные внутри подтаблиц до обновления и после обновления
      *
      */
-    final public function loadSubtablesForChangeDetection()
+    final public function loadSubtablesForChangeDetection(): void
     {
         foreach ($this->subtablesChangeDetection as $subtableClass) {
             $this->loadSubtable($subtableClass);
@@ -608,7 +608,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         if (!$id) {
             return null;
         }
-        $className = get_called_class();
+        $className = static::class;
         /** @var ObjAbstract $obj */
         $obj = new $className;
         $obj->setId($id);
@@ -760,7 +760,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         return $id;
     }
 
-    public function deleteDb($dbLogMsg = '')
+    public function deleteDb($dbLogMsg = ''): void
     {
         if (!$this->_data) {
             $this->loadData();
@@ -782,7 +782,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable
         $this->writeDbLogText($msg);
     }
 
-    public function writeDbLogText($text, $fieldKey = '', $fieldDescription = '')
+    public function writeDbLogText($text, $fieldKey = '', $fieldDescription = ''): void
     {
         $masterModule = $this->getMasterModuleForDbLog();
         $masterId = $this->getMasterIdForDbLog();

@@ -6,7 +6,7 @@ namespace Light;
 
 class ElfinderPage
 {
-    public static function renderPage(string $title, string $apiUrl)
+    public static function renderPage(string $title, string $apiUrl): void
     {
         Response::setMasterTemplate(null);
         Template::includeTpl('ElfinderPageMaster.tpl.php', [
@@ -15,7 +15,7 @@ class ElfinderPage
         ]);
     }
 
-    public static function proceedApi(string $path, string $downloadUrl, bool $hasWriteAccess = true)
+    public static function proceedApi(string $path, string $downloadUrl, bool $hasWriteAccess = true): void
     {
         Response::setMasterTemplate(null);
 

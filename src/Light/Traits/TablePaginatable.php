@@ -32,7 +32,7 @@ trait TablePaginatable
         }
     }
 
-    private function initShowAll()
+    private function initShowAll(): void
     {
         /** @var TableUserParamsRepository $tableUserParams */
         // Отдельный объект, которых заведует сохранением настроек в базу для данного пользователя

@@ -81,8 +81,8 @@ use Light\User;
  */
 final class ShipmentObj extends ObjAbstract
 {
-    const SHIPMENT_OPEN = 0;
-    const SHIPMENT_CLOSED = 1;
+    public const SHIPMENT_OPEN = 0;
+    public const SHIPMENT_CLOSED = 1;
 
     public function __construct()
     {
@@ -395,7 +395,7 @@ final class ShipmentObj extends ObjAbstract
         return htmlspecialchars($this->_data['MAWBNumber']) . ' / Shipment ' . $this->_data['Name'];
     }
 
-    public function insertDb(array $fieldsData, $logMsg = '<em>Creation</em>')
+    public function insertDb(array $fieldsData, $logMsg = '<em>Creation</em>'): void
     {
         //Попробуем определить номер файла (Name) исходя из трафика
         if (isset($fieldsData['TrafficID']) && !isset($fieldsData['Name'])) {
@@ -440,7 +440,7 @@ final class ShipmentObj extends ObjAbstract
     /**
      * Обновляет кеширующее поле CacheUsedFileNumbersJSON
      */
-    private function updateUsedFileNumbers()
+    private function updateUsedFileNumbers(): void
     {
         //Обновим JSON с номерами использованных номеров файлов по трафикам
         //Сначала узнаем текущий JSON и текущий номер файла
@@ -513,7 +513,7 @@ final class ShipmentObj extends ObjAbstract
         return $affectedRows;
     }
 
-    public function deleteDb($dbLogMsg = '')
+    public function deleteDb($dbLogMsg = ''): void
     {
         parent::deleteDb();
 
@@ -564,7 +564,7 @@ final class ShipmentObj extends ObjAbstract
         }
     }
 
-    public function updateCacheAfterSubmit(array $oldData, ?Msg $msgBuff)
+    public function updateCacheAfterSubmit(array $oldData, ?Msg $msgBuff): void
     {
         $oldPrintedDate = $oldData['DocsPrintedDate'] ?? '0000-00-00';
         $newPrintedDate = $this->_data['DocsPrintedDate'];

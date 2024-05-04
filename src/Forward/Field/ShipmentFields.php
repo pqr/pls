@@ -23,9 +23,7 @@ class ShipmentFields
             'modes' => F::MODE_READONLY | F::MODE_SUBMIT,
             'tableWidthExcel' => 15,
             'tableWidthHtml' => 45,
-            'viewCssClass' => function ($value, array $data, $forTable) {
-                return $forTable ? 'fn' : '';
-            }
+            'viewCssClass' => fn($value, array $data, $forTable) => $forTable ? 'fn' : ''
         ]);
     }
 
@@ -112,9 +110,7 @@ class ShipmentFields
             'FileNumbers',
             [
                 'name' => 'File Numbers',
-                'sqlWhere' => function ($value) {
-                    return Db::getSqlWhereSeparatedByComa($value, 'shipment.Name', -1, false, true, 1);
-                }
+                'sqlWhere' => fn($value) => Db::getSqlWhereSeparatedByComa($value, 'shipment.Name', -1, false, true, 1)
             ]
         );
     }
@@ -123,29 +119,25 @@ class ShipmentFields
     {
         return F::createText('MAWBNumbers', [
                 'name' => 'MAWB Numbers',
-                'sqlWhereFormatFunction' => function ($value) {
-                    return str_replace(['-', ' '], '', $value);
-                },
-                'sqlWhere' => function ($value) {
-                    return "(" .
-                        Db::getSqlWhereSeparatedByComa(
-                            $value,
-                            "REPLACE(REPLACE(shipment.MAWBNumber, ' ', ''), '-', '')",
-                            11,
-                            true,
-                            false,
-                            0
-                        ) . "
+                'sqlWhereFormatFunction' => fn($value) => str_replace(['-', ' '], '', $value),
+                'sqlWhere' => fn($value) => "(" .
+                    Db::getSqlWhereSeparatedByComa(
+                        $value,
+                        "REPLACE(REPLACE(shipment.MAWBNumber, ' ', ''), '-', '')",
+                        11,
+                        true,
+                        false,
+                        0
+                    ) . "
                             OR EXISTS (SELECT ID FROM shipmentshipper WHERE ShipmentID = shipment.ID AND " .
-                        Db::getSqlWhereSeparatedByComa(
-                            $value,
-                            'shipmentshipper.HAWBNumber',
-                            0,
-                            true,
-                            false,
-                            0
-                        ) . "))";
-                }
+                    Db::getSqlWhereSeparatedByComa(
+                        $value,
+                        'shipmentshipper.HAWBNumber',
+                        0,
+                        true,
+                        false,
+                        0
+                    ) . "))"
 
             ]
         );

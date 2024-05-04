@@ -12,28 +12,28 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class AirfreightRateExcelImport
 {
-    const VENDOR = 1;
-    const DEPARTUREIATA = 2;
-    const ARRIVALIATA = 3;
-    const AIRLINE = 4;
-    const TRANSITTIME = 5;
-    const CONTRACT = 6;
-    const VALIDFROM = 7;
-    const VALIDUNTIL = 8;
-    const MIN = 9;
-    const N = 10;
-    const AMOUNT45 = 11;
-    const AMOUNT100 = 12;
-    const AMOUNT200 = 13;
-    const AMOUNT300 = 14;
-    const AMOUNT500 = 15;
-    const AMOUNT750 = 16;
-    const AMOUNT1000 = 17;
-    const AMOUNT2000 = 18;
-    const FSC = 19;
-    const SSC = 20;
-    const CURRENCY = 21;
-    const COMMENTS = 22;
+    public const VENDOR = 1;
+    public const DEPARTUREIATA = 2;
+    public const ARRIVALIATA = 3;
+    public const AIRLINE = 4;
+    public const TRANSITTIME = 5;
+    public const CONTRACT = 6;
+    public const VALIDFROM = 7;
+    public const VALIDUNTIL = 8;
+    public const MIN = 9;
+    public const N = 10;
+    public const AMOUNT45 = 11;
+    public const AMOUNT100 = 12;
+    public const AMOUNT200 = 13;
+    public const AMOUNT300 = 14;
+    public const AMOUNT500 = 15;
+    public const AMOUNT750 = 16;
+    public const AMOUNT1000 = 17;
+    public const AMOUNT2000 = 18;
+    public const FSC = 19;
+    public const SSC = 20;
+    public const CURRENCY = 21;
+    public const COMMENTS = 22;
 
     public function __invoke($filepath, Msg $msgBuff)
     {
@@ -305,7 +305,7 @@ class AirfreightRateExcelImport
         return $rateObj->updateDb($data, $dbLogMsg);
     }
 
-    private function insertDb(array $data)
+    private function insertDb(array $data): void
     {
         $rateObj = new AirfreightRateObj();
 

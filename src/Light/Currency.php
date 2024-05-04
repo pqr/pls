@@ -216,14 +216,14 @@ class Currency
         return '';
     }
 
-    public static function putJsRates()
+    public static function putJsRates(): void
     {
         Response::addJsData([
             'CurrencyRates' => self::getRates(date('Y-m-d')),
         ]);
     }
 
-    public static function updateCurrencyRateTodayAfterSend()
+    public static function updateCurrencyRateTodayAfterSend(): void
     {
         static $updateRegistered = false;
         if ($updateRegistered) {

@@ -16,10 +16,10 @@ use Light\User;
 
 class UserVacationFields
 {
-    const VACATION_VACATION = 1;
-    const VACATION_REMOTE = 2;
-    const VACATION_SEEK = 3;
-    const VACATION_BUSINESS = 4;
+    public const VACATION_VACATION = 1;
+    public const VACATION_REMOTE = 2;
+    public const VACATION_SEEK = 3;
+    public const VACATION_BUSINESS = 4;
 
     public static function userId()
     {

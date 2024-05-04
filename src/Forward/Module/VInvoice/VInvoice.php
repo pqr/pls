@@ -100,9 +100,7 @@ class VInvoice extends InvoiceModuleAbstract
             GeneralFields::vendorId(),
             GeneralFields::vendorAccountId(),
             F::createText('Reference', [
-                    'sqlWhere' => function ($value) {
-                        return Db::getSqlWhereSeparatedByComa($value, 'Name', 0, true, false);
-                    },
+                    'sqlWhere' => fn($value) => Db::getSqlWhereSeparatedByComa($value, 'Name', 0, true, false),
                 ]
             ),
             F::createText(
@@ -201,43 +199,41 @@ class VInvoice extends InvoiceModuleAbstract
                 'DocDate',
                 'Overdue',
                 'Responsible',
-                'Status' => function () {
-                    return Template::html('Status')
-                        . '<div><table id="statuses-checkboxes-table"'
-                        . ((is_numeric(Template::value('Status')) || Template::value(
-                                'Status'
-                            ) == '%') ? ' class="display-none"' : '')
-                        . '><tr valign="top"><td>'
-                        . '<div class="invopen">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_OPEN)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_OPEN)
-                        . '</div>'
-                        . '<div class="invunderdispute">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_UNDERDISPUTE)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_UNDERDISPUTE)
-                        . '</div>'
-                        . '<div class="invaccepted">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_ACCEPTED)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_ACCEPTED)
-                        . '</div>'
-                        . '<div class="invpartcleared">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_PARTCLEARED)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_PARTCLEARED)
-                        . '</div>'
-                        . '<div class="invcleared">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_CLEARED)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_CLEARED)
-                        . '</div>'
-                        . '<div class="invcreditnoted">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_CREDITNOTED)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_CREDITNOTED)
-                        . '</div>'
-                        . '<div class="invdeleted">'
-                        . Template::html('Status' . Finance::INVOICESTATUS_DELETED)
-                        . ' ' . Template::label('Status' . Finance::INVOICESTATUS_DELETED)
-                        . '</div>'
-                        . '</td></tr></table></div>';
-                },
+                'Status' => fn() => Template::html('Status')
+                    . '<div><table id="statuses-checkboxes-table"'
+                    . ((is_numeric(Template::value('Status')) || Template::value(
+                            'Status'
+                        ) == '%') ? ' class="display-none"' : '')
+                    . '><tr valign="top"><td>'
+                    . '<div class="invopen">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_OPEN)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_OPEN)
+                    . '</div>'
+                    . '<div class="invunderdispute">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_UNDERDISPUTE)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_UNDERDISPUTE)
+                    . '</div>'
+                    . '<div class="invaccepted">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_ACCEPTED)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_ACCEPTED)
+                    . '</div>'
+                    . '<div class="invpartcleared">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_PARTCLEARED)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_PARTCLEARED)
+                    . '</div>'
+                    . '<div class="invcleared">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_CLEARED)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_CLEARED)
+                    . '</div>'
+                    . '<div class="invcreditnoted">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_CREDITNOTED)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_CREDITNOTED)
+                    . '</div>'
+                    . '<div class="invdeleted">'
+                    . Template::html('Status' . Finance::INVOICESTATUS_DELETED)
+                    . ' ' . Template::label('Status' . Finance::INVOICESTATUS_DELETED)
+                    . '</div>'
+                    . '</td></tr></table></div>',
             ],
         ];
     }
@@ -301,7 +297,7 @@ class VInvoice extends InvoiceModuleAbstract
                     ->getHtml();
             $fieldKey = 'Name';
             $hint = 'уже существует';
-            $this->riseSaveWarning($msg, $fieldKey, $hint);
+            $this->riseSaveWarning($msg, $fieldKey);
         }
     }
 
@@ -472,7 +468,7 @@ class VInvoice extends InvoiceModuleAbstract
      * @param string $oldVInvoiceName
      * @param string $newVInvoiceName
      */
-    private function renameAfterInsertUpdate($oldVInvoiceName, $newVInvoiceName)
+    private function renameAfterInsertUpdate($oldVInvoiceName, $newVInvoiceName): void
     {
         if ((string)$oldVInvoiceName !== (string)$newVInvoiceName) {
             Db::query(
@@ -534,7 +530,7 @@ class VInvoice extends InvoiceModuleAbstract
         parent::proceedAddNew();
     }
 
-    public static function proceedTry()
+    public static function proceedTry(): void
     {
         $query = "SELECT ID FROM vinvoice WHERE Name = '" . Db::esc($_REQUEST['try']) . "'
                       AND EXISTS (SELECT VInvoiceID FROM vinvoiceline vc
@@ -580,7 +576,7 @@ class VInvoice extends InvoiceModuleAbstract
         return true;
     }
 
-    private function sendToOneC(VInvoiceObj $vinvObj)
+    private function sendToOneC(VInvoiceObj $vinvObj): void
     {
 //        if (!Constant::isOneCCompany($vinvObj['CompanyID'])) {
 //            return;
@@ -645,7 +641,7 @@ class VInvoice extends InvoiceModuleAbstract
 //        file_put_contents($ftpFilepathAbs, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
     }
 
-    private function emailToAccountingIfNeeded(VInvoiceObj $obj, Msg $msgBuff)
+    private function emailToAccountingIfNeeded(VInvoiceObj $obj, Msg $msgBuff): void
     {
         $vendor = Db::getRow(
             "SELECT NotifyAccountingByEmail, Name FROM vendoraccount WHERE ID = @i",

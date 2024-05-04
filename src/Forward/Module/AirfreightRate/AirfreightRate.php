@@ -59,7 +59,7 @@ class AirfreightRate extends ModuleAbstract
         return $out;
     }
 
-    public function proceedRatesUploadExcel()
+    public function proceedRatesUploadExcel(): void
     {
         if ($_FILES['ratesfile']['tmp_name'] != '') {
             $msgBuff = new Msg();

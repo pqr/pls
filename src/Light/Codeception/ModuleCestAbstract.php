@@ -132,7 +132,7 @@ abstract class ModuleCestAbstract
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
      */
-    public function modeAddNew($I)
+    public function modeAddNew($I): void
     {
         $I->amOnPage('?a=' . $this->getModule() . '&addnew=1');
         $this->canSeeModuleNameInPageHead($I);
@@ -144,7 +144,7 @@ abstract class ModuleCestAbstract
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
      */
-    public function modeList($I)
+    public function modeList($I): void
     {
         $I->amOnPage('?a=' . $this->getModule());
         $this->canSeeModuleNameInPageHead($I);
@@ -155,7 +155,7 @@ abstract class ModuleCestAbstract
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
      */
-    public function modeListAjaxRefresh($I)
+    public function modeListAjaxRefresh($I): void
     {
         $I->sendAjaxPostRequest('?a=' . $this->getModule());
         $html = $I->grabResponse();
@@ -167,7 +167,7 @@ abstract class ModuleCestAbstract
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
      */
-    public function modeView($I)
+    public function modeView($I): void
     {
         $I->amOnPage('?a=' . $this->getModule() . '&id=' . $this->getTestObjId() /*. '&XDEBUG_SESSION_START=PHPSTORM'*/);
         $this->canSeeModuleNameInPageHead($I);
@@ -179,7 +179,7 @@ abstract class ModuleCestAbstract
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
      */
-    public function modeEdit($I)
+    public function modeEdit($I): void
     {
         $I->amOnPage('?a=' . $this->getModule() . '&editid=' . $this->getTestObjId());
         $this->canSeeModuleNameInPageHead($I);
@@ -192,7 +192,7 @@ abstract class ModuleCestAbstract
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
      */
-    public function submit($I)
+    public function submit($I): void
     {
         $I->amOnPage('?a=' . $this->getModule() . '&editid=' . $this->getTestObjId());
         $I->submitForm('#edit-form', ['_continmethod' => 'view']);
@@ -213,7 +213,7 @@ abstract class ModuleCestAbstract
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
      */
-    public function modeLog($I)
+    public function modeLog($I): void
     {
         $testId = $this->getTestObjId();
         $I->wantTo("Log (ID: $testId)");
@@ -227,7 +227,7 @@ abstract class ModuleCestAbstract
     /**
      * @param \AcceptanceTester | \FunctionalTester $I
      */
-    public function deleteDialog($I)
+    public function deleteDialog($I): void
     {
         $testId = $this->getTestObjId();
         $I->wantTo("Delete dialog (ID: $testId)");
@@ -254,7 +254,7 @@ abstract class ModuleCestAbstract
      * @param \AcceptanceTester | \FunctionalTester $I
      * @dataProvider ajaxChangeFieldDataProvider
      */
-    public function ajaxChangeField($I, \Codeception\Example $example)
+    public function ajaxChangeField($I, \Codeception\Example $example): void
     {
         if (!isset($example['field'])) {
             return;
@@ -350,7 +350,7 @@ abstract class ModuleCestAbstract
      *
      * @dataProvider printFormsDataProvider
      */
-    public function printForms($I, \Codeception\Example $example)
+    public function printForms($I, \Codeception\Example $example): void
     {
         if (isset($example['noforms'])) {
             return;

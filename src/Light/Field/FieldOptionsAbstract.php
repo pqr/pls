@@ -100,7 +100,7 @@ abstract class FieldOptionsAbstract extends FieldAbstract
      * Метод вызывается в ModuleAbstract в режимах View и List, чтобы предзагрузить только нужные записи из базы
      * @param array $ids
      */
-    public function prefetchOptions(array $ids)
+    public function prefetchOptions(array $ids): void
     {
         if (is_array($this->options) || is_callable($this->options)) {
             // Если массив опций задан статически, то нет смысла обращаться к базе и делать предзагрузку каких-то значений

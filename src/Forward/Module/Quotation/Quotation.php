@@ -564,7 +564,7 @@ class Quotation extends ModuleAbstract
      * Далее пользователь может поменять сумму в диалоговом окне и нажав кнопку кнопку Ok в диалоге эта сумма будет добавлена
      * к Airfreight строке в доходной части
      */
-    public static function proceedApplyAddonDialog()
+    public static function proceedApplyAddonDialog(): void
     {
         //Подгрузим нужное значение Addon - либо из карточки клиента, либо из DefaultAddons
         $addon = '';

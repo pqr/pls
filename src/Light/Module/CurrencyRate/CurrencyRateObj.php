@@ -48,7 +48,7 @@ class CurrencyRateObj extends ObjAbstract
         return $id;
     }
 
-    public function updateDb(array $fieldsData, $dbLogMsg = '')
+    public function updateDb(array $fieldsData, $dbLogMsg = ''): void
     {
         $affectedRows = parent::updateDb($fieldsData, $dbLogMsg);
         if ($affectedRows) {
@@ -56,7 +56,7 @@ class CurrencyRateObj extends ObjAbstract
         }
     }
 
-    public function deleteDb($dbLogMsg = '')
+    public function deleteDb($dbLogMsg = ''): void
     {
         parent::deleteDb($dbLogMsg);
         Currency::updateCurrencyRateTodayAfterSend();

@@ -59,7 +59,7 @@ class Template
         Fieldset $fieldset = null,
         array $fieldsData = null,
         $fieldMode = null
-    ) {
+    ): void {
         self::$tmpfilepath = self::findfile($filename);
         if (!self::$tmpfilepath) {
             throw new \Exception("Cant find template file $filename");
@@ -113,7 +113,7 @@ class Template
         return $result;
     }
 
-    public static function setTdata(array $tdata)
+    public static function setTdata(array $tdata): void
     {
         self::$tdata = $tdata;
     }

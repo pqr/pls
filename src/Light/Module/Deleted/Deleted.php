@@ -70,7 +70,7 @@ class Deleted extends ModuleAbstract
 
     }
 
-    public function initViewSubmenu()
+    public function initViewSubmenu(): void
     {
         $textRestore = Config::$lang === 'ru' ? 'Восстановить' : 'Restore';
         $this->addSubmenuLinkViewFunc(Ico::i('fa-undo icon-green', 'fas') . " $textRestore", 'Restore')
@@ -80,7 +80,7 @@ class Deleted extends ModuleAbstract
         $this->addSubmenuLinkViewFunc(Ico::search() . " $textFindRelated", 'FindRelations');
     }
 
-    public function viewGetFindRelations()
+    public function viewGetFindRelations(): void
     {
         if ($this->_obj['TraceID']) {
 
@@ -104,13 +104,13 @@ class Deleted extends ModuleAbstract
         Response::redirect('Deleted', ['filterValues' => json_encode($filterValues)]);
     }
 
-    public function viewPostRestore()
+    public function viewPostRestore(): void
     {
         $this->restore($this->_obj->getId());
         Response::redirect('Deleted', ['id' => $this->_obj->getId()]);
     }
 
-    public function massactionRestore(array $ids)
+    public function massactionRestore(array $ids): void
     {
         foreach ($ids as $id) {
             $this->restore($id);

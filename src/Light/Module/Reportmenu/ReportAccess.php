@@ -91,7 +91,7 @@ class ReportAccess
      * @param string $reportClass
      * @throws \Exception
      */
-    public function setNewUsers(array $newUserIds, string $reportClass)
+    public function setNewUsers(array $newUserIds, string $reportClass): void
     {
         $oldUserIds = $this->getReportUsers($reportClass);
         $insertUserIds = array_diff($newUserIds, $oldUserIds);
@@ -126,7 +126,7 @@ class ReportAccess
      * @param string $reportClass
      * @throws \Exception
      */
-    public function setNewGroups(array $newGroupIds, string $reportClass)
+    public function setNewGroups(array $newGroupIds, string $reportClass): void
     {
         $oldGroupIds = $this->getReportUsers($reportClass);
         $insertGroupIds = array_diff($newGroupIds, $oldGroupIds);

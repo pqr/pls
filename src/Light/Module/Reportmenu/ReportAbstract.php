@@ -54,7 +54,7 @@ abstract class ReportAbstract extends Table
 
     public static function getIconFile()
     {
-        $class = get_called_class();
+        $class = static::class;
         $class = substr($class, strrpos($class, '\\') + 1);
         return "Reportmenu/$class.png";
     }
@@ -101,7 +101,7 @@ abstract class ReportAbstract extends Table
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
-    public function __invoke()
+    public function __invoke(): void
     {
         if ($this->isRenderRowForAjax()) {
             // Пользователь поменял какое-то поле с помощью changeField в режиме таблицы и теперь нужно перезагрузить всю строку

@@ -161,7 +161,7 @@ trait DeleteTrait
     /**
      * @param ObjAbstract $obj
      */
-    private function proceedDeleteSubtables(ObjAbstract $obj)
+    private function proceedDeleteSubtables(ObjAbstract $obj): void
     {
         foreach ($this->subtables as $subtableClass => ['readonly' => $readonly]) {
             if (!$readonly) {

@@ -6,29 +6,29 @@ namespace Light;
 class InvStatus
 {
     // Open process
-    const DRAFT = 14;
-    const OPEN = 11;
-    const DISPUTE = 12;
-    const ACCEPTED = 13;
+    public const DRAFT = 14;
+    public const OPEN = 11;
+    public const DISPUTE = 12;
+    public const ACCEPTED = 13;
 
     // Part Cleared/Cleared
-    const PAYMENT_ON_CHEKCING = 24;
-    const PAYMENT_CONFIRMED = 23;
-    const PAYMENT_SENT = 26;
-    const PAYMENT_EXECUTED = 25;
-    const PARTCLEARED = 21;
-    const CLEARED = 22;
+    public const PAYMENT_ON_CHEKCING = 24;
+    public const PAYMENT_CONFIRMED = 23;
+    public const PAYMENT_SENT = 26;
+    public const PAYMENT_EXECUTED = 25;
+    public const PARTCLEARED = 21;
+    public const CLEARED = 22;
 
     // Canceled/Deleted
-    const CREDITNOTED = 31;
-    const DELETED = 32;
+    public const CREDITNOTED = 31;
+    public const DELETED = 32;
 
     // Something Strange
-    const OPENTOXIC = 41;
-    const ACCEPTED_NOTFORPAYMENT = 42;
+    public const OPENTOXIC = 41;
+    public const ACCEPTED_NOTFORPAYMENT = 42;
 
-    const DOCTYPE_INVOICE = 1;
-    const DOCTYPE_CREDITNOTE = -1;
+    public const DOCTYPE_INVOICE = 1;
+    public const DOCTYPE_CREDITNOTE = -1;
 
     public static $docType = [
         self::DOCTYPE_INVOICE => 'Счёт',

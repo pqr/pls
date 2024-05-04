@@ -12,7 +12,7 @@ class EmailPendingQuotations14days extends AutolaunchAbstract
     protected static $title = 'E-Mail Darft or Pending Quotations (3 days)';
     protected static $description = 'Отправляет на E-mail уведомление о котировках находящихся 3 дня в статусе Darft или Pending. Адресаты: Customer Service с копией Sales.';
 
-    public function run(array $params)
+    public function run(array $params): void
     {
         //Найдём все котировки, которые находятся в Pending ровно 3 дня.
         if (date('N') == 1) {
@@ -94,7 +94,7 @@ class EmailPendingQuotations14days extends AutolaunchAbstract
         $this->putFinalLogMsg($sentMails, $errMails);
     }
 
-    private function putFinalLogMsg($sentMails, $errMails)
+    private function putFinalLogMsg($sentMails, $errMails): void
     {
         $msg = $sentMails . ' mails sent';
         $type = $sentMails ? 'info' : 'success';

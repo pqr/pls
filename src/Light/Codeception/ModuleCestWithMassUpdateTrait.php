@@ -11,7 +11,7 @@ trait ModuleCestWithMassUpdateTrait
     /**
      * @param \FunctionalTester|\AcceptanceTester $I
      */
-    public function massUpdate($I)
+    public function massUpdate($I): void
     {
         $I->expect('See Mass Update ajax Dialog');
         $module = $this->getModule();
@@ -29,7 +29,7 @@ trait ModuleCestWithMassUpdateTrait
     /**
      * @param \FunctionalTester|\AcceptanceTester $I
      */
-    public function massUpdateSubmit($I)
+    public function massUpdateSubmit($I): void
     {
         $I->expect('See Multiple Update success Dialog');
         $module = $this->getModule();

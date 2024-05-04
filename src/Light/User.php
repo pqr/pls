@@ -51,7 +51,7 @@ class User
 
     }
 
-    public static function resetCache()
+    public static function resetCache(): void
     {
         self::$usersCache = [];
     }
@@ -79,7 +79,7 @@ class User
         return $user;
     }
 
-    public static function loadFromSession()
+    public static function loadFromSession(): void
     {
         // Проверим сессию пользователя, есть ли там lightauth
         if (isset($_SESSION['lightauth'])) {
@@ -343,7 +343,7 @@ class User
         return $salt . md5($password . $salt);
     }
 
-    public static function updateLastRefreshDateTime()
+    public static function updateLastRefreshDateTime(): void
     {
         Db::query("UPDATE user_visit SET LastRefreshDateTime=NOW() WHERE UserID = " . (int)self::getId());
     }
@@ -365,8 +365,8 @@ class User
 
     public static function avatarImgWithNameHtml(int $userId = null, string $innerHtml = null): string
     {
-        $userId = $userId ?? self::getId();
-        $innerHtml = $innerHtml ?? htmlspecialchars(self::getName());
+        $userId ??= self::getId();
+        $innerHtml ??= htmlspecialchars(self::getName());
         return '<div class="AvatarWithUsername">' . self::avatarImgHtml($userId) . ' ' . $innerHtml . '</div>';
     }
 
@@ -378,7 +378,7 @@ class User
 
     public static function avatarImgSrc(int $userId = null): string
     {
-        $userId = $userId ?? self::getId();
+        $userId ??= self::getId();
         if (self::hasAvatar($userId)) {
             $avatarFilepathAbs = self::avatarFilepath($userId);
             $mtime = filemtime($avatarFilepathAbs);

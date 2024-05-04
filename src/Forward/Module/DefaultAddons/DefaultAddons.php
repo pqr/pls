@@ -39,7 +39,7 @@ class DefaultAddons
         );
     }
 
-    public function __invoke()
+    public function __invoke(): void
     {
         Response::setPageHeadHtml('Default Addons');
         Response::setPageTitle('Default Addons');
@@ -50,7 +50,7 @@ class DefaultAddons
         Template::includeTpl('DefaultAddons.tpl.php', $tdata);
     }
 
-    public function proceedSave()
+    public function proceedSave(): void
     {
         $fs = $this->getFieldset();
         $addons = $fs->getDataFromRequest($_POST);

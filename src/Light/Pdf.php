@@ -7,7 +7,7 @@ use Symfony\Component\Process\Process;
 
 class Pdf
 {
-    const CONCAT_TMPDIR_PREFIX = 'concatenate_pdfs';
+    public const CONCAT_TMPDIR_PREFIX = 'concatenate_pdfs';
 
     /**
      * Генерирует pdf из html контента по абсолютному пути. Проверок на сущетсвование файла не осущетсвляет

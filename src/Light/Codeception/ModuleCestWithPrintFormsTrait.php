@@ -14,7 +14,7 @@ trait ModuleCestWithPrintFormsTrait
      * @param \AcceptanceTester | \FunctionalTester $I
      * @param \Codeception\Example $example
      */
-    private function printHtmlInternal($I, Example $example)
+    private function printHtmlInternal($I, Example $example): void
     {
         [$id, $form] = $example;
 
@@ -33,7 +33,7 @@ trait ModuleCestWithPrintFormsTrait
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
      */
-    private function printExcelInternal($I, $example)
+    private function printExcelInternal($I, $example): void
     {
         [$id, $form] = $example;
 
@@ -61,7 +61,7 @@ trait ModuleCestWithPrintFormsTrait
      * @param \AcceptanceTester | \FunctionalTester $I
      * @param \Codeception\Example $example
      */
-    private function printPdfInternal($I, Example $example)
+    private function printPdfInternal($I, Example $example): void
     {
         [$id, $form] = $example;
 
@@ -81,7 +81,7 @@ trait ModuleCestWithPrintFormsTrait
      * @param \AcceptanceTester | \FunctionalTester $I
      * @param \Codeception\Example $example
      */
-    private function testPrintButtonsInternal($I, Example $example)
+    private function testPrintButtonsInternal($I, Example $example): void
     {
         /** @var array $forms */
         [$id, $forms] = $example;
@@ -117,7 +117,7 @@ trait ModuleCestWithPrintFormsTrait
      * @param \AcceptanceTester | \FunctionalTester $I
      * @param \Codeception\Example $example
      */
-    private function testPrintButtonsMultipleInternal($I, Example $example)
+    private function testPrintButtonsMultipleInternal($I, Example $example): void
     {
         /** @var array $forms */
         [$idsString, $forms] = $example;

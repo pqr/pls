@@ -10,8 +10,8 @@ use Light\Module\Autolaunch\AutolaunchAbstract;
 
 class DiskFreeSpace extends AutolaunchAbstract
 {
-    const WARN_GB = 1;
-    const NOTIFY_EMAILS = 'petr.myazin@gmail.com, mike.zgodko@proactive-gl.ru';
+    public const WARN_GB = 1;
+    public const NOTIFY_EMAILS = 'petr.myazin@gmail.com, mike.zgodko@proactive-gl.ru';
 
     protected static $title = 'Проверяет свободное место на диске с программой и диске с папками.';
     protected static $description = 'Если свободного места меньше 1 Гб, то отправляются E-mail уведомления на ' . self::NOTIFY_EMAILS . '. Провека должна запускаться раз в день.';
@@ -27,7 +27,7 @@ class DiskFreeSpace extends AutolaunchAbstract
         $this->check(LIGHT_DIR_ROOT, 'с программой');
     }
 
-    private function check(string $dir, string $folderTitle)
+    private function check(string $dir, string $folderTitle): void
     {
         $bytes = disk_free_space($dir);
         $gb = $bytes / 1024 / 1024 / 1024;

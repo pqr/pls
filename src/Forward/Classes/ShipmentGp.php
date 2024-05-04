@@ -21,7 +21,7 @@ class ShipmentGp
      * Вспомагательный метод, который принимает массив номеров файлов и последовательно вызывает метод  self::updateGpEgpDeviation()
      * @param array $fileNumbers
      */
-    public static function updateGpEgpDeviationByFileNumbers(array $fileNumbers)
+    public static function updateGpEgpDeviationByFileNumbers(array $fileNumbers): void
     {
         foreach ($fileNumbers as $fileNumber) {
             self::updateGpEgpDeviation($fileNumber);
@@ -31,7 +31,7 @@ class ShipmentGp
     /**
      * @param int $fileNumber
      */
-    public static function updateGpEgpDeviation($fileNumber)
+    public static function updateGpEgpDeviation($fileNumber): void
     {
         //Если буфер ещё не инициалирован, значит это вообще первое обращение к ShipmentGp::updateGpEgpDeviation()
         //Одновременно с этим регистрируем обработчик ApplicationAbstract::addFlushOnTerminate()
@@ -43,7 +43,7 @@ class ShipmentGp
         self::$_buffer[$fileNumber] = true;
     }
 
-    public static function flush($defaultConvertionDate = null)
+    public static function flush($defaultConvertionDate = null): void
     {
         if (!self::$_buffer) {
             //Ничего в буфере нет
@@ -78,7 +78,7 @@ class ShipmentGp
         self::$_buffer = [];
     }
 
-    private static function flushFile($shipmentId, $fileNumber, $defaultConvertionDate)
+    private static function flushFile($shipmentId, $fileNumber, $defaultConvertionDate): void
     {
         $customerInvoices = self::loadCustomerInvoices($fileNumber);
         $vendorInvoices = self::loadVendorInvoices($fileNumber);
@@ -342,7 +342,7 @@ class ShipmentGp
         $actualExpenses,
         $estimatedIncome,
         $estimatedExpenses
-    ) {
+    ): void {
         $gp = $actualIncome - $actualExpenses;
         $egp = $estimatedIncome - $estimatedExpenses;
         $deviation = $gp - $egp;

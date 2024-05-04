@@ -57,7 +57,7 @@ class AutolaunchLog extends Table
         $this->tableLoadData();
     }
 
-    private function tableLoadData()
+    private function tableLoadData(): void
     {
         $findid = $this->getTableFindIdFromRequest();
         $newPage = $this->getTablePageFromModuleSession($findid);

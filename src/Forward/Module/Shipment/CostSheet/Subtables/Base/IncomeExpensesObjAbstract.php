@@ -17,13 +17,13 @@ abstract class IncomeExpensesObjAbstract extends ObjAbstract
     /** @var IncomeExpensesAbstract */
     protected $_subtable;
 
-    public function setFileNumber($fileNumber)
+    public function setFileNumber($fileNumber): void
     {
         //Инжектим номер текущего файла - понадобится для формирования ссылок на номерах счетов
         $this->_fileNumber = $fileNumber;
     }
 
-    public function setSubtable(IncomeExpensesAbstract $subtable)
+    public function setSubtable(IncomeExpensesAbstract $subtable): void
     {
         $this->_subtable = $subtable;
     }
@@ -107,7 +107,7 @@ abstract class IncomeExpensesObjAbstract extends ObjAbstract
                             return '';
                         }
 
-                        list($invCurrencyIso, $invAmount) = $invAmountAndCurrencyIso;
+                        [$invCurrencyIso, $invAmount] = $invAmountAndCurrencyIso;
                         $rowCurrencyIso = FieldMoneyWithCurrency::getAsTouple($data['Amount'])[0];
                         if ($rowCurrencyIso === $invCurrencyIso && $amountForInvNum != $invAmount) {
                             return 'bad';

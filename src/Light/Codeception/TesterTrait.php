@@ -10,37 +10,37 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 trait TesterTrait
 {
-    public function canSeePageHead(string $text)
+    public function canSeePageHead(string $text): void
     {
         $this->expect('Page head contains: ' . $text);
         $this->canSee($text, '#page-head');
     }
 
-    public function cantSeeXdebugError()
+    public function cantSeeXdebugError(): void
     {
         $this->expect('No Xdebug errors');
         $this->cantSeeElement('.xdebug-error');
     }
 
-    public function assertNotContainsXdebugError($html)
+    public function assertNotContainsXdebugError($html): void
     {
         $this->expect('No Xdebug errors');
         $this->assertNotContains('xdebug-error', $html);
     }
 
-    public function cantSeeSqlError()
+    public function cantSeeSqlError(): void
     {
         $this->expect('No SQL errors');
         $this->cantSee('SQL error:', '.alert-danger');
     }
 
-    public function assertNotContainsSqlError($html)
+    public function assertNotContainsSqlError($html): void
     {
         $this->expect('No SQL errors');
         $this->assertNotContains('SQL error:', $html);
     }
 
-    public function canSeeAjaxDialog($url, $hasButtonOk = true)
+    public function canSeeAjaxDialog($url, $hasButtonOk = true): void
     {
         $this->expect('See Ajax Dialog');
         $this->sendAjaxGetRequest($url);
@@ -104,7 +104,7 @@ trait TesterTrait
 
     }
 
-    public function setSpecialAccess(string $accessKey, int $newValue, callable $testFunc)
+    public function setSpecialAccess(string $accessKey, int $newValue, callable $testFunc): void
     {
         // Пользователь admin захардкожен в LightConnector - именно под ним запускаются все функциональные тесты
         $user = Db::getRow("SELECT ID, SpecialAccessJSON FROM `user` WHERE Login='admin'");

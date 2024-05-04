@@ -193,10 +193,9 @@ trait TableWithFoldersTrait
                 }
 
                 $splFiles = File::scandirRecurcive($folderAbs);
-                $filenamesRelative = array_map(function ($splFileInfo) use ($folderAbs) {
+                $filenamesRelative = array_map(fn($splFileInfo) =>
                     /** @var \SplFileInfo $splFileInfo */
-                    return rtrim(File::fs()->makePathRelative($splFileInfo->getPathname(), $folderAbs), '/');
-                }, $splFiles);
+                    rtrim(File::fs()->makePathRelative($splFileInfo->getPathname(), $folderAbs), '/'), $splFiles);
 
                 return implode("\n", $filenamesRelative);
             },
@@ -233,10 +232,9 @@ trait TableWithFoldersTrait
         $filepathAbs = "$folderAbs/$file";
 
         $splFiles = File::scandirRecurcive($folderAbs);
-        $found = A::some($splFiles, function ($splFileInfo) use ($filepathAbs) {
+        $found = A::some($splFiles, fn($splFileInfo) =>
             /** @var \SplFileInfo $splFileInfo */
-            return $splFileInfo->getPathname() === $filepathAbs;
-        });
+            $splFileInfo->getPathname() === $filepathAbs);
         if (!$found) {
             Response::abort(404);
             return;

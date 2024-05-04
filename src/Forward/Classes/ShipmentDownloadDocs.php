@@ -16,7 +16,7 @@ use Symfony\Component\Process\Process;
 
 class ShipmentDownloadDocs
 {
-    const ONLY_SHIPMENT_REQUESTS_XLSX = -1;
+    public const ONLY_SHIPMENT_REQUESTS_XLSX = -1;
     /**
      * @var Filesystem
      */
@@ -117,7 +117,7 @@ class ShipmentDownloadDocs
         }
     }
 
-    public function removeTmpDir()
+    public function removeTmpDir(): void
     {
         if ($this->tmpDir) {
             File::fs()->remove($this->tmpDir);

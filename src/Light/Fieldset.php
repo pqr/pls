@@ -44,7 +44,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     /**
      * Для имплементации \Iterator
      */
-    public function rewind()
+    public function rewind(): void
     {
         $this->_position = 0;
     }
@@ -70,7 +70,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     /**
      * Для имплементации \Iterator
      */
-    public function next()
+    public function next(): void
     {
         ++$this->_position;
     }
@@ -98,7 +98,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * @param $fieldKey
      * @param $field
      */
-    public function offsetSet($fieldKey, $field)
+    public function offsetSet($fieldKey, $field): void
     {
         //Если это поле уже есть в массивах $this->_fields и $this->_fieldKeys, то не будем его трогать в $this->_fieldKeys
         //чтобы сохранить позицию
@@ -125,7 +125,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * Функция умышленно не реализована, поэтому выводит ошибку
      * @param string $fieldKey
      */
-    public function offsetUnset($fieldKey)
+    public function offsetUnset($fieldKey): void
     {
         if (isset($this->_fields[$fieldKey])) {
             unset($this->_fields[$fieldKey]);
@@ -220,7 +220,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
         return $this;
     }
 
-    public function createField($fieldKey, $type, array $params = [])
+    public function createField($fieldKey, $type, array $params = []): void
     {
         $this->addField(F::create($fieldKey, $type, $params));
     }
@@ -255,7 +255,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     {
         $outFieldset = new self();
         foreach ($this->_fields as $field) {
-            if ($field->hasMode($testMode, $data)) {
+            if ($field->hasMode($testMode)) {
                 $outFieldset->addField($field);
             }
         }
@@ -564,7 +564,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * @param string $fieldKey
      * @param array $selectFieldsArr
      */
-    private function makeSelectFieldsArr(string $fieldKey, array &$selectFieldsArr)
+    private function makeSelectFieldsArr(string $fieldKey, array &$selectFieldsArr): void
     {
         if (!$fieldKey) {
             return;

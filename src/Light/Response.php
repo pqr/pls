@@ -20,7 +20,7 @@ class Response
     /** @var ResponseInterface */
     public static $psr7;
 
-    public static function new()
+    public static function new(): void
     {
         self::$pageTitle = '';
         self::$masterTemplate = 'Master.tpl.php';
@@ -357,7 +357,7 @@ class Response
         return self::$jsdata;
     }
 
-    public static function streamFileFromContent(string $content, string $downloadFilename)
+    public static function streamFileFromContent(string $content, string $downloadFilename): void
     {
         $extension = pathinfo($downloadFilename, PATHINFO_EXTENSION);
         switch (mb_strtolower($extension, 'UTF-8')) {
@@ -417,7 +417,7 @@ class Response
         string $filepathAbs,
         string $downloadFilename = null,
         bool $preview = false
-    ) {
+    ): void {
         if (!$downloadFilename) {
             $downloadFilename = pathinfo($filepathAbs, PATHINFO_BASENAME);
         }

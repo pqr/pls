@@ -25,11 +25,11 @@
 
 class CMUDict extends CMUDict_original {
 
-    private static $arpabet = array();
-    private static $arpabet_rus = array();
+    private static $arpabet = [];
+    private static $arpabet_rus = [];
 
     public function getPhoneme($phrase) {
-        $result = array();
+        $result = [];
         $phrase = trim($phrase);
         $words = mb_strpos($phrase, ' ') ? explode(' ', $phrase) : (array)$phrase;
         foreach ($words as $word) {
@@ -47,7 +47,7 @@ class CMUDict extends CMUDict_original {
 
         $phrase_phoneme = $this->getPhoneme($phrase);
         $result = strtr($phrase_phoneme, self::$arpabet);
-        $result = strtr($result, array(' ' => '', ' ;; ' => ' '));
+        $result = strtr($result, [' ' => '', ' ;; ' => ' ']);
         $result = trim($result);
         return $result;
     }
@@ -58,13 +58,13 @@ class CMUDict extends CMUDict_original {
 
         $phrase_phoneme = $this->getPhoneme($phrase);
         $result = strtr($phrase_phoneme, self::$arpabet_rus);
-        $result = strtr($result, array(' ' => '', ' ;; ' => ' '));
+        $result = strtr($result, [' ' => '', ' ;; ' => ' ']);
         $result = trim($result);
         return $result;
     }
 
     private static function loadArpabet($file = 'arpabet.txt') {
-        self::$arpabet = array();
+        self::$arpabet = [];
         $temp = @(array)file(__DIR__ . '/' . $file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($temp as $tmp) {
             $tmp = trim($tmp);
@@ -72,7 +72,7 @@ class CMUDict extends CMUDict_original {
                 continue;
             $tmp = preg_replace("~\t~s", '|', $tmp);
             #echo $tmp . '<br/>';
-            list($arp, $ipa, $rus) = explode('|', $tmp);
+            [$arp, $ipa, $rus] = explode('|', $tmp);
             self::$arpabet[$arp] = $ipa;
             self::$arpabet_rus[$arp] = $rus;
         }
@@ -85,8 +85,8 @@ class CMUDict extends CMUDict_original {
 
 class CMUDict_original {
 
-    private $keys = array();
-    private $values = array();
+    private $keys = [];
+    private $values = [];
     private $count = 0;
 
     private function __construct() {
@@ -97,9 +97,9 @@ class CMUDict_original {
                 if (self::starts_with(';;;', $buffer)) {
                     continue;
                 }
-                list($word, $imploded_phonemes) = explode('  ', rtrim($buffer));
+                [$word, $imploded_phonemes] = explode('  ', rtrim($buffer));
                 $phonemes = explode(' ', $imploded_phonemes);
-                $modified_phonemes = array();
+                $modified_phonemes = [];
                 foreach ($phonemes as $phoneme) {
                     $modified_phoneme = $phoneme;
                     if (strlen($modified_phoneme) > 2) {
@@ -154,7 +154,7 @@ class CMUDict_original {
             $split_words = explode("'", $uppercased_word);
         }
         if (!empty($split_words)) {
-            $merged_phonemes = array();
+            $merged_phonemes = [];
             foreach ($split_words as $split_word) {
                 $phonemes = $this->getPhonemes($split_word);
                 if ($phonemes === null) {
@@ -189,7 +189,7 @@ class CMUDict_original {
      * @return bool
      */
     private static function contains($value, $str) {
-        return strstr($str, $value) !== false;
+        return strstr($str, (string) $value) !== false;
     }
 
     /**

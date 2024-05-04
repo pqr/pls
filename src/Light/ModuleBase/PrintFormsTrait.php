@@ -42,7 +42,7 @@ trait PrintFormsTrait
         $this->printForms[$printForm->getKey()] = $printForm;
     }
 
-    private function printFormsAddMassaction()
+    private function printFormsAddMassaction(): void
     {
         if ($this->printForms) {
             // Если в классе потомке были добавлены какие-то опции печати, то добавим massaction действие
@@ -121,7 +121,7 @@ trait PrintFormsTrait
      * Метод запускается если у печатной формы определён какой-то fieldset и, соответственно, при клике на ссылку в меню
      * отправляется ajax GET запрос, чтобы вывести форму
      */
-    private function viewGetPrint()
+    private function viewGetPrint(): void
     {
         $printForm = $this->beforePrint();
 
@@ -153,7 +153,7 @@ trait PrintFormsTrait
      * Метод вызывается при Post запросе, который может прийти от ссылки из submenu, а может прийти из диалога
      * с дополнительными параметрами для печати (см. как рендерится этот диалог в ModuleAbstract::viewGetPrint())
      */
-    private function viewPostPrint()
+    private function viewPostPrint(): void
     {
         try {
 
@@ -281,7 +281,7 @@ trait PrintFormsTrait
      * @throws \BadMethodCallException
      * @throws \Exception
      */
-    public function proceedMassactionPrintSubmit()
+    public function proceedMassactionPrintSubmit(): void
     {
         $this->initPrintForms();
         $form = $_GET['form'] ?? '';
@@ -365,7 +365,7 @@ trait PrintFormsTrait
         array $objects,
         PrintForm $printForm,
         bool $multipleAsOne
-    )
+    ): void
     {
         $formAction = $this->getPrintSubmitLink($printForm, $multipleAsOne)
             ->params(['fromDialog' => 1]);

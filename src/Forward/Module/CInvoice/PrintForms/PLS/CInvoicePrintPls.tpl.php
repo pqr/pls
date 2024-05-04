@@ -80,9 +80,7 @@ use Light\Template as t; ?>
                         <?php
                         $bankLines = explode("\n", $OurCompanyBeneficiaryBank_raw);
                         $bankLinesHtml = array_map(
-                            function ($line) {
-                                return '<div class="nobr"><nobr>' . \htmlspecialchars($line) . '</nobr></div>';
-                            },
+                            fn($line) => '<div class="nobr"><nobr>' . \htmlspecialchars($line) . '</nobr></div>',
                             $bankLines
                         );
                         ?>
@@ -94,9 +92,7 @@ use Light\Template as t; ?>
                         <?php
                         $corrBankLines = explode("\n", $OurCompanyCorrespondentBank_raw);
                         $corrBankLinesHtml = array_map(
-                            function ($line) {
-                                return '<div class="nobr"><nobr>' . \htmlspecialchars($line) . '</nobr></div>';
-                            },
+                            fn($line) => '<div class="nobr"><nobr>' . \htmlspecialchars($line) . '</nobr></div>',
                             $corrBankLines
                         );
                         ?>

@@ -60,9 +60,7 @@ trait TableExcelExportable
             $dataCalculated,
             $dataTotal,
             $fieldsetSowed,
-            function (array $rowData, $rowNum) {
-                return $this->getTableRowDataExcelParams($rowData, $rowNum);
-            },
+            fn(array $rowData, $rowNum) => $this->getTableRowDataExcelParams($rowData, $rowNum),
             XlsWriter::ALLOPTS
         );
 
@@ -76,7 +74,7 @@ trait TableExcelExportable
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
-    public function sendExcel($filename = null, $sheetname = null)
+    public function sendExcel($filename = null, $sheetname = null): void
     {
         $timer = new Timer();
 
@@ -109,9 +107,9 @@ trait TableExcelExportable
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
-    public function saveExcel($filename = null, $sheetname = null)
+    public function saveExcel($filename = null, $sheetname = null): void
     {
-        list($filename, $sheetname) = $this->normalizeFilenameSheetname($filename, $sheetname);
+        [$filename, $sheetname] = $this->normalizeFilenameSheetname($filename, $sheetname);
         $xls = $this->getXlsWriter($sheetname);
         //Отправляем в поток
         $xls->send($filename);

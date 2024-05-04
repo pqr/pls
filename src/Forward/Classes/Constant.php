@@ -9,42 +9,42 @@ use Light\User;
 
 class Constant
 {
-    const USERGROUP_FIN = 1;
-    const USERGROUP_CS = 2;
-    const USERGROUP_SALES = 3;
+    public const USERGROUP_FIN = 1;
+    public const USERGROUP_CS = 2;
+    public const USERGROUP_SALES = 3;
 
-    const RESPONSIBLEROLE_CS = 2;
-    const RESPONSIBLEROLE_SALES = 3;
+    public const RESPONSIBLEROLE_CS = 2;
+    public const RESPONSIBLEROLE_SALES = 3;
 
-    const OC_PLS = 1;
-    const OC_PLS_USD = 13;
-    const OC_GTS = 2;
-    const OC_PLS_OOO = 4;
-    const OC_PGL_OOO = 5;
-    const OC_ACB = 7;
-    const OC_PLS12_OOO = 12;
-    const OC_PGL11_OOO = 11;
-    const OC_PF14_OOO = 14;
-    const OC_MAXVEL = 16;
-    const OC_PLS17_OOO = 17;
-    const OC_PGL18_OOO = 18;
-    const OC_PRO_AIR_OOO = 19;
-    const OC_PRO_AIR_SPB = 21;
+    public const OC_PLS = 1;
+    public const OC_PLS_USD = 13;
+    public const OC_GTS = 2;
+    public const OC_PLS_OOO = 4;
+    public const OC_PGL_OOO = 5;
+    public const OC_ACB = 7;
+    public const OC_PLS12_OOO = 12;
+    public const OC_PGL11_OOO = 11;
+    public const OC_PF14_OOO = 14;
+    public const OC_MAXVEL = 16;
+    public const OC_PLS17_OOO = 17;
+    public const OC_PGL18_OOO = 18;
+    public const OC_PRO_AIR_OOO = 19;
+    public const OC_PRO_AIR_SPB = 21;
 
-    const TRAFFIC_OCEAN = 7;
-    const TRAFFIC_FINANCE = 11;
+    public const TRAFFIC_OCEAN = 7;
+    public const TRAFFIC_FINANCE = 11;
 
-    const BU_MOW = '1';
-    const BU_LED = '2';
+    public const BU_MOW = '1';
+    public const BU_LED = '2';
 
-    const ACTONDATETYPE_ATA = 1;
-    const ACTONDATETYPE_CPAYMENT = 2;
+    public const ACTONDATETYPE_ATA = 1;
+    public const ACTONDATETYPE_CPAYMENT = 2;
 
-    const USER_PETR = 28;
-    const USER_OLGA = 29;
-    const USER_ALEXANDRA = 25;
+    public const USER_PETR = 28;
+    public const USER_OLGA = 29;
+    public const USER_ALEXANDRA = 25;
 
-    const USER_START_DATE = [
+    public const USER_START_DATE = [
         self::USER_PETR => '2022-07-01',
         self::USER_OLGA => '2022-08-01',
         self::USER_ALEXANDRA => '2024-01-01',
@@ -62,14 +62,14 @@ class Constant
         Constant::OC_PRO_AIR_SPB => 'airspb',
     ];
 
-    const FOLDER_REQUEST = 0;
-    const FOLDER_REQUEST_SIGNED = 1;
-    const FOLDER_CINVOICE = 2;
-    const FOLDER_MAWB = 3;
-    const FOLDER_VINVOICE = 4;
-    const FOLDER_CACT = 5;
-    const FOLDER_CACT_SIGNED = 6;
-    const FOLDER_CACT_NOTRESIDENT = 7;
+    public const FOLDER_REQUEST = 0;
+    public const FOLDER_REQUEST_SIGNED = 1;
+    public const FOLDER_CINVOICE = 2;
+    public const FOLDER_MAWB = 3;
+    public const FOLDER_VINVOICE = 4;
+    public const FOLDER_CACT = 5;
+    public const FOLDER_CACT_SIGNED = 6;
+    public const FOLDER_CACT_NOTRESIDENT = 7;
 
     public static $standardFolders = [
         '0 Заявка',
@@ -170,9 +170,7 @@ class Constant
     {
         return A::find(
             [2000, 1000, 750, 500, 300, 200, 100, 45],
-            function ($interval) use ($weight) {
-                return $weight >= $interval;
-            },
+            fn($interval) => $weight >= $interval,
         );
     }
 

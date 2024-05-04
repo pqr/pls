@@ -83,7 +83,7 @@ abstract class InvoiceModuleAbstract extends ModuleAbstract
         return [];
     }
 
-    public function proceedSplitPerWeight()
+    public function proceedSplitPerWeight(): void
     {
 
         $fileNumbers = array_filter(array_map('intval', explode("\n", $_POST['fileNumbers'])));

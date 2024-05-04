@@ -278,7 +278,7 @@ class ShipmentAccounting extends ModuleAbstract
         throw new \Exception("Unknown method $name");
     }
 
-    private function downloadDocs(array $ids, int $onlyFolderNo = null)
+    private function downloadDocs(array $ids, int $onlyFolderNo = null): void
     {
         $msgBuff = new Msg();
         $sd = ShipmentDownloadDocs::create($msgBuff);

@@ -16,7 +16,7 @@ use Light\User;
 class Bot extends ModuleBotAbstract
 {
 
-    const LIMIT = 15;
+    public const LIMIT = 15;
 
     protected function getWizardMessageForCommand(string $command)
     {

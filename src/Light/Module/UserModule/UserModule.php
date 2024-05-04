@@ -17,7 +17,7 @@ use Light\User;
 
 class UserModule
 {
-    public function __invoke()
+    public function __invoke(): void
     {
         if (!Request::isAjax()) {
 
@@ -26,14 +26,14 @@ class UserModule
         }
     }
 
-    private function printInitialHtml()
+    private function printInitialHtml(): void
     {
         Js::$react = true;
         Js::$mobx = true;
         Js::addLight('build/UserModuleBuild.js');
 
         $orderBy = User::getParam('UserModuleUsersOrderBy') ?? 'Name ASC';
-        list($usersSortFieldKey, $usersSortDirection) = explode(' ', $orderBy);
+        [$usersSortFieldKey, $usersSortDirection] = explode(' ', $orderBy);
 
         Response::addJsData([
 
@@ -166,7 +166,7 @@ class UserModule
      * Этот метод используется для сохранения пользователей и для сохранения групп одновременнов
      * Внутри определяем тип сохраняемого объекта по наличию в запросе параметра $_POST['Login']
      */
-    public function proceedSubmit()
+    public function proceedSubmit(): void
     {
         $type = isset($_POST['Login']) ? 'user' : 'group';
 
@@ -242,14 +242,14 @@ class UserModule
 
     }
 
-    public function proceedLoginAs()
+    public function proceedLoginAs(): void
     {
         session_regenerate_id(true);
         $_SESSION['lightauth'] = Db::getOne("SELECT Login FROM user WHERE ID = " . (int)$_GET['userId']);
         Response::redirect(ModuleRegister::getDefaultModule());
     }
 
-    public function proceedViewHome()
+    public function proceedViewHome(): void
     {
         $userId = (int)$_GET['userId'];
 

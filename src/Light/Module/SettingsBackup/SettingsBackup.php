@@ -11,9 +11,9 @@ use Light\ModuleBase\SettingsPageAbstract;
 
 class SettingsBackup extends SettingsPageAbstract
 {
-    const PARAM_DIR = 'BackupDir';
-    const PARAM_PASS = 'BackupPass';
-    const PARAM_MAIL_TO = 'BackupMailTo';
+    public const PARAM_DIR = 'BackupDir';
+    public const PARAM_PASS = 'BackupPass';
+    public const PARAM_MAIL_TO = 'BackupMailTo';
 
     public function __construct()
     {
@@ -36,7 +36,7 @@ class SettingsBackup extends SettingsPageAbstract
     protected function getDescription(): string
     {
         return Link::create(Autolaunch::class, 'Run Backup >>')
-            ->params(['class' => 'Light\Autolaunch\BackupMysqlData'])
+            ->params(['class' => \Light\Autolaunch\BackupMysqlData::class])
             ->getHtml();
     }
 

@@ -40,19 +40,19 @@ class TemplaterExcel extends TemplaterAbstract
         $this->tableOpts = $tableOpts;
     }
 
-    public function writeData(array $data)
+    public function writeData(array $data): void
     {
         $this->xlsWriter->replaceData($data, $this->fieldset, $this->tableOpts);
         $this->xlsWriter->clearPlaceholders();
         $this->xlsWriter->getSpreadsheet()->getActiveSheet()->setTitle($this->titleExcelSheet);
     }
 
-    public function saveExcel(string $dest)
+    public function saveExcel(string $dest): void
     {
         $this->xlsWriter->save($dest);
     }
 
-    public function savePdf(string $dest, bool $landscape)
+    public function savePdf(string $dest, bool $landscape): void
     {
         $this->xlsWriter->savePdf($dest);
     }

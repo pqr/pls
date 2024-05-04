@@ -329,9 +329,7 @@ class Shipment extends ModuleAbstract
                 'FileNumbers',
                 [
                     'name' => 'File Numbers',
-                    'sqlWhere' => function ($value) {
-                        return Db::getSqlWhereSeparatedByComa($value, 'shipment.Name', -1, false, true, 1);
-                    },
+                    'sqlWhere' => fn($value) => Db::getSqlWhereSeparatedByComa($value, 'shipment.Name', -1, false, true, 1),
                 ],
             ),
             ShipmentFields::filterMawbs(),
@@ -510,25 +508,19 @@ class Shipment extends ModuleAbstract
                 'CriterionID',
             ],
             [
-                'Color' => function () {
-                    return '<div class="color-container color'.Template::value('Color').'">'
-                        .Template::html('Color')
-                        .'</div>';
-                },
+                'Color' => fn() => '<div class="color-container color'.Template::value('Color').'">'
+                    .Template::html('Color')
+                    .'</div>',
                 'BUIDsFilter',
                 'FileClosed',
 
-                'MonthFrom' => function () {
-                    return Template::html('MonthFrom').' - '.Template::html('MonthUntil');
-                },
+                'MonthFrom' => fn() => Template::html('MonthFrom').' - '.Template::html('MonthUntil'),
                 'ReadyForCarriageDate',
                 'ETD',
                 'ETA',
                 'ATA',
                 'DocsPrintedDate',
-                'FlightNo' => function () {
-                    return Template::html('FlightNo').' '.Template::html('FlightDate');
-                },
+                'FlightNo' => fn() => Template::html('FlightNo').' '.Template::html('FlightDate'),
                 'HasVAT',
             ],
         ];
@@ -1020,7 +1012,7 @@ class Shipment extends ModuleAbstract
      * @param array       $oldData
      * @param Msg         $msgBuff
      */
-    private function emailOnAtaChange(ObjAbstract $obj, array $oldData, Msg $msgBuff)
+    private function emailOnAtaChange(ObjAbstract $obj, array $oldData, Msg $msgBuff): void
     {
         $oldAta = $oldData['ATA'] ?? '0000-00-00';
         $newAta = $obj['ATA'];
@@ -1043,7 +1035,7 @@ class Shipment extends ModuleAbstract
         }
     }
 
-    private function sendShipmentEmail(ShipmentObj $obj, $additionalText, Msg $msgBuff)
+    private function sendShipmentEmail(ShipmentObj $obj, $additionalText, Msg $msgBuff): void
     {
         //Отправим на дарес Sales, если создал НЕ Sales.
         $to = [];
@@ -1564,7 +1556,7 @@ class Shipment extends ModuleAbstract
         }
     }
 
-    private function removeStampFromShipmentRequestExcel(XlsWriter $xls)
+    private function removeStampFromShipmentRequestExcel(XlsWriter $xls): void
     {
         // Также файл с заявкой без печати и подписи необходимо сохранить в папку 0. Заявка
         // Для этого сначала найдём все объекты изображений
@@ -1726,12 +1718,12 @@ class Shipment extends ModuleAbstract
         return $this->getSubmenuHtml();
     }
 
-    public static function proceedCopyFromCs()
+    public static function proceedCopyFromCs(): void
     {
         CostSheetRouter::proceedAjaxCopyFromCs();
     }
 
-    public function viewGetFillFromQuotation()
+    public function viewGetFillFromQuotation(): void
     {
         // Загрузим данные по переданной котировке
         if ($_GET['QuotationID'] < 700000) {

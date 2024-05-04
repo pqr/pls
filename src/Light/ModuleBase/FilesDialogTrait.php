@@ -160,7 +160,7 @@ trait FilesDialogTrait
         Response::sendHeaderJsEval('document.dispatchEvent(new CustomEvent(\'FilesDialogSubmit\', { detail: {module:"' . $module . '", id: ' . $masterObj->getId() . '}}))');
     }
 
-    public function proceedFilesDialogSubmitFromMassaction()
+    public function proceedFilesDialogSubmitFromMassaction(): void
     {
         if (!$this->allowEdit || !User::hasWriteAccess()) {
             MassactionUtils::sendErrorDialog('No access to edit in this module');
@@ -198,7 +198,7 @@ trait FilesDialogTrait
      * @param ObjAbstract $masterObj
      * @throws \Exception
      */
-    private function filesDialogSubmitOneMaster(ObjAbstract $masterObj)
+    private function filesDialogSubmitOneMaster(ObjAbstract $masterObj): void
     {
         $masterId = $masterObj->getId();
         $rowsDataFromPost = $_POST['FilesDialogTable'][$masterId] ?? [];

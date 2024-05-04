@@ -3,7 +3,7 @@
 namespace Light;
 
 // Текущий файл находится в <rootdir>/src/Light/ApplicationAbstract.php - нужно сделать два раза dirname, чтобы получить <rootdir>
-define('LIGHT_DIR_ROOT', dirname(dirname(__DIR__)));
+define('LIGHT_DIR_ROOT', dirname(__DIR__, 2));
 define('LIGHT_DIR_PROJECT', LIGHT_DIR_ROOT . '/src/' . PROJECT_NAMESPACE);
 define('LIGHT_DIR_LIGHT', LIGHT_DIR_ROOT . '/src/Light');
 define('LIGHT_DIR_TEMP', LIGHT_DIR_ROOT . '/temp');
@@ -64,7 +64,7 @@ abstract class ApplicationAbstract
         return isset($GLOBALS['argv']);
     }
 
-    private function checkCsrf()
+    private function checkCsrf(): void
     {
         if (defined("CODECEPTION_FUNCTIONAL_TEST")) {
             return;
@@ -72,7 +72,7 @@ abstract class ApplicationAbstract
 
         if (Request::getModule() !== 'Login' && User::getId()) {
             if (!isset($_SESSION['csrf_token'])) {
-                $_SESSION['csrf_token'] = md5(time() . rand() . User::getId());
+                $_SESSION['csrf_token'] = md5(time() . random_int(0, mt_getrandmax()) . User::getId());
             } else {
                 if ($_POST) {
                     $testToken = '';
@@ -105,7 +105,7 @@ abstract class ApplicationAbstract
     /**
      * Проверяет, существует ли запрашиваемый модуль вообще?
      */
-    private function checkModuleExists()
+    private function checkModuleExists(): void
     {
         $module = Request::getModule();
 
@@ -123,7 +123,7 @@ abstract class ApplicationAbstract
         }
     }
 
-    private function checkModuleAccess()
+    private function checkModuleAccess(): void
     {
         $module = Request::getModule();
 
@@ -174,7 +174,7 @@ abstract class ApplicationAbstract
         }
     }
 
-    public static function setParam($name, $value)
+    public static function setParam($name, $value): void
     {
         $data = [
             'CreatedBy' => User::getId(),
@@ -257,7 +257,7 @@ abstract class ApplicationAbstract
      */
     abstract public function getSpecialAccessList();
 
-    private function initDb()
+    private function initDb(): void
     {
         //Инициализируем singleton объект базы
         Db::connect();
@@ -274,7 +274,7 @@ abstract class ApplicationAbstract
         return PROJECT_NAMESPACE . "\\Autolaunch\\$cliName";
     }
 
-    public function runAutolaunchCli()
+    public function runAutolaunchCli(): void
     {
         //Попробуем запустить этот Autolaunch скрипт
         $autolaunchCliName = $GLOBALS['argv'][1] ?? null;
@@ -294,7 +294,7 @@ abstract class ApplicationAbstract
         $this->finalize();
     }
 
-    public function __invoke()
+    public function __invoke(): void
     {
         // Объект PSR-7 Request не передаём в явном виде - он будет создан fromGlobals()
         // В Codeception окружении метод handleHttpRequest() запускается с явной передачей PSR-7 Request
@@ -504,7 +504,7 @@ abstract class ApplicationAbstract
      * @throws ForceSendResponse
      *
      */
-    public static function terminate($resultFromModule = null)
+    public static function terminate($resultFromModule = null): void
     {
         // Проверим, возможно есть дополнительные буферы вывода, которые нужно прочитать и приконкатинировать в $resultFromModule?
         while (ob_get_level()) {
@@ -560,7 +560,7 @@ abstract class ApplicationAbstract
         return Response::$psr7;
     }
 
-    public function emitResponse($finalPsr7Response)
+    public function emitResponse($finalPsr7Response): void
     {
         // Если же не CLI, то нужно отправить с помощью эмиттера
         (new SapiEmitter())->emit($finalPsr7Response);
@@ -574,12 +574,12 @@ abstract class ApplicationAbstract
         }
     }
 
-    public function beforeSend()
+    public function beforeSend(): void
     {
         $this->runHandlers($this->handlersBeforeSend);
     }
 
-    public function finalize()
+    public function finalize(): void
     {
         if (!isset($_REQUEST['nouserrefreshtime']) && !self::isCli() && User::isAuth()) {
             User::updateLastRefreshDateTime();
@@ -602,7 +602,7 @@ abstract class ApplicationAbstract
         }
     }
 
-    private function runHandlers(array $handlers)
+    private function runHandlers(array $handlers): void
     {
         foreach ($handlers as $handler) {
             try {
@@ -613,12 +613,12 @@ abstract class ApplicationAbstract
         }
     }
 
-    public static function onBeforeSend(callable $handler)
+    public static function onBeforeSend(callable $handler): void
     {
         self::$app->handlersBeforeSend[] = $handler;
     }
 
-    public static function onAfterSend(callable $handler)
+    public static function onAfterSend(callable $handler): void
     {
         self::$app->handlersAfterSend[] = $handler;
     }

@@ -11,7 +11,7 @@ class UpdateShipmentCriteria extends AutolaunchAbstract
     protected static $title = 'Update Shipment Criteria';
     protected static $description = 'Обновляет критерии по перевозкам. Должен запускаться ежедневно в начале дня.';
 
-    public function initFieldset()
+    public function initFieldset(): void
     {
         $options = ['All' => ['text' => 'Update All', 'cssClass' => 'bold']];
         $options += ShipmentCriteria::getSelectOptions();
@@ -28,7 +28,7 @@ class UpdateShipmentCriteria extends AutolaunchAbstract
         ));
     }
 
-    public function run(array $params)
+    public function run(array $params): void
     {
         if (isset($params['CriterionID']) && is_numeric($params['CriterionID'])) {
             //Обновляем какой-то определённый критерий

@@ -22,7 +22,7 @@ class Autolaunch
      *
      * Кроме того, нужно уметь обрабатывать запуск autolaunch ($_GET['run']) и просмотр логов (AutolaunchHistoryWithForm)
      */
-    public function __invoke()
+    public function __invoke(): void
     {
         Js::addLight('Autolaunch.js');
 
@@ -32,7 +32,7 @@ class Autolaunch
             // Базовая проверка: класс должен начинаться либо с неймспейса проекта, либо с Light\\
             // и не должен содержать точек внутри
             if (strpos($className, 'Light\\') === false
-                && strpos($className, PROJECT_NAMESPACE)
+                && strpos($className, (string) PROJECT_NAMESPACE)
                 || strpos($className, '.') !== false
             ) {
                 throw new \InvalidArgumentException("Invalid autolaunch class $className");
@@ -65,7 +65,7 @@ class Autolaunch
     /**
      * Отображате таблицу со списком всех Autolaunch скпритов
      */
-    private function renderMenu()
+    private function renderMenu(): void
     {
 // Если не было параметра $_GET['class'], тогда выводим общий список всех скпритов
         Response::setPageTitle('Autolaunch');
@@ -86,7 +86,7 @@ class Autolaunch
      * @param string $className
      * @throws \Exception
      */
-    private function renderFormAndHistory(string $className)
+    private function renderFormAndHistory(string $className): void
     {
         // Мы находимся где-то на форме запуска с историей
         // Сразу подготовим объект с таблицей истории запусков
@@ -134,7 +134,7 @@ class Autolaunch
      * Запускает Autolaunch, когда пользователь нажал на форме Run
      * @param string $className
      */
-    private function run(string $className)
+    private function run(string $className): void
     {
         // Запуск с формы
         // Создадим объект подмодуля и запустим его!
@@ -152,7 +152,7 @@ class Autolaunch
      * @param int $logId
      * @throws \Exception
      */
-    private function renderOneLog(string $className, int $logId)
+    private function renderOneLog(string $className, int $logId): void
     {
         // Попробуем загрузить данные текущего лога
         $logObj = new AutolaunchLogObj();

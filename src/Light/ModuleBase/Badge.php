@@ -6,10 +6,10 @@ namespace Light\ModuleBase;
 
 class Badge
 {
-    const SUCCESS = 'success';
-    const WARNING = 'warning';
-    const ERROR = 'error';
-    const INFO = 'info';
+    public const SUCCESS = 'success';
+    public const WARNING = 'warning';
+    public const ERROR = 'error';
+    public const INFO = 'info';
 
     /**
      * @var string

@@ -104,7 +104,7 @@ class CustomerObj extends ObjAbstract
      * Обновляет поля CacheOpenInvoicesAmountUSD/EUR/RUB и CacheOverdueInvoicesAmountUSD/EUR/RUB в том числе с группировкой
      * по компаниям и по интервалам дат Overdue
      */
-    public function updateCacheOpenAndOverdueInvoicesAmount()
+    public function updateCacheOpenAndOverdueInvoicesAmount(): void
     {
         //Сначала очистим все кеш-данные, т.к. раньше могли быть одни валюты, а теперь получились другие
         $customerId = $this->getId();
@@ -175,7 +175,7 @@ class CustomerObj extends ObjAbstract
     /**
      * Обновляет поля в таблице customer_openpayments
      */
-    public function updateCacheOpenPaymentsAmount()
+    public function updateCacheOpenPaymentsAmount(): void
     {
         $customerId = $this->getId();
         //Сначала очистим все кеш-данные, т.к. раньше могли быть одни валюты, а теперь получились другие

@@ -33,16 +33,12 @@ class Cargo extends Subtable
 
         );
 
-        $this->_obj->setDescriptionFunction(function(ObjAbstract $obj, $originalDescriptionHtml) {
-
-            return $obj->getFieldHtml('Length')
-            . ' x '
-            . $obj->getFieldHtml('Width')
-            . ' x '
-            . $obj->getFieldHtml('Height')
-            . ' x '
-            . $obj->getFieldHtml('Pieces');
-
-        });
+        $this->_obj->setDescriptionFunction(fn(ObjAbstract $obj, $originalDescriptionHtml) => $obj->getFieldHtml('Length')
+        . ' x '
+        . $obj->getFieldHtml('Width')
+        . ' x '
+        . $obj->getFieldHtml('Height')
+        . ' x '
+        . $obj->getFieldHtml('Pieces'));
     }
 }

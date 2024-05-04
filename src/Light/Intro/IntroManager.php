@@ -12,27 +12,25 @@ class IntroManager
 {
     private static $intros = [];
 
-    public static function addIntro($selector, $text, $additionalUniqueKey = '')
+    public static function addIntro($selector, $text, $additionalUniqueKey = ''): void
     {
         $hash = md5(Request::getModule() . $additionalUniqueKey . $selector . $text);
         self::$intros[$hash] = [$selector, $text];
     }
 
-    public static function addIntroWithHash($selector, $text, $hash)
+    public static function addIntroWithHash($selector, $text, $hash): void
     {
         self::$intros[$hash] = [$selector, $text];
     }
 
-    public static function show()
+    public static function show(): void
     {
         if (!self::$intros) {
             return;
         }
 
         $hashes = array_keys(self::$intros);
-        $paramsNames = array_map(function ($hash) {
-            return 'intro' . $hash;
-        }, $hashes);
+        $paramsNames = array_map(fn($hash) => 'intro' . $hash, $hashes);
 
         $viewedIntros = Db::getAssoc("SELECT Name, 1 FROM user_param WHERE Name IN (@a) AND UserID = @i", $paramsNames,
             User::getId());

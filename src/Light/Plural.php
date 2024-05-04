@@ -4,10 +4,10 @@ namespace Light;
 
 class Plural
 {
-    const MALE = 1;
-    const FEMALE = 2;
-    const NEUTRAL = 3;
-    const EN = 0;
+    public const MALE = 1;
+    public const FEMALE = 2;
+    public const NEUTRAL = 3;
+    public const EN = 0;
 
     protected static $_digits = [
         'ru' =>

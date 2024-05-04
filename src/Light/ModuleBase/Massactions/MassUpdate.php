@@ -45,7 +45,7 @@ class MassUpdate extends MassactionAbstract
         return User::hasWriteAccess(Misc::getModule($this->objBase));
     }
 
-    public function __invoke(array $ids)
+    public function __invoke(array $ids): void
     {
         if (isset($_GET['submit']) && Request::isPost()) {
             $this->proceedSubmit($ids);

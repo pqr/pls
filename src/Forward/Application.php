@@ -21,26 +21,26 @@ use Light\Response;
 
 class Application extends ApplicationAbstract
 {
-    const SA_VINVOICE_ALLOW_STATUS_ACCEPT = 'VInvoice1';
-    const SA_VINVOICE_ALLOW_STATUS_CLEAR = 'VInvoice2';
-    const SA_VINVOICE_ALLOW_ALL_COMPANYID = 'VInvoice3';
-    const SA_SHIPMENT_DELETE = 'Shipment1';
-    const SA_SHIPMENT_CHANGECLOSED = 'Shipment2';
-    const SA_SHIPMENT_SAVE_WITHOUT_MANDATORY = 'SA_SHIPMENT_SAVE_WITHOUT_MANDATORY';
-    const SA_HOME_VOUTSTANDING = 'Home1';
-    const SA_HOME_CINVOICE = 'Home2';
-    const SA_HOME_VINVOICE = 'Home3';
-    const SA_HOME_CHECKATD = 'SA_HOME_CHECKATD';
-    const SA_HOME_CHECKATA = 'SA_HOME_CHECKATA';
+    public const SA_VINVOICE_ALLOW_STATUS_ACCEPT = 'VInvoice1';
+    public const SA_VINVOICE_ALLOW_STATUS_CLEAR = 'VInvoice2';
+    public const SA_VINVOICE_ALLOW_ALL_COMPANYID = 'VInvoice3';
+    public const SA_SHIPMENT_DELETE = 'Shipment1';
+    public const SA_SHIPMENT_CHANGECLOSED = 'Shipment2';
+    public const SA_SHIPMENT_SAVE_WITHOUT_MANDATORY = 'SA_SHIPMENT_SAVE_WITHOUT_MANDATORY';
+    public const SA_HOME_VOUTSTANDING = 'Home1';
+    public const SA_HOME_CINVOICE = 'Home2';
+    public const SA_HOME_VINVOICE = 'Home3';
+    public const SA_HOME_CHECKATD = 'SA_HOME_CHECKATD';
+    public const SA_HOME_CHECKATA = 'SA_HOME_CHECKATA';
 
-    const SA_UNBLOCK = 'SA_UNBLOCK';
+    public const SA_UNBLOCK = 'SA_UNBLOCK';
 
-    const ROLE_CS = 'CS';
-    const ROLE_SALES = 'Sales';
-    const ROLE_ACCOUNTING = 'Accounting';
-    const ROLE_BUMOW = 'MOW';
-    const ROLE_BULED = 'LED';
-    const ROLE_ALLOWEXCEL = 'Excel';
+    public const ROLE_CS = 'CS';
+    public const ROLE_SALES = 'Sales';
+    public const ROLE_ACCOUNTING = 'Accounting';
+    public const ROLE_BUMOW = 'MOW';
+    public const ROLE_BULED = 'LED';
+    public const ROLE_ALLOWEXCEL = 'Excel';
 
     protected function init()
     {

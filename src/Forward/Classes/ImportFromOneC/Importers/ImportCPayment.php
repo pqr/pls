@@ -298,7 +298,7 @@ class ImportCPayment extends ImporterAbstract
 
     }
 
-    private function sendEmailOverpay(CPaymentObj $cpaymentObj)
+    private function sendEmailOverpay(CPaymentObj $cpaymentObj): void
     {
         $cpaymentId = $cpaymentObj->getId();
         // Снчала проверим, есть ли строки у этой оплаты. Если строк нет, ничего проверять не будем

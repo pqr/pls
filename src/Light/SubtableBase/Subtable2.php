@@ -22,9 +22,9 @@ abstract class Subtable2
 {
     use FieldsetAwareTrait, TableWithFoldersTrait;
 
-    const STATE_VIEW = 'view';
-    const STATE_EDIT = 'edit';
-    const STATE_SUBMIT = 'submit';
+    public const STATE_VIEW = 'view';
+    public const STATE_EDIT = 'edit';
+    public const STATE_SUBMIT = 'submit';
 
     protected $_tableMsgIfEmpty;
 
@@ -140,19 +140,15 @@ abstract class Subtable2
     {
         //Массив неймспейсов будет выглять так: <ProjectNamespace>\Module\<ModuleNamespace>\Subtables\ClassName
         $namespaces = explode('\\', get_class($this));
-        //Имя модуля таким образом находится в элементе с индексом 2
-        if (isset($namespaces[2])) {
-            return $namespaces[2];
-        }
 
-        return '';
+        return $namespaces[2] ?? '';
     }
 
     /**
      * Метод пригождается при копировании в ModuleAbstract
      * @param ObjAbstract $masterObj
      */
-    public function setMasterObj(ObjAbstract $masterObj)
+    public function setMasterObj(ObjAbstract $masterObj): void
     {
         $this->_masterObj = $masterObj;
     }
@@ -169,7 +165,7 @@ abstract class Subtable2
         return $this->_subtableName;
     }
 
-    public function setTableName($name)
+    public function setTableName($name): void
     {
         $this->_subtableName = $name;
     }
@@ -179,7 +175,7 @@ abstract class Subtable2
      * @param array $data
      * @return void
      */
-    public function setAdditionalData($data)
+    public function setAdditionalData($data): void
     {
         $this->_additionalData = $data;
     }
@@ -318,7 +314,7 @@ abstract class Subtable2
         return $query;
     }
 
-    public function loadData()
+    public function loadData(): void
     {
         $this->_data = [];
 
@@ -347,7 +343,7 @@ abstract class Subtable2
         return $count;
     }
 
-    public function setData(array $data)
+    public function setData(array $data): void
     {
         $this->_data = $data;
     }
@@ -674,7 +670,7 @@ abstract class Subtable2
         $this->_obj->deleteDb('from subtable');
     }
 
-    public function deleteAll()
+    public function deleteAll(): void
     {
         $this->loadData();
         foreach ($this->_data as $id => $row) {
@@ -758,7 +754,7 @@ abstract class Subtable2
      * на таблицу $this->_masterObj->getDbTable(), для каждого поля, добавляя префикс Cache<Имя класса без Subtable>
      * @return void
      */
-    public function updateCache()
+    public function updateCache(): void
     {
         if ($this->_data === null) {
             $this->loadData();
@@ -807,7 +803,7 @@ abstract class Subtable2
     /**
      * Изменение поля через ajax
      */
-    public function proceedChangeField()
+    public function proceedChangeField(): void
     {
         $fieldKey = $_REQUEST['fieldKey'];
         $field = $this->_obj->getFieldset()->getField($fieldKey);
@@ -866,12 +862,12 @@ abstract class Subtable2
         return $this->_obj->getDbTable();
     }
 
-    public function setDbTable($dbTable)
+    public function setDbTable($dbTable): void
     {
         $this->_obj->setDbTable($dbTable);
     }
 
-    public function setNameFieldKey($nameFieldKey)
+    public function setNameFieldKey($nameFieldKey): void
     {
         $this->_obj->setNameFieldKey($nameFieldKey);
     }

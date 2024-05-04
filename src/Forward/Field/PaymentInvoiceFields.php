@@ -90,9 +90,7 @@ class PaymentInvoiceFields
 
                     return $outHtml;
                 },
-                'getHtmlInputFunction' => function ($value, $data, $outHtml) {
-                    return '<span class="nobr">' . $outHtml . ' <span class="invoice-currency-span">' . ($data['InvoiceCurrencyISO'] ?? '&emsp;&emsp;') . '</span></span>';
-                }
+                'getHtmlInputFunction' => fn($value, $data, $outHtml) => '<span class="nobr">' . $outHtml . ' <span class="invoice-currency-span">' . ($data['InvoiceCurrencyISO'] ?? '&emsp;&emsp;') . '</span></span>'
             ]
         );
     }
@@ -121,9 +119,7 @@ class PaymentInvoiceFields
 
                 return $outHtml;
             },
-            'getHtmlInputFunction' => function ($value, $data, $outHtml) {
-                return '<span class="nobr">' . $outHtml . ' <span class="payment-currency-span">' . ($data['PaymentCurrencyISO'] ?? '') . '</span></span>';
-            }
+            'getHtmlInputFunction' => fn($value, $data, $outHtml) => '<span class="nobr">' . $outHtml . ' <span class="payment-currency-span">' . ($data['PaymentCurrencyISO'] ?? '') . '</span></span>'
         ]);
     }
 }
