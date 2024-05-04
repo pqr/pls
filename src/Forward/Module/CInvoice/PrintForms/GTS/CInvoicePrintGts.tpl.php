@@ -61,7 +61,7 @@
                 </tr>
             </table>
 
-            <?php include __DIR__ . '/../InvoicePrintLayout.tpl.php' ?>
+            <?php include __DIR__.'/../InvoicePrintLayout.tpl.php' ?>
 
             <p style="font-weight: bold; text-align: right">Total:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                 <?= t::html('Amount') ?>&nbsp;&nbsp;<?= t::html('CurrencyISO') ?>

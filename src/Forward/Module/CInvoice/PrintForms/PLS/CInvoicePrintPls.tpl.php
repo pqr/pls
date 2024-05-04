@@ -120,7 +120,7 @@ use Light\Template as t; ?>
             if ($WithStamp): ?>
                 <table align="center" style="width: 80%">
                     <tr>
-                        <td align="right"><img id="stamp" src="i/PLSStamp.jpg"
+                        <td align="right"><img id="stamp" src="i/Stamp/PLSStamp.jpg"
                                                width="210" height="210"></td>
                     </tr>
                 </table>
