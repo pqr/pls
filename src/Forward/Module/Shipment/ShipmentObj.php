@@ -291,7 +291,7 @@ final class ShipmentObj extends ObjAbstract
                         $trafficTypes[$data['TrafficID']] === 'avia' && $data['MAWBNumber'] !== ''
                     ) {
                         return '<a href="http://quicktracing.com/api/air.php?token=tVRtbXgXHxE71UJTTkbPOE0qZrj6sMYF&awb=' .
-                            rawurlencode($data['MAWBNumber']) .
+                            rawurlencode((string) $data['MAWBNumber']) .
                             '" target="_blank" alt="Trace" title="Trace via quicktracing.com"><i class="fa fa-location-arrow"></i>' .
                             /*Img::png('tracktrace16') .*/
                             '</a>';
@@ -392,7 +392,7 @@ final class ShipmentObj extends ObjAbstract
 
     public function getDescriptionHtml()
     {
-        return htmlspecialchars($this->_data['MAWBNumber']) . ' / Shipment ' . $this->_data['Name'];
+        return htmlspecialchars((string) $this->_data['MAWBNumber']) . ' / Shipment ' . $this->_data['Name'];
     }
 
     public function insertDb(array $fieldsData, $logMsg = '<em>Creation</em>'): void
@@ -447,7 +447,7 @@ final class ShipmentObj extends ObjAbstract
         //он же = новый номер файла, т.к. функция updateUsedFileNumbers вызывается после insert или update
         $shInfo = Db::getRow("SELECT TrafficID, Name, CacheUsedFileNumbersJSON FROM shipment WHERE ID = " . $this->_id);
 
-        $usedFileNumbersJson = json_decode($shInfo['CacheUsedFileNumbersJSON'], true);
+        $usedFileNumbersJson = json_decode((string) $shInfo['CacheUsedFileNumbersJSON'], true);
         if (!is_array($usedFileNumbersJson)) {
             $usedFileNumbersJson = [];
         }
@@ -469,7 +469,7 @@ final class ShipmentObj extends ObjAbstract
                 //Поскольку поменялся трафик, нужно поменять и номер файла
                 //Возможно, трафик который мы сейчас пытаемся включить уже использовался ранее для этого файла?
                 //В этом случае нужно вернуть ранее использованный номер файла
-                $usedFileNumbersJson = json_decode($shInfo['CacheUsedFileNumbersJSON'], true);
+                $usedFileNumbersJson = json_decode((string) $shInfo['CacheUsedFileNumbersJSON'], true);
                 if (!is_array($usedFileNumbersJson)) {
                     $usedFileNumbersJson = [];
                 }

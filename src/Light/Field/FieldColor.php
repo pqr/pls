@@ -59,10 +59,10 @@ class FieldColor extends FieldAbstract
     private function getHtmlImg(array $data)
     {
         $source = $this->source;
-        if ($source && str_contains($source, '{id}')) {
+        if ($source && str_contains((string) $source, '{id}')) {
             //Если среди данных был параметр ID и в строке source есть плейсхолдер {id}, нужно его заменить
             if (isset($data['ID'])) {
-                $source = str_replace('{id}', $data['ID'], $source);
+                $source = str_replace('{id}', $data['ID'], (string) $source);
             } else {
                 //Среди данных нет ID - вообще убираем source!
                 $source = null;
@@ -70,7 +70,7 @@ class FieldColor extends FieldAbstract
         }
 
         //Сформируем параметры для вставки в тег кнопки
-        $tagParams = $source ? ' data-source="' . htmlspecialchars($source) . '"' : null;
+        $tagParams = $source ? ' data-source="' . htmlspecialchars((string) $source) . '"' : null;
 
         return '<i class="fas fa-palette colorpalette" ' . $tagParams . '></i>';
     }
@@ -107,7 +107,7 @@ class FieldColor extends FieldAbstract
             . $this->getHtmlImg($data)
             . '<input type="hidden" id="' . $tdata['editId']
             . '" name="' . $tdata['editName']
-            . '" class="color-input" value="' . htmlspecialchars($tdata['value']) . '">'
+            . '" class="color-input" value="' . htmlspecialchars((string) $tdata['value']) . '">'
             . '</div>';
     }
 
@@ -141,7 +141,7 @@ class FieldColor extends FieldAbstract
         //Попробуем прочитать данные из system_params - там должен быть json
         $hints = ApplicationAbstract::getParam('ColorHints');
         if ($hints) {
-            $hints = json_decode($hints, true);
+            $hints = json_decode((string) $hints, true);
         }
 
         //Если не удалось прочитать - преобразуем в массив принудительно

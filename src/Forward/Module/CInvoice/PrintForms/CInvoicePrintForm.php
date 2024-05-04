@@ -15,7 +15,7 @@ class CInvoicePrintForm extends PrintForm
     {
         parent::__construct($key, $title, $format, self::OUT_SAVE_AND_STREAM);
 
-        $this->stamp = str_contains($key, 'Stamp');
+        $this->stamp = str_contains((string) $key, 'Stamp');
     }
 
     public function testForObj(ObjAbstract $obj): bool
@@ -27,7 +27,7 @@ class CInvoicePrintForm extends PrintForm
 
     protected function getTitleHtml(ObjAbstract $obj): string
     {
-        return 'Invoice ' . strip_tags($obj->getDescriptionHtml());
+        return 'Invoice ' . strip_tags((string) $obj->getDescriptionHtml());
     }
 
     protected function getTitleHtmlMultiple(int $count): string

@@ -86,7 +86,7 @@ abstract class InvoiceModuleAbstract extends ModuleAbstract
     public function proceedSplitPerWeight(): void
     {
 
-        $fileNumbers = array_filter(array_map('intval', explode("\n", $_POST['fileNumbers'])));
+        $fileNumbers = array_filter(array_map('intval', explode("\n", (string) $_POST['fileNumbers'])));
         $subtableData = $_POST['subtableData'];
 
         // Для начала загрузим все номера перевозки из базы

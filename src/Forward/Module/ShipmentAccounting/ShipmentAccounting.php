@@ -266,8 +266,8 @@ class ShipmentAccounting extends ModuleAbstract
 
     public function __call($name, $arguments)
     {
-        if (str_starts_with($name, 'massactionDownloadDocs')) {
-            $folderNo = str_replace('massactionDownloadDocs', '', $name);
+        if (str_starts_with((string) $name, 'massactionDownloadDocs')) {
+            $folderNo = str_replace('massactionDownloadDocs', '', (string) $name);
             if (isset(Constant::$standardFolders[$folderNo])) {
                 $ids = $arguments[0];
                 $this->downloadDocs($ids, $folderNo);

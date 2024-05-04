@@ -32,7 +32,7 @@ trait ModuleSessionTrait
             if ($res) {
                 $this->moduleSessionId = $res['ID'];
                 $this->moduleSessionStartPage = (int)$res['StartPage'];
-                $this->moduleSessionObjectsIds = explode(',', $res['IDs']);
+                $this->moduleSessionObjectsIds = explode(',', (string) $res['IDs']);
 
                 $this->tableLinkUrlParams['msid'] = $this->moduleSessionId;
             }

@@ -47,7 +47,7 @@ class Logviewer extends Table
     {
         parent::__construct('Logviewer');
 
-        $formatExcel = fn($value) => html_entity_decode(strip_tags($value));
+        $formatExcel = fn($value) => html_entity_decode(strip_tags((string) $value));
 
         $this->addFields(
 

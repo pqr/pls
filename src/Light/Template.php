@@ -134,8 +134,8 @@ class Template
         $field = static::$tdata['_fieldset'][$fieldKey];
         if (!$field) {
             $title = '';
-            $label = htmlspecialchars($fieldKey);
-            $html = '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
+            $label = htmlspecialchars((string) $fieldKey);
+            $html = '<span class=bad>Unknown field ' . htmlspecialchars((string) $fieldKey) . '</span>';
             return static::control($title, $label, $html);
         }
 
@@ -163,8 +163,8 @@ class Template
         $field = static::$tdata['_fieldset'][$fieldKey];
         if (!$field) {
             $title = '';
-            $label = htmlspecialchars($fieldKey);
-            $html = '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
+            $label = htmlspecialchars((string) $fieldKey);
+            $html = '<span class=bad>Unknown field ' . htmlspecialchars((string) $fieldKey) . '</span>';
             return static::control($title, $label, $html);
         }
 
@@ -185,8 +185,8 @@ class Template
         $html = static::html($fieldKey);
 
         if (!$currencyKey) {
-            if (str_ends_with($fieldKey, 'Amount')) {
-                $amountKey = substr($fieldKey, 0, -6);
+            if (str_ends_with((string) $fieldKey, 'Amount')) {
+                $amountKey = substr((string) $fieldKey, 0, -6);
             } else {
                 $amountKey = $fieldKey;
             }
@@ -242,17 +242,17 @@ class Template
         /** @var F $field */
         $field = static::$tdata['_fieldset'][$fieldKey];
         if (!$field) {
-            return '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
+            return '<span class=bad>Unknown field ' . htmlspecialchars((string) $fieldKey) . '</span>';
         }
 
-        return nl2br($field->getName());
+        return nl2br((string) $field->getName());
     }
 
     public static function label($fieldKey, string $name = null)
     {
         $field = static::$tdata['_fieldset'][$fieldKey];
         if (!$field) {
-            return '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
+            return '<span class=bad>Unknown field ' . htmlspecialchars((string) $fieldKey) . '</span>';
         }
 
         if ($name === null) {
@@ -268,7 +268,7 @@ class Template
         /** @var F $field */
         $field = static::$tdata['_fieldset'][$fieldKey];
         if (!$field) {
-            return 'Unknown field ' . htmlspecialchars($fieldKey);
+            return 'Unknown field ' . htmlspecialchars((string) $fieldKey);
         }
 
         $data = static::$tdata['_data'];
@@ -281,7 +281,7 @@ class Template
         /** @var F $field */
         $field = static::$tdata['_fieldset'][$fieldKey];
         if (!$field) {
-            return '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
+            return '<span class=bad>Unknown field ' . htmlspecialchars((string) $fieldKey) . '</span>';
         }
 
         $mode = static::$tdata['_mode'];
@@ -298,7 +298,7 @@ class Template
         /** @var F $field */
         $field = static::$tdata['_fieldset'][$fieldKey];
         if (!$field) {
-            return '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
+            return '<span class=bad>Unknown field ' . htmlspecialchars((string) $fieldKey) . '</span>';
         }
 
         $data = static::$tdata['_data'] ?? [];
@@ -317,7 +317,7 @@ class Template
         /** @var F $field */
         $field = static::$tdata['_fieldset'][$fieldKey];
         if (!$field) {
-            return '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
+            return '<span class=bad>Unknown field ' . htmlspecialchars((string) $fieldKey) . '</span>';
         }
 
         $data = static::$tdata['_data'] ?? [];
@@ -337,7 +337,7 @@ class Template
         /** @var F $field */
         $field = static::$tdata['_fieldset'][$fieldKey];
         if (!$field) {
-            return '<span class=bad>Unknown field ' . htmlspecialchars($fieldKey) . '</span>';
+            return '<span class=bad>Unknown field ' . htmlspecialchars((string) $fieldKey) . '</span>';
         }
 
         return $field->uom;
@@ -537,7 +537,7 @@ class Template
     public static function csrfHidden()
     {
         if (isset($_SESSION['csrf_token'])) {
-            return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($_SESSION['csrf_token']) . '">';
+            return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars((string) $_SESSION['csrf_token']) . '">';
         }
 
         return '';

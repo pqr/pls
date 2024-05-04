@@ -37,7 +37,7 @@ class CitadeleCurrencyLoader extends AutolaunchAbstract
         //Выделим столбец с валютами, оставив массив $eurRows только с самими курсами
         $currencies = [];
         foreach ($eurRows as $i => $rowData) {
-            preg_match('/[A-Z]{3}/i', $rowData[0], $m);
+            preg_match('/[A-Z]{3}/i', (string) $rowData[0], $m);
             $currencyIso = $m[0];
             if ($currencyIso === 'RUR') {
                 //На сайте citadele рубли обозначаются как RUR. Приведём к принятому у нас обозначению RUB

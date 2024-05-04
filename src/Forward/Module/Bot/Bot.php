@@ -38,7 +38,7 @@ class Bot extends ModuleBotAbstract
         $sqlWhere = [];
         foreach ($commands as [$command, $arg]) {
 
-            if (preg_match('/file(\d+)$/', $command, $matches)) {
+            if (preg_match('/file(\d+)$/', (string) $command, $matches)) {
                 // специальный вид команды file1234, где 1234 номер перевозки
                 $command = 'file';
                 $arg = $matches[1];
@@ -47,7 +47,7 @@ class Bot extends ModuleBotAbstract
             $argSql = Db::esc($arg);
             switch ($command) {
                 case '':
-                    $mawb = str_replace(['-', ' '], '', $arg);
+                    $mawb = str_replace(['-', ' '], '', (string) $arg);
                     $descriptions[] = "Номер MAWB, контейнера или машины: $arg";
                     $sqlWhere[] = "(ContainerName LIKE '%$argSql%'
                                     OR TruckNumber LIKE '%$argSql%'
@@ -82,7 +82,7 @@ class Bot extends ModuleBotAbstract
                     if ($arg === '') {
                         $descriptions[] = "После команды mawb не указан номер накладной, пропускаем";
                     } else {
-                        $mawb = str_replace(['-', ' '], '', $arg);
+                        $mawb = str_replace(['-', ' '], '', (string) $arg);
                         $descriptions[] = "Номер MAWB: $arg";
                         $sqlWhere[] = "REPLACE(REPLACE(MAWBNumber, ' ', ''), '-', '') LIKE '%$mawb%'";
 
@@ -94,7 +94,7 @@ class Bot extends ModuleBotAbstract
                     if ($arg === '') {
                         $descriptions[] = "После команды month не указан месяц, пропускаем";
                     } else {
-                        $parts = explode('-', $arg);
+                        $parts = explode('-', (string) $arg);
                         $monthFrom = $this->parseMonth($parts[0]);
                         if (!$monthFrom) {
                             $descriptions[] = "Не удалось распознать месяц: " . $parts[0] . ", формат должен быть 12/2017 или просто 12, проускаем";
@@ -263,7 +263,7 @@ class Bot extends ModuleBotAbstract
             if ($text === '') {
                 continue;
             }
-            $lines[] = strip_tags($field->getName()) . ' ' . $text;
+            $lines[] = strip_tags((string) $field->getName()) . ' ' . $text;
         }
 
         return implode("\n", $lines);

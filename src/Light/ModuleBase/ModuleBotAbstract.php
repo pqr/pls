@@ -34,7 +34,7 @@ abstract class ModuleBotAbstract
         $this->loadUserByTelegramId($this->telegramId);
 
         $text = $_GET['text'] ?? '';
-        if ($text === '' || stripos($text, '/start') === 0) {
+        if ($text === '' || stripos((string) $text, '/start') === 0) {
 
             $startMessage = User::isAuth()
                 ? $this->getStartMessageAuthorized()
@@ -45,8 +45,8 @@ abstract class ModuleBotAbstract
         }
 
         // Далее проверим, возможно пользователь хочет переавторизоваьться?
-        if (stripos($text, '/login') === 0) {
-            $token = explode(' ', $text, 2)[1] ?? '';
+        if (stripos((string) $text, '/login') === 0) {
+            $token = explode(' ', (string) $text, 2)[1] ?? '';
             if (!$this->loadUserByToken($token, $this->telegramId)) {
                 $msg = "Не верное секретное слово переданное после /login\nВы можете посмотреть своё секретное слово в базе в разделе Инструкции.";
                 $this->sendResponse($msg, 403);
@@ -62,7 +62,7 @@ abstract class ModuleBotAbstract
         }
 
         // Теперь разобьём результат на команды и аргументы
-        $text = trim($text);
+        $text = trim((string) $text);
         $text = str_replace('  ', ' ', $text);
         $parts = array_values(array_filter(explode(' ', $text)));
 
@@ -95,7 +95,7 @@ abstract class ModuleBotAbstract
         $commands = [];
         for($i = 0; $i < count($parts); $i += 2) {
             if ($parts[$i][0] === '/' || isset($parts[$i + 1])) {
-                $theOnlyCommand = mb_strtolower(ltrim($parts[$i], '/'));
+                $theOnlyCommand = mb_strtolower(ltrim((string) $parts[$i], '/'));
                 $arg = $parts[$i + 1] ?? '';
             } else {
                 $theOnlyCommand = '';

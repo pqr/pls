@@ -44,10 +44,10 @@ class User
         $this->data = $data;
         $this->id = $userId;
 
-        $this->moduleAccess = json_decode($data['ModuleAccessJSON'], true);
-        $this->specialAccess = json_decode($data['SpecialAccessJSON'], true);
-        $this->groupAccess = json_decode($data['GroupModuleAccessJSON'], true);
-        $this->groupSpecialAccess = json_decode($data['GroupSpecialAccessJSON'], true);
+        $this->moduleAccess = json_decode((string) $data['ModuleAccessJSON'], true);
+        $this->specialAccess = json_decode((string) $data['SpecialAccessJSON'], true);
+        $this->groupAccess = json_decode((string) $data['GroupModuleAccessJSON'], true);
+        $this->groupSpecialAccess = json_decode((string) $data['GroupSpecialAccessJSON'], true);
 
     }
 
@@ -172,7 +172,7 @@ class User
         }
 
         // Если внутри текста $responsibleRoles есть вхождение запрашиваемой роли, вернём true
-        return str_contains($responsibleRoles, '|' . $role . '|');
+        return str_contains((string) $responsibleRoles, '|' . $role . '|');
     }
 
     public static function hasResponsibleRoleSql(string $role): string
@@ -293,11 +293,11 @@ class User
         $activeUsers = Db::getAll("SELECT u.ID, u.SpecialAccessJSON, g.SpecialAccessJSON AS GroupSpecialAccessJSON FROM user u, usergroup g WHERE u.GroupID = g.ID AND Active = 1");
         if ($activeUsers) {
             foreach ($activeUsers as $activeUser) {
-                $specialAccess = json_decode($activeUser['GroupSpecialAccessJSON'], true);
+                $specialAccess = json_decode((string) $activeUser['GroupSpecialAccessJSON'], true);
                 if (isset($specialAccess[$accessKey]) && $specialAccess[$accessKey] == 1) {
                     $userIds[] = $activeUser['ID'];
                 } elseif (!isset($specialAccess[$accessKey]) || $specialAccess[$accessKey] == -1) {
-                    $groupSpecialAccess = json_decode($activeUser['SpecialAccessJSON'], true);
+                    $groupSpecialAccess = json_decode((string) $activeUser['SpecialAccessJSON'], true);
                     if (isset($groupSpecialAccess[$accessKey]) && $groupSpecialAccess[$accessKey] == 1) {
                         $userIds[] = $activeUser['ID'];
                     }
@@ -366,7 +366,7 @@ class User
     public static function avatarImgWithNameHtml(int $userId = null, string $innerHtml = null): string
     {
         $userId ??= self::getId();
-        $innerHtml ??= htmlspecialchars(self::getName());
+        $innerHtml ??= htmlspecialchars((string) self::getName());
         return '<div class="AvatarWithUsername">' . self::avatarImgHtml($userId) . ' ' . $innerHtml . '</div>';
     }
 

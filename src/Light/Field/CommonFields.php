@@ -80,12 +80,12 @@ class CommonFields
                     return null;
                 }
 
-                if (!str_ends_with($field->key, 'From')) {
+                if (!str_ends_with((string) $field->key, 'From')) {
                     // У этого поля окончание НЕ From, не будем проверят на Until
                     return null;
                 }
 
-                $untilFieldKey = substr($field->key, 0, -4) . 'Until';
+                $untilFieldKey = substr((string) $field->key, 0, -4) . 'Until';
                 $untilValue = $dataFromRequest[$untilFieldKey] ?? $currentObjData[$untilFieldKey] ?? null;
                 if (FieldDate::empty($untilValue)) {
                     // Поле From не задано явно, сравнивать не будем
@@ -121,12 +121,12 @@ class CommonFields
                     return null;
                 }
 
-                if (!str_ends_with($field->key, 'Until')) {
+                if (!str_ends_with((string) $field->key, 'Until')) {
                     // У этого поля окончание НЕ From, не будем проверят на Until
                     return null;
                 }
 
-                $fromFieldKey = substr($field->key, 0, -5) . 'From';
+                $fromFieldKey = substr((string) $field->key, 0, -5) . 'From';
                 $fromValue = $dataFromRequest[$fromFieldKey] ?? $currentObjData[$fromFieldKey] ?? null;
                 if (FieldDate::empty($fromValue)) {
                     // Поле From не задано явно, сравнивать не будем
@@ -393,7 +393,7 @@ class CommonFields
     {
         return F::createHtml('Checkbox', [
             'nameTable' => '<input type="checkbox" class="cb-all">',
-            'getHtmlFunction' => fn($value, array $data) => '<input type="checkbox" class="cb" value="' . htmlspecialchars($data[$valueFieldKey]) . '" name="' . $name . '[]">',
+            'getHtmlFunction' => fn($value, array $data) => '<input type="checkbox" class="cb" value="' . htmlspecialchars((string) $data[$valueFieldKey]) . '" name="' . $name . '[]">',
         ]);
     }
 

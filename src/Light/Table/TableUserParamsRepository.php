@@ -17,7 +17,7 @@ class TableUserParamsRepository
     private $fieldsWidth = [];
     private $showAll = false;
 
-    public function __construct(private string $tableNameForSettings, private int $userId)
+    public function __construct(private readonly string $tableNameForSettings, private readonly int $userId)
     {
     }
 
@@ -115,7 +115,7 @@ class TableUserParamsRepository
                 $this->sortOrder = (string)$params['SortOrder'];
                 $this->fieldsShow = (string)$params['FieldsShow'];
                 $this->showAll = (string)$params['ShowAll'];
-                $this->fieldsWidth = json_decode($params['FieldsWidth'], true);
+                $this->fieldsWidth = json_decode((string) $params['FieldsWidth'], true);
                 if (!is_array($this->fieldsWidth)) {
                     $this->fieldsWidth = [];
                 }

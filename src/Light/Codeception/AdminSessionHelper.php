@@ -24,7 +24,7 @@ class AdminSessionHelper extends Module
         $this->phpsessid = $phpBrowser->grabCookie('PHPSESSID');
 
         $homeHtml = $phpBrowser->_request('GET', 'index.php');
-        preg_match('/window._lightCsrfToken = "(\w+)"/', $homeHtml, $m);
+        preg_match('/window._lightCsrfToken = "(\w+)"/', (string) $homeHtml, $m);
         if (!isset($m[1])) {
             throw new \Exception('window._lightCsrfToken not found on Home');
         }

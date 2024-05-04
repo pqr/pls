@@ -17,7 +17,7 @@ class TemplaterPhp extends TemplaterAbstract
      */
     public $bodyHtml = '';
 
-    public function __construct(string $templateFilepathAbs, private string $titleHtml)
+    public function __construct(string $templateFilepathAbs, private readonly string $titleHtml)
     {
         parent::__construct($templateFilepathAbs);
     }

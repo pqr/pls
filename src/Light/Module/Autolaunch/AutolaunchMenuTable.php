@@ -57,7 +57,7 @@ class AutolaunchMenuTable extends Table
                         // А классы из неймспейса движка Light\Autolaunch\<class> указываются как Light/<class>
                         $replaceFrom = [PROJECT_NAMESPACE . '\\', 'Autolaunch\\', 'Light\\'];
                         $replaceTo = ['', '', 'Light/'];
-                        $cliClass = str_replace($replaceFrom, $replaceTo, $data['ClassName']);
+                        $cliClass = str_replace($replaceFrom, $replaceTo, (string) $data['ClassName']);
 
                         if (strpos($line, (string) $cliClass)) {
                             $cron = substr($line, 0, strpos($line, ' php'));

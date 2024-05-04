@@ -38,7 +38,7 @@ class CurrencyRateCitadele extends ModuleAbstract
 
         if ($existId = Db::getOne($query, $dataFromPost['Name'], $dataFromPost['ValidDate'], $this->_obj->getId())) {
 
-            $msg = 'Курс ' . htmlspecialchars($dataFromPost['Name'])
+            $msg = 'Курс ' . htmlspecialchars((string) $dataFromPost['Name'])
                 . ' на дату ' . FieldDate::beautify($dataFromPost['ValidDate'])
                 . ' уже существует, '
                 . Link::create(CurrencyRateCitadele::class, 'посмотреть...')

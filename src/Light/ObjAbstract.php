@@ -678,7 +678,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable, \Stringab
 
     public function __toString(): string
     {
-        return strip_tags($this->getDescriptionHtml());
+        return strip_tags((string) $this->getDescriptionHtml());
     }
 
     public function jsonSerialize()
@@ -711,7 +711,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable, \Stringab
 
     public function getDescriptionText()
     {
-        return strip_tags($this->getDescriptionHtml());
+        return strip_tags((string) $this->getDescriptionHtml());
     }
 
     /**
@@ -918,8 +918,8 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable, \Stringab
 
     final public function __call($method, $args)
     {
-        $setOrGet = substr($method, 0, 3);
-        $fieldKey = substr($method, 3);
+        $setOrGet = substr((string) $method, 0, 3);
+        $fieldKey = substr((string) $method, 3);
         if ($setOrGet === 'set') {
 
             $this->_data[$fieldKey] = $args[0];

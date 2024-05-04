@@ -31,9 +31,9 @@ class Autolaunch
             $className = $_GET['class'];
             // Базовая проверка: класс должен начинаться либо с неймспейса проекта, либо с Light\\
             // и не должен содержать точек внутри
-            if (!str_contains($className, 'Light\\')
-                && strpos($className, (string) PROJECT_NAMESPACE)
-                || str_contains($className, '.')
+            if (!str_contains((string) $className, 'Light\\')
+                && strpos((string) $className, (string) PROJECT_NAMESPACE)
+                || str_contains((string) $className, '.')
             ) {
                 throw new \InvalidArgumentException("Invalid autolaunch class $className");
             }

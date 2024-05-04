@@ -83,7 +83,7 @@ class Session implements \SessionHandlerInterface
         $flashFromDb = Db::getAll("SELECT ID, Messages FROM user_flash WHERE UserID = $userId ORDER BY ID");
         if ($flashFromDb) {
             foreach ($flashFromDb as $jsonFromDb) {
-                $messagesFromDb = json_decode($jsonFromDb['Messages'], true);
+                $messagesFromDb = json_decode((string) $jsonFromDb['Messages'], true);
                 if (is_array($messagesFromDb)) {
                     $out = array_merge($out, $messagesFromDb);
                 }
@@ -107,8 +107,8 @@ class Session implements \SessionHandlerInterface
 
     public static function __callStatic($name, $arguments)
     {
-        if (str_starts_with($name, 'flash')) {
-            $type = strtolower(substr($name, 5));
+        if (str_starts_with((string) $name, 'flash')) {
+            $type = strtolower(substr((string) $name, 5));
             self::flashAdd($type, $arguments[0] ?? '');
             return;
         }

@@ -62,7 +62,7 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
 
     public function getCalculatedValue($value, array $data = [], $forTable = false)
     {
-        if ($this->groupconcat && $this->groupconcatSum && $value && strpos($value, "\n")) {
+        if ($this->groupconcat && $this->groupconcatSum && $value && strpos((string) $value, "\n")) {
             // Для этого поля определена настройка $this->groupconcatSum
             // и внутри действительно есть несколько значений для суммирования - выполним его!
             $value = $this->calcGroupconcatSum($value);
@@ -92,7 +92,7 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
 //    }
 
     protected function calcGroupconcatSum($value) {
-        $lines = explode("\n", $value);
+        $lines = explode("\n", (string) $value);
         return array_sum($lines);
     }
 
@@ -109,7 +109,7 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
     {
         $value = parent::getDataFromRequestInner($request);
         if ($value !== null) {
-            $value = str_replace(' ', '', $value);
+            $value = str_replace(' ', '', (string) $value);
         }
 
         return $value;

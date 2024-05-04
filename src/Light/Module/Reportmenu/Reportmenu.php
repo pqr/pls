@@ -228,7 +228,7 @@ class Reportmenu
         $outHtml .= '<ul>';
         foreach ($allUsers as $user) {
             if (User::hasWriteAccess('Reportmenu', $user['ID'])) {
-                $outHtml .= '<li>' . htmlspecialchars($user['Name']) . '</li>';
+                $outHtml .= '<li>' . htmlspecialchars((string) $user['Name']) . '</li>';
             }
         }
         $outHtml .= '</ul>';
@@ -394,8 +394,8 @@ class Reportmenu
 
         $fieldset = $this->getAccessDialogFieldset();
         ['UserIDs' => $userIdsString, 'GroupIDs' => $groupIdsString] = $fieldset->getDataFromRequest($_POST);
-        $newUserIds = array_filter(array_map('intval', explode('|', $userIdsString)));
-        $newGroupIds = array_filter(array_map('intval', explode('|', $groupIdsString)));
+        $newUserIds = array_filter(array_map('intval', explode('|', (string) $userIdsString)));
+        $newGroupIds = array_filter(array_map('intval', explode('|', (string) $groupIdsString)));
 
         $ra = new ReportAccess();
         $ra->setNewUsers($newUserIds, $reportClass);

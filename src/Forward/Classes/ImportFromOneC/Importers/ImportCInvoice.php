@@ -26,14 +26,14 @@ class ImportCInvoice extends ImporterAbstract
         $cinvObj = new CInvoiceObj();
         $cinvObj->setId($cinvId);
         if (!$cinvObj->loadData()) {
-            $this->msgBuff->addError('Не удалось найти в базе счёт с ID <strong>' . htmlspecialchars($data['ID']) . '</strong>');
+            $this->msgBuff->addError('Не удалось найти в базе счёт с ID <strong>' . htmlspecialchars((string) $data['ID']) . '</strong>');
             return 0;
         }
 
         // Для запуска updateCacheAfterSubmit() нужно предварительно сохранить старые данные по счёту
         $cinvOldData = $cinvObj->getData();
 
-        $currencyParts = explode('+', $data['CurrencyISO']);
+        $currencyParts = explode('+', (string) $data['CurrencyISO']);
 
         $updateData = [
             'Name' => $data['DocNumber'],
@@ -156,7 +156,7 @@ class ImportCInvoice extends ImporterAbstract
             $result = false;
         } else {
             if (!is_numeric($data['ID'])) {
-                $this->msgBuff->addError('Поле ID должно быть числом, получено "' . htmlspecialchars($data['Amount']) . '"');
+                $this->msgBuff->addError('Поле ID должно быть числом, получено "' . htmlspecialchars((string) $data['Amount']) . '"');
                 $result = false;
             }
         }
@@ -173,12 +173,12 @@ class ImportCInvoice extends ImporterAbstract
         $cinvFolderRelative = FilesFolder::getRelativeModule(CInvoice::class, $cinvId);
 
         $pdfDataBase64 = $data['Data'];
-        $pdfData = base64_decode($pdfDataBase64);
+        $pdfData = base64_decode((string) $pdfDataBase64);
         $pdfFilename = File::getValidFilename($cinvObj['Name'] . '.pdf');
         $this->writeFile($cinvFolderRelative, $pdfFilename, $pdfData, $cinvLink);
 
         $excelDataBase64 = $data['ExcelData'];
-        $excelData = base64_decode($excelDataBase64);
+        $excelData = base64_decode((string) $excelDataBase64);
         $excelFilename = File::getValidFilename($cinvObj['Name']) . '.xlsx';
         $this->writeFile($cinvFolderRelative, $excelFilename, $excelData, $cinvLink);
 

@@ -116,7 +116,7 @@ class Translate
             self::$_countries['ru'] = array_column($dataCountries, 'Name');
         }
 
-        $words = preg_split("/([^A-Za-z+])/", $text, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+        $words = preg_split("/([^A-Za-z+])/", (string) $text, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
         $translates = [];
 
         foreach ($words as $word) {
@@ -126,7 +126,7 @@ class Translate
                 $countryReplaceFlag = 0;
                 if ($countryCheck) {
                     // попробуем сначала перевести с помощью справочника стран
-                    $translate = str_ireplace(self::$_countries['en'], self::$_countries['ru'], $charWord,
+                    $translate = str_ireplace((string) self::$_countries['en'], (string) self::$_countries['ru'], $charWord,
                         $countryReplaceFlag);
                 }
                 if (!$countryReplaceFlag) {
@@ -135,7 +135,7 @@ class Translate
                         $translate = self::latToRus($word);
                     }
                 }
-                $translate = mb_strtoupper($translate);
+                $translate = mb_strtoupper((string) $translate);
             }
             $translates[$word] = $translate;
         }
@@ -229,7 +229,7 @@ class Translate
     {
         $rus = ['ё', 'ж', 'ц', 'ч', 'ш', 'щ', 'ю', 'я', 'Ё', 'Ж', 'Ц', 'Ч', 'Ш', 'Щ', 'Ю', 'Я'];
         $lat = ['yo', 'zh', 'tc', 'ch', 'sh', 'sh', 'yu', 'ya', 'YO', 'ZH', 'TC', 'CH', 'SH', 'SH', 'YU', 'YA'];
-        $string = str_replace($rus, $lat, $string);
+        $string = str_replace($rus, $lat, (string) $string);
         $string = strtr($string,
             "АБВГДЕЗИЙКЛМНОПРСТУФХЪЫЬЭабвгдезийклмнопрстуфхъыьэ",
             "ABVGDEZIJKLMNOPRSTUFH_I_Eabvgdezijklmnoprstufh_i_e");
@@ -392,7 +392,7 @@ class Translate
             "yi",
             "i",
         ];
-        $string = str_replace($lat, $cyr, $string);
+        $string = str_replace($lat, $cyr, (string) $string);
         $string = str_replace("_", " ", $string);
         return ($string);
     }
@@ -511,6 +511,6 @@ class Translate
             $out[] = "$kop $currencyIso";
         }
 
-        return trim(preg_replace('/ {2,}/', ' ', implode(' ', $out)));
+        return trim((string) preg_replace('/ {2,}/', ' ', implode(' ', $out)));
     }
 }

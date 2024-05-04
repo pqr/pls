@@ -26,7 +26,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         if ($this->currencyIsoFieldKey) {
             return $this->currencyIsoFieldKey;
         }
-        return str_replace('Amount', '', $this->key) . 'CurrencyISO';
+        return str_replace('Amount', '', (string) $this->key) . 'CurrencyISO';
     }
 
     public function getSqlSelect()
@@ -41,7 +41,7 @@ class FieldMoneyWithCurrency extends FieldMoney
 
     protected function calcGroupconcatSum($value)
     {
-        $lines = explode("\n", $value);
+        $lines = explode("\n", (string) $value);
 
         $amountPerCurrency = Misc::calcAmountPerCurrency($lines);
 
@@ -65,7 +65,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeViewMaxWidth);
 
         if ($value) {
-            $parts = explode(' ', $value);
+            $parts = explode(' ', (string) $value);
             if (isset($parts[1])) {
                 $amount = $parts[1];
 
@@ -118,8 +118,8 @@ class FieldMoneyWithCurrency extends FieldMoney
         $amount = 0;
         $currencyIso = '';
 
-        if ($value != '' && str_contains($value, ' ')) {
-            [$currencyIso, $amount] = explode(' ', $value);
+        if ($value != '' && str_contains((string) $value, ' ')) {
+            [$currencyIso, $amount] = explode(' ', (string) $value);
             $amount = (double)$amount;
         }
 
@@ -130,8 +130,8 @@ class FieldMoneyWithCurrency extends FieldMoney
     {
         $amount = 0;
 
-        if ($value != '' && ($pos = strpos($value, ' ')) !== false) {
-            $amount = (double)substr($value, $pos + 1);
+        if ($value != '' && ($pos = strpos((string) $value, ' ')) !== false) {
+            $amount = (double)substr((string) $value, $pos + 1);
         }
 
         return $amount;
@@ -141,8 +141,8 @@ class FieldMoneyWithCurrency extends FieldMoney
     {
         $amount = 0;
 
-        if ($value != '' && ($pos = strpos($value, ' ')) !== false) {
-            $amount = (double)substr($value, 0, $pos);
+        if ($value != '' && ($pos = strpos((string) $value, ' ')) !== false) {
+            $amount = (double)substr((string) $value, 0, $pos);
         }
 
         return $amount;

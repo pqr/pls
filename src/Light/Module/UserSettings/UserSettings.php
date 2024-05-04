@@ -54,10 +54,10 @@ class UserSettings extends SettingsPageAbstract
                     $href = 'mailto:' . $value;
                     $params = [];
                     if (isset($_GET['MailSubject'])) {
-                        $params[] = 'subject=' . rawurlencode($_GET['MailSubject']);
+                        $params[] = 'subject=' . rawurlencode((string) $_GET['MailSubject']);
                     }
                     if (isset($_GET['MailBody'])) {
-                        $params[] = 'body=' . rawurlencode($_GET['MailBody']);
+                        $params[] = 'body=' . rawurlencode((string) $_GET['MailBody']);
                     }
                     if ($params) {
                         $href .= '?' . implode('&', $params);

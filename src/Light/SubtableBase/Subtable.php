@@ -573,7 +573,7 @@ abstract class Subtable extends Table
     {
         $outHtml = parent::getHtmlTableTrTotal($allFields, $dataCalculated);
         return str_replace('tr class="total"', 'tr class="total" id="' . $this->getTableName() . '-subtable-tr-total"',
-            $outHtml);
+            (string) $outHtml);
     }
 
     /**
@@ -843,7 +843,7 @@ abstract class Subtable extends Table
         $this->initFolderStatuses();
         $this->copySubtableDataToTableData();
 
-        return '<div class="subtable-div" data-subtablename="' . htmlspecialchars($this->getTableName()) . '">'
+        return '<div class="subtable-div" data-subtablename="' . htmlspecialchars((string) $this->getTableName()) . '">'
             . $this->getHtmlTable()
             . '</div>';
     }
@@ -852,7 +852,7 @@ abstract class Subtable extends Table
     {
         return "?a=" . Request::getModule()
             . "&id=" . $this->_masterObj->getId()
-            . "&subtable=" . htmlspecialchars($this->getTableName())
+            . "&subtable=" . htmlspecialchars((string) $this->getTableName())
             . "&func=ChangeField&subid=";
     }
 
@@ -1093,7 +1093,7 @@ abstract class Subtable extends Table
             $this->_delRows = [];
             //сожержит номера строк через запятую, которые были удалены
             if (isset($dataFromRequest['delrows']) && $dataFromRequest['delrows'] !== '') {
-                $delRowsIds = array_values(array_map('intval', explode(',', $dataFromRequest['delrows'])));
+                $delRowsIds = array_values(array_map('intval', explode(',', (string) $dataFromRequest['delrows'])));
                 $this->_delRows = array_combine($delRowsIds, $delRowsIds);
             }
         }
@@ -1125,7 +1125,7 @@ abstract class Subtable extends Table
             if ($dataFromRequest['ids'] === '') {
                 $this->_rowsIds = [];
             } else {
-                $this->_rowsIds = array_values(array_map('intval', explode(',', $dataFromRequest['ids'])));
+                $this->_rowsIds = array_values(array_map('intval', explode(',', (string) $dataFromRequest['ids'])));
             }
         }
         return $this->_rowsIds;

@@ -386,8 +386,8 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
 
     private function parseFieldValueFromDb(F $field, $value)
     {
-        if ($field->groupconcat && str_contains($value, "\n")) {
-            $lines = explode("\n", $value);
+        if ($field->groupconcat && str_contains((string) $value, "\n")) {
+            $lines = explode("\n", (string) $value);
             //Если число линий больше 1 - будем рекурсивно обрабатывать каждую линию
             if (count($lines) > 1) {
                 //Обработаем каждую строку через метод $this->getCalculatedValueOneLine() и соберём все строки в текст

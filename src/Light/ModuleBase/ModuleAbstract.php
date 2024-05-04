@@ -234,7 +234,7 @@ abstract class ModuleAbstract extends Table
         $initialData = [];
         if (isset($_GET['initialData'])) {
             try {
-                $initialData = json_decode($_GET['initialData'], true, 512, JSON_THROW_ON_ERROR);
+                $initialData = json_decode((string) $_GET['initialData'], true, 512, JSON_THROW_ON_ERROR);
                 if (!is_array($initialData)) {
                     $initialData = [];
                 }
@@ -651,7 +651,7 @@ abstract class ModuleAbstract extends Table
             // Это первичный запрос на рендер каркаса диалога (пока без содержимого с файлами)
             $textFolder = Config::$lang === 'ru' ? 'Папка' : 'Folder';
             $moduleName = ModuleRegister::getModuleName($this->getModule());
-            $title = "$textFolder: $moduleName " . strip_tags($this->_obj->getDescriptionHtml());
+            $title = "$textFolder: $moduleName " . strip_tags((string) $this->_obj->getDescriptionHtml());
             $apiUrl = Link::create($module)->view($id)->params(['elfinder' => 'api'])->getHref();
             ElfinderPage::renderPage($title, $apiUrl);
             return;
@@ -676,12 +676,12 @@ abstract class ModuleAbstract extends Table
         if ($_GET['elfinder'] === 'download' && isset($_GET['file'])) {
 
             // Проверим, чтобы в имени скачиваемого файла file не было ..
-            $test = '/' . str_replace('\\', '/', $_GET['file']) . '/';
+            $test = '/' . str_replace('\\', '/', (string) $_GET['file']) . '/';
             if (str_contains($test, '/../')) {
                 throw new InvalidArgumentException("file contains ..: " . $_GET['file']);
             }
 
-            $file = trim($_GET['file'], '/');
+            $file = trim((string) $_GET['file'], '/');
             FilesFolder::streamFile("$relative/$file");
             ApplicationAbstract::terminate();
             return;
@@ -698,7 +698,7 @@ abstract class ModuleAbstract extends Table
     {
         $this->_state = self::STATE_VIEW_FUNC;
 
-        $func = ucfirst($_GET['func']);
+        $func = ucfirst((string) $_GET['func']);
         $postOrGet = Request::isPost() ? 'Post' : 'Get';
 
         $method = "view{$postOrGet}{$func}";
@@ -724,7 +724,7 @@ abstract class ModuleAbstract extends Table
 
         $action = $this->createViewActionInstance($actionName);
         if (!$action) {
-            Session::flashError('Unknown action ' . htmlspecialchars($actionName));
+            Session::flashError('Unknown action ' . htmlspecialchars((string) $actionName));
             $this->redirectWhenWrongAction();
             return null;
         }
@@ -1018,13 +1018,13 @@ abstract class ModuleAbstract extends Table
         if (!$created) {
             return '';
         }
-        $mailSubject = strip_tags($this->_obj->getDescriptionHtml());
+        $mailSubject = strip_tags((string) $this->_obj->getDescriptionHtml());
         $mailBody = $this->_obj->getLinkView()->absolute()->getHref() . "\n\n";
         $beautyDateTime = FieldDateTime::beautify($created['CreatedDateTime']);
         $beautyDate = FieldDate::beautify($created['CreatedDateTime']);
         $title = Config::$lang === 'ru' ? 'Создано' : 'Created by';
         $title .= ': ' . $created['Name'] . ' @ ' . $beautyDateTime;
-        $linkText = htmlspecialchars($created['Name']) . ' @ ' . $beautyDate;
+        $linkText = htmlspecialchars((string) $created['Name']) . ' @ ' . $beautyDate;
         return Link::userDialog($created['CreatedBy'], $linkText, $mailSubject,
             $mailBody)
             ->cssClass('CreatedLink')
@@ -1118,12 +1118,12 @@ abstract class ModuleAbstract extends Table
         $res = $this->getFieldset()->proceedSelect2ajax($fieldKey);
         if ($res === null) {
             // Если поле не найдено среди полей объекта, возможно это поле в подтаблице?
-            preg_match_all('/(\w+)\[(\d+)\]\[(\w+)\]/', $fieldKey, $mathes);
+            preg_match_all('/(\w+)\[(\d+)\]\[(\w+)\]/', (string) $fieldKey, $mathes);
             if (count($mathes) === 4 && isset($mathes[1][0]) && $mathes[1][0]) {
                 $subtableName = $mathes[1][0];
                 // Отрезаем хвост "Subtable", который фигурирует в имени поля пришедшем в $_GET
-                if (substr($subtableName, -1 * strlen('Subtable')) === 'Subtable') {
-                    $subtableName = substr($subtableName, 0, -1 * strlen('Subtable'));
+                if (substr((string) $subtableName, -1 * strlen('Subtable')) === 'Subtable') {
+                    $subtableName = substr((string) $subtableName, 0, -1 * strlen('Subtable'));
                 }
                 $subtableClass = PROJECT_NAMESPACE . '\\Module\\' . $this->getModule() . '\\Subtables\\' . $subtableName;
                 if ($this->hasSubtable($subtableClass)) {
@@ -1445,7 +1445,7 @@ abstract class ModuleAbstract extends Table
             && $dataFromPost['Synonyms'] !== ''
             && $this->hasField('Synonyms')
         ) {
-            $synArr = explode("\n", $dataFromPost['Synonyms']);
+            $synArr = explode("\n", (string) $dataFromPost['Synonyms']);
             $synArr = array_map('trim', $synArr);
             $synArr = array_filter($synArr);
 

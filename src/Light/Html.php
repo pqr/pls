@@ -44,7 +44,7 @@ class Html
             preg_replace(
                 "#(^|[\n ])((www|ftp)\.[^ \"\t\n\r<]*)#is",
                 "\\1<a href=\"http://\\2\" target=\"_blank\">\\2</a>",
-                $ret
+                (string) $ret
             );
 
         // matches an email@domain type address at the start of a line, or after a space.
@@ -52,11 +52,11 @@ class Html
         $ret = preg_replace(
             "#(^|[\n ])([a-z0-9&\-_.]+?)@([\w\-]+\.([\w\-\.]+\.)*[\w]+)#i",
             "\\1<a href=\"mailto:\\2@\\3\">\\2@\\3</a>",
-            $ret
+            (string) $ret
         );
 
         // Remove our padding..
-        $ret = substr($ret, 1);
+        $ret = substr((string) $ret, 1);
 
         return $ret;
     }
@@ -108,11 +108,11 @@ class Html
 
     public static function getTruncatedText($text, $maxlength = 30)
     {
-        if (str_contains($text, 'truncated-full')) {
+        if (str_contains((string) $text, 'truncated-full')) {
             // Если переданный текст уже содержит html код для скрытия-отображения, то второй раз не оборачиваем (актуально для вывода логов)
             return $text;
         }
-        if (mb_strlen(strip_tags($text), 'UTF-8') > $maxlength) {
+        if (mb_strlen(strip_tags((string) $text), 'UTF-8') > $maxlength) {
             $showLabel = Config::$lang === 'ru' ? 'Показать' : 'Show';
             $text = '<a class="inner showhide" href="#">' . $showLabel . '</a>'
                 . '<div class="truncated-full display-none">' . $text . '</div>';
@@ -122,12 +122,12 @@ class Html
 
     public static function getPartlyTruncatedText($text, $lettersShown = 200)
     {
-        if (str_contains($text, 'truncated-full')) {
+        if (str_contains((string) $text, 'truncated-full')) {
             // Если переданный текст уже содержит html код для скрытия-отображения, то второй раз не оборачиваем (актуально для вывода логов)
             return $text;
         }
 
-        $shownText = mb_substr($text, 0, $lettersShown, 'UTF-8');
+        $shownText = mb_substr((string) $text, 0, $lettersShown, 'UTF-8');
         $lastOpenTagsPosition = strrpos($shownText, '<');
         $lastClosedTagsPosition = strrpos($shownText, '>');
 
@@ -138,7 +138,7 @@ class Html
             $shownText = substr($shownText, 0, $lastOpenTagsPosition);
         }
 
-        if (mb_strlen(strip_tags($text), 'UTF-8') > $lettersShown * 2) {
+        if (mb_strlen(strip_tags((string) $text), 'UTF-8') > $lettersShown * 2) {
             $text = '<span class="truncated-part">' . $shownText . ' ...</span>'
                 . '<div class="truncated-full display-none">' . $text . '</div>'
                 . ' <a class="inner showhide" href="#">Show</a>';

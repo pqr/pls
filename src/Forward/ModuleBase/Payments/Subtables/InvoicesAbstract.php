@@ -54,7 +54,7 @@ abstract class InvoicesAbstract extends Subtable
         $this->tableDataTotal = [$firstLetter . 'InvoiceName' => 'Total'];
 
         if (isset($_POST['invoices'])) {
-            $invIds = explode(',', $_POST['invoices']);
+            $invIds = explode(',', (string) $_POST['invoices']);
             $this->setSubtableDataAdditional($this->getInvoices($invIds));
         }
 

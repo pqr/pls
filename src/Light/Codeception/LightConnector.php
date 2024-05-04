@@ -26,10 +26,10 @@ class LightConnector extends AbstractBrowser
         $_SERVER = $request->getServer();
         $_FILES = $this->remapFiles($request->getFiles());
 
-        $uri = str_replace('http://localhost', '', $request->getUri());
+        $uri = str_replace('http://localhost', '', (string) $request->getUri());
 
         $_REQUEST = $this->remapRequestParameters($request->getParameters());
-        if (strtoupper($request->getMethod()) == 'GET') {
+        if (strtoupper((string) $request->getMethod()) == 'GET') {
             $_GET = $_REQUEST;
             $_POST = [];
         } else {
@@ -37,14 +37,14 @@ class LightConnector extends AbstractBrowser
             $_GET = [];
         }
 
-        $uriQuery = ltrim(parse_url($request->getUri(), PHP_URL_QUERY), '?');
+        $uriQuery = ltrim(parse_url((string) $request->getUri(), PHP_URL_QUERY), '?');
         parse_str($uriQuery, $params);
         foreach ($params as $k => $v) {
             $_GET[$k] = $v;
             $_REQUEST[$k] = $v;
         }
 
-        $_SERVER['REQUEST_METHOD'] = strtoupper($request->getMethod());
+        $_SERVER['REQUEST_METHOD'] = strtoupper((string) $request->getMethod());
         $_SERVER['REQUEST_URI'] = $uri;
         $_SERVER['QUERY_STRING'] = $uriQuery;
         $_SERVER['SCRIPT_NAME'] = 'index.php';

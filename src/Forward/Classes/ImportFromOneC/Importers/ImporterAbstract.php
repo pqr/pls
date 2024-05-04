@@ -59,7 +59,7 @@ abstract class ImporterAbstract
             $result = false;
         } else {
             if (!is_numeric($data['Amount'])) {
-                $this->msgBuff->addError('Поле Amount должно быть числом, получено "' . htmlspecialchars($data['Amount']) . '"');
+                $this->msgBuff->addError('Поле Amount должно быть числом, получено "' . htmlspecialchars((string) $data['Amount']) . '"');
                 $result = false;
             }
         }

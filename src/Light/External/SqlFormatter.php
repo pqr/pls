@@ -121,12 +121,12 @@ class SqlFormatter
         self::$reserved = array_keys($reservedMap);
 
         // Set up regular expressions
-        self::$regex_boundaries = '('.implode('|',array_map([self::class, 'quote_regex'],self::$boundaries)).')';
-        self::$regex_reserved = '('.implode('|',array_map([self::class, 'quote_regex'],self::$reserved)).')';
-        self::$regex_reserved_toplevel = str_replace(' ','\\s+','('.implode('|',array_map([self::class, 'quote_regex'],self::$reserved_toplevel)).')');
-        self::$regex_reserved_newline = str_replace(' ','\\s+','('.implode('|',array_map([self::class, 'quote_regex'],self::$reserved_newline)).')');
+        self::$regex_boundaries = '('.implode('|',array_map(self::quote_regex(...),self::$boundaries)).')';
+        self::$regex_reserved = '('.implode('|',array_map(self::quote_regex(...),self::$reserved)).')';
+        self::$regex_reserved_toplevel = str_replace(' ','\\s+','('.implode('|',array_map(self::quote_regex(...),self::$reserved_toplevel)).')');
+        self::$regex_reserved_newline = str_replace(' ','\\s+','('.implode('|',array_map(self::quote_regex(...),self::$reserved_newline)).')');
 
-        self::$regex_function = '('.implode('|',array_map([self::class, 'quote_regex'],self::$functions)).')';
+        self::$regex_function = '('.implode('|',array_map(self::quote_regex(...),self::$functions)).')';
 
         self::$init = true;
     }
@@ -241,7 +241,7 @@ class SqlFormatter
         // 1. backtick quoted string using `` to escape
         // 2. double quoted string using "" or \" to escape
         // 3. single quoted string using '' or \' to escape
-        if ( preg_match('/^(((`[^`]*($|`))+)|(("[^"\\\\]*(?:\\\\.[^"\\\\]*)*("|$))+)|((\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*(\'|$))+))/s', $string, $matches)) {
+        if ( preg_match('/^(((`[^`]*($|`))+)|(("[^"\\\\]*(?:\\\\.[^"\\\\]*)*("|$))+)|((\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*(\'|$))+))/s', (string) $string, $matches)) {
             $ret = $matches[1];
         }
         
@@ -293,12 +293,12 @@ class SqlFormatter
             if ($cacheKey && isset(self::$token_cache[$cacheKey])) {
                 // Retrieve from cache
                 $token = self::$token_cache[$cacheKey];
-                $token_length = strlen($token[self::TOKEN_VALUE]);
+                $token_length = strlen((string) $token[self::TOKEN_VALUE]);
                 self::$cache_hits++;
             } else {
                 // Get the next token and the token type
                 $token = self::getNextToken($string, $token);
-                $token_length = strlen($token[self::TOKEN_VALUE]);
+                $token_length = strlen((string) $token[self::TOKEN_VALUE]);
                 self::$cache_misses++;
 
                 // If the token is shorter than the max length, store it in cache
@@ -393,7 +393,7 @@ class SqlFormatter
                 if ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_BLOCK_COMMENT) {
                     $indent = str_repeat($tab,$indent_level);
                     $return .= "\n" . $indent;
-                    $highlighted = str_replace("\n","\n".$indent,$highlighted);
+                    $highlighted = str_replace("\n","\n".$indent,(string) $highlighted);
                 }
 
                 $return .= $highlighted;
@@ -425,7 +425,7 @@ class SqlFormatter
                     }
                 }
 
-                $inline_count += strlen($token[self::TOKEN_VALUE]);
+                $inline_count += strlen((string) $token[self::TOKEN_VALUE]);
             }
 
             // Opening parentheses increase the block indent level and start a new line
@@ -458,7 +458,7 @@ class SqlFormatter
                         break;
                     }
 
-                    $length += strlen($next[self::TOKEN_VALUE]);
+                    $length += strlen((string) $next[self::TOKEN_VALUE]);
                 }
 
                 if ($inline_parentheses && $length > 30) {
@@ -535,8 +535,8 @@ class SqlFormatter
                 }
 
                 // If the token may have extra whitespace
-                if (str_contains($token[self::TOKEN_VALUE],' ') || str_contains($token[self::TOKEN_VALUE],"\n") || str_contains($token[self::TOKEN_VALUE],"\t")) {
-                    $highlighted = preg_replace('/\s+/',' ',$highlighted);
+                if (str_contains((string) $token[self::TOKEN_VALUE],' ') || str_contains((string) $token[self::TOKEN_VALUE],"\n") || str_contains((string) $token[self::TOKEN_VALUE],"\t")) {
+                    $highlighted = preg_replace('/\s+/',' ',(string) $highlighted);
                 }
                 //if SQL 'LIMIT' clause, start variable to reset newline
                 if ($token[self::TOKEN_VALUE] === 'LIMIT' && !$inline_parentheses) {
@@ -570,8 +570,8 @@ class SqlFormatter
                 }
 
                 // If the token may have extra whitespace
-                if (str_contains($token[self::TOKEN_VALUE],' ') || str_contains($token[self::TOKEN_VALUE],"\n") || str_contains($token[self::TOKEN_VALUE],"\t")) {
-                    $highlighted = preg_replace('/\s+/',' ',$highlighted);
+                if (str_contains((string) $token[self::TOKEN_VALUE],' ') || str_contains((string) $token[self::TOKEN_VALUE],"\n") || str_contains((string) $token[self::TOKEN_VALUE],"\t")) {
+                    $highlighted = preg_replace('/\s+/',' ',(string) $highlighted);
                 }
             }
 
@@ -729,7 +729,7 @@ class SqlFormatter
             }
             // Remove extra whitespace in reserved words (e.g "OUTER     JOIN" becomes "OUTER JOIN")
             elseif ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED || $token[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED_NEWLINE || $token[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED_TOPLEVEL) {
-                $token[self::TOKEN_VALUE] = preg_replace('/\s+/',' ',$token[self::TOKEN_VALUE]);
+                $token[self::TOKEN_VALUE] = preg_replace('/\s+/',' ',(string) $token[self::TOKEN_VALUE]);
             }
 
             if ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_WHITESPACE) {
@@ -765,7 +765,7 @@ class SqlFormatter
         if (self::is_cli()) {
             $token = $token[self::TOKEN_VALUE];
         } else {
-            $token = htmlentities($token[self::TOKEN_VALUE],ENT_COMPAT,'UTF-8');
+            $token = htmlentities((string) $token[self::TOKEN_VALUE],ENT_COMPAT,'UTF-8');
         }
 
         if ($type===self::TOKEN_TYPE_BOUNDARY) {

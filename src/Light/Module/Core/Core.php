@@ -122,7 +122,7 @@ class Core
         $out = [];
 
         //Запрос к базе данных на поиск значения для autocomplete
-        $listTables = explode(',', $_GET['source']);
+        $listTables = explode(',', (string) $_GET['source']);
         foreach ($listTables as $table) {
 
             //В строке $table может содержаться имя таблицы и указание какой тип LIKE использовать через |
@@ -262,7 +262,7 @@ class Core
             $createdDateTimeText = (new Carbon($createdDateTime))->diffForHumans();
 
             $html .= '<li>'
-                . '<a href="#" data-filtersjson="' . htmlspecialchars($filtersJson) . '">'
+                . '<a href="#" data-filtersjson="' . htmlspecialchars((string) $filtersJson) . '">'
                 . '<div class="note nobr">' . $createdDateTimeText . ':</div>'
                 . '<div>' . $description . '</div>'
                 . '</a>'
@@ -350,7 +350,7 @@ class Core
             foreach ($saved as $name => $filtersJson) {
 
                 $html .= '<li>'
-                    . '<a href="#" data-filtersjson="' . htmlspecialchars($filtersJson) . '">'
+                    . '<a href="#" data-filtersjson="' . htmlspecialchars((string) $filtersJson) . '">'
                     . htmlspecialchars($name)
                     . '</a>'
                     . '<a href="#" class="del-link">' . Ico::delete() . '</a>'
@@ -383,8 +383,8 @@ class Core
         ], 'user_filter_saved');
 
         $msg = Config::$lang === 'ru'
-            ? 'Фильтр <strong>' . htmlspecialchars($_POST['Name']) . '</strong> успешно сохранён'
-            : 'Filter values <strong>' . htmlspecialchars($_POST['Name']) . '</strong> saved';
+            ? 'Фильтр <strong>' . htmlspecialchars((string) $_POST['Name']) . '</strong> успешно сохранён'
+            : 'Filter values <strong>' . htmlspecialchars((string) $_POST['Name']) . '</strong> saved';
         Response::sendToast('success', $msg);
 
         // В ответ отдадим свежий список сохранённых фильтров
@@ -413,8 +413,8 @@ class Core
         );
 
         $msg = Config::$lang === 'ru'
-            ? 'Фильтр ' . htmlspecialchars($_POST['Name']) . ' удалён'
-            : 'Filter values ' . htmlspecialchars($_POST['Name']) . ' deleted';
+            ? 'Фильтр ' . htmlspecialchars((string) $_POST['Name']) . ' удалён'
+            : 'Filter values ' . htmlspecialchars((string) $_POST['Name']) . ' deleted';
         Response::sendToast('success', $msg);
 
         // В ответ отдадим свежий список сохранённых фильтров

@@ -142,7 +142,7 @@ class FieldDate extends FieldInputAbstract
 
     public function allowSqlWhereValue($value)
     {
-        $value = trim($value);
+        $value = trim((string) $value);
         return self::notEmpty($value);
     }
 
@@ -160,9 +160,9 @@ class FieldDate extends FieldInputAbstract
     private function getSqlWhereFromUntil($value): string
     {
         // Одно из полей тандема "From ... until ..."
-        $dbKey = preg_replace('/(From|Until)$/', '', $this->getFilterFieldKeys()[0]);
-        if (str_ends_with($this->key, 'From')) {
-            if (strlen($value) === 10) {
+        $dbKey = preg_replace('/(From|Until)$/', '', (string) $this->getFilterFieldKeys()[0]);
+        if (str_ends_with((string) $this->key, 'From')) {
+            if (strlen((string) $value) === 10) {
                 $value .= ' 00:00';
             }
             if ($this->asInterval) {
@@ -172,8 +172,8 @@ class FieldDate extends FieldInputAbstract
             return "$dbKey >= '" . Db::esc($value) . "'";
         }
 
-        if (str_ends_with($this->key, 'Until')) {
-            if (strlen($value) === 10) {
+        if (str_ends_with((string) $this->key, 'Until')) {
+            if (strlen((string) $value) === 10) {
                 $value .= ' 23:59';
             }
             if ($this->asInterval) {
@@ -193,7 +193,7 @@ class FieldDate extends FieldInputAbstract
             return '';
         }
 
-        $timestamp = strtotime($mysqlDate);
+        $timestamp = strtotime((string) $mysqlDate);
         if ($timestamp === false) {
             return $mysqlDate;
         }

@@ -102,11 +102,11 @@ class Js
 
         // Добавим метки времени, чтобы обновлять закешированные файлы
         foreach ($out as &$file) {
-            if (!str_starts_with($file, '//')) {
+            if (!str_starts_with((string) $file, '//')) {
                 // Добавим метку времени для уникальности
                 // но только если имя файла не начинается с // - это глобальные интернет пути
-                if (str_starts_with($file, 'lightpublic/')) {
-                    $srcFile = LIGHT_DIR_LIGHTPUBLIC . '/' . str_replace('lightpublic/', '', $file);
+                if (str_starts_with((string) $file, 'lightpublic/')) {
+                    $srcFile = LIGHT_DIR_LIGHTPUBLIC . '/' . str_replace('lightpublic/', '', (string) $file);
                 } else {
                     $srcFile = LIGHT_DIR_PUBLIC . "/$file";
                 }

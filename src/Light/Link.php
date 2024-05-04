@@ -312,7 +312,7 @@ class Link implements \Stringable
 
         } else {
 
-            $href = $this->isAbsolute ? rtrim(Config::$localUrl, '/') . '/' : '';
+            $href = $this->isAbsolute ? rtrim((string) Config::$localUrl, '/') . '/' : '';
             $href .= "?a=$this->module";
             if ($this->params) {
                 $href .= '&' . http_build_query($this->params);
@@ -342,7 +342,7 @@ class Link implements \Stringable
         $attributesText = '';
         if ($this->attributes) {
             foreach ($this->attributes as $attrKey => $attrVal) {
-                $attributesText .= ' ' . $attrKey . '="' . htmlspecialchars($attrVal) . '"';
+                $attributesText .= ' ' . $attrKey . '="' . htmlspecialchars((string) $attrVal) . '"';
             }
         }
 
@@ -355,7 +355,7 @@ class Link implements \Stringable
         }
 
         return '<a href="' . $href . '"'
-            . ($this->title ? ' title="' . htmlspecialchars($this->title) . '"' : '')
+            . ($this->title ? ' title="' . htmlspecialchars((string) $this->title) . '"' : '')
             . ($this->cssClass ? ' class="' . implode(' ', $this->cssClass) . '"' : '')
             . $attributesText
             . ($this->isBlank ? ' target="_blank"' : '')
@@ -381,11 +381,11 @@ class Link implements \Stringable
         //Параметры могли быть переданы не как удобный массив ключ=>значение, а как строка для http запроса: ключ1=значение1&ключ2=значение2
         //Для начала переведём в массив
         if (!is_array($currentUrlParams)) {
-            parse_str($currentUrlParams, $currentUrlParams);
+            parse_str((string) $currentUrlParams, $currentUrlParams);
         }
 
         if (!is_array($additionalParams)) {
-            parse_str($additionalParams, $additionalParams);
+            parse_str((string) $additionalParams, $additionalParams);
         }
 
         //Склеиваем два массива и возвращаем как массив
@@ -487,11 +487,11 @@ class Link implements \Stringable
         }
 
         if ($title) {
-            $title = ' title="' . htmlspecialchars($title) . '"';
+            $title = ' title="' . htmlspecialchars((string) $title) . '"';
         }
 
         if ($tagParams) {
-            $tagParams = ' ' . trim($tagParams);
+            $tagParams = ' ' . trim((string) $tagParams);
         }
 
         if ($blank) {

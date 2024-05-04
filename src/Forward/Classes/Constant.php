@@ -179,7 +179,7 @@ class Constant
         //Загрузим из system_params
         $addons = Application::getParam('DefaultAddons');
         if ($addons) {
-            $addons = json_decode($addons, true);
+            $addons = json_decode((string) $addons, true);
         }
 
         if (!is_array($addons)) {

@@ -40,8 +40,8 @@ class Response
      */
     public static function header($header): void
     {
-        if (str_contains($header, ':')) {
-            [$name, $value] = explode(':', $header, 2);
+        if (str_contains((string) $header, ':')) {
+            [$name, $value] = explode(':', (string) $header, 2);
             self::withHeader($name, $value);
         }
     }
@@ -134,7 +134,7 @@ class Response
             $formHtml = '<form action="' . $url . '" method="post"' . ($blank ? ' target="_blank"' : '') . ' id="redirectpost">';
             $formHtml .= Template::csrfHidden();
             foreach ($postData as $key => $val) {
-                $formHtml .= '<input type="hidden" name="' . $key . '" value="' . htmlspecialchars($val) . '">';
+                $formHtml .= '<input type="hidden" name="' . $key . '" value="' . htmlspecialchars((string) $val) . '">';
             }
             $formHtml .= '</form>';
             $formHtml .= '<script>document.getElementById("redirectpost").submit();</script>';
@@ -302,7 +302,7 @@ class Response
 
     public static function setPageTitle($title): void
     {
-        self::$pageTitle = strip_tags($title);
+        self::$pageTitle = strip_tags((string) $title);
     }
 
     public static function getFullTitle(): string

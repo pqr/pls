@@ -61,7 +61,7 @@ class FieldMonth extends FieldInputAbstract
             return '';
         }
 
-        return substr($value, 0, 7);
+        return substr((string) $value, 0, 7);
     }
 
     protected function getEditTagParams($value, array $data)
@@ -69,8 +69,8 @@ class FieldMonth extends FieldInputAbstract
         $editTagParams = parent::getEditTagParams($value, $data);
 
         $editTagParams .= ' data-allyear="' . ($this->allYear ? '1' : '0') . '"'
-            . ' data-yearfrom="' . htmlspecialchars($this->yearFrom) . '"'
-            . ' data-yearuntil="' . htmlspecialchars($this->yearUntil) . '"'
+            . ' data-yearfrom="' . htmlspecialchars((string) $this->yearFrom) . '"'
+            . ' data-yearuntil="' . htmlspecialchars((string) $this->yearUntil) . '"'
             . ' autocomplete="off"';
 
         return $editTagParams;
@@ -86,8 +86,8 @@ class FieldMonth extends FieldInputAbstract
         if (self::empty($value)) {
             return '';
         }
-        if (str_contains($value, '-')) {
-            [$year, $month] = explode('-', $value);
+        if (str_contains((string) $value, '-')) {
+            [$year, $month] = explode('-', (string) $value);
             return "$month/$year";
         }
 
@@ -137,7 +137,7 @@ class FieldMonth extends FieldInputAbstract
             $dbKeyQuoted = Db::quote($dbKeyQuoted);
         }
 
-        if (strlen($value) === 10) {
+        if (strlen((string) $value) === 10) {
             return "DATE_FORMAT($dbKeyQuoted, '%Y-%m-01') = " . Db::escString($value);
         }
 
@@ -151,11 +151,11 @@ class FieldMonth extends FieldInputAbstract
             return '';
         }
 
-        if (preg_match('/\d{4}-\d{2}-\d{2}/', $value)) {
-            return substr($value, 0, 8) . '01';
+        if (preg_match('/\d{4}-\d{2}-\d{2}/', (string) $value)) {
+            return substr((string) $value, 0, 8) . '01';
         }
 
-        $slpashPos = strpos($value, '/');
+        $slpashPos = strpos((string) $value, '/');
         if ($slpashPos === false && is_numeric($value) && $value >= 2000) {
             //Задан только год (без месяца)
             return $value;
@@ -165,7 +165,7 @@ class FieldMonth extends FieldInputAbstract
             return '';
         }
 
-        [$month, $year] = explode('/', $value);
+        [$month, $year] = explode('/', (string) $value);
         if (!is_numeric($month) || $month < 1 || $month > 12
             || !is_numeric($year) || $year < 2000
         ) {

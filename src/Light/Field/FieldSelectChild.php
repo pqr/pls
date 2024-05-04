@@ -35,7 +35,7 @@ class FieldSelectChild extends FieldSelect
         //Принудительно приводим к массиву, на случай если была указана строка
         $parentFieldKeys = (array)$this->parentFieldKeys;
         $tagParams .= ' data-parentfieldkeys="' . htmlspecialchars(json_encode($parentFieldKeys)) . '"';
-        $tagParams .= ' data-ownfieldkey="' . htmlspecialchars($this->key) . '"';
+        $tagParams .= ' data-ownfieldkey="' . htmlspecialchars((string) $this->key) . '"';
 
         $options = $this->getEvaluatedOptions();
         $relations = $this->relations;

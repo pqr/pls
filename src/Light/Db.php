@@ -84,7 +84,7 @@ class Db
         /** @noinspection NotOptimalRegularExpressionsInspection */
         $array = preg_split(
             '/(@[nsifuapl12]{1,2}_[a-zA-Z0-9_]*|@[nsifuapl12]{1,2})/u',
-            $rawQuery,
+            (string) $rawQuery,
             null,
             PREG_SPLIT_DELIM_CAPTURE
         );
@@ -162,7 +162,7 @@ class Db
             throw new \RuntimeException($msg);
         }
 
-        $msgHtml = 'SQL error: ' . $query . htmlspecialchars($errMsg);
+        $msgHtml = 'SQL error: ' . $query . htmlspecialchars((string) $errMsg);
         Response::sendErrorMsg($msgHtml);
     }
 
@@ -520,7 +520,7 @@ class Db
 
     public static function insertUnique($value, string $tableName)
     {
-        $value = trim($value);
+        $value = trim((string) $value);
         if ($value === '') {
             return 0;
         }
@@ -606,8 +606,8 @@ class Db
 
             $filterComaSeparatedArr[] = $elem;
 
-            if (str_contains($elem, '-')) {
-                [$from, $to] = explode('-', $elem, 2);
+            if (str_contains((string) $elem, '-')) {
+                [$from, $to] = explode('-', (string) $elem, 2);
                 if (is_numeric($from) && is_numeric($to)) {
 
                     $fromInt = (int)$from;
@@ -633,7 +633,7 @@ class Db
             $valuesEqual = [];
             $valuesLike = [];
             foreach ($filterComaSeparatedArr as $cv) {
-                $cv = trim($cv);
+                $cv = trim((string) $cv);
                 if ($cv !== '') {
                     if ($isIntField && !is_numeric($cv)) {
                         continue;

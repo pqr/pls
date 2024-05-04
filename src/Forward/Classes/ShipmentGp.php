@@ -36,7 +36,7 @@ class ShipmentGp
         //Одновременно с этим регистрируем обработчик ApplicationAbstract::addFlushOnTerminate()
         if (self::$_buffer === null) {
             self::$_buffer = [];
-            ApplicationAbstract::onAfterSend([self::class, 'flush']);
+            ApplicationAbstract::onAfterSend(self::flush(...));
         }
 
         self::$_buffer[$fileNumber] = true;

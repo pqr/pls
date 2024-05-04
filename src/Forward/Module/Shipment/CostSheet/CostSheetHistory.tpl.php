@@ -17,7 +17,7 @@ use Light\Template as t;
 
 <h1 style="margin: 10px">Cost-sheet for shipment <?= t::html('Name') ?></h1>
 
-<p style="margin: 10px">Created by <?= htmlspecialchars($CreatedBy_raw) ?> @ <?= date('d.m.Y H:i') ?></p>
+<p style="margin: 10px">Created by <?= htmlspecialchars((string) $CreatedBy_raw) ?> @ <?= date('d.m.Y H:i') ?></p>
 <hr>
 
 <?php include __DIR__ . '/CostSheetHead.tpl.php' ?>

@@ -39,7 +39,7 @@ class FieldCheckbox extends FieldAbstract
             $viewCssClass .= ' ' . ($value ? $this->cssClassYes : $this->cssClassNo);
         }
 
-        return trim($viewCssClass);
+        return trim((string) $viewCssClass);
     }
 
     public function getText($value, array $data = [], $forTable = false)

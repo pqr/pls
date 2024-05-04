@@ -48,7 +48,7 @@ class InvoiceFields
         return F::createDate('DueDate', [
             'name' => 'Due Date',
             'editTitle' => 'Оставьте пустым, чтобы программа расчитала Due Date автоматически',
-            'viewCssClass' => [Finance::class, 'getOverdueViewCssClass'],
+            'viewCssClass' => Finance::getOverdueViewCssClass(...),
             'sqlSelectRequires' => ['Status', 'Overdue'],
             'ajax' => true,
             'editMandatory' => $editMandatory
@@ -71,7 +71,7 @@ class InvoiceFields
             'tableAlign' => 'center',
             'default' => Finance::INVOICESTATUS_OPEN,
             'options' => Finance::$cinvoiceStatuses,
-            'getHtmlFunction' => [Finance::class, 'getCInvoiceStatusIcon'],
+            'getHtmlFunction' => Finance::getCInvoiceStatusIcon(...),
             'sqlSelect' => '`Status`'
         ]);
     }
@@ -97,7 +97,7 @@ class InvoiceFields
             'tableAlign' => 'center',
             'default' => Finance::INVOICESTATUS_OPEN,
             'options' => Finance::$vinvoiceStatuses,
-            'getHtmlFunction' => [Finance::class, 'getVInvoiceStatusIcon'],
+            'getHtmlFunction' => Finance::getVInvoiceStatusIcon(...),
             'sqlSelect' => '`Status`'
         ]);
     }
@@ -131,8 +131,8 @@ class InvoiceFields
             'editWidth' => 'small',
             'editAlign' => 'left',
             'editCssClass' => 'input-int',
-            'viewCssClass' => [InvoiceFields::class, 'invoiceViewCssClass'],
-            'viewTitle' => [InvoiceFields::class, 'invoiceViewTitle']
+            'viewCssClass' => InvoiceFields::invoiceViewCssClass(...),
+            'viewTitle' => InvoiceFields::invoiceViewTitle(...)
         ];
 
         $params += $defaultParams;
@@ -149,8 +149,8 @@ class InvoiceFields
             'tableAlign' => 'center',
             'editWidth' => $firstLetter === 'C' ? 'small' : 'medium',
             'tableWidthExcel' => 14,
-            'viewCssClass' => [InvoiceFields::class, 'invoiceViewCssClass'],
-            'viewTitle' => [InvoiceFields::class, 'invoiceViewTitle'],
+            'viewCssClass' => InvoiceFields::invoiceViewCssClass(...),
+            'viewTitle' => InvoiceFields::invoiceViewTitle(...),
             'getHtmlFunction' => function ($value, array $data, $outHtml, $forTable, $field) {
 
                 if (array_key_exists('RealInvoiceID', $data) && !empty($data['RealInvoiceID'])) {

@@ -130,7 +130,7 @@ abstract class Subtable2
 
         // Отдельного файла для класса найдено не было, создадим на основе обычного Obj
         $this->_obj = new SimpleObj();
-        $this->_obj->setDbTable(strtolower($this->getTableName()));
+        $this->_obj->setDbTable(strtolower((string) $this->getTableName()));
     }
 
     /**
@@ -384,11 +384,11 @@ abstract class Subtable2
 
         $ajaxChangeFieldUrl = "?a=" . Request::getModule()
             . "&id=" . $this->_masterObj->getId()
-            . "&subtable=" . htmlspecialchars($this->getTableName())
+            . "&subtable=" . htmlspecialchars((string) $this->getTableName())
             . "&func=ChangeField&subid=";
 
         $outHtml = '<div data-ajaxchangefieldurl="' . $ajaxChangeFieldUrl . '">'
-            . '<div class="subtable2-div" data-subtablename="' . htmlspecialchars($subtableName) . '">';
+            . '<div class="subtable2-div" data-subtablename="' . htmlspecialchars((string) $subtableName) . '">';
         if ($this->_data) {
             $rowNum = 0;
             $fieldset = $this->getFieldset();
@@ -460,8 +460,8 @@ abstract class Subtable2
         $subtableName = $this->getTableName();
         $outHtml = '<div class="subtable2-div"'
             . ' data-fields="' . htmlspecialchars($fieldsJson) . '"'
-            . ' data-subtablename="' . htmlspecialchars($subtableName) . '"'
-            . ' data-blocktemplate="' . htmlspecialchars($newBlockHtmlTemplate) . '">';
+            . ' data-subtablename="' . htmlspecialchars((string) $subtableName) . '"'
+            . ' data-blocktemplate="' . htmlspecialchars((string) $newBlockHtmlTemplate) . '">';
         $rowNum = 0;
         foreach ($allData as $blockData) {
             $outHtml .= $this->getEditBlockHtml($blockData, $rowNum);
@@ -614,7 +614,7 @@ abstract class Subtable2
             $postKey = $this->getTableName() . 'Subtable2';
             $subtableRequestData = $_POST[$postKey];
             if (isset($subtableRequestData['delrows']) && $subtableRequestData['delrows'] !== '') {
-                $delRowsIds = explode(',', $subtableRequestData['delrows']);
+                $delRowsIds = explode(',', (string) $subtableRequestData['delrows']);
                 $this->_delRows = array_combine($delRowsIds, $delRowsIds);
             }
         }
@@ -644,7 +644,7 @@ abstract class Subtable2
             Новые строки, которые добавляются в HTML таблицу через JS будут отображены в конце с нулевым ID */
             $ids = $_POST[$this->getTableName() . 'Subtable2']['ids'];
             if ($ids !== '') {
-                $this->_rowsIds = explode(',', $ids);
+                $this->_rowsIds = explode(',', (string) $ids);
             } else {
                 $this->_rowsIds = [];
             }

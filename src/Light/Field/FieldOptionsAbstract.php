@@ -238,7 +238,7 @@ abstract class FieldOptionsAbstract extends FieldAbstract
     {
         $outHtml = $this->getOptionText($option, $originalValue);
         if ($this->htmlspecialchars) {
-            $outHtml = htmlspecialchars($outHtml);
+            $outHtml = htmlspecialchars((string) $outHtml);
         }
         if (!empty($option['icon'])) {
             $outHtml = Ico::i($option['icon']) . ' ' . $outHtml;
@@ -288,7 +288,7 @@ abstract class FieldOptionsAbstract extends FieldAbstract
         }
 
         if (!$this->htmlspecialchars) {
-            $text = strip_tags($text);
+            $text = strip_tags((string) $text);
         }
 
         return $text;

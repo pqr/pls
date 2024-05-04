@@ -64,7 +64,7 @@ class Core extends LightCore
             $where = "Name = '" . Db::esc($value) . "'";
         } else {
             $where = "REPLACE(REPLACE(MAWBNumber, ' ', ''), '-', '') LIKE '%" .
-                Db::esc(str_replace([' ', '-'], '', $value)) . "%'";
+                Db::esc(str_replace([' ', '-'], '', (string) $value)) . "%'";
         }
 
         $query = "SELECT " . $searchField . " AS value

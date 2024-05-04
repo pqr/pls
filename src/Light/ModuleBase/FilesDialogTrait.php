@@ -208,7 +208,7 @@ trait FilesDialogTrait
         // Подготовим специальный объект для записи в базу, чтобы одновременно и логи записались правильно
         $manager = $this->filesDialogManager($masterId);
         foreach ($rowsDataFromPost as $base64 => $rowDataFromPost) {
-            $relative = base64_decode($base64);
+            $relative = base64_decode((string) $base64);
             $manager->updateFromDialog($relative, $rowDataFromPost);
         }
     }
@@ -244,7 +244,7 @@ trait FilesDialogTrait
                 /** @var FieldAbstract $cloneField */
                 $cloneField = clone $field;
                 $field->setGetHtmlFunction(function ($value, array $data) use ($masterId, $cloneField) {
-                    $base64 = base64_encode($data['RelativePath']);
+                    $base64 = base64_encode((string) $data['RelativePath']);
                     $cloneField->setEditId("FilesDialogTable-$masterId-$base64-$cloneField->key");
                     $cloneField->setEditName("FilesDialogTable[$masterId][$base64][$cloneField->key]");
                     if ($cloneField->checkEditAccessFunction($data)) {

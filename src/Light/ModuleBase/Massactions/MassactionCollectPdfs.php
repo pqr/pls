@@ -86,7 +86,7 @@ trait MassactionCollectPdfs
             $srcRelative = $this->getFolderRelative($obj->getData());
             foreach (FilesFolder::scandir($srcRelative, 'pdf') as $file) {
 
-                $filename = pathinfo($file, PATHINFO_FILENAME);
+                $filename = pathinfo((string) $file, PATHINFO_FILENAME);
                 if ($filenameIncludes !== '' && mb_stripos($filename, $filenameIncludes) === false) {
                     // От этого метода требовалось, чтобы файл содержал опеределённые слова (например, "без_печати")
                     continue;

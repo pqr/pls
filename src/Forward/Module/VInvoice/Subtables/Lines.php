@@ -61,7 +61,7 @@ class Lines extends Subtable
         //из Cost-sheet'а нажатием кнопки Register Vendor Invoice
         if (isset($_GET['fromCostSheet'])) {
             $shipmentId = (int)$_GET['fromCostSheet'];
-            $csLineIds = explode(',', $_GET['csLineIds']);
+            $csLineIds = explode(',', (string) $_GET['csLineIds']);
             $this->loadFromCostSheet($csLineIds, $shipmentId);
         }
 

@@ -23,7 +23,7 @@ class ShipmentDownloadDocs
      */
     private $tmpDir;
 
-    public function __construct(private Filesystem $fs, private Process $process, private Msg $msgBuff)
+    public function __construct(private readonly Filesystem $fs, private readonly Process $process, private readonly Msg $msgBuff)
     {
     }
 
@@ -162,13 +162,13 @@ class ShipmentDownloadDocs
 
         foreach (FilesFolder::scandir($srcFolderRelative) as $file) {
 
-            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            $ext = strtolower(pathinfo((string) $file, PATHINFO_EXTENSION));
 
             if ($onlyExtension && $onlyExtension !== $ext) {
                 continue;
             }
 
-            if ($filenameStartsWith && mb_stripos($file, 'Заявка') !== 0) {
+            if ($filenameStartsWith && mb_stripos((string) $file, 'Заявка') !== 0) {
                 continue;
             }
 

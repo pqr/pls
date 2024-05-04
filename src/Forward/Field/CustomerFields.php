@@ -32,9 +32,9 @@ class CustomerFields
                     return $outHtml;
                 },
                 'viewCssClass' => function ($value, array $data, $forTable) {
-                    if ($value && $forTable !== 'total' && isset($data['CreditAmount']) && str_contains($data['CreditAmount'], ' ')) {
+                    if ($value && $forTable !== 'total' && isset($data['CreditAmount']) && str_contains((string) $data['CreditAmount'], ' ')) {
                         [$currencyIso, $amount] = explode(' ', $value);
-                        [$creditCurrencyIso, $creditAmount] = explode(' ', $data['CreditAmount']);
+                        [$creditCurrencyIso, $creditAmount] = explode(' ', (string) $data['CreditAmount']);
                         if ($amount > 0 && $creditCurrencyIso == $currencyIso) {
                             //Сравним сумму задолженности с кредитными условиями
                             if ($amount > $creditAmount) {

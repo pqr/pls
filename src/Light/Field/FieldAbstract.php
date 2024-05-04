@@ -621,7 +621,7 @@ abstract class FieldAbstract implements \JsonSerializable
         $this->editName = $this->key;
         $this->tableOrderBy = $this->key;
 
-        if (str_starts_with($this->key, 'Name')) {
+        if (str_starts_with((string) $this->key, 'Name')) {
             //Если поле начинается со слова Name - установим некую стандартную ширину для экспорта в Excel = 30
             $this->tableWidthExcel = 30;
         }
@@ -766,7 +766,7 @@ abstract class FieldAbstract implements \JsonSerializable
 
         if ($this->groupconcat && $value) {
 
-            $lines = explode("\n", $value);
+            $lines = explode("\n", (string) $value);
             // Если число линий больше 1 - будем рекурсивно обрабатывать каждую линию
             $groupconcatLinesCount = count($lines);
 
@@ -779,7 +779,7 @@ abstract class FieldAbstract implements \JsonSerializable
                 $html = $this->getHtmlOneLine($lineValue, $data, $forTable, $groupconcatLinesCount, $forLog);
 
                 // Проверим, если есть специальный флаг пропускать пустые линии и эта линия действительно пустая - пропустим её!
-                if ($groupconcatRemoveEmpty && trim(strip_tags($html)) === '') {
+                if ($groupconcatRemoveEmpty && trim(strip_tags((string) $html)) === '') {
                     // Не записываем эту строку в $outLines
                     continue;
                 }
@@ -818,7 +818,7 @@ abstract class FieldAbstract implements \JsonSerializable
             //Обрезаем текст, если его слишком много и указана специальная опция в настройках поля
             switch ($this->textTruncate) {
                 case self::TEXTTRUNCATE_LIST:
-                    $outHtml = Html::getTruncatedList(explode('<br>', $outHtml), $this->getName());
+                    $outHtml = Html::getTruncatedList(explode('<br>', (string) $outHtml), $this->getName());
                     break;
                 case self::TEXTTRUNCATE_FULL:
                     $outHtml = Html::getTruncatedText($outHtml);
@@ -854,7 +854,7 @@ abstract class FieldAbstract implements \JsonSerializable
             $tagParams = $this->getViewTagParams($value, $data, $forTable);
             if ($cssClass || $tagParams || $title) {
                 $cssClass = $cssClass ? ' class="' . $cssClass . '"' : '';
-                $title = $title ? ' title="' . htmlspecialchars($title) . '"' : '';
+                $title = $title ? ' title="' . htmlspecialchars((string) $title) . '"' : '';
                 $tagParams = $tagParams ? ' ' . $tagParams : '';
 
                 $outHtml = '<span' . $cssClass . $tagParams . $title . '>' . $outHtml . '</span>';
@@ -900,7 +900,7 @@ abstract class FieldAbstract implements \JsonSerializable
 
         $ajaxSuccessHandler = $this->ajaxSuccessHandler ? ' data-ajax-success-handler="' . $this->ajaxSuccessHandler . '"' : '';
 
-        return '<a href="#" class="ajax-input" data-id="' . $data['ID'] . '" data-fieldkey="' . htmlspecialchars($this->key) . '"' . $ajaxSuccessHandler . '>' . $outHtml . '</a>';
+        return '<a href="#" class="ajax-input" data-id="' . $data['ID'] . '" data-fieldkey="' . htmlspecialchars((string) $this->key) . '"' . $ajaxSuccessHandler . '>' . $outHtml . '</a>';
     }
 
     public function getHtmlForLog($value, array $data)
@@ -912,7 +912,7 @@ abstract class FieldAbstract implements \JsonSerializable
     {
         $ajax = $this->ajax;
         $this->ajax = false;
-        $out = htmlspecialchars_decode(strip_tags($this->getHtml($value, $data, $forTable)));
+        $out = htmlspecialchars_decode(strip_tags((string) $this->getHtml($value, $data, $forTable)));
         $this->ajax = $ajax;
         return $out;
     }
@@ -925,7 +925,7 @@ abstract class FieldAbstract implements \JsonSerializable
 
         if ($value !== null) {
             //Правильное оформление перевода строк
-            $value = strip_tags(str_replace(["\r", "<br>", "<p>"], ['', "\n", "\n"], $value));
+            $value = strip_tags(str_replace(["\r", "<br>", "<p>"], ['', "\n", "\n"], (string) $value));
         }
 
         //Проверим, возможно значение $value состоит из нескольких, которые необходимо разбить через перевод строки
@@ -937,7 +937,7 @@ abstract class FieldAbstract implements \JsonSerializable
             $outLines = [];
             foreach ($lines as $lineValue) {
                 $lineValue = $this->getExcelOneLine(trim($lineValue), $data, $groupconcatLinesCount);
-                if ($groupconcatRemoveEmpty && trim($lineValue) === '') {
+                if ($groupconcatRemoveEmpty && trim((string) $lineValue) === '') {
                     continue;
                 }
 
@@ -974,8 +974,8 @@ abstract class FieldAbstract implements \JsonSerializable
 
         $calcFunction = $this->calcFunction;
 
-        if ($this->groupconcat && str_contains($value, "\n")) {
-            $lines = explode("\n", $value);
+        if ($this->groupconcat && str_contains((string) $value, "\n")) {
+            $lines = explode("\n", (string) $value);
             //Если число линий больше 1 - будем рекурсивно обрабатывать каждую линию
             if (count($lines) > 1) {
                 //Обработаем каждую строку через метод $this->getCalculatedValueOneLine() и соберём все строки в текст
@@ -1009,9 +1009,9 @@ abstract class FieldAbstract implements \JsonSerializable
 
     protected function getHtmlInputTplData($value, array $data, $idPrefix)
     {
-        $cssClass = trim($this->getEditCssClass($value, $data));
-        $title = trim($this->getEditTitle($value, $data));
-        $tagParams = trim($this->getEditTagParams($value, $data));
+        $cssClass = trim((string) $this->getEditCssClass($value, $data));
+        $title = trim((string) $this->getEditTitle($value, $data));
+        $tagParams = trim((string) $this->getEditTagParams($value, $data));
 
         return [
             'cssClass' => $cssClass ? ' class="' . $cssClass . '"' : '',
@@ -1093,7 +1093,7 @@ abstract class FieldAbstract implements \JsonSerializable
      */
     protected function allowSqlWhereValue($value)
     {
-        return trim($value) !== '';
+        return trim((string) $value) !== '';
     }
 
     /**
@@ -1169,7 +1169,7 @@ abstract class FieldAbstract implements \JsonSerializable
             //Если хоть какой-то запрос получился, проведём над ним последние операции
             if ($sqlWhere) {
 
-                $sqlWhere = str_replace('{value}', Db::esc($value), $sqlWhere);
+                $sqlWhere = str_replace('{value}', Db::esc($value), (string) $sqlWhere);
                 // В параметре filterFieldKeys пользователь мог задать несколько ключей по которым искать
                 // нужно перебрать их все в цикле и сформировать OR запрос.
                 $filterFieldKeys = $this->getFilterFieldKeys();
@@ -1253,7 +1253,7 @@ abstract class FieldAbstract implements \JsonSerializable
     public function getNameDbLog()
     {
         if ($this->nameDbLog === null) {
-            $this->nameDbLog = strip_tags($this->getName());
+            $this->nameDbLog = strip_tags((string) $this->getName());
         }
 
         return $this->nameDbLog;
@@ -1279,7 +1279,7 @@ abstract class FieldAbstract implements \JsonSerializable
         }
 
         $name = $this->getNameTable();
-        return strip_tags(str_replace(['<br>', "\n"], ' ', $name));
+        return strip_tags(str_replace(['<br>', "\n"], ' ', (string) $name));
     }
 
     public function getSqlSelect()
@@ -1335,7 +1335,7 @@ abstract class FieldAbstract implements \JsonSerializable
 
         $viewCssClass = $this->viewCssClass;
         if ($viewCssClass && is_callable($viewCssClass)) {
-            $callResult = trim($viewCssClass($value, $data, $forTable, $this));
+            $callResult = trim((string) $viewCssClass($value, $data, $forTable, $this));
             if ($callResult) {
                 $result .= " $callResult";
             }
@@ -1443,14 +1443,14 @@ abstract class FieldAbstract implements \JsonSerializable
             && $this->acSource
             && !$this->acReadonly
             && $this->acSource[0] !== '?'
-            && !str_contains($this->acSource, ',')
+            && !str_contains((string) $this->acSource, ',')
         ) {
 
             $formatFunction = $this->acFormatValueOnSaveFunction;
 
             // Возможно, в $source присутствовал знак |, который разделял имя таблицы и режим поиска like, например
             // list_table|full или list_table|startwith
-            $table = explode('|', $this->acSource)[0];
+            $table = explode('|', (string) $this->acSource)[0];
             if ($this->acDelimChar) {
                 // В строке может быть несоклько занчений разделённых DelimChar
                 $values = explode($this->acDelimChar, $value);

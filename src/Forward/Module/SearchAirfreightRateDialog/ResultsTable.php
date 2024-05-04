@@ -87,7 +87,7 @@ class ResultsTable extends Table
                     }
 
                     $html = '<span title="' . htmlspecialchars($title) . '">'
-                        . htmlspecialchars($surcharge['Name'])
+                        . htmlspecialchars((string) $surcharge['Name'])
                         . '</span>';
 
                     //Если у пользователя есть доступ к модулю редактирования Airfreight Surcharges, то сделаем ссылку!

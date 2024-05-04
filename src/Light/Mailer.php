@@ -311,7 +311,7 @@ class Mailer
             return [];
         }
         if (!is_array($emails)) {
-            $emails = preg_split("/,|;|\s/", $emails);
+            $emails = preg_split("/,|;|\s/", (string) $emails);
         }
         $emails = array_unique(array_filter(array_map('trim', $emails)));
         $emails = array_map(static fn($email) => str_replace(['<', '>'], '', trim($email)), $emails);

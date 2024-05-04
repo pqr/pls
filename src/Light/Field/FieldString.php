@@ -13,7 +13,7 @@ class FieldString extends FieldInputAbstract
 
     protected function getHtmlInner($value, array $data, $forTable)
     {
-        $outHtml = htmlspecialchars($value);
+        $outHtml = htmlspecialchars((string) $value);
         if (!$forTable && $outHtml && $this->uom) {
             $outHtml .= ' ' . $this->uom;
         }
@@ -29,7 +29,7 @@ class FieldString extends FieldInputAbstract
     {
         $value = parent::getDataFromRequestInner($request);
         if ($value !== null) {
-            $value = str_replace("\r", '', $value);
+            $value = str_replace("\r", '', (string) $value);
         }
 
         return $value;
@@ -52,6 +52,6 @@ class FieldString extends FieldInputAbstract
 
     public static function empty($value): bool
     {
-        return trim($value) === '';
+        return trim((string) $value) === '';
     }
 }

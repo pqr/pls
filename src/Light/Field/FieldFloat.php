@@ -60,7 +60,7 @@ class FieldFloat extends FieldNumberAbstract
     {
         $value = parent::getDataFromRequestInner($request);
         if ($value !== null) {
-            $value = str_replace(',', '.', $value);
+            $value = str_replace(',', '.', (string) $value);
             $value = (double)$value;
         }
 
@@ -69,7 +69,7 @@ class FieldFloat extends FieldNumberAbstract
 
     public static function parse($value)
     {
-        return (double)str_replace(',', '.', $value);
+        return (double)str_replace(',', '.', (string) $value);
     }
 
     public function allowSqlWhereValue($value)

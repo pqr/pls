@@ -12,7 +12,7 @@ class ConcatinaterHtml implements ConcatinaterInterface
     public const PLACEHOLDER_BEGIN = '<!-- PRINT FORM BODY BEGIN -->';
     public const PLACEHOLDER_END = '<!-- PRINT FORM BODY END -->';
 
-    public function __construct(private Filesystem $fs)
+    public function __construct(private readonly Filesystem $fs)
     {
     }
 

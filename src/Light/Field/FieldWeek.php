@@ -15,7 +15,7 @@ class FieldWeek extends FieldInputAbstract
 
     public static function getAsTouple($value)
     {
-        $value = trim($value);
+        $value = trim((string) $value);
 
         $week = '';
         $year = '';
@@ -120,8 +120,8 @@ class FieldWeek extends FieldInputAbstract
                 $value = $request[$this->key];
                 if ($value === '-') {
                     $value = null;
-                } elseif (str_contains($value, '-')) {
-                    [$year, $week] = explode('-', $value);
+                } elseif (str_contains((string) $value, '-')) {
+                    [$year, $week] = explode('-', (string) $value);
                 }
             }
 

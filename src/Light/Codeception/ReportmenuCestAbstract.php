@@ -41,10 +41,10 @@ abstract class ReportmenuCestAbstract
         $I->cantSeeSqlError();
 
         $I->expectTo("See report title: $reportClass");
-        $I->canSee(strip_tags($example['title']));
+        $I->canSee(strip_tags((string) $example['title']));
         if ($example['description']) {
             $I->expectTo('See report description: ' . $reportClass);
-            $I->canSee(strip_tags($example['description']));
+            $I->canSee(strip_tags((string) $example['description']));
         }
     }
 

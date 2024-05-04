@@ -288,8 +288,8 @@ class VInvoice extends InvoiceModuleAbstract
         }
 
         if ($id = Db::getOne($query, $dataFromPost['Name'], $dataFromPost['VendorID'])) {
-            $vendorName = strip_tags($this->getField('VendorID')->getHtml($dataFromPost['VendorID']));
-            $msg = 'Vendor Invoice с таким Reference <strong>' . htmlspecialchars($dataFromPost['Name'])
+            $vendorName = strip_tags((string) $this->getField('VendorID')->getHtml($dataFromPost['VendorID']));
+            $msg = 'Vendor Invoice с таким Reference <strong>' . htmlspecialchars((string) $dataFromPost['Name'])
                 . '</strong> от перевозчика ' . $vendorName . ' уже есть в базе, '
                 . Link::create(VInvoice::class, 'посмотреть...')
                     ->view($id)
@@ -373,7 +373,7 @@ class VInvoice extends InvoiceModuleAbstract
         $usedFilenames = [];
         foreach ($vinvoices as $vinvoice) {
             // Превратим номера накладных в строку через запятые
-            $mawbNumbers = explode("\n", $vinvoice['CacheLinesMAWBNumber']);
+            $mawbNumbers = explode("\n", (string) $vinvoice['CacheLinesMAWBNumber']);
             $mawbNumbers = array_unique(array_filter(array_map('trim', $mawbNumbers)));
             $mawbNumbersForFile = File::getValidFilename(implode(',', $mawbNumbers));
 
@@ -513,7 +513,7 @@ class VInvoice extends InvoiceModuleAbstract
 
             //Определим валюту счёта и компанию
             //Сначала попробуем определить по первой отмеченной галочке
-            $csLineIds = explode(',', $_GET['csLineIds']);
+            $csLineIds = explode(',', (string) $_GET['csLineIds']);
             $this->_obj->mergeData(
                 InvoicesCommon::getCurrencyFromCsLines($csLineIds, 'csexpenses')
             );
@@ -668,7 +668,7 @@ class VInvoice extends InvoiceModuleAbstract
                 ) . ')'
                 . '<p><small>Our Company:</small> ' . $obj->getFieldText('CompanyID') . '</p>'
                 . '<p><small>Vendor Account:</small> ' . $obj->getFieldText('VendorAccountID') . '</p>'
-                . '<p><small>MAWB/BL:</small> ' . htmlspecialchars($mawbs) . '</p>'
+                . '<p><small>MAWB/BL:</small> ' . htmlspecialchars((string) $mawbs) . '</p>'
                 . '<p><small>Номер счёта:</small> ' . $obj->getFieldText('Name') . '</p>'
                 . '<p><small>Дата счёта:</small> ' . $obj->getFieldText('DocDate') . '</p>';
 

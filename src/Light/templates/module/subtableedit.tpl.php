@@ -1,7 +1,7 @@
 <div id="<?= $name ?>-subtable"
      class="subtable-div"
      data-subtablename="<?= $name ?>"
-     data-fields="<?= htmlspecialchars($fieldsJson) ?>"
+     data-fields="<?= htmlspecialchars((string) $fieldsJson) ?>"
      data-sortable="<?= $orderManual ?>">
 
     <?php if ($allowAdd || $allowPaste): ?>

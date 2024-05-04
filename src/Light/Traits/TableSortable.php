@@ -396,7 +396,7 @@ trait TableSortable
     private function getHtmlSortLink($innerHtml, $fieldKey, $order)
     {
         return '<a href="#' . rawurlencode(
-                $fieldKey
+                (string) $fieldKey
             ) . '|' . $order . '" class="table-sort-link">' . $innerHtml . '</a>';
     }
 }

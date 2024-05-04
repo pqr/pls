@@ -63,7 +63,7 @@ class Maxvel extends PrintForm
             return '';
         }
 
-        return date('d-M-Y', strtotime($date));
+        return date('d-M-Y', strtotime((string) $date));
     }
 
     private function getLinesTable(int $cinvId): Table

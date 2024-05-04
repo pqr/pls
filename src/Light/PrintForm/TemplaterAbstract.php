@@ -24,12 +24,12 @@ abstract class TemplaterAbstract
 
     abstract public function writeData(array $data);
 
-    public function saveHtml(string $dest)
+    public function saveHtml(string $dest): never
     {
         throw new \Exception('writeToHtml not implemented');
     }
 
-    public function savePdf(string $dest, bool $landscape)
+    public function savePdf(string $dest, bool $landscape): never
     {
         throw new \Exception('writeToPdf not implemented');
     }
@@ -39,17 +39,17 @@ abstract class TemplaterAbstract
         throw new \Exception('writeToPdf not implemented');
     }
 
-    public function saveExcel(string $dest)
+    public function saveExcel(string $dest): never
     {
         throw new \Exception('writeToExcel not implemented');
     }
 
-    public function saveDoc(string $dest)
+    public function saveDoc(string $dest): never
     {
         throw new \Exception('writeToDoc not implemented');
     }
 
-    public function saveDocx(string $dest)
+    public function saveDocx(string $dest): never
     {
         throw new \Exception('writeToDocx not implemented');
     }

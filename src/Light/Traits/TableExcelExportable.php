@@ -122,14 +122,14 @@ trait TableExcelExportable
         }
 
         //Если расширение неизвестное или отсутсвует, используем настройку из базы
-        $ext = pathinfo($filename, PATHINFO_EXTENSION);
+        $ext = pathinfo((string) $filename, PATHINFO_EXTENSION);
         if ($ext !== 'xls' && $ext !== 'xlsx') {
             $filename .= '.xlsx';
         }
 
         if ($sheetname === null) {
             $sheetname = $this->getExcelWorksheetName();
-            $sheetname = mb_substr($sheetname, 0, 31, 'UTF-8');
+            $sheetname = mb_substr((string) $sheetname, 0, 31, 'UTF-8');
         }
 
         return [$filename, $sheetname];

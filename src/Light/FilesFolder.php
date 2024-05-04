@@ -45,7 +45,7 @@ class FilesFolder
             // Нужно записать новое состояние в базу данных (или обновить существующую строку в базе данных)
             // это обновление будет произведено отложенно в ApplicationAbstract::onAfterSend
             if (!self::$onAfterSendRegistered) {
-                ApplicationAbstract::onAfterSend([self::class, 'flushFoldersStatus']);
+                ApplicationAbstract::onAfterSend(self::flushFoldersStatus(...));
             }
             self::$newFoldersStatus[$key] = [$module, $id, $hasFiles];
 
@@ -288,7 +288,7 @@ class FilesFolder
         static $isUserAgentNix;
         if ($isUserAgentNix === null) {
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-            $isUserAgentNix = str_contains($userAgent, 'OS X') || str_contains($userAgent, 'Linux');
+            $isUserAgentNix = str_contains((string) $userAgent, 'OS X') || str_contains((string) $userAgent, 'Linux');
         }
 
         return $isUserAgentNix;
@@ -301,9 +301,9 @@ class FilesFolder
 
             // Если дошли до этого момента, значит мы в локальной сети и под Windows - тут всё зависит от браузера
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-            $isFirefox = str_contains($userAgent, 'Firefox');
-            $isIe = str_contains($userAgent, 'Trident');
-            $isEdge = str_contains($userAgent, 'Edge');
+            $isFirefox = str_contains((string) $userAgent, 'Firefox');
+            $isIe = str_contains((string) $userAgent, 'Trident');
+            $isEdge = str_contains((string) $userAgent, 'Edge');
             if (!$isFirefox && !$isIe && !$isEdge) {
                 // У нас какой-то бразуер, но точно не Firefox и не IE - значит расшаренные папки не будут работать нативно
                 $isWindowsSharedFolderAllowed = false;

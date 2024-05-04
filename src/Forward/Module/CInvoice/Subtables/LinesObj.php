@@ -39,7 +39,7 @@ class LinesObj extends ObjAbstract
 
     public function getDescriptionHtml()
     {
-        return $this->_data['FileNumber'] . ' ' . htmlspecialchars($this->_data['Name']);
+        return $this->_data['FileNumber'] . ' ' . htmlspecialchars((string) $this->_data['Name']);
     }
 
 }

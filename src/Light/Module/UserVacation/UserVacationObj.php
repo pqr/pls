@@ -25,6 +25,6 @@ class UserVacationObj extends ObjAbstract
 
     public function getDescriptionHtml()
     {
-        return htmlspecialchars($this->getFieldText('UserID'));
+        return htmlspecialchars((string) $this->getFieldText('UserID'));
     }
 }

@@ -96,7 +96,7 @@ abstract class IncomeExpensesObjAbstract extends ObjAbstract
 
                         //Не будем подсвечивать расхождения, если валюта строки отличается от валюты счёта
                         //поэтому нам нужно получить сумму счёта на данный файл + валюту счёта
-                        $invDbTable = strtolower($invNumLinkModule); //получается 'cinvoice' или 'vinvoice'
+                        $invDbTable = strtolower((string) $invNumLinkModule); //получается 'cinvoice' или 'vinvoice'
                         $invAmountAndCurrencyIso = CommonDataProvider::getInvoiceAmountOnShipmentAndCurrency(
                             $invDbTable,
                             $this->_fileNumber,
@@ -126,7 +126,7 @@ abstract class IncomeExpensesObjAbstract extends ObjAbstract
                         if ($value) {
                             //Проверим, есть ли этот счёт реально в базе данных?
                             //Сделаем ссылку на него, либо подсветим красным
-                            $invDbTable = strtolower($invNumLinkModule); //получается 'cinvocie' или 'vinvoice'
+                            $invDbTable = strtolower((string) $invNumLinkModule); //получается 'cinvocie' или 'vinvoice'
                             $invId = CommonDataProvider::getInvoiceId($invDbTable, $this->_fileNumber, $value);
                             if ($invId) {
                                 //Счёт найден, делаем ссылку на просмотр счёта!

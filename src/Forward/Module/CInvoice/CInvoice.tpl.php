@@ -8,7 +8,7 @@ $csLineIds = false;
 if (isset($_GET['fromCostSheet'])) {
 
     //Переход на режим Add New состоялся из Cost-sheet'а где несколько строк были выделены галочками
-    $csLineIds = explode(',', $_GET['csLineIds']);
+    $csLineIds = explode(',', (string) $_GET['csLineIds']);
     $csLineIds = array_filter($csLineIds);
 
 } elseif (isset($_GET['fromShipmentsMassaction'])) {
@@ -208,7 +208,7 @@ if ($csLineIds) {
 
 
         <div style="text-align: right;" id="invoicedate">Date: <?= t::html('DocDate') ?></div>
-        <div style="text-align: right;" id="invoicename"><?= strtoupper(t::text('DocType')) ?> # <?= t::html('Name') ?></div>
+        <div style="text-align: right;" id="invoicename"><?= strtoupper((string) t::text('DocType')) ?> # <?= t::html('Name') ?></div>
         <div style="text-align: right; padding-right: 200px;" id="invoiceto1">To</div>
         <div style="text-align: right; margin-bottom: 15px;" id="invoiceto2"><?= t::html('InvoiceTo') ?></div>
 

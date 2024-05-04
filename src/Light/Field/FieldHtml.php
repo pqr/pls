@@ -36,6 +36,6 @@ class FieldHtml extends FieldAbstract
 
     public static function empty($value): bool
     {
-        return trim($value) === '';
+        return trim((string) $value) === '';
     }
 }

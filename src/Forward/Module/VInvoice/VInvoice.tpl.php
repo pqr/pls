@@ -8,7 +8,7 @@ $csLineIds = false;
 if (isset($_GET['fromCostSheet'])) {
 
     //Переход на режим Add New состоялся из Cost-sheet'а где несколько строк были выделены галочками
-    $csLineIds = explode(',', $_GET['csLineIds']);
+    $csLineIds = explode(',', (string) $_GET['csLineIds']);
     $csLineIds = array_filter($csLineIds);
 
 }

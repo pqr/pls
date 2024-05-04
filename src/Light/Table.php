@@ -178,7 +178,7 @@ class Table implements \JsonSerializable
 
         // Отдельного файла для класса найдено не было, создадим на основе обычного Obj
         $obj = new SimpleObj();
-        $obj->setDbTable(strtolower($this->getTableName()));
+        $obj->setDbTable(strtolower((string) $this->getTableName()));
         $obj->setMasterModuleForDbLog(Misc::getModule($this));
         return $obj;
     }
@@ -642,7 +642,7 @@ class Table implements \JsonSerializable
 
             $width = $field->getTableWidthHtml();
             $width = $width ? ' width="' . htmlspecialchars($width) . '"' : '';
-            $fieldKey = ' data-fieldkey="' . htmlspecialchars($field->key) . '"';
+            $fieldKey = ' data-fieldkey="' . htmlspecialchars((string) $field->key) . '"';
             $dataTotal = $field->total ? ' data-total="' . $field->getType() . '"' : '';
 
             $cssClass = '';
@@ -665,7 +665,7 @@ class Table implements \JsonSerializable
      */
     protected function getHtmlTableTheadThContent(F $field)
     {
-        return str_replace("\n", '<br>', $field->getNameTable());
+        return str_replace("\n", '<br>', (string) $field->getNameTable());
     }
 
     /**
@@ -851,7 +851,7 @@ class Table implements \JsonSerializable
             /** @var \Light\Field\FieldAbstract $field */
             $fieldKey = $field->key;
             $value = $rowDataCalculated[$fieldKey];
-            if ($field->groupconcat && str_contains($value, "\n")) {
+            if ($field->groupconcat && str_contains((string) $value, "\n")) {
                 //Если было объединение нескольких значений, то накладывать css class на всю ячейку TD не стоит
                 //В этом случае каждое значение должно быть подсвечено отдельно
                 $tdCssClass = '';
@@ -874,7 +874,7 @@ class Table implements \JsonSerializable
             $tdCssClass = $tdCssClass ? ' class="' . $tdCssClass . '"' : '';
 
             $tdTitle = $field->getViewTitle($value, $rowDataCalculated, true);
-            $tdTitle = $tdTitle ? ' title="' . htmlspecialchars($tdTitle) . '"' : '';
+            $tdTitle = $tdTitle ? ' title="' . htmlspecialchars((string) $tdTitle) . '"' : '';
 
             $tdTagParams = $field->getViewTagParams($value, $rowDataCalculated, true);
             $tdTagParams = $tdTagParams ? ' ' . $tdTagParams : '';
@@ -963,7 +963,7 @@ class Table implements \JsonSerializable
             $fieldKey = $field->key;
 
             $totalValue = $dataTotal[$fieldKey] ?? null;
-            if ($field->groupconcat && str_contains($totalValue, "\n")) {
+            if ($field->groupconcat && str_contains((string) $totalValue, "\n")) {
                 //Если было объединение нескольких значений, то накладывать css class на всю ячейку TD не стоит
                 //В этом случае каждое значение должно быть подсвечено отдельно
                 $tdCssClass = '';
@@ -980,7 +980,7 @@ class Table implements \JsonSerializable
             // иначе можем получить total строку из большого кол-ва значений по умолчанию (нули, No, и т.п)
             if (array_key_exists($fieldKey, $dataTotal)) {
                 $totalValue = $dataTotal[$fieldKey];
-                if ($field->getType() === F::TYPE_MONEY_WITH_CURRENCY && str_contains($totalValue, "\n")) {
+                if ($field->getType() === F::TYPE_MONEY_WITH_CURRENCY && str_contains((string) $totalValue, "\n")) {
                     // Текущая колонка имеет тип TYPE_MONEY_WITH_CURRENCY, а total значение содержит перевод строки
                     // значит в таблице были разные валюты и мы в итоге получаем разбивку по валютам
                     // нужно применить groupconcat подход
@@ -1014,7 +1014,7 @@ class Table implements \JsonSerializable
             //Получим значение из GET параметра
             $findIdFromRequest = $this->getTableFindIdFromRequest();
             if ($findIdFromRequest) {
-                $findIdFields = explode('+', $findIdFromRequest);
+                $findIdFields = explode('+', (string) $findIdFromRequest);
                 foreach ($findIdFields as $part) {
 
                     if (str_contains($part, '|')) {
@@ -1059,7 +1059,7 @@ class Table implements \JsonSerializable
             $amountsLines = [];
             foreach ($amounts as $cellText) {
                 if ($groupconcat) {
-                    $amountsLines = array_merge($amountsLines, explode("\n", $cellText));
+                    $amountsLines = array_merge($amountsLines, explode("\n", (string) $cellText));
                 } else {
                     $amountsLines[] = $cellText;
                 }
@@ -1084,7 +1084,7 @@ class Table implements \JsonSerializable
         $totalAmount = 0;
         foreach ($amounts as $cellText) {
             if ($groupconcat) {
-                $amountsLines = explode("\n", $cellText);
+                $amountsLines = explode("\n", (string) $cellText);
             } else {
                 $amountsLines = [$cellText];
             }

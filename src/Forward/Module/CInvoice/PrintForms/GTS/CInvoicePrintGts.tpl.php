@@ -32,12 +32,12 @@
                 <tr valign="top">
                     <td width="75%">
                         <h1 style="font-family: Century Gothic, Verdana, Arial; font-size: 26px; font-weight: normal;">
-                            <?= htmlspecialchars($OurCompanyName_raw) ?>
+                            <?= htmlspecialchars((string) $OurCompanyName_raw) ?>
                         </h1>
-                        <span style="font-size: 13px;"><?= nl2br(htmlspecialchars($OurCompanyAddress_raw)) ?></span>
+                        <span style="font-size: 13px;"><?= nl2br(htmlspecialchars((string) $OurCompanyAddress_raw)) ?></span>
                     </td>
                     <td width="25%"
-                        style="font-size: 40px; text-align: right; font-family: Century Gothic, Verdana, Arial"><?= strtoupper(t::text('DocType')) ?>
+                        style="font-size: 40px; text-align: right; font-family: Century Gothic, Verdana, Arial"><?= strtoupper((string) t::text('DocType')) ?>
                     </td>
                 </tr>
             </table>
@@ -47,7 +47,7 @@
                     <td>
                         <div style="text-align: right;">
                             Date: <?= t::html('DocDate') ?><br>
-                            <?= strtoupper(t::text('DocType')) ?> # <?= t::html('Name') ?>
+                            <?= strtoupper((string) t::text('DocType')) ?> # <?= t::html('Name') ?>
                         </div>
 
 
@@ -75,7 +75,7 @@
                     <td style="padding-right: 20px;">
                         <strong>Beneficiary Bank:</strong>
 
-                        <p><?= nl2br(htmlspecialchars($OurCompanyBeneficiaryBank_raw)) ?></p>
+                        <p><?= nl2br(htmlspecialchars((string) $OurCompanyBeneficiaryBank_raw)) ?></p>
                     </td>
                     <td>
                         &nbsp;&nbsp;&nbsp;&nbsp;
@@ -84,7 +84,7 @@
                     <td style="padding-left: 20px;">
                         <strong>Correspondent Bank:</strong>
 
-                        <p><?= nl2br(htmlspecialchars($OurCompanyCorrespondentBank_raw)) ?></p>
+                        <p><?= nl2br(htmlspecialchars((string) $OurCompanyCorrespondentBank_raw)) ?></p>
                     </td>
                 </tr>
             </table>

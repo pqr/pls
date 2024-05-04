@@ -498,7 +498,7 @@ class Quotation extends ModuleAbstract
             $chargelinesRu = Db::getAssoc("SELECT LOWER(Name), NameRu FROM list_chargedescription WHERE NameRu != ''");
 
             foreach ($details as $i => $detailLine) {
-                $nameLower = mb_strtolower($detailLine['Name'], 'UTF-8');
+                $nameLower = mb_strtolower((string) $detailLine['Name'], 'UTF-8');
                 if (isset($chargelinesRu[$nameLower])) {
                     $details[$i]['Name'] = $chargelinesRu[$nameLower];
                 }
@@ -542,8 +542,8 @@ class Quotation extends ModuleAbstract
 
         //Имя файла - это имя клиента + описание котировки
         $fileName = '#' . $this->_obj->getId() . ' ' . strip_tags(
-                $this->_obj->getFieldHtml('CustomerID')
-            ) . ' ' . str_replace('/', '-', $this->_obj['Name']) . '.xlsx';
+                (string) $this->_obj->getFieldHtml('CustomerID')
+            ) . ' ' . str_replace('/', '-', (string) $this->_obj['Name']) . '.xlsx';
 
 
         // Сначала сохраним файл в папке

@@ -33,7 +33,7 @@ class UserModule
         Js::addLight('build/UserModuleBuild.js');
 
         $orderBy = User::getParam('UserModuleUsersOrderBy') ?? 'Name ASC';
-        [$usersSortFieldKey, $usersSortDirection] = explode(' ', $orderBy);
+        [$usersSortFieldKey, $usersSortDirection] = explode(' ', (string) $orderBy);
 
         Response::addJsData([
 
@@ -109,8 +109,8 @@ class UserModule
 
         foreach ($groups as &$group) {
 
-            $group['moduleAccess'] = json_decode($group['ModuleAccessJSON'], true);
-            $group['specialAccess'] = json_decode($group['SpecialAccessJSON'], true);
+            $group['moduleAccess'] = json_decode((string) $group['ModuleAccessJSON'], true);
+            $group['specialAccess'] = json_decode((string) $group['SpecialAccessJSON'], true);
 
             unset($group['ModuleAccessJSON'], $group['SpecialAccessJSON']);
 
@@ -128,7 +128,7 @@ class UserModule
     {
         $out = [];
         foreach (ApplicationAbstract::$app->getUserRolesList() as $roleKey => $_) {
-            $out[$roleKey] = str_contains($userResponsibleRoles, '|' . $roleKey . '|');
+            $out[$roleKey] = str_contains((string) $userResponsibleRoles, '|' . $roleKey . '|');
         }
         return $out;
     }
@@ -145,15 +145,15 @@ class UserModule
 
             if ($user['LastRefreshDateTime']) {
                 $user['Idle'] = (new Carbon($user['LastRefreshDateTime']))->diffForHumans();
-                $user['IdleTimestamp'] = strtotime($user['LastRefreshDateTime']);
+                $user['IdleTimestamp'] = strtotime((string) $user['LastRefreshDateTime']);
             } else {
                 $user['IdleTimestamp'] = 0;
             }
 
             $user['ResponsibleRoles'] = $this->getUserRolesForJs($user['ResponsibleRoles']);
 
-            $user['moduleAccess'] = json_decode($user['ModuleAccessJSON'], true);
-            $user['specialAccess'] = json_decode($user['SpecialAccessJSON'], true);
+            $user['moduleAccess'] = json_decode((string) $user['ModuleAccessJSON'], true);
+            $user['specialAccess'] = json_decode((string) $user['SpecialAccessJSON'], true);
 
             unset($user['ModuleAccessJSON'], $user['SpecialAccessJSON']);
 
@@ -205,7 +205,7 @@ class UserModule
             $existId = Db::getOne("SELECT ID FROM user WHERE Login = @s AND ID != @i", $dataFromPost['Login'], $id);
             if ($existId) {
                 Response::sendToast('error',
-                    'User with login <strong>' . htmlspecialchars($dataFromPost['Login']) . '</strong> already exist');
+                    'User with login <strong>' . htmlspecialchars((string) $dataFromPost['Login']) . '</strong> already exist');
                 Response::abort(401);
             }
         }
@@ -224,15 +224,15 @@ class UserModule
             $newData['ResponsibleRoles'] = $this->getUserRolesForJs($newData['ResponsibleRoles']);
         }
 
-        $newData['moduleAccess'] = json_decode($obj['ModuleAccessJSON'], true);
-        $newData['specialAccess'] = json_decode($obj['SpecialAccessJSON'], true);
+        $newData['moduleAccess'] = json_decode((string) $obj['ModuleAccessJSON'], true);
+        $newData['specialAccess'] = json_decode((string) $obj['SpecialAccessJSON'], true);
         unset($newData['ModuleAccessJSON'], $newData['SpecialAccessJSON']);
 
         if ($type === 'user') {
             $lastRefreshDateTime = Db::getOne("SELECT LastRefreshDateTime FROM user_visit WHERE UserID = @i", $id);
             if ($lastRefreshDateTime) {
                 $newData['Idle'] = (new Carbon($lastRefreshDateTime))->diffForHumans();
-                $newData['IdleTimestamp'] = strtotime($lastRefreshDateTime);
+                $newData['IdleTimestamp'] = strtotime((string) $lastRefreshDateTime);
             } else {
                 $newData['IdleTimestamp'] = 0;
             }
@@ -268,7 +268,7 @@ class UserModule
 
             $userName = Db::getOne("SELECT Name FROM user WHERE ID = @i", $userId);
             Response::setPageTitle($userName . ' - Home');
-            Response::setPageHeadHtml(htmlspecialchars($userName) . ' - Home');
+            Response::setPageHeadHtml(htmlspecialchars((string) $userName) . ' - Home');
             Response::disableMainmenu();
             HomeBlocksPage::printHomeBlocks($userId);
 

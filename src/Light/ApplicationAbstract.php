@@ -446,7 +446,7 @@ abstract class ApplicationAbstract
         $proceedMethod = Request::getQueryParam('p');
         if ($proceedMethod) {
             // Если в url был параметр p, значит нужно запустить особый метод proceed внутри этого класса
-            if (stripos($proceedMethod, 'post') === 0
+            if (stripos((string) $proceedMethod, 'post') === 0
                 && !Request::isPost()
             ) {
                 // функции, которые начинаются со слова post разрешено вызывать только
@@ -455,7 +455,7 @@ abstract class ApplicationAbstract
                 Response::abort(403, 'Only POST is allowed for method proceed' . $proceedMethod);
             }
 
-            $fillProceedMethod = 'proceed' . ucfirst($proceedMethod);
+            $fillProceedMethod = 'proceed' . ucfirst((string) $proceedMethod);
             return $module->{$fillProceedMethod}();
         }
 
@@ -484,7 +484,7 @@ abstract class ApplicationAbstract
         //Специальный метод для Autocomplete - вызывается статически и возвращает массив для автокомплита
         //Массив двухмерный: проиндексированный массив со строками и внутри ассоциативный массив с полями
         //важное поле во вложенном массиве - 'value' - оно будет подставлено в input средствами JS
-        $value = trim(Request::getQueryParam('term'));
+        $value = trim((string) Request::getQueryParam('term'));
         return call_user_func($class . '::ac' . ucfirst($autocompleteMethod), $value);
     }
 

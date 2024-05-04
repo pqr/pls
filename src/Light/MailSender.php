@@ -149,7 +149,7 @@ class MailSender
             $message->setReplyTo($replyToArr);
         }
 
-        $attachements = explode("\n", $emailDataFromQueue['Attachements']);
+        $attachements = explode("\n", (string) $emailDataFromQueue['Attachements']);
         foreach ($attachements as $attachement) {
             if ($attachement && file_exists($attachement)) {
                 $message->attach(\Swift_Attachment::fromPath($attachement));
@@ -195,16 +195,16 @@ class MailSender
     public static function getSuccessMsgQueue(array $emailDataFromQueue): string
     {
         $msg = 'На почту <strong>'
-            . htmlspecialchars($emailDataFromQueue['To'])
+            . htmlspecialchars((string) $emailDataFromQueue['To'])
             . '</strong> будет отправлено сообщение <strong>'
-            . htmlspecialchars($emailDataFromQueue['Subject'])
+            . htmlspecialchars((string) $emailDataFromQueue['Subject'])
             . '</strong>';
 
         if ($emailDataFromQueue['Cc']) {
-            $msg .= ' (Cc: ' . htmlspecialchars($emailDataFromQueue['Cc']) . ')';
+            $msg .= ' (Cc: ' . htmlspecialchars((string) $emailDataFromQueue['Cc']) . ')';
         }
 
-        $attachements = array_filter(explode("\n", $emailDataFromQueue['Attachements']));
+        $attachements = array_filter(explode("\n", (string) $emailDataFromQueue['Attachements']));
         if ($attachements) {
             $title = htmlspecialchars(implode(', ', $attachements));
             $msg .= ', вложений: <span title="' . $title . '">' . count($attachements) . '</span>';
@@ -223,13 +223,13 @@ class MailSender
     public static function getErrorMsg(array $emailDataFromQueue): string
     {
         $msg = 'Ошибка при отправке сообщения на почту <strong>'
-            . htmlspecialchars($emailDataFromQueue['To'])
+            . htmlspecialchars((string) $emailDataFromQueue['To'])
             . '</strong> <strong>'
-            . htmlspecialchars($emailDataFromQueue['Subject'])
+            . htmlspecialchars((string) $emailDataFromQueue['Subject'])
             . '</strong>';
 
         if ($emailDataFromQueue['Cc']) {
-            $msg .= ' (Cc: ' . htmlspecialchars($emailDataFromQueue['Cc']) . ')';
+            $msg .= ' (Cc: ' . htmlspecialchars((string) $emailDataFromQueue['Cc']) . ')';
         }
 
         if ($emailDataFromQueue['Attachements']) {

@@ -239,7 +239,7 @@ trait TableFilterable
         $fieldKey = $_GET['select2ajax'];
 
         // Это может быть multiple поле, в этом случае fieldKey на конце содержит '[]'
-        $fieldKey = str_replace('[]', '', $fieldKey);
+        $fieldKey = str_replace('[]', '', (string) $fieldKey);
 
         $res = $this->getFiltersFieldset()->proceedSelect2ajax($fieldKey);
         if ($res === null) {

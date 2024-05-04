@@ -269,17 +269,17 @@ class Shipment extends ModuleAbstract
         foreach ($this->_obj->getFieldset() as $field) {
             if (isset($this->_obj[$field->key])) {
                 $value = $field->getExcel($this->_obj[$field->key], $this->_obj->getData());
-                $subject = str_replace('{'.$field->key.'}', $value, $subject);
-                $body = str_replace('{'.$field->key.'}', $value, $body);
+                $subject = str_replace('{'.$field->key.'}', $value, (string) $subject);
+                $body = str_replace('{'.$field->key.'}', $value, (string) $body);
             }
         }
 
         //$link = 'http://connect.track-trace.com/for/pls/aircargo/' . $this->_obj['MAWBNumber'];
         $link = 'http://quicktracing.com/api/air.php?token=tVRtbXgXHxE71UJTTkbPOE0qZrj6sMYF&awb='.rawurlencode(
-                $this->_obj['MAWBNumber'],
+                (string) $this->_obj['MAWBNumber'],
             );
-        $subject = str_replace('{TrackTraceLink}', $link, $subject);
-        $body = str_replace('{TrackTraceLink}', $link, $body);
+        $subject = str_replace('{TrackTraceLink}', $link, (string) $subject);
+        $body = str_replace('{TrackTraceLink}', $link, (string) $body);
 
         //Загрузим email и имя контактной персоны клиента, на который отправлять уведомление
         $customerInfo = Db::getRow(
@@ -539,7 +539,7 @@ class Shipment extends ModuleAbstract
                     $dataFromRequest['MAWBNumber'] = str_replace(
                         ' ',
                         '',
-                        trim($_POST['MAWBNumber1']).'-'.trim($_POST['MAWBNumber2']),
+                        trim((string) $_POST['MAWBNumber1']).'-'.trim((string) $_POST['MAWBNumber2']),
                     );
                     if ($dataFromRequest['MAWBNumber'] === '-') {
                         $dataFromRequest['MAWBNumber'] = '';
@@ -554,12 +554,12 @@ class Shipment extends ModuleAbstract
                 if (!$this->_obj->getId()) {
                     $dataFromRequest['Month'] = date('Y-m-01');
                 } else {
-                    $dataFromRequest['Month'] = substr($this->_obj['CreatedDateTime'], 0, 7).'-01';
+                    $dataFromRequest['Month'] = substr((string) $this->_obj['CreatedDateTime'], 0, 7).'-01';
                 }
             } else {
                 //Для других трафиков в качестве месяца используется ETD
                 if ($dataFromRequest['ETD'] !== '') {
-                    $dataFromRequest['Month'] = substr($dataFromRequest['ETD'], 0, 7).'-01';
+                    $dataFromRequest['Month'] = substr((string) $dataFromRequest['ETD'], 0, 7).'-01';
                 }
             }
         }
@@ -582,7 +582,7 @@ class Shipment extends ModuleAbstract
 
             if ($id = Db::getOne($query)) {
                 $this->riseSaveErorr(
-                    'MAWB '.htmlspecialchars($dataFromRequest['MAWBNumber']).' already exists, '.
+                    'MAWB '.htmlspecialchars((string) $dataFromRequest['MAWBNumber']).' already exists, '.
                     Link::create(Shipment::class, 'view...')
                         ->view($id)
                         ->blank()
@@ -674,7 +674,7 @@ class Shipment extends ModuleAbstract
             && Constant::isOneCCompany($dataFromRequest['CompanyID'])
         ) {
             $shipmentRequestDate = $this->getShipmentRequestDate($dataFromRequest['ETD']);
-            $shipmentRequestYearShort = substr($shipmentRequestDate, 2, 2);
+            $shipmentRequestYearShort = substr((string) $shipmentRequestDate, 2, 2);
             $maxShipmentRequestNo = $this->getMaxShipmentRequestNo(
                 $dataFromRequest['CompanyID'],
                 $dataFromRequest['CustomerAccountID'],
@@ -707,7 +707,7 @@ class Shipment extends ModuleAbstract
             $mawb2 = '';
 
             if (isset($this->_obj['MAWBNumber'])) {
-                $parts = explode('-', $this->_obj['MAWBNumber']);
+                $parts = explode('-', (string) $this->_obj['MAWBNumber']);
                 $mawb1 = substr($parts[0], 0, 3);
                 if (isset($parts[1])) {
                     $mawb2 = $parts[1];
@@ -758,9 +758,9 @@ class Shipment extends ModuleAbstract
             if ($crArr) {
                 $crBlock = '<ul>';
                 foreach ($crArr as $crInfo) {
-                    $crBlock .= '<li title="'.htmlspecialchars($crInfo['Description']).'"'.
+                    $crBlock .= '<li title="'.htmlspecialchars((string) $crInfo['Description']).'"'.
                         (isset($crInfo['cssClass']) ? ' class="'.$crInfo['cssClass'].'"' : '').'>'.
-                        htmlspecialchars($crInfo['text']).'</li>';
+                        htmlspecialchars((string) $crInfo['text']).'</li>';
                 }
                 $crBlock .= '</ul>';
                 $tdata['Criteria'] = $crBlock;
@@ -982,7 +982,7 @@ class Shipment extends ModuleAbstract
             // Обновление уже существующей перевозки
             if (isset($oldData['ResponsibleCS'], $obj['ResponsibleCS']) && $oldData['ResponsibleCS'] != $obj['ResponsibleCS']) {
                 $additionalText = 'New Customer Service <strong>'
-                    .htmlspecialchars(Db::getOne("SELECT Name FROM user WHERE ID = @i", $obj['ResponsibleCS']))
+                    .htmlspecialchars((string) Db::getOne("SELECT Name FROM user WHERE ID = @i", $obj['ResponsibleCS']))
                     .'</strong>';
                 /** @var ShipmentObj $obj */
                 $this->sendShipmentEmail($obj, $additionalText, $msgBuff);
@@ -1076,7 +1076,7 @@ class Shipment extends ModuleAbstract
 
         $body .= '<small>';
         $body .= $this->_justInserted ? 'Created' : 'Updated';
-        $body .= ' by '.htmlspecialchars(User::getName()).'</small>';
+        $body .= ' by '.htmlspecialchars((string) User::getName()).'</small>';
 
         Mailer::create($to, $subject, $body)
             ->send($msgBuff);
@@ -1379,7 +1379,7 @@ class Shipment extends ModuleAbstract
         }
 
         // Сформируем путь до файла назначения и проверим, что этого файла ещё нет в папке
-        $shipmentRequestYearShort = substr($shipmentRequestDate, 2, 2);
+        $shipmentRequestYearShort = substr((string) $shipmentRequestDate, 2, 2);
 
         $excelData = $shipmentObj->getExcelData();
 
@@ -1393,7 +1393,7 @@ class Shipment extends ModuleAbstract
             $shipmentObj['CustomerAccountID'],
         );
         // Заменим в номере контракта английское слово "from" на русское "от"
-        $excelData['CustomerAccountContractNo'] = str_replace('from', 'от', $contractNo);
+        $excelData['CustomerAccountContractNo'] = str_replace('from', 'от', (string) $contractNo);
 
         // Добавим адрес получателя
         if ($shipmentObj['ConsigneeID'] > 0) {
@@ -1451,7 +1451,7 @@ class Shipment extends ModuleAbstract
 
         if ($firstCInvoice) {
             $excelData['AmountAndCurrency'] = strip_tags(
-                FieldMoney::beautify(
+                (string) FieldMoney::beautify(
                     $firstCInvoice['Amount'],
                     false,
                     $firstCInvoice['CurrencyISO'],
@@ -1506,7 +1506,7 @@ class Shipment extends ModuleAbstract
             $xls->save($filepathAbsWithStamp);
             //Session::flashSuccess('Файл <strong>' . htmlspecialchars($filename) . '</strong> сохранён в папку перевозки');
 
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             Session::flashError(
                 'Не удалось сохранить файл <strong>'.htmlspecialchars(
                     $filenameWithoutExt.".pdf",
@@ -1530,7 +1530,7 @@ class Shipment extends ModuleAbstract
             Session::flashError(
                 'Не удалось сохранить файл <strong>'.htmlspecialchars(
                     $filenameWithoutExt.".xlsx",
-                ).'</strong> в папку "'.htmlspecialchars($requestFolder).'", возможно, он открыт в Excel?',
+                ).'</strong> в папку "'.htmlspecialchars((string) $requestFolder).'", возможно, он открыт в Excel?',
             );
         }
 

@@ -29,7 +29,7 @@ class FieldText extends FieldAbstract
             $parsedown->setSafeMode(true);
             $html = $parsedown->text($value);
         } else {
-            $html = nl2br(htmlspecialchars($value));
+            $html = nl2br(htmlspecialchars((string) $value));
         }
         return $html;
     }
@@ -42,11 +42,11 @@ class FieldText extends FieldAbstract
         $rows = $this->rows;
         if ($rows) {
             //Специальный хак для FF - указать высоту в em единицах внутри style
-            if (!str_contains($tdata['tagParams'], 'height:')
+            if (!str_contains((string) $tdata['tagParams'], 'height:')
             ) {
                 //в $tagParams нет явного указания height, значит можем переопределить сами
                 $height = ($rows * 1.5) . 'em';
-                if (!str_contains($tdata['tagParams'], 'style="')) {
+                if (!str_contains((string) $tdata['tagParams'], 'style="')) {
                     //В $tagParams вообще нету параметра style, определим его
                     $tdata['tagParams'] .= ' style="height: ' . $height . ';"';
                 } else {
@@ -54,7 +54,7 @@ class FieldText extends FieldAbstract
                     $tdata['tagParams'] = str_replace(
                         'style="',
                         'style="height: ' . $height . ';',
-                        $tdata['tagParams']
+                        (string) $tdata['tagParams']
                     );
                 }
             }
@@ -63,7 +63,7 @@ class FieldText extends FieldAbstract
         }
 
         $html = '<textarea data-type="' . $tdata['type'] . '" name="' . $tdata['editName'] . '" id="' . $tdata['editId'] .
-            '"' . $tdata['cssClass'] . $tdata['tagParams'] . '>' . htmlspecialchars($tdata['value']) . '</textarea>';
+            '"' . $tdata['cssClass'] . $tdata['tagParams'] . '>' . htmlspecialchars((string) $tdata['value']) . '</textarea>';
 
         if ($this->markdownInfo) {
             $html .= '<div class="note-markdown">Данное поле поддерживает язык разметки <a href="http://klavogonki.ru/wiki/Markdown" target="_blank">Markdown</a></div>';
@@ -84,6 +84,6 @@ class FieldText extends FieldAbstract
 
     public static function empty($value): bool
     {
-        return trim($value) === '';
+        return trim((string) $value) === '';
     }
 }

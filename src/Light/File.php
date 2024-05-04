@@ -32,7 +32,7 @@ class File
                 return false;
             }
 
-            $targetDir = \dirname($target);
+            $targetDir = \dirname((string) $target);
             File::fs()->mkdir($targetDir);
             File::fs()->rename($origin, $target, true);
             return true;

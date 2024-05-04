@@ -133,7 +133,7 @@ class Plural
         if ($value == 0) {
             return $result;
         }
-        $triade = str_split(str_pad($value, 3, '0', STR_PAD_LEFT));
+        $triade = str_split(str_pad((string) $value, 3, '0', STR_PAD_LEFT));
         if ($triade[0] != 0) {
             if ($lang === 'ru') {
                 $result .= (self::$_hundredsRu[$triade[0]] . ' ');

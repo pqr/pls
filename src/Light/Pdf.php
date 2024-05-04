@@ -91,7 +91,7 @@ class Pdf
 
         try {
             // Переименуем временный файл в реальный
-            $dir = \dirname($filepathAbs);
+            $dir = \dirname((string) $filepathAbs);
             File::fs()->mkdir($dir);
             File::fs()->rename($tmpfilepathAbs, $filepathAbs, true);
             File::fs()->chmod($filepathAbs, 0666);
@@ -236,7 +236,7 @@ class Pdf
         foreach ($srcFilepaths as $filepath) {
             $tmpFilepath = "$tmpDir/{$i}.pdf";
 
-            $srcExt = strtolower(pathinfo($filepath, PATHINFO_EXTENSION));
+            $srcExt = strtolower(pathinfo((string) $filepath, PATHINFO_EXTENSION));
             if ($srcExt !== 'pdf') {
                 // Исходный файл не PDF - попобуем сконвернировать его в PDF с помощью imagemagic
                 $successCopy = ImageOperators::imagemagic($filepath, $tmpFilepath, ['compress' => 'jpeg'], $msgBuff);
@@ -252,7 +252,7 @@ class Pdf
                 // Если по каким-то причинам не удалось скопировать очередной исходный pdf во временный файл
                 // то добавим сообщение об ошибке
                 $msg = Config::$lang === 'ru' ? 'Не удалось прочитать файл ' : 'Can\'t read file ';
-                $msg .= htmlspecialchars($filepath);
+                $msg .= htmlspecialchars((string) $filepath);
                 $msgBuff->addError($msg);
             }
         }

@@ -62,7 +62,7 @@ class EmailLogModule extends ModuleAbstract
         $body = Db::getOne("SELECT Body FROM log_email_text WHERE ID = $id");
         $contentType = Db::getOne("SELECT ContentType FROM log_email WHERE ID = $id");
         if ($contentType !== 'text/html') {
-            $body = nl2br($body);
+            $body = nl2br((string) $body);
         }
         print $body;
         ApplicationAbstract::terminate();

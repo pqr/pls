@@ -59,7 +59,7 @@ class LoggerCsv
                 Request::getModule(),
                 $_SERVER['QUERY_STRING'] ?? '',
                 $query,
-                str_replace('.', ',', $queryTime)
+                str_replace('.', ',', (string) $queryTime)
             ];
             self::write('sqllog', $header, $data);
         }

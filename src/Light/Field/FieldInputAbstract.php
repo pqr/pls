@@ -36,7 +36,7 @@ abstract class FieldInputAbstract extends FieldAbstract
         $outHtml = '<input type="' . $this->inputType . '" data-type="' . $tdata['type']
             . '" name="' . $tdata['editName']
             . '" id="' . $tdata['editId']
-            . '" value="' . htmlspecialchars($tdata['value']) . '"';
+            . '" value="' . htmlspecialchars((string) $tdata['value']) . '"';
 
         if ($this->editMaxLength) {
             $outHtml .= ' maxlength="' . $this->editMaxLength . '"';

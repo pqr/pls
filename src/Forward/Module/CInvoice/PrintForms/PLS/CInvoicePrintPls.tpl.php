@@ -45,16 +45,16 @@ use Light\Template as t; ?>
                     <td width="120"><img id="logo" src="i/login/loginlogo.png" alt="Logo" width="110" height="110"></td>
                     <td width="300">
                         <h1 style="font-family: Verdana, Arial; font-size: 16px; font-weight: bold; padding: 2px;">
-                            <?= htmlspecialchars($OurCompanyName_raw) ?>
+                            <?= htmlspecialchars((string) $OurCompanyName_raw) ?>
                         </h1>
 
                         <div style="padding: 2px;font-family: Verdana, Arial;font-size: 11px;">
-                            <?= nl2br(htmlspecialchars($OurCompanyAddress_raw)) ?>
+                            <?= nl2br(htmlspecialchars((string) $OurCompanyAddress_raw)) ?>
                         </div>
                     </td>
                     <td width="180"
                         style="font-size: 40px; text-align: right; font-family: Century Gothic, Verdana, Arial"><?= strtoupper(
-                            t::text('DocType')
+                            (string) t::text('DocType')
                         ) ?>
                     </td>
                 </tr>
@@ -72,13 +72,13 @@ use Light\Template as t; ?>
 
                     <td style="font-family: Verdana, Arial; font-size: 14px; text-align: right;">
                         Date: <?= t::html('DocDate') ?>
-                        <br><strong><?= strtoupper(t::text('DocType')) ?> # <?= t::html('Name') ?></strong>
+                        <br><strong><?= strtoupper((string) t::text('DocType')) ?> # <?= t::html('Name') ?></strong>
                     </td>
                 </tr>
                 <tr valign="top">
                     <td style="padding-right: 5px; width: 35%; font-family: Verdana, Arial; font-size: 9px;">
                         <?php
-                        $bankLines = explode("\n", $OurCompanyBeneficiaryBank_raw);
+                        $bankLines = explode("\n", (string) $OurCompanyBeneficiaryBank_raw);
                         $bankLinesHtml = array_map(
                             fn($line) => '<div class="nobr"><nobr>' . \htmlspecialchars($line) . '</nobr></div>',
                             $bankLines
@@ -90,7 +90,7 @@ use Light\Template as t; ?>
 
                     <td style="padding: 0 5px 0 5px; width: 35%; font-family: Verdana, Arial; font-size: 9px;">
                         <?php
-                        $corrBankLines = explode("\n", $OurCompanyCorrespondentBank_raw);
+                        $corrBankLines = explode("\n", (string) $OurCompanyCorrespondentBank_raw);
                         $corrBankLinesHtml = array_map(
                             fn($line) => '<div class="nobr"><nobr>' . \htmlspecialchars($line) . '</nobr></div>',
                             $corrBankLines

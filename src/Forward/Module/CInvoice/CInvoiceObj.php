@@ -93,7 +93,7 @@ class CInvoiceObj extends InvoiceObjAbstract
                            , DATEDIFF(CURDATE(), DueDate)
                            , -999)",
                     //Определим функцию, которая в зависимости от значения Overdue окрасит ячеку таблицы в класс bad или warning
-                    'viewCssClass' => [Finance::class, 'getOverdueViewCssClass'],
+                    'viewCssClass' => Finance::getOverdueViewCssClass(...),
                     //Определим функцию, которая очистит ячейку Overdue, если статус счёта CLEARD или CREDITNOTED
                     'getHtmlFunction' => function ($value, $data, $outHtml, $forTable) {
                         if (isset($data['Status'])) {

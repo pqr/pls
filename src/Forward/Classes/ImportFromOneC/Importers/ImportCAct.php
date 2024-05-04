@@ -29,7 +29,7 @@ class ImportCAct extends ImporterAbstract
 
             $cinvId = Db::getOne("SELECT ID FROM cinvoice WHERE ID = @i", $data['CInvoiceID']);
             if (!$cinvId) {
-                $this->msgBuff->addError('Не удалось найти счёт с ID = ' . htmlspecialchars($data['CInvoiceID']));
+                $this->msgBuff->addError('Не удалось найти счёт с ID = ' . htmlspecialchars((string) $data['CInvoiceID']));
             }
 
         } else {
@@ -40,7 +40,7 @@ class ImportCAct extends ImporterAbstract
             $cinvId = Db::getOne("SELECT ID FROM cinvoice WHERE Name = @s AND DocDate = @s AND CompanyID = @i",
                 $cinvoiceNumber, $cinvoiceDocDate, $companyId);
             if (!$cinvId) {
-                $this->msgBuff->addError("Не удалось найти счёт №" . htmlspecialchars($cinvoiceNumber) . " от " . FieldDate::beautify($cinvoiceDocDate) . " для компании с ID = $companyId");
+                $this->msgBuff->addError("Не удалось найти счёт №" . htmlspecialchars((string) $cinvoiceNumber) . " от " . FieldDate::beautify($cinvoiceDocDate) . " для компании с ID = $companyId");
             }
 
         }
@@ -87,12 +87,12 @@ class ImportCAct extends ImporterAbstract
         $cinvFolderRelative = FilesFolder::getRelativeModule(CInvoice::class, $cinvId);
 
         $pdfDataBase64 = $data['Data'];
-        $pdfData = base64_decode($pdfDataBase64);
+        $pdfData = base64_decode((string) $pdfDataBase64);
         $pdfFilename = File::getValidFilename("$filename.pdf");
         $this->writeFile($cinvFolderRelative, $pdfFilename, $pdfData, $cinvLink);
 
         $excelDataBase64 = $data['DataExcel'];
-        $excelData = base64_decode($excelDataBase64);
+        $excelData = base64_decode((string) $excelDataBase64);
         $excelFilename = File::getValidFilename("$filename.xlsx");
         $this->writeFile($cinvFolderRelative, $excelFilename, $excelData, $cinvLink);
 

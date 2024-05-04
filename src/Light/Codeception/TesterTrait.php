@@ -87,7 +87,7 @@ trait TesterTrait
 
                     $cellValue = $sheet->getCellByColumnAndRow($currentCol, $currentRow)->getValue();
                     // Проверим, есть ли внутри ячейки что-то связанное с процентамии (типа %fieldKey%)
-                    preg_match_all("/%([\\w\\d]+)%/", $cellValue, $matches);
+                    preg_match_all("/%([\\w\\d]+)%/", (string) $cellValue, $matches);
                     $hasPlaceholders = isset($matches[1][0]);
                     if ($hasPlaceholders) {
                         // Найдены какие-то прейсхолдеры в чейке - и это плохо
@@ -108,7 +108,7 @@ trait TesterTrait
     {
         // Пользователь admin захардкожен в LightConnector - именно под ним запускаются все функциональные тесты
         $user = Db::getRow("SELECT ID, SpecialAccessJSON FROM `user` WHERE Login='admin'");
-        $specialAccess = json_decode($user['SpecialAccessJSON'], true);
+        $specialAccess = json_decode((string) $user['SpecialAccessJSON'], true);
         // Меняем в базе значение на требуемое
         $specialAccess[$accessKey] = $newValue;
         Db::updateRow(['SpecialAccessJSON' => json_encode($specialAccess)], 'user', $user['ID']);

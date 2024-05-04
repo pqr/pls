@@ -48,9 +48,9 @@ class FieldDateTime extends FieldInputAbstract
 
         if (!$value) {
             $outHtml = '';
-        } elseif (str_starts_with($value, '0000-00-00')) {
+        } elseif (str_starts_with((string) $value, '0000-00-00')) {
             $outHtml = '';
-        } elseif (str_starts_with($value, '2099-01-01')) {
+        } elseif (str_starts_with((string) $value, '2099-01-01')) {
             $outHtml = 'until further notice';
         } else {
             $outHtml = FieldDateTime::beautify($value);
@@ -63,7 +63,7 @@ class FieldDateTime extends FieldInputAbstract
     {
         if (!$value) {
             $out = '';
-        } elseif (str_starts_with($value, '0000-00-00')) {
+        } elseif (str_starts_with((string) $value, '0000-00-00')) {
             $out = '';
         } else {
             if ($this->groupconcat && $groupconcatLinesCount > 1) {
@@ -90,19 +90,19 @@ class FieldDateTime extends FieldInputAbstract
 
     public static function beautify($mysqlDateTime)
     {
-        if ($mysqlDateTime === '' || str_starts_with($mysqlDateTime, '0000-00-00')) {
+        if ($mysqlDateTime === '' || str_starts_with((string) $mysqlDateTime, '0000-00-00')) {
             return '';
         }
 
-        return date(Config::$defaultDateTimeFormat, strtotime($mysqlDateTime));
+        return date(Config::$defaultDateTimeFormat, strtotime((string) $mysqlDateTime));
     }
 
     protected function getDataFromRequestInner(array $requset)
     {
         $value = parent::getDataFromRequestInner($requset);
 
-        if ($value !== null && str_contains($value, ' ')) {
-            [$date, $time] = explode(' ', $value);
+        if ($value !== null && str_contains((string) $value, ' ')) {
+            [$date, $time] = explode(' ', (string) $value);
             $date = FieldDate::parse($date);
 
             if ($time === null) {
@@ -121,7 +121,7 @@ class FieldDateTime extends FieldInputAbstract
 
     public function allowSqlWhereValue($value): bool
     {
-        $value = trim($value);
+        $value = trim((string) $value);
         return self::notEmpty($value);
     }
 
@@ -139,17 +139,17 @@ class FieldDateTime extends FieldInputAbstract
     private function getSqlWhereFromUntil($value): string
     {
         // Одно из полей тандема "From ... until ..."
-        $dbKey = preg_replace('/(From|Until)$/', '', $this->getFilterFieldKeys()[0]);
-        if (str_ends_with($this->key, 'From')) {
-            if (strlen($value) === 10) {
+        $dbKey = preg_replace('/(From|Until)$/', '', (string) $this->getFilterFieldKeys()[0]);
+        if (str_ends_with((string) $this->key, 'From')) {
+            if (strlen((string) $value) === 10) {
                 $value .= ' 00:00:00';
             }
             $dbKey .= $this->asInterval ? 'Until' : '';
             return $dbKey . " >= '" . Db::esc($value) . "'";
         }
 
-        if (str_ends_with($this->key, 'Until')) {
-            if (strlen($value) === 10) {
+        if (str_ends_with((string) $this->key, 'Until')) {
+            if (strlen((string) $value) === 10) {
                 $value .= ' 23:59:59';
             }
             $dbKey .= $this->asInterval ? 'From' : '';

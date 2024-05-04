@@ -81,7 +81,7 @@ class Port extends ModuleAbstract
                     $fieldsData['PODID'] = $newPortId;
                 }
 
-                $shipmentObj->updateDb($fieldsData, 'Удаление порта ' . htmlspecialchars($this->_obj['Name']));
+                $shipmentObj->updateDb($fieldsData, 'Удаление порта ' . htmlspecialchars((string) $this->_obj['Name']));
             }
 
             $msg = '<strong>' . count($shipments) . '</strong> перевозок было обновлено';

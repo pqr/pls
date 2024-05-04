@@ -120,7 +120,7 @@ class MassactionDownloadAsZip extends MassactionAbstract
         }
 
         $startWith = $this->options['startWith'];
-        if ($startWith && mb_stripos($file, $startWith) !== 0) {
+        if ($startWith && mb_stripos($file, (string) $startWith) !== 0) {
             // Данный файл не подходит по условию что имя файла должно начинаться с $startWith
             return false;
         }

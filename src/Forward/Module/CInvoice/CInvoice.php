@@ -103,7 +103,7 @@ class CInvoice extends InvoiceModuleAbstract
                 'ShippingDocuments',
                 [
                     'name' => 'Shipping Documents',
-                    'sqlWhereFormatFunction' => fn($value) => str_replace(' ', '', str_replace('-', '', $value)),
+                    'sqlWhereFormatFunction' => fn($value) => str_replace(' ', '', str_replace('-', '', (string) $value)),
                     'sqlWhere' => fn($value) => Db::getSqlWhereSeparatedByComa(
                         $value,
                         'REPLACE(cinvoice.ShippingDocument, "-", "")',
@@ -279,7 +279,7 @@ class CInvoice extends InvoiceModuleAbstract
             //Загрузим шапку из указанного файла
             $this->_obj->mergeData(CInvoiceCommon::getDataFromShipment($shipmentId));
             //Компанию CompanyID и валюту счёта определим на основе первой отмеченной галочки в кост-шите
-            $csLineIds = explode(',', $_GET['csLineIds']);
+            $csLineIds = explode(',', (string) $_GET['csLineIds']);
             $this->_obj->mergeData(
                 InvoicesCommon::getCurrencyFromCsLines($csLineIds, 'csincome')
             );
@@ -336,7 +336,7 @@ class CInvoice extends InvoiceModuleAbstract
 
     public static function proceedCreateCPayments(): void
     {
-        $cinvocieIds = explode(',', $_POST['ids']);
+        $cinvocieIds = explode(',', (string) $_POST['ids']);
         $paymentDate = FieldDate::parse($_POST['PaymentDate']);
         CreateCPayments::create($cinvocieIds, $paymentDate);
     }
@@ -578,7 +578,7 @@ class CInvoice extends InvoiceModuleAbstract
         $fullTextShowed = false;
         if (isset($resData['Errors']) && $resData['Errors']) {
             Session::flashWarning(
-                'От 1С получено сообщение в поле Errors:<br>' . nl2br(htmlspecialchars($resData['Errors']))
+                'От 1С получено сообщение в поле Errors:<br>' . nl2br(htmlspecialchars((string) $resData['Errors']))
             );
             Session::flashInfo('Полный текст ответа от 1С:' . '<pre>' . htmlspecialchars($resBody) . '</pre>');
             Session::flashInfo(
@@ -610,7 +610,7 @@ class CInvoice extends InvoiceModuleAbstract
             'Номер счёта из 1С'
         );
         Session::flashSuccess(
-            'Счёт зарегистрирован в 1С под номером <strong>' . htmlspecialchars($resData['DocNumber']) . '</strong>'
+            'Счёт зарегистрирован в 1С под номером <strong>' . htmlspecialchars((string) $resData['DocNumber']) . '</strong>'
         );
 
         $isDeleted = ($resData['IsDeleted'] ?? false) || strpos($resData['Errors'] ?? '', 'Помеченный на удаление');
@@ -643,7 +643,7 @@ class CInvoice extends InvoiceModuleAbstract
             $pdfFilename = File::getValidFilename($this->_obj['Name']) . '.pdf';
             $pdfFilepathAbs = "$folderpathAbs/$pdfFilename";
             $pdfDataBase64 = $resData['Data'];
-            $pdfData = base64_decode($pdfDataBase64);
+            $pdfData = base64_decode((string) $pdfDataBase64);
             if (file_put_contents($pdfFilepathAbs, $pdfData)) {
                 Session::flashSuccess(
                     'Файл <strong>' . htmlspecialchars($pdfFilename) . '</strong> помещён в папку счёта'
@@ -661,7 +661,7 @@ class CInvoice extends InvoiceModuleAbstract
             $excelFilename = File::getValidFilename($this->_obj['Name']) . '.xlsx';
             $excelFilepathAbs = "$folderpathAbs/$excelFilename";
             $excelDataBase64 = $resData['ExcelData'];
-            $excelData = base64_decode($excelDataBase64);
+            $excelData = base64_decode((string) $excelDataBase64);
 
             if (file_put_contents($excelFilepathAbs, $excelData)) {
                 Session::flashSuccess(

@@ -112,7 +112,7 @@ class AirfreightRateExcelImport
                     } else {
                         $value = $cell->getValue();
                     }
-                    $value = trim($value);
+                    $value = trim((string) $value);
                 } else {
                     $value = '';
                 }
@@ -149,20 +149,20 @@ class AirfreightRateExcelImport
             $arrivalLocationName = $this->getLocationName($rowData[self::ARRIVALIATA]);
 
             if (!$validFrom) {
-                $msgBuff->addWarning('Строка ' . $rowData['_excelRowNum'] . ': не удалось рапознать дату Valid From <storng>' . htmlspecialchars($rowData[self::VALIDFROM]) . '</storng>');
+                $msgBuff->addWarning('Строка ' . $rowData['_excelRowNum'] . ': не удалось рапознать дату Valid From <storng>' . htmlspecialchars((string) $rowData[self::VALIDFROM]) . '</storng>');
             }
             if (!$validUntil) {
-                $msgBuff->addWarning('Строка ' . $rowData['_excelRowNum'] . ': не удалось рапознать дату Valid Until <storng>' . htmlspecialchars($rowData[self::VALIDUNTIL]) . '</storng>');
+                $msgBuff->addWarning('Строка ' . $rowData['_excelRowNum'] . ': не удалось рапознать дату Valid Until <storng>' . htmlspecialchars((string) $rowData[self::VALIDUNTIL]) . '</storng>');
             }
 
             if (!$vendorId) {
-                $msgBuff->addWarning('Строка ' . $rowData['_excelRowNum'] . ': неизвестный Vendor <storng>' . htmlspecialchars($rowData[self::VENDOR]) . '</storng>');
+                $msgBuff->addWarning('Строка ' . $rowData['_excelRowNum'] . ': неизвестный Vendor <storng>' . htmlspecialchars((string) $rowData[self::VENDOR]) . '</storng>');
             }
             if (!$departureLocationName) {
-                $msgBuff->addWarning('Строка ' . $rowData['_excelRowNum'] . ': неизвестный Departure Location <storng>' . htmlspecialchars($rowData[self::DEPARTUREIATA]) . '</storng>');
+                $msgBuff->addWarning('Строка ' . $rowData['_excelRowNum'] . ': неизвестный Departure Location <storng>' . htmlspecialchars((string) $rowData[self::DEPARTUREIATA]) . '</storng>');
             }
             if (!$arrivalLocationName) {
-                $msgBuff->addWarning('Строка ' . $rowData['_excelRowNum'] . ': неизвестный Arrival Location <storng>' . htmlspecialchars($rowData[self::ARRIVALIATA]) . '</storng>');
+                $msgBuff->addWarning('Строка ' . $rowData['_excelRowNum'] . ': неизвестный Arrival Location <storng>' . htmlspecialchars((string) $rowData[self::ARRIVALIATA]) . '</storng>');
             }
 
             if (!$validFrom || !$validUntil || !$vendorId || !$departureLocationName || !$arrivalLocationName) {
@@ -176,7 +176,7 @@ class AirfreightRateExcelImport
                 'Name' => $rowData[self::CONTRACT],
                 'VendorID' => $vendorId,
                 'AirlineAlphaCode' => $rowData[self::AIRLINE],
-                'TransitTime' => str_replace([' days', ' day'], '', strtolower($rowData[self::TRANSITTIME])),
+                'TransitTime' => str_replace([' days', ' day'], '', strtolower((string) $rowData[self::TRANSITTIME])),
                 'DepartureIATA' => $rowData[self::DEPARTUREIATA],
                 'DepartureLocationName' => $departureLocationName,
                 'ArrivalIATA' => $rowData[self::ARRIVALIATA],
@@ -196,7 +196,7 @@ class AirfreightRateExcelImport
                 'Amount2000' => $rowData[self::AMOUNT2000],
                 'FSCAmount' => $rowData[self::FSC],
                 'SSCAmount' => $rowData[self::SSC],
-                'CurrencyISO' => strtoupper($rowData[self::CURRENCY]),
+                'CurrencyISO' => strtoupper((string) $rowData[self::CURRENCY]),
             ];
 
         }
@@ -211,7 +211,7 @@ class AirfreightRateExcelImport
             $vendors = Db::getAssoc("SELECT LOWER(Name), ID FROM vendor");
         }
 
-        $vendorName = mb_strtolower(trim($vendorName), 'UTF-8');
+        $vendorName = mb_strtolower(trim((string) $vendorName), 'UTF-8');
         return $vendors[$vendorName] ?? null;
     }
 
@@ -222,7 +222,7 @@ class AirfreightRateExcelImport
             $locations = Db::getAssoc("SELECT UPPER(IATA), Name FROM location");
         }
 
-        $locationIata = mb_strtoupper(trim($locationIata), 'UTF-8');
+        $locationIata = mb_strtoupper(trim((string) $locationIata), 'UTF-8');
         return $locations[$locationIata] ?? null;
     }
 

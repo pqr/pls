@@ -19,7 +19,7 @@ final class MAWBExcel extends PrintForm
     {
         $tdata = parent::getTplDataForExcel($obj);
 
-        $mawbPars = explode('-', $obj['MAWBNumber'], 2);
+        $mawbPars = explode('-', (string) $obj['MAWBNumber'], 2);
         $tdata['MAWBPrefix'] = $mawbPars[0];
         $tdata['MAWBSuffix'] = $mawbPars[1] ?? '';
         $shipmentId = $obj->getId();

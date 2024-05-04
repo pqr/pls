@@ -10,11 +10,11 @@ class Misc
     public static function makeLinksAbsolute($html)
     {
         if (isset($_SERVER['REQUEST_URI'])) {
-            $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+            $path = parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH);
         } else {
             $path = $_SERVER['PHP_SELF'];
         }
-        $path = str_replace('index.php', '', $path);
+        $path = str_replace('index.php', '', (string) $path);
         $path = ltrim('/', $path);
         $url = Config::$localUrl . "/$path";
         // hot fix: ссылки, у которых теги начинаются с @, менять не будем
@@ -26,7 +26,7 @@ class Misc
             ' @href="' => ' href="',
             ' @url(' => ' url(',
         ];
-        return str_replace(array_keys($replacement), array_values($replacement), $html);
+        return str_replace(array_keys($replacement), array_values($replacement), (string) $html);
     }
 
     /*
@@ -59,11 +59,11 @@ class Misc
 
     public static function encodeMailtoLinkText($text)
     {
-        if (str_contains($_SERVER['HTTP_USER_AGENT'], 'Windows NT 5.2')) {
+        if (str_contains((string) $_SERVER['HTTP_USER_AGENT'], 'Windows NT 5.2')) {
             //Outlook 2003 не понимает utf8
-            $text = mb_convert_encoding($text, "windows-1251", "UTF-8");
+            $text = mb_convert_encoding((string) $text, "windows-1251", "UTF-8");
         }
-        return str_replace('+', ' ', urlencode($text));
+        return str_replace('+', ' ', urlencode((string) $text));
     }
 
     /**
@@ -218,7 +218,7 @@ class Misc
     public static function validateEmails($string)
     {
         $regex = "/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/iu";
-        $result = preg_split("/,|;/", preg_replace("/\s/", "", $string));
+        $result = preg_split("/,|;/", preg_replace("/\s/", "", (string) $string));
         foreach ($result as $value) {
             if (!preg_match($regex, $value)) {
                 return false;
@@ -290,7 +290,7 @@ class Misc
         foreach ($records as $r) {
             $out[$r['Name']] = $r['ID'];
             if (!empty($r['Synonyms'])) {
-                $synonyms = array_filter(array_map('trim', explode("\n", $r['Synonyms'])));
+                $synonyms = array_filter(array_map('trim', explode("\n", (string) $r['Synonyms'])));
                 foreach ($synonyms as $synonym) {
                     if (!isset($out[$synonym])) {
                         $out[$synonym] = $r['ID'];

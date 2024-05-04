@@ -126,7 +126,7 @@ class Login
         $tdata += $this->getRandomImage();
 
         if (isset($_GET['next'])) {
-            $tdata['formActionUrl'] .= '&next=' . rawurlencode($_GET['next']);
+            $tdata['formActionUrl'] .= '&next=' . rawurlencode((string) $_GET['next']);
         }
 
         Template::includeTpl('Login.tpl.php', $tdata);

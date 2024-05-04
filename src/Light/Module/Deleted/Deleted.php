@@ -140,7 +140,7 @@ class Deleted extends ModuleAbstract
         }
 
         try {
-            $data = json_decode($json, true);
+            $data = json_decode((string) $json, true);
             $insertId = Db::insertRow($data, $tableName);
             if (!$insertId) {
                 $msg = Config::$lang === 'ru' ? "Не удалось восстановить ID $deleteId" : "Failed to restore ID $deleteId";

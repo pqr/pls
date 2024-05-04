@@ -63,7 +63,7 @@ class AirfreightRate extends ModuleAbstract
     {
         if ($_FILES['ratesfile']['tmp_name'] != '') {
             $msgBuff = new Msg();
-            $ext = pathinfo($_FILES['ratesfile']['name'], PATHINFO_EXTENSION);
+            $ext = pathinfo((string) $_FILES['ratesfile']['name'], PATHINFO_EXTENSION);
             $newTmpFile = LIGHT_DIR_TEMP . '/AirfreightRate_User' . User::getId() . '_' . date('Y_m_d_H_i_s') . '.' . $ext;
             move_uploaded_file($_FILES['ratesfile']['tmp_name'], $newTmpFile);
             $importObj = new AirfreightRateExcelImport();

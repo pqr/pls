@@ -33,7 +33,7 @@ class XlsHelpers
                         } else {
                             $value = $cell->getValue();
                         }
-                        $value = trim($value);
+                        $value = trim((string) $value);
                     }
                 }
 

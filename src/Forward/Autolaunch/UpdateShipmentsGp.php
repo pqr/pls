@@ -27,7 +27,7 @@ class UpdateShipmentsGp extends AutolaunchAbstract
             $convertDate = Db::getOne("SELECT max(CreatedDateTime) FROM cshistory WHERE ShipmentID = @i", $shipmentId);
             if ($convertDate) {
                 //Отрежим время
-                $convertDate = substr($convertDate, 0, 10);
+                $convertDate = substr((string) $convertDate, 0, 10);
             }
             ShipmentGp::flush($convertDate);
         }

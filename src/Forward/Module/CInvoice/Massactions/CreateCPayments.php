@@ -63,7 +63,7 @@ class CreateCPayments
         // Создаём по одной оплате на счёт
         foreach ($cinvoicesPerCustomerAndCurrency as $customerAndCurrency => $cinvoicesForCustomer) {
 
-            [$customerId, $currencyIso] = explode('-', $customerAndCurrency);
+            [$customerId, $currencyIso] = explode('-', (string) $customerAndCurrency);
 
             $amount = array_sum(array_column($cinvoicesForCustomer, 'CacheOutstandingAmount'));
             $customerAccountIds = array_unique(array_column($cinvoicesForCustomer, 'CustomerAccountID'));

@@ -209,7 +209,7 @@ class StandartRateDialog
         if ($currencyIso == 'USD' || $currencyIso == 'EUR') {
             foreach ($fieldset->getKeys() as $fieldKey) {
                 $customerFieldKey = str_replace('Addon', 'Addon' . $currencyIso,
-                    $fieldKey); //Вставляем валюту в ключ поля
+                    (string) $fieldKey); //Вставляем валюту в ключ поля
                 $data[$fieldKey] = $addonsSource[$customerFieldKey];
             }
         }

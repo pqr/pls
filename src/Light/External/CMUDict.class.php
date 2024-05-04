@@ -30,7 +30,7 @@ class CMUDict extends CMUDict_original {
 
     public function getPhoneme($phrase) {
         $result = [];
-        $phrase = trim($phrase);
+        $phrase = trim((string) $phrase);
         $words = mb_strpos($phrase, ' ') ? explode(' ', $phrase) : (array)$phrase;
         foreach ($words as $word) {
             $phonemes = (array)$this->getPhonemes($word);
@@ -72,7 +72,7 @@ class CMUDict extends CMUDict_original {
                 continue;
             $tmp = preg_replace("~\t~s", '|', $tmp);
             #echo $tmp . '<br/>';
-            [$arp, $ipa, $rus] = explode('|', $tmp);
+            [$arp, $ipa, $rus] = explode('|', (string) $tmp);
             self::$arpabet[$arp] = $ipa;
             self::$arpabet_rus[$arp] = $rus;
         }
@@ -135,7 +135,7 @@ class CMUDict_original {
     }
 
     function getPhonemes($word) {
-        $uppercased_word = strtoupper($word);
+        $uppercased_word = strtoupper((string) $word);
         $result = @$this->values[$uppercased_word];
         if ($result !== null) {
             return $result;
@@ -189,7 +189,7 @@ class CMUDict_original {
      * @return bool
      */
     private static function contains($value, $str) {
-        return str_contains($str, (string) $value);
+        return str_contains((string) $str, (string) $value);
     }
 
     /**
@@ -200,7 +200,7 @@ class CMUDict_original {
      * @return bool
      */
     private static function starts_with($prefix, $str) {
-        return !strncmp($str, $prefix, strlen($prefix));
+        return !strncmp((string) $str, (string) $prefix, strlen((string) $prefix));
     }
 
     /**
@@ -211,7 +211,7 @@ class CMUDict_original {
      * @return bool
      */
     private static function ends_with($suffix, $str) {
-        return str_ends_with($str, $suffix);
+        return str_ends_with((string) $str, (string) $suffix);
     }
 
     /**

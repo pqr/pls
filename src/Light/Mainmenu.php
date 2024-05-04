@@ -211,7 +211,7 @@ class Mainmenu
         ];
 
         $avatar = User::avatarImgHtml(User::getId());
-        $userName = htmlspecialchars(User::getName());
+        $userName = htmlspecialchars((string) User::getName());
         if (User::hasWriteAccess(UserSettings::class)) {
             $userName = Link::create(UserSettings::class, $userName)->getHtml();
             $avatar = Link::create(UserSettings::class, $avatar)->getHtml();

@@ -295,8 +295,8 @@ class Select2ajaxController
         $oppositeSearchTerm = Translate::oppositeString($searchTerm);
         foreach ($options as $optionValue => $option) {
             $optionText = $field->getOptionText($option, $optionValue);
-            if (mb_stripos($optionText, $searchTerm) !== false
-                || mb_stripos($optionText, $oppositeSearchTerm) !== false
+            if (mb_stripos((string) $optionText, $searchTerm) !== false
+                || mb_stripos((string) $optionText, $oppositeSearchTerm) !== false
             ) {
                 $out[$optionValue] = $option;
             }

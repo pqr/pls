@@ -159,7 +159,7 @@ class Customer extends ModuleAbstract
 
     protected function viewGetStandartRatesExcel()
     {
-        $rateIds = array_map('intval', explode(',', $_GET['RateIDs']));
+        $rateIds = array_map('intval', explode(',', (string) $_GET['RateIDs']));
         $table = new StandartRatesExcel($this->_obj->getId(), $rateIds);
         $table->sendStandartRatesExcel($this->_obj['Name'], $this->_obj['CompanyID'], 'en');
     }

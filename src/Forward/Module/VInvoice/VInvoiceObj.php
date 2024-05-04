@@ -246,7 +246,7 @@ class VInvoiceObj extends InvoiceObjAbstract
 
             if ($msgBuff) {
                 $msgBuff->addInfo(
-                    'Номер счёта ' . htmlspecialchars($this->_data['Name']) . ' был автоматически простален в ' . count(
+                    'Номер счёта ' . htmlspecialchars((string) $this->_data['Name']) . ' был автоматически простален в ' . count(
                         $csLinesIdsToBeUpdated
                     ) . ' строк Cost-sheet Expenses'
                 );

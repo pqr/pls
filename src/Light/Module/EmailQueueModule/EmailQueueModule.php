@@ -63,7 +63,7 @@ class EmailQueueModule extends ModuleAbstract
     {
         $body = $this->_obj['Body'];
         if ($this->_obj['ContentType'] !== 'text/html') {
-            $body = '<pre>' . nl2br(htmlspecialchars($body)) . '</pre>';
+            $body = '<pre>' . nl2br(htmlspecialchars((string) $body)) . '</pre>';
         }
         print $body;
         ApplicationAbstract::terminate();

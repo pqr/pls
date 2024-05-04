@@ -161,7 +161,7 @@ trait TableLayoutable
             $layouts[] = ['name' => $name, 'fieldKeys' => explode('|', $this->tableLayoutDefault)];
         }
         foreach ($this->tableLayouts as $name => $layoutFields) {
-            $layouts[] = ['name' => $name, 'fieldKeys' => explode('|', $layoutFields)];
+            $layouts[] = ['name' => $name, 'fieldKeys' => explode('|', (string) $layoutFields)];
         }
 
         $userLayouts = self::getHtmlTableUserLayouts($this->getTableNameForSettings());
@@ -189,7 +189,7 @@ trait TableLayoutable
         if ($layouts) {
             $outHtml .= '<table>';
             foreach ($layouts as $l) {
-                $link = '<a href="#' . htmlspecialchars($l['FieldsShow']) . '">' . htmlspecialchars($l['LayoutName']) . '</a>';
+                $link = '<a href="#' . htmlspecialchars((string) $l['FieldsShow']) . '">' . htmlspecialchars((string) $l['LayoutName']) . '</a>';
                 $delLink = '<i class="fa fa-trash icon-delete" data-delid="' . $l['ID'] . '"></i>';
                 $outHtml .= "<tr><td>$link</td><td>$delLink</td></tr>";
             }

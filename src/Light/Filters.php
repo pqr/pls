@@ -286,7 +286,7 @@ class Filters
                  AND TableName = " . Db::escString($this->tableName)
         );
         if ($currentFiltersJson) {
-            $jsonValues = json_decode($currentFiltersJson, true);
+            $jsonValues = json_decode((string) $currentFiltersJson, true);
             if (is_array($jsonValues)) {
                 $currentValues = $jsonValues;
             }
@@ -355,10 +355,10 @@ class Filters
             }
 
             $valueText = $this->getField($fieldKey)->getText($value);
-            if (mb_strlen($valueText) > 40) {
-                $valueText = mb_substr($valueText, 0, 4) . '...';
+            if (mb_strlen((string) $valueText) > 40) {
+                $valueText = mb_substr((string) $valueText, 0, 4) . '...';
             }
-            $descriptions[] = "$fieldName: <strong>" . htmlspecialchars($valueText) . "</strong>";
+            $descriptions[] = "$fieldName: <strong>" . htmlspecialchars((string) $valueText) . "</strong>";
         }
 
         $userId = User::getId();
@@ -444,10 +444,10 @@ class Filters
         foreach ($this->fieldset as $field) {
 
 
-            if (str_starts_with($field->key, 'Not')) {
+            if (str_starts_with((string) $field->key, 'Not')) {
                 // Ключ этого поля начинается с Not - подозрительная ситуация,
                 // возможно это автосгенерированное поле на основе другого поля у которого стоит признак filterNot?
-                $originalFieldKey = substr($field->key, 3);
+                $originalFieldKey = substr((string) $field->key, 3);
                 $originalField = $this->fieldset->getField($originalFieldKey);
                 if ($originalField && $originalField->filterNot) {
                     // Действительно, существует оригинальное поле с признаком filterNot,
@@ -462,12 +462,12 @@ class Filters
             if (property_exists($field, 'filterFromUntil')
                 && $field->filterFromUntil) {
 
-                if (str_ends_with($field->key, 'From')) {
+                if (str_ends_with((string) $field->key, 'From')) {
                     // Нашли поле, которое является либо датой From либо датой Until
                     // В колонку будем долавлять только поле From, причём нужно отрезать суффикс From
                     // Да, имеем дело с полем типа From, отрезаем суффикс From
-                    $templateKey = substr($field->key, 0, -4);
-                } elseif (str_ends_with($field->key, 'Until')) {
+                    $templateKey = substr((string) $field->key, 0, -4);
+                } elseif (str_ends_with((string) $field->key, 'Until')) {
                     // Поле Until вообще не добавляем в эту автосгенерированную колонку
                     continue;
                 }
@@ -671,7 +671,7 @@ class Filters
             if ($settings) {
 
                 $layout = $this->mergeWithUserLayout($layout, $settings['Sort']);
-                $invisibleArray = json_decode($settings['Invisible'], true);
+                $invisibleArray = json_decode((string) $settings['Invisible'], true);
                 if (!is_array($invisibleArray)) {
                     $invisibleArray = [];
                 }
@@ -812,7 +812,7 @@ class Filters
     private function getFilterLiHtml($templateKey, $isInvisible, $title, $label, $html)
     {
         $class = $isInvisible ? ' class="filter-invisible"' : '';
-        $dataKey = ' data-templatekey="' . htmlspecialchars($templateKey) . '"';
+        $dataKey = ' data-templatekey="' . htmlspecialchars((string) $templateKey) . '"';
 
         $left = "<div class=filter__label>$label</div>";
         $right = "<div>$html</div>";

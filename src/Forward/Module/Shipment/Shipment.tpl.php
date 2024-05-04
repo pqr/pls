@@ -168,7 +168,7 @@
                                     <?= t::html('ShipmentRequestNo') ?>
 
                                     <?php if (t::_state() !== \Light\ModuleBase\ModuleAbstract::STATE_VIEW): ?>-
-                                        <?= substr($ShipmentRequestDate, 2, 2) ?>
+                                        <?= substr((string) $ShipmentRequestDate, 2, 2) ?>
 
                                     <?php endif; ?>
                                 </td>

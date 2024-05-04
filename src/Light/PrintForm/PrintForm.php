@@ -135,7 +135,7 @@ class PrintForm
      */
     protected function getTitleHtml(ObjAbstract $obj): string
     {
-        return $this->title . ' ' . strip_tags($obj->getDescriptionHtml());
+        return $this->title . ' ' . strip_tags((string) $obj->getDescriptionHtml());
     }
 
     /**
@@ -144,7 +144,7 @@ class PrintForm
      */
     protected function getTitleExcelSheet(ObjAbstract $obj): string
     {
-        return strip_tags($obj->getDescriptionHtml());
+        return strip_tags((string) $obj->getDescriptionHtml());
     }
 
     /**

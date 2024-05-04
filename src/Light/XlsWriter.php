@@ -291,7 +291,7 @@ class XlsWriter
                                 //Если в fieldset нет типа для этого поля, то подставляем из массива $data как есть
                                 $replaceTo = $data[$fieldKey];
                             }
-                            $newCellValue = str_replace("%$fieldKey%", $replaceTo, $newCellValue);
+                            $newCellValue = str_replace("%$fieldKey%", $replaceTo, (string) $newCellValue);
                         }
 
                         // Результат последовательно замены плейсхолдеров на значения из $data запишем в итоге в ячейку
@@ -332,7 +332,7 @@ class XlsWriter
 
                     $newCellValue = $cellValue;
                     foreach ($matches[1] as $fieldKey) {
-                        $newCellValue = str_replace("%$fieldKey%", '', $newCellValue);
+                        $newCellValue = str_replace("%$fieldKey%", '', (string) $newCellValue);
                     }
 
                     // Результат последовательно замены плейсхолдеров на значения из $data запишем в итоге в ячейку
@@ -451,7 +451,7 @@ class XlsWriter
 
         //Запишем заголовки
         foreach ($fieldset as $field) {
-            $headTxt = str_replace('<br>', ' ', strip_tags($field->getNameTable()));
+            $headTxt = str_replace('<br>', ' ', strip_tags((string) $field->getNameTable()));
             $ws->setCellValueExplicitByColumnAndRow($currentCol, $row, $headTxt, DataType::TYPE_STRING);
 
             // В комментарии к ячейке вставим всплывающую подсказку title
@@ -502,7 +502,7 @@ class XlsWriter
             $colRange = $colLetter . $row . ':' . $colLetter . $lastRow;
 
             // Устанавливаем выравнивание left|center|right
-            if (str_contains($field->key, 'CurrencyISO')) {
+            if (str_contains((string) $field->key, 'CurrencyISO')) {
                 //Валюту всегда выравниваем по левому краю с добавлением indent
                 $ws->getStyle($colRange)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setIndent(1);
             } else {
@@ -625,7 +625,7 @@ class XlsWriter
                 if (
                     $fieldType === F::TYPE_TEXT ||
                     $fieldType === F::TYPE_HTML ||
-                    ($field->groupconcat && str_contains($value, "\n"))
+                    ($field->groupconcat && str_contains((string) $value, "\n"))
                 ) {
                     $hasTextField = true;
                 }
@@ -683,7 +683,7 @@ class XlsWriter
 
         //Если это числовой тип безе перевода строк внутри (т.е не groupconcat)
         //то можно записать обычной функцией setCellValueByColumnAndRow - Excel сам распознает число
-        $noNewLine = !str_contains($excelVal, "\n");
+        $noNewLine = !str_contains((string) $excelVal, "\n");
         if ($noNewLine &&
             ($type === F::TYPE_INT
                 || $type === F::TYPE_FLOAT
@@ -714,7 +714,7 @@ class XlsWriter
                     );
                     $ws->setCellValue($coordinate, $amount);
                 } else {
-                    $lines = explode("\n", $excelVal);
+                    $lines = explode("\n", (string) $excelVal);
                     foreach ($lines as &$lineText) {
                         $lineText = strip_tags(FieldMoneyWithCurrency::beautify($lineText));
                     }

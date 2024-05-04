@@ -178,7 +178,7 @@ trait MassactionsTrait
         } else {
 
             // В противном случае попробуем запустить метод с определённым именем в текущем классе
-            $handler = 'massaction' . ucfirst($action);
+            $handler = 'massaction' . ucfirst((string) $action);
             if (!method_exists($this, $handler)) {
                 $this->{$handler}($ids);
                 throw new \BadMethodCallException("Unknown function $handler in class " . $this::class);

@@ -119,7 +119,7 @@ class ShipmentFields
     {
         return F::createText('MAWBNumbers', [
                 'name' => 'MAWB Numbers',
-                'sqlWhereFormatFunction' => fn($value) => str_replace(['-', ' '], '', $value),
+                'sqlWhereFormatFunction' => fn($value) => str_replace(['-', ' '], '', (string) $value),
                 'sqlWhere' => fn($value) => "(" .
                     Db::getSqlWhereSeparatedByComa(
                         $value,

@@ -9,7 +9,7 @@ trait PipeSeparatedIdsTrait
 
     public static function parseValue($value)
     {
-        $valueArr = explode('|', $value);
+        $valueArr = explode('|', (string) $value);
         //уберём пустые значения
         $valueArr = array_filter($valueArr);
 

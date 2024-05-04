@@ -260,7 +260,7 @@ class FieldSelect extends FieldOptionsAbstract
 
     private function parsePipeSeparatedValue($value): array
     {
-        return array_filter(explode('|', $value));
+        return array_filter(explode('|', (string) $value));
     }
 
     protected function getHtmlInputTplData($value, array $data, $idPrefix)
@@ -362,7 +362,7 @@ class FieldSelect extends FieldOptionsAbstract
                 . ($img !== '' ? ' data-img="' . $img . '"' : '')
                 . ($title !== '' ? ' title="' . htmlspecialchars($title) . '"' : '')
                 . '>'
-                . htmlspecialchars($text)
+                . htmlspecialchars((string) $text)
                 . '</option>';
 
             if ($optgroup === '') {
@@ -476,7 +476,7 @@ class FieldSelect extends FieldOptionsAbstract
 
             $valueText = $request[$this->key . 'New'];
             if ($this->upper) {
-                $valueText = mb_strtoupper($valueText, 'UTF-8');
+                $valueText = mb_strtoupper((string) $valueText, 'UTF-8');
             }
 
             //Добавляем новое значение в базу, узнаем новое ID

@@ -53,7 +53,7 @@ class Lines extends Subtable
 
                 if ($translation && $translation['NameRu'] !== '') {
 
-                    $outHtml .= '<br><small>' . htmlspecialchars($translation['NameRu']) . '</small>';
+                    $outHtml .= '<br><small>' . htmlspecialchars((string) $translation['NameRu']) . '</small>';
 
                 } elseif (User::hasWriteAccess('ItemList')) {
 
@@ -111,7 +111,7 @@ class Lines extends Subtable
             //Добавим строки в подтаблицу, если в GET запросе есть ключевой параметр fromCostSheet - значит попали сюда
             //из Cost-sheet'а нажатием кнопки Create Customer Invoice
             $shipmentId = (int)$_GET['fromCostSheet'];
-            $csLineIds = explode(',', $_GET['csLineIds']);
+            $csLineIds = explode(',', (string) $_GET['csLineIds']);
             if (!Constant::isOneCCompany($this->_masterObj['CompanyID'])) {
                 // Для обычных компаний (не ООО) берём все строки из Cost-sheet
                 $linesData = CInvoiceCommon::getLinesDataFromCostSheet($shipmentId, $csLineIds);

@@ -115,7 +115,7 @@ class ImportFromOneC
 
     protected function parseJson($text)
     {
-        $json = json_decode(str_replace("\xEF\xBB\xBF", '', $text), true);
+        $json = json_decode(str_replace("\xEF\xBB\xBF", '', (string) $text), true);
         if (!$json) {
             $this->msgBuff->addError('Не удалось распознать JSON структуру');
             switch (json_last_error()) {

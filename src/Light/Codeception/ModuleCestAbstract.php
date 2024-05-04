@@ -301,11 +301,11 @@ abstract class ModuleCestAbstract
         $I->assertNotContainsSqlError($response);
         $I->assertNotContainsXdebugError($response);
 
-        $actualText = strip_tags($response);
+        $actualText = strip_tags((string) $response);
 
         $recordData = Db::getRow("SELECT * FROM {$this->getDbTable()} WHERE ID = $testObjId");
         $expectedHtml = $field->getHtml($newValue, $recordData);
-        $expectedText = strip_tags($expectedHtml);
+        $expectedText = strip_tags((string) $expectedHtml);
         $I->assertContains($expectedText, $actualText);
 
         // Возвращаем в базу предыдущее значение

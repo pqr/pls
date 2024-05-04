@@ -201,7 +201,7 @@ class InvStatus
         $title = $statuses[$status]['text'];
 
         $iconColorClass = "invicon$status";
-        $title = ' title="' . htmlspecialchars($title) . '"';
+        $title = ' title="' . htmlspecialchars((string) $title) . '"';
 
         if ($status === self::DRAFT) {
             return "<i class=\"far fa-question-circle $iconColorClass\"$title></i>";

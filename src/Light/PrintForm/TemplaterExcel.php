@@ -19,7 +19,7 @@ class TemplaterExcel extends TemplaterAbstract
      */
     private $titleExcelSheet;
 
-    public function __construct(string $templateFilepathAbs, string $titleExcelSheet, private Fieldset $fieldset, private int $tableOpts)
+    public function __construct(string $templateFilepathAbs, string $titleExcelSheet, private readonly Fieldset $fieldset, private readonly int $tableOpts)
     {
         parent::__construct($templateFilepathAbs);
 

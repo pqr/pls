@@ -5,7 +5,7 @@ $activeModule = \Light\Request::getModule();
     data-status="<?= $status ?>"<?= $status === 'closed' ? ' style="display: none"' : '' ?>>
     <?php foreach ($items as $module => ['text' => $text, 'title' => $title, 'url' => $url]): ?>
 
-        <li class="MeinmenuItem"<?= $title ? ' title="' . htmlspecialchars($title) . '"' : '' ?>>
+        <li class="MeinmenuItem"<?= $title ? ' title="' . htmlspecialchars((string) $title) . '"' : '' ?>>
             <a class="MainmenuLink<?= $module === $activeModule ? ' MainmenuLink_active' : '' ?>"
                href="<?= $url ?>">
                 <?= $text ?>

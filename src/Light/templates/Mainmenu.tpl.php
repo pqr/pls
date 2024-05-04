@@ -21,14 +21,14 @@ use Light\Ico; ?>
                 <?php /* <img src="lightpublic/i/santa-hat.png" class="santa-hat"> */ ?>
                 <?= $Avatar ?>
             </div>
-        <?php endif; ?>
+<?php endif; ?>
 
         <div class="MainmenuUsername">
             <?= $UserName ?>
         </div>
 
         <div class="MainmenuUsergroup">
-            <?= htmlspecialchars(\Light\User::getGroupName()) ?>
+            <?= htmlspecialchars((string) \Light\User::getGroupName()) ?>
             <a href="index.php?a=Logout#ajax-post" class="MainmenuLogout" title="Logout"><i
                         class="fas fa-sign-out-alt"></i></a>
         </div>
@@ -49,7 +49,7 @@ use Light\Ico; ?>
     <?php foreach ($sectionsHtml as $section => $sectionHtml): ?>
 
         <?php if ($section): ?>
-            <div class="MainmenuSectionHead" data-name="<?= htmlspecialchars($section) ?>">
+            <div class="MainmenuSectionHead" data-name="<?= htmlspecialchars((string) $section) ?>">
                 <?= $section ?>
             </div>
         <?php endif ?>

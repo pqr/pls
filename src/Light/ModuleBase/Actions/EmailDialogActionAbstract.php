@@ -323,7 +323,7 @@ abstract class EmailDialogActionAbstract extends ActionAbstract
         // Проверим, допустим ли такой EmailAccountID? Чтобы на форме не подменяли на чужой
         $availableEmailAccoutnIds = $this->getEmailAccountIdOptions();
         if (!isset($availableEmailAccoutnIds[$emailAccountId])) {
-            $this->msgBuff->addError('Не допустимое значение EmailAccountID = ' . htmlspecialchars($emailAccountId));
+            $this->msgBuff->addError('Не допустимое значение EmailAccountID = ' . htmlspecialchars((string) $emailAccountId));
         }
 
         $attachementsFullPaths = [];
@@ -342,7 +342,7 @@ abstract class EmailDialogActionAbstract extends ActionAbstract
 
         $sentCount = 0;
 
-        $emailTo = trim($formData['EmailTo']);
+        $emailTo = trim((string) $formData['EmailTo']);
         $toArr = $formData['EmailSeparateTo'] ? Mailer::getEmailsAsArray($emailTo) : [$emailTo];
 
         if (!$toArr) {
@@ -378,7 +378,7 @@ abstract class EmailDialogActionAbstract extends ActionAbstract
 
                 $this->msgBuff->merge($oneMsgBuff);
 
-                $dbLogMsg = nl2br($oneMsgBuff->getText());
+                $dbLogMsg = nl2br((string) $oneMsgBuff->getText());
                 $this->obj->writeDbLogText($dbLogMsg, Misc::getClass($this));
 
             } catch (\Throwable $e) {
@@ -401,7 +401,7 @@ abstract class EmailDialogActionAbstract extends ActionAbstract
 
     protected function sendOneEmail(string $to, array $formData, array $attachementsFullPaths, Msg $oneMsgBuff): bool
     {
-        $mail = Mailer::create($to, $formData['EmailSubject'], nl2br(htmlspecialchars($formData['EmailBody'])))
+        $mail = Mailer::create($to, $formData['EmailSubject'], nl2br(htmlspecialchars((string) $formData['EmailBody'])))
             ->cc($formData['EmailCc'])
             ->replyTo($formData['EmailReplyTo'])
             ->attachements($attachementsFullPaths);
@@ -425,7 +425,7 @@ abstract class EmailDialogActionAbstract extends ActionAbstract
         if (!isset($formData['EmailAttachementsFromFolder']) || !$formData['EmailAttachementsFromFolder']) {
             return [];
         }
-        $attachementsFromFolder = explode('|', $formData['EmailAttachementsFromFolder']);
+        $attachementsFromFolder = explode('|', (string) $formData['EmailAttachementsFromFolder']);
         $validFiles = $this->getFiles();
         $validAttachements = array_intersect($attachementsFromFolder, $validFiles);
         if ($validAttachements) {
@@ -476,7 +476,7 @@ abstract class EmailDialogActionAbstract extends ActionAbstract
                     \Light\ErrorHandler::reportException(new \Exception('Ошибка при перемещении загруженного файла через диалог отправки E-mail ' . $filepathAbs . ' ' . $errMsg));
                 }
                 $msg = Config::$lang === 'ru' ? 'Не удалось загрузить вложение' : 'Can\'t upload attachement';
-                $msg .= ' ' . htmlspecialchars($name);
+                $msg .= ' ' . htmlspecialchars((string) $name);
                 $oneMsgBuff->addError($msg);
 
             }
