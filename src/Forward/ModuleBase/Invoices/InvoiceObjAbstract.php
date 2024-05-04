@@ -1,7 +1,6 @@
 <?php
 namespace Forward\ModuleBase\Invoices;
 
-use Forward\Classes\CitadeleCurreny;
 use Forward\Classes\Finance;
 use Light\Currency;
 use Light\Traits\FirstLetterTrait;
@@ -242,17 +241,11 @@ abstract class InvoiceObjAbstract extends ObjAbstract
             $convertDate = $this->_data['DocDate'];
         }
 
-        //Если к этому моменту курс всё ещё не определился, используем справочник курсов валют Citadele
         if (!$rateToUsd) {
             if ($this->_data['CurrencyISO'] === 'USD') {
                 $rateToUsd = 1;
             } else {
                 $rateToUsd = Currency::getRate($this->_data['CurrencyISO'], 'USD', $convertDate);
-//                if ($firstLetter === 'C') {
-//                    $rateToUsd = CitadeleCurreny::sellSomethingBuyUsd(1, $this->_data['CurrencyISO'], $convertDate);
-//                } else {
-//                    $rateToUsd = CitadeleCurreny::buySomethingSellUsd(1, $this->_data['CurrencyISO'], $convertDate);
-//                }
             }
         }
 

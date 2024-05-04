@@ -57,8 +57,6 @@
             <td width="50%">
                 <h2 class="buying">Buying
                     <small>
-                        <a href="#" class="search-airfreightrate-link"><span class="glyphicon glyphicon-search"></span>
-                            Search Airfreight Rate</a>
                         <a href="#" class="copy-to-selling-link"><span class="glyphicon glyphicon-arrow-left"></span>
                             Copy to Selling</a>
                     </small>

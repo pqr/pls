@@ -138,7 +138,7 @@ class ImportCPayment extends ImporterAbstract
         $result = parent::validateData($data);
 
         if (!isset($data['GUID'])) {
-            $this->msgBuff->addError('Отсуствует обязательное поле GUID');
+            $this->msgBuff->addError('Отсутствует обязательное поле GUID');
             $result = false;
         } else {
             if ($data['GUID'] === '') {
@@ -147,7 +147,7 @@ class ImportCPayment extends ImporterAbstract
             }
         }
         if (!isset($data['CustomerAccountID'])) {
-            $this->msgBuff->addError('Отсуствует обязательное поле CustomerAccountID');
+            $this->msgBuff->addError('Отсутствует обязательное поле CustomerAccountID');
             $result = false;
         } else {
             if (!is_numeric($data['CustomerAccountID'])) {

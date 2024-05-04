@@ -5,8 +5,6 @@
         <td class="cs-expenses-title-td">
             <h2 class="buying">Buying
                 <small>
-                    <a href="#" id="search-airfreightrate-link" class="display-none"><span class="glyphicon glyphicon-search"></span>
-                        Search Airfreight Rate</a>
                     <a href="#" id="copy-to-selling-link" class="display-none"><span class="glyphicon glyphicon-arrow-left"></span>
                         Copy to Selling</a>
                 </small>

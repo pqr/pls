@@ -154,7 +154,7 @@ class ImportCInvoice extends ImporterAbstract
         $result = parent::validateData($data);
 
         if (!isset($data['ID'])) {
-            $this->msgBuff->addError('Отсуствует обязательное поле ID');
+            $this->msgBuff->addError('Отсутствует обязательное поле ID');
             $result = false;
         } else {
             if (!is_numeric($data['ID'])) {

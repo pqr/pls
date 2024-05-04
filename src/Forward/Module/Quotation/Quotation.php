@@ -12,7 +12,6 @@ use Forward\Field\QuotationFields;
 use Forward\Module\Quotation\Subtables\Cargo;
 use Forward\Module\Quotation\Subtables\Expenses;
 use Forward\Module\Quotation\Subtables\Income;
-use Forward\Module\SearchAirfreightRateDialog\SearchAirfreightRateDialog;
 use Forward\Module\Shipment\Shipment;
 use Light\ApplicationAbstract;
 use Light\Currency;
@@ -168,7 +167,6 @@ class Quotation extends ModuleAbstract
         parent::initCssJs();
         if ($this->isStateEdit() || $this->isStateAddNew()) {
             CompanyChild::initJsCompanyChildFromCustomer();
-            SearchAirfreightRateDialog::initCssJs();
             Currency::putJsRates();
         }
     }

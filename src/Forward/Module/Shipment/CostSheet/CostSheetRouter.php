@@ -2,7 +2,6 @@
 namespace Forward\Module\Shipment\CostSheet;
 
 use Forward\Application;
-use Forward\Module\SearchAirfreightRateDialog\SearchAirfreightRateDialog;
 use Forward\Module\Shipment\CostSheet\Subtables\CommonDataProvider;
 use Forward\Module\Shipment\ShipmentObj;
 use Light\Css;
@@ -60,8 +59,6 @@ class CostSheetRouter
     {
         Js::add('Module/Shipment/CostSheet/CostSheet.js');
         Css::add('CostSheet.css');
-
-        SearchAirfreightRateDialog::initCssJs();
 
         //Передадим в JavaScript окружение текущие значения GP - пригодятся для режима редактирования
         $dataForSearchAirfreigthRate = [

@@ -67,7 +67,6 @@ namespace CostSheet {
         $(".cs-fillquotation-btn").removeClass("display-none");
 
         //Отобразим ссылки Search Airfreight Rate и Copy to Selling
-        $("#search-airfreightrate-link").removeClass("display-none");
         $("#copy-to-selling-link").removeClass("display-none");
 
         var url = "index.php?a=Shipment&id=" + shipmentId + "&func=cs&editcs=1";
@@ -130,7 +129,6 @@ namespace CostSheet {
         $(".cs-fillquotation-btn").addClass("display-none");
 
         //Скроем ссылки Search Airfreight Rate и Copy to Selling
-        $("#search-airfreightrate-link").addClass("display-none");
         $("#copy-to-selling-link").addClass("display-none");
 
         //Обновим блоки с EGP и Deviation
@@ -498,117 +496,6 @@ namespace CostSheet {
 
         new Light.Dialog(bodyHtml, options).open();
     });
-
-    $("#search-airfreightrate-link").on("click", function(e) {
-        e.preventDefault();
-
-        //При клике на ссылку "Search Arifreight Rate" нужно отправить ajax запрос на сервер, который вернёт диалоговое
-        //окно для поиска покупной ставки
-        //Данные по перевозке лежать в глобальном объекте dataForSearchAirfreigthRate, который протягивается в JS чреез PageParams
-        SearchAirfreightRateDialog.sendRenderRequest(
-            onSearchAirfreightRateDialogChoose,
-            dataForSearchAirfreigthRate["VendorID"],
-            dataForSearchAirfreigthRate["DepartureIATA"],
-            dataForSearchAirfreigthRate["ArrivalIATA"],
-            dataForSearchAirfreigthRate["AirlineAlphaCode"],
-            dataForSearchAirfreigthRate["Incoterms"],
-            dataForSearchAirfreigthRate["ETD"],
-            dataForSearchAirfreigthRate["ChargeableWeight"]
-        );
-    });
-
-    var onSearchAirfreightRateDialogChoose = function(rateData) {
-        //Этот код на JavaScript подностью повторяет аналогичный код Shipment::getCsLinesFromStandartRate() (Module/Shipment.php)
-        //С той лишь разницей, что там на стороне сервера фомируются данные и для расходной части и для доходной при
-        //при использовании функции Fill from Quotation / Standart Rate
-
-        //А здесь мы заполняем только расходную часть на основе диалога Search Airfreight Rate
-        var expensesSubtable = Light.subtables.get("ExpensesEdit");
-        expensesSubtable.empty();
-
-        var weight = Light.parseFloat(dataForSearchAirfreigthRate.ChargeableWeight);
-
-        //Какую цену применить как основную?
-        var interval = _([2000, 1000, 750, 500, 300, 200, 100, 45]).find(function(interval) {
-            return weight >= interval;
-        });
-        var amountFieldKey = interval ? "Amount" + interval : "AmountN";
-
-        var price = Light.parseFloat(rateData[amountFieldKey]);
-        var quantity = weight;
-        var amount = price * quantity;
-
-        var minAmount = Light.parseFloat(rateData.MinAmount);
-        //Если итоговая сумма меньше меньшего - нужно использовать минимальную сумму
-        if (amount < minAmount) {
-            amount = minAmount;
-            price = amount;
-            quantity = 1;
-        }
-
-        expensesSubtable.addRow(
-            {
-                Name: "Airfreight",
-                Quantity: quantity,
-                Price: price,
-                Amount: rateData.CurrencyISO + " " + amount
-            },
-            true
-        );
-
-        //Добавим FSC и SSC
-        ["FSC", "SSC"].forEach(function(fscOrSsc) {
-            price = Light.parseFloat(rateData[fscOrSsc + "Amount"]);
-            if (price) {
-                expensesSubtable.addRow(
-                    {
-                        Name: fscOrSsc,
-                        Quantity: weight,
-                        Price: price,
-                        Amount: rateData.CurrencyISO + " " + price * weight
-                    },
-                    true
-                );
-            }
-        });
-
-        //Теперь добавим все надбавки
-        rateData.Surcharges.forEach(function(surcharge) {
-            var base = Light.parseFloat(surcharge.BaseAmount);
-            var price = Light.parseFloat(surcharge.PerKgAmount);
-            var quantity = weight;
-            var amount = base + price * quantity;
-
-            var minAmount = Light.parseFloat(surcharge.MinAmount);
-            var maxAmount = Light.parseFloat(surcharge.MaxAmount);
-
-            if (amount < minAmount) {
-                amount = minAmount;
-                price = amount;
-                quantity = 1;
-            } else if (maxAmount > 0 && amount > maxAmount) {
-                amount = maxAmount;
-                price = amount;
-                quantity = 1;
-            } else if (base != 0) {
-                price = amount;
-                quantity = 1;
-            }
-
-            expensesSubtable.addRow(
-                {
-                    Name: surcharge.Name,
-                    Quantity: quantity,
-                    Price: price,
-                    Amount: surcharge.CurrencyISO + " " + amount
-                },
-                true
-            );
-        });
-
-        //Теперь можно пересчитать total по подтаблице Expenses
-        expensesSubtable.calcTotalAll();
-    };
 
     //При нажатии на ссылку "Copy to Selling", которая находится в блоке Buying нужно скопировать
     $("#copy-to-selling-link").on("click", function(e) {

@@ -32,7 +32,7 @@ abstract class ImporterAbstract
     {
         $result = true;
         if (!isset($data['type'])) {
-            $this->msgBuff->addError('Отсуствует обязательное поле type');
+            $this->msgBuff->addError('Отсутствует обязательное поле type');
             $result = false;
         } else {
             $validTypes = ['cact', 'cinvoice', 'cpayment'];
@@ -44,7 +44,7 @@ abstract class ImporterAbstract
         }
 
         if (!isset($data['CompanyID'])) {
-            $this->msgBuff->addError('Отсуствует обязательное поле CompanyID');
+            $this->msgBuff->addError('Отсутствует обязательное поле CompanyID');
             $result = false;
         } else {
             if (!Constant::isOneCCompany($data['CompanyID'])) {
@@ -55,7 +55,7 @@ abstract class ImporterAbstract
         }
 
         if (!isset($data['Amount'])) {
-            $this->msgBuff->addError('Отсуствует обязательное поле Amount');
+            $this->msgBuff->addError('Отсутствует обязательное поле Amount');
             $result = false;
         } else {
             if (!is_numeric($data['Amount'])) {

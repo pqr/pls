@@ -90,85 +90,12 @@ $(function() {
             sellingSurchargesSubtalbe.empty();
             sellingSurchargesSubtalbe.addRows(data);
         })
-        .on("click", ".search-airfreightrate-link", function(e) {
-            e.preventDefault();
-
-            //При клике на ссылку "Search Arifreight Rate" нужно отправить ajax запрос на сервер, который вернёт диалоговое
-            //окно для поиска покупной ставки
-            //Обратимся к форме, чтобы получить её данные
-            var form = Light.forms.get("StandartRateDialog-form");
-            SearchAirfreightRateDialog.sendRenderRequest(
-                onSearchAirfreightRateDialogChoose,
-                form.getFieldValue("VendorID"),
-                form.getFieldValue("DepartureIATA"),
-                form.getFieldValue("ArrivalIATA"),
-                form.getFieldValue("AirlineAlphaCode"),
-                form.getFieldValue("Incoterms"),
-                form.getFieldValue("ValidFrom")
-            );
-        })
         .on("click", ".apply-addon", function(e) {
             e.preventDefault();
 
             //При клике на ссылку "Apply Addon" нужно отобразить дилог наложения Addon
             showApplyAddonDialog();
         });
-
-    //Метод вызывается когда в диалоговом окне поиска покупных ставок пользователь сделал какой-то выбор
-    var onSearchAirfreightRateDialogChoose = function(rateData) {
-        var form = Light.forms.get("StandartRateDialog-form");
-        [
-            "MinAmount",
-            "AmountN",
-            "Amount45",
-            "Amount100",
-            "Amount200",
-            "Amount300",
-            "Amount500",
-            "Amount750",
-            "Amount1000",
-            "Amount2000",
-            "FSCAmount",
-            "SSCAmount",
-            "CurrencyISO"
-        ].forEach(function(fieldKey) {
-            form.setFieldValue("Buying" + fieldKey, rateData[fieldKey]);
-            form.setFieldValue("Selling" + fieldKey, rateData[fieldKey]);
-        });
-
-        //Теперь скопируем все надбавки и в selling и в buying часть
-        var buyingSurchargesSubtalbe = Light.subtables.get("BuyingSurcharges");
-        var sellingSurchargesSubtalbe = Light.subtables.get("SellingSurcharges");
-
-        sellingSurchargesSubtalbe.empty();
-        buyingSurchargesSubtalbe.empty();
-
-        sellingSurchargesSubtalbe.addRows(rateData.Surcharges);
-        buyingSurchargesSubtalbe.addRows(rateData.Surcharges);
-
-        //Отдельно заполним остальные поля
-        form.setFieldValue("AirlineAlphaCode", rateData.AirlineAlphaCode);
-        form.setFieldValue("TransitTime", rateData.TransitTime);
-        form.setFieldValue("VendorID", rateData.VendorID);
-
-        //Самое хитрое поле - это комментарии.
-        //Нужно взять комментарии из покупного тарифа и приклеить к нему комментарии из всех надбавок
-        var comments = [];
-        if (rateData.Comments) {
-            comments.push(rateData.Comments);
-        }
-
-        rateData.Surcharges.forEach(function(surcharge) {
-            if (surcharge.Comments) {
-                comments.push(surcharge.Name + ": " + surcharge.Comments);
-            }
-        });
-
-        form.setFieldValue("CommentsInternal", comments.join("\n"));
-
-        //После того, как все данные скопированы в обе части - buying и selling нужно наложить addon
-        showApplyAddonDialog();
-    };
 
     var showApplyAddonDialog = function() {
         var form = Light.forms.get("StandartRateDialog-form");

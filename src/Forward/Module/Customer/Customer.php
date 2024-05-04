@@ -16,7 +16,6 @@ use Forward\Module\Customer\Subtables\CustomerAccounts;
 use Forward\Module\Customer\Subtables\Quotations;
 use Forward\Module\Customer\Subtables\Responsibles;
 use Forward\Module\Customer\Subtables\StandartRates;
-use Forward\Module\SearchAirfreightRateDialog\SearchAirfreightRateDialog;
 use Light\Currency;
 use Light\Field\CommonFields as CF;
 use Light\Field\FieldAbstract as F;
@@ -149,9 +148,6 @@ class Customer extends ModuleAbstract
         parent::initCssJs();
 
         if ($this->isStateView() || $this->isStateEdit()) {
-            //Добавим также файл помогающий работе диалогового окна поиска покупных тарифов
-            SearchAirfreightRateDialog::initCssJs();
-
             //Добавим также информацию по курсам валют
             Currency::putJsRates();
         }

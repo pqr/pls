@@ -312,7 +312,6 @@ class ShipmentGp
                 }
 
                 //Если доошли до этого места, значит определить курс пересчёта по сумме счёта не удалось.
-                //Будем использовать справочник курсов Citadele на дату оплаты или на дату счёта
                 if ($foundInvoice['CacheLastPaymentDate'] !== '0000-00-00' && $foundInvoice['CacheLastPaymentDate'] !== null) {
                     $convertDate = $foundInvoice['CacheLastPaymentDate'];
                 } elseif ($foundInvoice['DocDate'] != '0000-00-00') {
@@ -322,17 +321,6 @@ class ShipmentGp
         }
 
         return Currency::convertValue((float)$csLine['Amount'], $csLine['CurrencyISO'], 'USD', $convertDate);
-
-        //Если дошли до этого места, значит continue выше не сработал - используем простой пересчёт по справочнику валют
-//        if ($incomeOrExpenses === 'income') {
-//            //Доходная часть. Мы получили от клиента какую-то странную валюту и теперь продаём её банку, чтобы
-//            //получились доллары
-//            return CitadeleCurreny::sellSomethingBuyUsd($csLine['Amount'], $csLine['CurrencyISO'], $convertDate);
-//        } else {
-//            //Расходная часть. Мы заплатили подрядчику в какой-то странной валюте, которую нам нужно было купить
-//            //за доллары. Узнаем кол-во требуемых долларов
-//            return CitadeleCurreny::buySomethingSellUsd($csLine['Amount'], $csLine['CurrencyISO'], $convertDate);
-//        }
     }
 
     private static function updateShipment(

@@ -85,9 +85,6 @@
                             Buying
                             <?php if (t::_state() !== 'view'): ?>
                                 <small>
-                                    <a href="#" id="search-airfreightrate-link"><span
-                                                class="glyphicon glyphicon-search"></span>
-                                        Search Airfreight Rate</a>
                                     <a href="#" id="copy-to-selling-link"><span
                                                 class="glyphicon glyphicon-arrow-left"></span> Copy to Selling</a>
                                 </small>

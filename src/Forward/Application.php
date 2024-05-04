@@ -68,12 +68,6 @@ class Application extends ApplicationAbstract
 
         ModuleRegister::addModule('Quotation', 'Quotations', 'Rates');
         ModuleRegister::addModule('DefaultAddons', 'Default Addons', 'Rates');
-        ModuleRegister::addModule('AirfreightRate', 'Airfreight Rates', 'Rates');
-        ModuleRegister::addModule('AirfreightSurcharge', 'Airfreight Locals', 'Rates');
-
-
-        ModuleRegister::addModule('SearchAirfreightRateDialog', 'Search Airfreight Rates', 'Rates',
-            ModuleRegister::MODULE_HIDDEN); //скрытый модуль, который обрабатывает запрос к диалогу поиска покупных тарифов
 
         ModuleRegister::addModule('Customer', 'Customers', 'Customer');
         ModuleRegister::addModule('CustomerAccount', 'Customer Accounts', 'Customer');
@@ -96,7 +90,6 @@ class Application extends ApplicationAbstract
         ModuleRegister::addModule('Location', 'Airports / Locations', 'Lists');
         ModuleRegister::addModule('Port', 'Ocean Ports', 'Lists');
         ModuleRegister::addModule('EmailNoticeSettings', 'E-mail Notice Settings', 'Lists');
-        ModuleRegister::addModule('CurrencyRateCitadele', 'Curr. Rates Citadele', 'Currency');
         ModuleRegister::addModule('Block', 'Block Base', 'System');
     }
 
