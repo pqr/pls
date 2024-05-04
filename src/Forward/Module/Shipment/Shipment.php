@@ -36,7 +36,6 @@ use Light\Ico;
 use Light\InvStatus;
 use Light\Link;
 use Light\Mailer;
-use Light\Misc;
 use Light\ModuleBase\ModuleAbstract;
 use Light\Msg;
 use Light\ObjAbstract;
@@ -338,7 +337,7 @@ class Shipment extends ModuleAbstract
                 'FileNumbers',
                 [
                     'name' => 'File Numbers',
-                    'sqlWhere' => fn($value) => Db::getSqlWhereSeparatedByComa($value, 'shipment.Name', -1, false, true, 1),
+                    'sqlWhere' => fn ($value) => Db::getSqlWhereSeparatedByComa($value, 'shipment.Name', -1, false, true, 1),
                 ],
             ),
             ShipmentFields::filterMawbs(),
@@ -517,19 +516,19 @@ class Shipment extends ModuleAbstract
                 'CriterionID',
             ],
             [
-                'Color' => fn() => '<div class="color-container color'.Template::value('Color').'">'
+                'Color' => fn () => '<div class="color-container color'.Template::value('Color').'">'
                     .Template::html('Color')
                     .'</div>',
                 'BUIDsFilter',
                 'FileClosed',
 
-                'MonthFrom' => fn() => Template::html('MonthFrom').' - '.Template::html('MonthUntil'),
+                'MonthFrom' => fn () => Template::html('MonthFrom').' - '.Template::html('MonthUntil'),
                 'ReadyForCarriageDate',
                 'ETD',
                 'ETA',
                 'ATA',
                 'DocsPrintedDate',
-                'FlightNo' => fn() => Template::html('FlightNo').' '.Template::html('FlightDate'),
+                'FlightNo' => fn () => Template::html('FlightNo').' '.Template::html('FlightDate'),
                 'HasVAT',
             ],
         ];
@@ -680,13 +679,13 @@ class Shipment extends ModuleAbstract
         }
 
         // Если пользователь вручную заполнил поле ShipmentRequestNo, то проверим, что это значение не выходит далеко впедёр от максимального
-        if (isset($dataFromRequest['ShipmentRequestNo'], $dataFromRequest['CompanyID'])
-            && $dataFromRequest['ShipmentRequestNo'] !== '0000-00-00'
+        if (isset($dataFromRequest['ShipmentRequestNo'], $dataFromRequest['CompanyID'], $dataFromRequest['ReadyForCarriageDate'])
             && $dataFromRequest['CustomerAccountID']
             && Constant::isOneCCompany($dataFromRequest['CompanyID'])
         ) {
-            $shipmentRequestDate = $this->getShipmentRequestDate($dataFromRequest['ETD']);
-            $shipmentRequestYearShort = substr((string) $shipmentRequestDate, 2, 2);
+            // 2024-05-04 По дате готовности груза
+            $shipmentRequestDate = self::getShipmentRequestDate($dataFromRequest);
+            $shipmentRequestYearShort = substr($shipmentRequestDate, 2, 2);
             $maxShipmentRequestNo = $this->getMaxShipmentRequestNo(
                 $dataFromRequest['CompanyID'],
                 $dataFromRequest['CustomerAccountID'],
@@ -759,11 +758,7 @@ class Shipment extends ModuleAbstract
             }
         }
 
-        if (isset($this->_obj['ETD'])) {
-            $tdata['ShipmentRequestDate'] = $this->getShipmentRequestDate($this->_obj['ETD']);
-        } else {
-            $tdata['ShipmentRequestDate'] = date('Y-m-d');
-        }
+        $tdata['ShipmentRequestDate'] = self::getShipmentRequestDate($this->_obj->getData());
 
         //Criteria Block
         if ($this->_obj->getId()) {
@@ -954,7 +949,7 @@ class Shipment extends ModuleAbstract
         $affectedRows,
         array $oldData,
         Msg $msgBuff,
-        $fromMultipleUpdate
+        $fromMultipleUpdate,
     ) {
         if ($this->_justInserted) {
             // Если шипмент был создан из котировки (заполнено поле QuotationID), то нужно заполнить и Cost-sheet!
@@ -974,7 +969,7 @@ class Shipment extends ModuleAbstract
                     // Вспомагательная функция, которая вставляет строки Cost-sheet (вызывается два раза: один раз для доходов и один раз для расходов)
                     $insertCsLines = function (array $csLines, IncomeExpensesObjAbstract $csLineObjBase) use (
                         $shipmentId,
-                        $quotationId
+                        $quotationId,
                     ) {
                         foreach ($csLines as $csLineData) {
                             $csLineObj = clone $csLineObjBase;
@@ -1041,8 +1036,7 @@ class Shipment extends ModuleAbstract
                 $obj['CustomerAccountID'],
             );
             if ($actOnDateType == Constant::ACTONDATETYPE_ATA) {
-                $body = 'Изменилась дата ATA '.FieldDate::beautify($newAta).' по накладной '.$obj->getLinkView(
-                    ).' ('.$obj->getFieldText('CustomerAccountID').')';
+                $body = 'Изменилась дата ATA '.FieldDate::beautify($newAta).' по накладной '.$obj->getLinkView().' ('.$obj->getFieldText('CustomerAccountID').')';
                 $subject = strip_tags($body);
                 Mailer::create('accounting@proactive-ls.com', $subject, $body)
                     ->wrapBodyWithHtmlTemplate()
@@ -1084,8 +1078,7 @@ class Shipment extends ModuleAbstract
             .'->'.$obj->getFieldText('ArrivalIATA');
 
         $body = $newOrUpdate
-            .' Shipment <a href="'.Config::$localUrl.'/?a=Shipment&id='.$obj->getId(
-            ).'"><strong>'.$obj['Name'].'</strong></a>'
+            .' Shipment <a href="'.Config::$localUrl.'/?a=Shipment&id='.$obj->getId().'"><strong>'.$obj['Name'].'</strong></a>'
             .' for '.$obj->getFieldText('CustomerID')
             .' '.$obj->getFieldText('DepartureIATA')
             .'➔'.$obj->getFieldText('ArrivalIATA')
@@ -1183,9 +1176,9 @@ class Shipment extends ModuleAbstract
      * Если перевозка уже создана то в Cost-sheet можно нажать "Fill from Quotation" - этот метод загружает
      * данные из ставки и они возвращаются пользователю в ajax ответе для заполнения Cost-sheet в режиме Edit
      *
-     * @param int $srId
+     * @param int   $srId
      * @param float $chargeableWeight
-     * @param int $shipmentId
+     * @param int   $shipmentId
      *
      * @return array
      */
@@ -1328,16 +1321,18 @@ class Shipment extends ModuleAbstract
         parent::sendDeleteConfirmDialog();
     }
 
-    private function getShipmentRequestDate(string $etd)
+    public static function getShipmentRequestDate(array $shipmentData): string
     {
-        return FieldDate::notEmpty($etd) ? $etd : date('Y-m-d');
+        $readyForCarriageDate = $shipmentData['ReadyForCarriageDate'] ?? null;
+
+        return FieldDate::notEmpty($readyForCarriageDate) ? $readyForCarriageDate : date('Y-m-d');
     }
 
     private function getMaxShipmentRequestNo(
         int $companyId,
         int $customerAccountId,
         string $shipmentRequestDate,
-        bool $forUpdate = false
+        bool $forUpdate = false,
     ) {
         $shipmentRequestYear = substr($shipmentRequestDate, 0, 4);
 
@@ -1383,10 +1378,10 @@ class Shipment extends ModuleAbstract
 
         ini_set('display_errors', 0);
 
-        $shipmentRequestDate = $this->getShipmentRequestDate($shipmentObj['ETD']);
+        $shipmentRequestDate = self::getShipmentRequestDate($shipmentObj->getData());
 
         if (!$shipmentObj['ShipmentRequestNo'] && $shipmentObj['CustomerAccountID']) {
-            // В базе нет сохранённого номера заявки - сгенерируем автоматически
+            // В базе нет сохранённого номера заявки - сгенерируем автоматически.
             // Выбираем максимальный номер заявки в рамках этого года
             Db::begin();
             $lastNo = $this->getMaxShipmentRequestNo(

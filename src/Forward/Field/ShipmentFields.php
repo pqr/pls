@@ -9,8 +9,8 @@ use Forward\Module\Shipment\ShipmentObj;
 use Light\Db;
 use Light\Field\FieldAbstract as F;
 use Light\Field\FieldDate;
+use Light\Field\FieldInt;
 use Light\Field\FieldMoney;
-use Light\File;
 use Light\FilesFolder;
 use Light\Link;
 
@@ -23,7 +23,7 @@ class ShipmentFields
             'modes' => F::MODE_READONLY | F::MODE_SUBMIT,
             'tableWidthExcel' => 15,
             'tableWidthHtml' => 45,
-            'viewCssClass' => fn($value, array $data, $forTable) => $forTable ? 'fn' : ''
+            'viewCssClass' => fn ($value, array $data, $forTable) => $forTable ? 'fn' : '',
         ]);
     }
 
@@ -35,9 +35,9 @@ class ShipmentFields
             'tableAlign' => 'center',
             'options' => [
                 ShipmentObj::SHIPMENT_OPEN => ['text' => 'OPEN', 'cssClass' => 'fileopen'],
-                ShipmentObj::SHIPMENT_CLOSED => ['text' => 'CLOSED', 'cssClass' => 'fileclosed']
+                ShipmentObj::SHIPMENT_CLOSED => ['text' => 'CLOSED', 'cssClass' => 'fileclosed'],
             ],
-            'empty' => false
+            'empty' => false,
         ]);
     }
 
@@ -55,7 +55,7 @@ class ShipmentFields
     {
         return F::createString('FlightNo', [
             'name' => 'Flight No.',
-            'editWidth' => 'small'
+            'editWidth' => 'small',
         ]);
     }
 
@@ -69,7 +69,7 @@ class ShipmentFields
         return F::createMonth('Month', [
             'yearFrom' => 2012,
             'yearUntil' => (new \DateTime())->modify('+3 month')->format('Y-m'),
-            'editMandatory' => true
+            'editMandatory' => true,
         ]);
     }
 
@@ -86,6 +86,7 @@ class ShipmentFields
     public static function fileField(int $folderNo)
     {
         $standardFolder = Constant::$standardFolders[$folderNo];
+
         return F::createYesNo("File$folderNo", [
             'name' => $standardFolder,
             'nameTable' => "Файл:\n$standardFolder",
@@ -99,8 +100,9 @@ class ShipmentFields
                         return 1;
                     }
                 }
+
                 return 0;
-            }
+            },
         ]);
     }
 
@@ -110,54 +112,57 @@ class ShipmentFields
             'FileNumbers',
             [
                 'name' => 'File Numbers',
-                'sqlWhere' => fn($value) => Db::getSqlWhereSeparatedByComa($value, 'shipment.Name', -1, false, true, 1)
-            ]
+                'sqlWhere' => fn ($value) => Db::getSqlWhereSeparatedByComa($value, 'shipment.Name', -1, false, true, 1),
+            ],
         );
     }
 
     public static function filterMawbs()
     {
-        return F::createText('MAWBNumbers', [
+        return F::createText(
+            'MAWBNumbers',
+            [
                 'name' => 'MAWB Numbers',
-                'sqlWhereFormatFunction' => fn($value) => str_replace(['-', ' '], '', (string) $value),
-                'sqlWhere' => fn($value) => "(" .
+                'sqlWhereFormatFunction' => fn ($value) => str_replace(['-', ' '], '', (string) $value),
+                'sqlWhere' => fn ($value) => "(".
                     Db::getSqlWhereSeparatedByComa(
                         $value,
                         "REPLACE(REPLACE(shipment.MAWBNumber, ' ', ''), '-', '')",
                         11,
                         true,
                         false,
-                        0
-                    ) . "
-                            OR EXISTS (SELECT ID FROM shipmentshipper WHERE ShipmentID = shipment.ID AND " .
+                        0,
+                    )."
+                            OR EXISTS (SELECT ID FROM shipmentshipper WHERE ShipmentID = shipment.ID AND ".
                     Db::getSqlWhereSeparatedByComa(
                         $value,
                         'shipmentshipper.HAWBNumber',
                         0,
                         true,
                         false,
-                        0
-                    ) . "))"
+                        0,
+                    )."))",
 
-            ]
+            ],
         );
     }
 
-    public static function shipmentRequestNo()
+    public static function shipmentRequestNo(): FieldInt
     {
         return F::createInt('ShipmentRequestNo', [
             'name' => 'Заявка №',
             'tableAlign' => 'center',
             'zeroEmpty' => true,
             'zeroEmptyExcel' => true,
-            'sqlSelectRequires' => 'ETD',
+            'sqlSelectRequires' => ['ReadyForCarriageDate'],
             'getHtmlFunction' => function ($value, array $data, $outHtml) {
-                if ($value && isset($data['ETD'])) {
-                    $shipmentRequestDate = $data['ETD'] !== '0000-00-00' ? $data['ETD'] : date('Y-m-d');
-                    $outHtml = $value . '-' . substr($shipmentRequestDate, 2, 2);
+                if ($value) {
+                    $shipmentRequestDate = Shipment::getShipmentRequestDate($data);
+                    $outHtml = $value.'-'.substr($shipmentRequestDate, 2, 2);
                 }
+
                 return $outHtml;
-            }
+            },
         ]);
     }
 
@@ -165,7 +170,7 @@ class ShipmentFields
     {
         return F::createDate('DocsPrintedDate', [
             'name' => 'Оригиналы отправлены на печать',
-            'ajax' => true
+            'ajax' => true,
         ]);
     }
 
@@ -173,7 +178,7 @@ class ShipmentFields
     {
         return F::createDate('DocsSentToAccountingDate', [
             'name' => 'Оригиналы отправлены в бухгалтерию',
-            'ajax' => true
+            'ajax' => true,
         ]);
     }
 
@@ -192,7 +197,8 @@ class ShipmentFields
                     return '';
                 }
                 [$actName, $actDate, $actAmount, $currencyIso] = explode('|', $value);
-                return htmlspecialchars($actName) . ' <small class="gray"> от ' . FieldDate::beautify($actDate) . '</small> <small> на ' . FieldMoney::beautify($actAmount) . ' ' . $currencyIso . '</small>';
+
+                return htmlspecialchars($actName).' <small class="gray"> от '.FieldDate::beautify($actDate).'</small> <small> на '.FieldMoney::beautify($actAmount).' '.$currencyIso.'</small>';
             },
             'getExcelFunction' => function ($value) {
                 if (!str_contains($value, '|')) {
@@ -200,8 +206,9 @@ class ShipmentFields
                 }
                 [$actName, $actDate, $actAmount, $currencyIso] = explode('|', $value);
                 $actDate = FieldDate::beautify($actDate);
+
                 return "$actName от $actDate на $actAmount $currencyIso";
-            }
+            },
         ]);
     }
 
@@ -224,6 +231,7 @@ class ShipmentFields
                 if ($forTable) {
                     return $text;
                 }
+
                 return Link::create(DocsInventory::class, $text)
                     ->viewDialog($diId)
                     ->getHtml();
@@ -234,8 +242,9 @@ class ShipmentFields
                 }
                 $diSentDate = explode('|', $value)[1];
                 $diSentDate = FieldDate::beautify($diSentDate);
+
                 return "$diSentDate";
-            }
+            },
         ]);
     }
 }
