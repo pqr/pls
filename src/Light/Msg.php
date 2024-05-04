@@ -23,7 +23,7 @@ class Msg implements \Countable, \JsonSerializable
     }
 
     #[\Override]
-    public function count()
+    public function count(): int
     {
         return count($this->messages);
     }
@@ -202,7 +202,7 @@ class Msg implements \Countable, \JsonSerializable
     }
 
     #[\Override]
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return $this->messages;
     }

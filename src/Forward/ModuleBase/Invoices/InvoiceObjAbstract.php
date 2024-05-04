@@ -131,14 +131,14 @@ abstract class InvoiceObjAbstract extends ObjAbstract
         $this->updateAmountPerFileCurrencyRate();
     }
 
-    public function updateShipmentsGpAndCriteria(array $oldFileNumbers, $dbLogMsg): void
+    public function updateShipmentsGpAndCriteria(array $oldFileNumbers, string $dbLogMsg): void
     {
         $newFileNumbers = $this->getFileNumbresFromCacheTable();
         $allFileNumbers = array_filter(array_unique(array_merge($oldFileNumbers, $newFileNumbers)));
         Finance::updateShipmentsGpAndCriteria($allFileNumbers, $dbLogMsg, $this->getFirstLetter());
     }
 
-    public function updateCacheAfterDelete(array $oldFileNumbers, $dbLogMsg): void
+    public function updateCacheAfterDelete(array $oldFileNumbers, string $dbLogMsg): void
     {
         $this->updateShipmentsGpAndCriteria($oldFileNumbers, $dbLogMsg);
 

@@ -1189,7 +1189,7 @@ class Table implements \JsonSerializable
     }
 
     #[\Override]
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return $this->tableData;
     }

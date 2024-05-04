@@ -22,7 +22,7 @@ use Light\User;
 class UserSettings extends SettingsPageAbstract
 {
     #[\Override]
-    public function __invoke()
+    public function __invoke(): void
     {
         Js::addLight('UserSettings.js');
 

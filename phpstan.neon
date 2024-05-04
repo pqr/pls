@@ -1,0 +1,17 @@
+includes:
+    - phpstan-baseline.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+
+parameters:
+    phpVersion: 80300
+    level: 8
+    parallel:
+        maximumNumberOfProcesses: 16
+    # https://phpstan.org/config-reference#vague-typehints
+    checkGenericClassInNonGenericObjectType: false
+    bootstrapFiles:
+        - vendor/autoload.php
+    paths:
+        - src/
+    excludePaths:
+        - src/Light/Codeception/

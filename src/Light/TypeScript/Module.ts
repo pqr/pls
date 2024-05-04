@@ -167,7 +167,7 @@ export function highlightErrorField(fieldKey: string) {
 }
 
 export function ajaxChangeField(id: number, fieldKey: string, newValue: string): any {
-    return $.post(`?a=${getModule()}&id=${id}&func=ChangeField`, {
+    return $.post(`?a=${getModule()}&id=${id}&action=AjaxChangeField`, {
         fieldKey: fieldKey,
         value: newValue
     });

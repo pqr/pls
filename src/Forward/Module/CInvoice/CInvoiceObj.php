@@ -309,7 +309,7 @@ class CInvoiceObj extends InvoiceObjAbstract
     }
 
     #[\Override]
-    public function updateCacheAfterDelete(array $oldFileNumbers, $dbLogMsg)
+    public function updateCacheAfterDelete(array $oldFileNumbers, string $dbLogMsg): void
     {
         //Вызовем метод предка, чтобы обновить стандартные поля для объектов унаследованных от InvoiceObjAbstract
         parent::updateCacheAfterDelete($oldFileNumbers, $dbLogMsg);

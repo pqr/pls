@@ -1503,7 +1503,7 @@ abstract class FieldAbstract implements \JsonSerializable
     }
 
     #[\Override]
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return [
             'FieldKey' => $this->key,

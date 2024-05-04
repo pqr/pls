@@ -40,5 +40,8 @@
     "select2": "^4.0.12",
     "serializr": "latest",
     "sortablejs": "^1.8.1"
+  },
+  "scripts": {
+    "watch": "NODE_OPTIONS=--openssl-legacy-provider webpack --watch"
   }
 }

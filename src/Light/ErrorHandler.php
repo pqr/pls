@@ -2,12 +2,8 @@
 
 namespace Light;
 
-use Rollbar\Payload\Level;
-use Rollbar\Rollbar;
-
 class ErrorHandler
 {
-    private static $hasRollbar = false;
     private static $hasSentry = false;
 
     public static function init(): void
@@ -16,31 +12,17 @@ class ErrorHandler
             return;
         }
 
-        if (isset(Config::$rollbar['access_token']) && Config::$rollbar['access_token']) {
-            self::initRollar();
-        }
-
         if (Config::$sentry && Config::$sentry['dns']) {
             self::initSentry();
         }
 
-        if (!self::$hasRollbar && !self::$hasSentry) {
+        if (!self::$hasSentry) {
             self::initCsv();
         }
     }
 
     public static function setUser(int $userId, string $username, string $email): void
     {
-        if (self::$hasRollbar) {
-            Rollbar::configure([
-                'person' => [
-                    'id' => $userId,
-                    'username' => $username,
-                    'email' => $email,
-                ],
-            ]);
-        }
-
         if (self::$hasSentry) {
             \Sentry\configureScope(function (\Sentry\State\Scope $scope) use ($userId, $username, $email): void {
                 $scope->setUser([
@@ -54,10 +36,6 @@ class ErrorHandler
 
     public static function reportSqlError($query, $errMsg): void
     {
-        if (self::$hasRollbar) {
-            Rollbar::log(Level::ERROR, new \Exception('SQL: ' . $errMsg), ['query' => $query]);
-        }
-
         if (self::$hasSentry) {
             \Sentry\withScope(function (\Sentry\State\Scope $scope) use ($query, $errMsg): void {
                 $scope->setExtra('query', $query);
@@ -65,31 +43,24 @@ class ErrorHandler
             });
         }
 
-        if (!self::$hasRollbar && !self::$hasSentry) {
+        if (!self::$hasSentry) {
             LoggerCsv::logSqlError($query, $errMsg);
         }
     }
 
     public static function reportException(\Throwable $e, array $extra = []): void
     {
-        if (self::$hasRollbar) {
-            Rollbar::log(Level::ERROR, $e, $extra);
-        }
         if (self::$hasSentry) {
             self::reportSentryException($e, $extra);
         }
 
-        if (!self::$hasRollbar && !self::$hasSentry) {
+        if (!self::$hasSentry) {
             self::recordCsv($e->getCode(), $e->getMessage(), $e->getFile(), $e->getLine());
         }
     }
 
     public static function reportError($message, array $extra = []): void
     {
-        if (self::$hasRollbar) {
-            Rollbar::log(Level::ERROR, $message, $extra);
-        }
-
         if (self::$hasSentry) {
             self::reportSentryException(new \Exception($message), $extra);
         }
@@ -107,24 +78,6 @@ class ErrorHandler
         });
     }
 
-    private static function initRollar(): void
-    {
-        $config = Config::$rollbar;
-        $config += [
-            'allow_exec' => false, // Чтобы Rollbar не делал exec() с запуском git для получения хэша коммита,
-            'code_version' => ApplicationAbstract::getVersion(),
-            'include_error_code_context' => true,
-            'include_exception_code_context' => true,
-            'include_raw_request_body' => true,
-            'root' => LIGHT_DIR_ROOT,
-            'send_message_trace' => true,
-        ];
-
-        Rollbar::init($config);
-
-        self::$hasRollbar = true;
-    }
-
     private static function initSentry(): void
     {
         $options = Config::$sentry['options'] ?? [];
@@ -132,14 +85,10 @@ class ErrorHandler
             'dsn' => Config::$sentry['dns'],
             'release' => ApplicationAbstract::getVersion(),
             'attach_stacktrace' => true,
+            'in_app_exclude' => [__DIR__.'/../../vendor'],
         ];
         \Sentry\init($options);
 
-//        $options = Config::$sentry['options'] + [
-//                'release' => ApplicationAbstract::getVersion(),
-//                'app_path' => LIGHT_DIR_ROOT . '/src',
-//                'prefixes' => [LIGHT_DIR_ROOT],
-//            ];
         self::$hasSentry = true;
     }
 

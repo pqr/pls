@@ -19,10 +19,8 @@ class ValueObject implements \JsonSerializable, \Stringable
     }
 
     #[\Override]
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return $this->value;
     }
-
-
 }

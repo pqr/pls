@@ -64,7 +64,7 @@ class AjaxChangeField extends ActionAbstract
 
     protected function getFieldKey(): string
     {
-        return Request::getQueryParam('fieldKey');
+        return (string) Request::getQueryParam('fieldKey');
     }
 
     #[\Override]

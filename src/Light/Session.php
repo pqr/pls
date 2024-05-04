@@ -25,13 +25,13 @@ class Session implements \SessionHandlerInterface
     }
 
     #[\Override]
-    public function close()
+    public function close(): bool
     {
         return true;
     }
 
     #[\Override]
-    public function destroy($sessionId)
+    public function destroy($sessionId): bool
     {
         $sessionIdSql = Db::esc($sessionId);
         Db::query("DELETE FROM phpsession WHERE SessionID = '$sessionIdSql'");
@@ -39,14 +39,14 @@ class Session implements \SessionHandlerInterface
     }
 
     #[\Override]
-    public function gc($maxlifetime)
+    public function gc(int $maxlifetime): int|false
     {
         Db::query("DELETE FROM phpsession WHERE CreatedTime < " . (time() - (int)$maxlifetime));
-        return true;
+        return 1;
     }
 
     #[\Override]
-    public function open($savePath, $name)
+    public function open(string $savePath, string $name): bool
     {
         return true;
     }
@@ -54,7 +54,7 @@ class Session implements \SessionHandlerInterface
     private static $lastSessionData;
 
     #[\Override]
-    public function read($sessionId)
+    public function read(string $sessionId): string
     {
         $sessionIdSql = Db::esc($sessionId);
         self::$lastSessionData = (string)Db::getOne("SELECT `Data` FROM phpsession WHERE SessionID = '$sessionIdSql'");
@@ -62,7 +62,7 @@ class Session implements \SessionHandlerInterface
     }
 
     #[\Override]
-    public function write($sessionId, $sessionData)
+    public function write(string $sessionId, string $sessionData): bool
     {
         $sessionIdSql = Db::esc($sessionId);
         if (self::$lastSessionData !== $sessionData) {

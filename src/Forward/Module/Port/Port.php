@@ -60,36 +60,4 @@ class Port extends ModuleAbstract
 
         return parent::getDeleteConfirmationDialogHtml();
     }
-
-    #[\Override]
-    protected function checkDeleteConfirmResult(): bool
-    {
-        if (isset($_POST['NewPortID'])) {
-            $newPortId = (int)$_POST['NewPortID'];
-            if (!$newPortId) {
-                Response::showDialog('При удалении нужно выбрать порт для замены');
-            }
-
-            $oldPortId = $this->_obj->getId();
-            $shipments = Db::getAll("SELECT ID, POLID, PODID FROM shipment WHERE POLID = @i OR PODID = @i", $oldPortId,
-                $oldPortId);
-            foreach ($shipments as $shipmentInfo) {
-                $shipmentObj = new ShipmentObj();
-                $shipmentObj->setId($shipmentInfo['ID']);
-                $fieldsData = [];
-                if ($shipmentInfo['POLID'] == $oldPortId) {
-                    $fieldsData['POLID'] = $newPortId;
-                }
-                if ($shipmentInfo['PODID'] == $oldPortId) {
-                    $fieldsData['PODID'] = $newPortId;
-                }
-
-                $shipmentObj->updateDb($fieldsData, 'Удаление порта ' . htmlspecialchars((string) $this->_obj['Name']));
-            }
-
-            $msg = '<strong>' . count($shipments) . '</strong> перевозок было обновлено';
-            Session::flashSuccess($msg);
-        }
-    }
 }
-

@@ -12,7 +12,6 @@
                         print ' color' . t::value('Color');
                     } ?>">
                         <h3 style="float: left;"><?= t::html('Name') ?></h3>
-                        <div style="float: left; margin-left: 100px"><?= t::html('Color') ?></div>
                         <h3 style="float: right;"><?= t::html('FileClosed') ?></h3>
                     </td>
                 </tr>

@@ -37,7 +37,10 @@
     "psr/http-factory": "@stable"
   },
   "require-dev": {
-    "rector/rector": "^1.0"
+    "rector/rector": "^1.0",
+    "phpstan/phpstan": "^1.10",
+    "phpstan/phpstan-deprecation-rules": "^1.1",
+    "phpstan/phpstan-strict-rules": "^1.5"
   },
   "autoload": {
     "psr-4": {

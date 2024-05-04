@@ -23,13 +23,13 @@ class ShipmentDownloadDocs
      */
     private $tmpDir;
 
-    public function __construct(private readonly Filesystem $fs, private readonly Process $process, private readonly Msg $msgBuff)
+    public function __construct(private readonly Filesystem $fs, private readonly Msg $msgBuff)
     {
     }
 
     public static function create(Msg $msgBuff)
     {
-        return new self(new Filesystem(), new Process(''), $msgBuff);
+        return new self(new Filesystem(), $msgBuff);
     }
 
     /**
@@ -78,8 +78,8 @@ class ShipmentDownloadDocs
         $cmd = $p7z->getCmd();
 
         try {
-            $this->process->setCommandLine($cmd);
-            $this->process->mustRun();
+            $process = Process::fromShellCommandline($cmd, null, ['LANG' => 'ru_RU.UTF-8']);
+            $process->mustRun();
         } catch (\Throwable $e) {
             $this->msgBuff->addError($e->getMessage());
             return null;

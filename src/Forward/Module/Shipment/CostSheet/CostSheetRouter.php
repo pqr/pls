@@ -30,12 +30,6 @@ class CostSheetRouter
      */
     public static function getCsHeadTplData(ShipmentObj $shipmentObj)
     {
-        //Чтобы работала кнопка Color, ей нужно задать правильный source
-        $shipmentObj->getField('Color')->setParam(
-            'source',
-            '?a=Shipment&id=' . $shipmentObj->getId() . '&func=changeField'
-        );
-
         //Заполним массив tdata данными из перевозки - нужно отобразить над Cost-sheet'ами
         $tdata = $shipmentObj->getTplData(F::MODE_VIEW);
 

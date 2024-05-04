@@ -76,7 +76,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable, \Stringab
     }
 
     #[\Override]
-    public function offsetSet($offset, $value): void
+    public function offsetSet(mixed $offset,mixed $value): void
     {
         if ($offset === null) {
             $this->_data[] = $value;
@@ -86,24 +86,24 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable, \Stringab
     }
 
     #[\Override]
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
         return isset($this->_data[$offset]);
     }
 
     #[\Override]
-    public function offsetUnset($offset): void
+    public function offsetUnset(mixed $offset): void
     {
         unset($this->_data[$offset]);
     }
 
     #[\Override]
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
         return $this->_data[$offset] ?? null;
     }
 
-    protected function getDataQuery()
+    protected function getDataQuery(): string
     {
         $fieldset = $this->getFieldset();
         $fieldKeys = $fieldset->getKeys();
@@ -687,7 +687,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable, \Stringab
     }
 
     #[\Override]
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return $this->_data;
     }

@@ -11,14 +11,12 @@ define('LIGHT_DIR_LOGS', LIGHT_DIR_ROOT . '/logs');
 define('LIGHT_DIR_PUBLIC', LIGHT_DIR_ROOT . '/public');
 define('LIGHT_DIR_LIGHTPUBLIC', LIGHT_DIR_ROOT . '/src/Light/public');
 
+use Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
 use Light\Codeception\TestResponseException;
 use Light\Exceptions\ForceSendResponse;
 use Light\Module\Autolaunch\AutolaunchAbstract;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Rollbar\Payload\Level;
-use Rollbar\Rollbar;
-use Zend\HttpHandlerRunner\Emitter\SapiEmitter;
 
 abstract class ApplicationAbstract
 {
