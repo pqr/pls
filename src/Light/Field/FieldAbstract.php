@@ -1502,6 +1502,7 @@ abstract class FieldAbstract implements \JsonSerializable
         return $dbValue;
     }
 
+    #[\Override]
     public function jsonSerialize()
     {
         return [

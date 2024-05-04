@@ -45,12 +45,14 @@ class CInvoice extends InvoiceModuleAbstract
     protected $textSaveBtn = 'Customer Invoice';
     public $tableLayoutDefault = 'Name|CustomerAccountID|Amount|CurrencyISO|DocType|StatusIco|DocDate|DueDate|Overdue|Comments';
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(Lines::class);
         $this->addSubtableReadonly(CPayments::class);
     }
 
+    #[\Override]
     protected function initMassactions()
     {
         if (User::hasWriteAccess(CPayment::class)) {
@@ -60,6 +62,7 @@ class CInvoice extends InvoiceModuleAbstract
         $this->addMassactionMassUpdate();
     }
 
+    #[\Override]
     protected function initPrintForms()
     {
         $this->addPrintForm(new CInvoicePrintForm('Word', 'Word', PrintForm::FORMAT_DOC));
@@ -70,6 +73,7 @@ class CInvoice extends InvoiceModuleAbstract
         //$this->addPrintForm(new Maxvel(PrintForm::FORMAT_PDF));
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->addFilters(
@@ -189,10 +193,12 @@ class CInvoice extends InvoiceModuleAbstract
         ];
     }
 
+    #[\Override]
     protected function validateUnique(array $dataFromPost)
     {
     }
 
+    #[\Override]
     protected function validateMandatory(array $dataFromPost)
     {
         parent::validateMandatory($dataFromPost);
@@ -245,6 +251,7 @@ class CInvoice extends InvoiceModuleAbstract
         */
     }
 
+    #[\Override]
     protected function getTplData()
     {
         // Проверим, есть ли зафиксированная дата OneCDocDate?
@@ -271,6 +278,7 @@ class CInvoice extends InvoiceModuleAbstract
         return $tdata;
     }
 
+    #[\Override]
     protected function proceedAddNew()
     {
         if (isset($_GET['fromCostSheet'])) {
@@ -388,6 +396,7 @@ class CInvoice extends InvoiceModuleAbstract
         Response::redirect('CInvoice', ['filterValues' => json_encode($filterValues)]);
     }
 
+    #[\Override]
     protected function getAccessSqlWhere(): string
     {
         return BuAccess::getSqlWhereCustomerId()
@@ -395,6 +404,7 @@ class CInvoice extends InvoiceModuleAbstract
             . " AND " . Constant::getCreatedDateSqlWhere();
     }
 
+    #[\Override]
     protected function hasWriteAccessRightToObj(ObjAbstract $obj)
     {
         //Нужно запретить доступ на редактирование счёта если в нём есть закрытые файлы
@@ -420,6 +430,7 @@ class CInvoice extends InvoiceModuleAbstract
         return true;
     }
 
+    #[\Override]
     protected function initViewSubmenu()
     {
         if (Constant::isOneCCompany($this->_obj['CompanyID'])) {

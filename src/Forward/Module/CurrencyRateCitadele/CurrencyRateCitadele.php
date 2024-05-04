@@ -22,12 +22,14 @@ class CurrencyRateCitadele extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
         $this->addFiltersDatesFromUntil('ValidDate', ['name' => 'Valid']);
     }
 
+    #[\Override]
     protected function validateUnique(array $dataFromPost)
     {
         $query = "SELECT ID

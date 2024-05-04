@@ -12,7 +12,7 @@ use Light\Table;
 
 class Maxvel extends PrintForm
 {
-    private const BANK_ACCOUNTS = [
+    private const array BANK_ACCOUNTS = [
         'USD' => 'ES1401825000892012500032',
         'EUR' => 'ES2001825000810201804226',
     ];
@@ -25,16 +25,19 @@ class Maxvel extends PrintForm
         error_reporting(0);
     }
 
+    #[\Override]
     public function testForObj(ObjAbstract $obj): bool
     {
         return $obj['CompanyID'] === Constant::OC_MAXVEL;
     }
 
+    #[\Override]
     protected function getTemplate(ObjAbstract $obj): string
     {
         return __DIR__ . '/Maxvel.xlsx';
     }
 
+    #[\Override]
     protected function getTplDataForExcel(ObjAbstract $obj): array
     {
         $tdata = parent::getTplDataForExcel($obj);

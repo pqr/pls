@@ -1188,6 +1188,7 @@ class Table implements \JsonSerializable
         $this->_obj->setNameFieldKey($nameFieldKey);
     }
 
+    #[\Override]
     public function jsonSerialize()
     {
         return $this->tableData;

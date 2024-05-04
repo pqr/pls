@@ -21,6 +21,7 @@ class FieldMonth extends FieldInputAbstract
     public $yearFrom;
     public $yearUntil;
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -35,6 +36,7 @@ class FieldMonth extends FieldInputAbstract
         $this->name = Config::$lang === 'ru' ? 'Месяц' : 'Month';
     }
 
+    #[\Override]
     public function getHtmlInner($value, array $data, $forTable)
     {
         if (self::empty($value)) {
@@ -55,6 +57,7 @@ class FieldMonth extends FieldInputAbstract
         return $out;
     }
 
+    #[\Override]
     public function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         if (self::empty($value)) {
@@ -64,6 +67,7 @@ class FieldMonth extends FieldInputAbstract
         return substr((string) $value, 0, 7);
     }
 
+    #[\Override]
     protected function getEditTagParams($value, array $data)
     {
         $editTagParams = parent::getEditTagParams($value, $data);
@@ -76,6 +80,7 @@ class FieldMonth extends FieldInputAbstract
         return $editTagParams;
     }
 
+    #[\Override]
     protected function getEditCssClass($value, array $data)
     {
         return parent::getEditCssClass($value, $data) . ' input-small';
@@ -98,12 +103,14 @@ class FieldMonth extends FieldInputAbstract
         return $value;
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         $beautyMonth = self::beautify($value);
         return parent::getHtmlInputInner($beautyMonth, $data, $idPrefix);
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $requset)
     {
         $value = parent::getDataFromRequestInner($requset);
@@ -114,6 +121,7 @@ class FieldMonth extends FieldInputAbstract
         return $value;
     }
 
+    #[\Override]
     protected function getSqlWhereInner($value): string
     {
         return self::getSqlWhereStatic('{fieldKey}', $value);
@@ -179,6 +187,7 @@ class FieldMonth extends FieldInputAbstract
         return $year . '-' . $month . '-01';
     }
 
+    #[\Override]
     public static function empty($value): bool
     {
         return !$value || $value === '0000-00-00';

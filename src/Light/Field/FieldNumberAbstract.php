@@ -26,6 +26,7 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
     public $zeroEmptyExcel = false;
     public $groupconcatSum = false;
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -34,11 +35,13 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
         $this->default = 0;
     }
 
+    #[\Override]
     protected function getEditTagParams($value, array $data)
     {
         return parent::getEditTagParams($value, $data) . ' autocomplete="off"';
     }
 
+    #[\Override]
     public function getViewCssClass($value, array $data = [], $forTable = false, $excludeViewMaxWidth = false)
     {
         $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeViewMaxWidth);
@@ -60,6 +63,7 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
         return $viewCssClass;
     }
 
+    #[\Override]
     public function getCalculatedValue($value, array $data = [], $forTable = false)
     {
         if ($this->groupconcat && $this->groupconcatSum && $value && strpos((string) $value, "\n")) {
@@ -96,6 +100,7 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
         return array_sum($lines);
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         if ($value == 0) {
@@ -105,6 +110,7 @@ abstract class FieldNumberAbstract extends FieldInputAbstract
         return parent::getHtmlInputInner($value, $data, $idPrefix);
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $value = parent::getDataFromRequestInner($request);

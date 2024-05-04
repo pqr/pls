@@ -42,6 +42,7 @@ class CustomerOutstanding extends HomeBlockAbstract
      * @param int $userId
      * @return mixed|void
      */
+    #[\Override]
     protected function getDataQuery(int $userId)
     {
         $query = "SELECT ID 
@@ -73,6 +74,7 @@ class CustomerOutstanding extends HomeBlockAbstract
         return $query;
     }
 
+    #[\Override]
     protected function getCountForTitle()
     {
         // Отобразим число просроченных счетов по клиентам на этом Home

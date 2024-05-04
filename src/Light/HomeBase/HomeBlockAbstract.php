@@ -124,6 +124,7 @@ abstract class HomeBlockAbstract extends Table
         $this->sendExcel();
     }
 
+    #[\Override]
     public function getHtmlTableForAjax()
     {
         $this->tableLoadData($this->userId);

@@ -15,6 +15,7 @@ use Light\Link;
 
 class ImportCAct extends ImporterAbstract
 {
+    #[\Override]
     public function import(array $data): int
     {
         if (!$this->validateData($data)) {

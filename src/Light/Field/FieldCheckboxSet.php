@@ -5,6 +5,7 @@ class FieldCheckboxSet extends FieldOptionsAbstract
 {
     use PipeSeparatedIdsTrait;
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -12,6 +13,7 @@ class FieldCheckboxSet extends FieldOptionsAbstract
         $this->tableWidthExcel = 40;
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         $options = $this->getEvaluatedOptions();
@@ -41,6 +43,7 @@ class FieldCheckboxSet extends FieldOptionsAbstract
         return $outHtml;
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $fieldKey = $this->getKey();

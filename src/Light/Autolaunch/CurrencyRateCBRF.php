@@ -16,6 +16,7 @@ class CurrencyRateCBRF extends AutolaunchAbstract
     protected static $_title = 'Обновить курсы валют ЦБРФ';
     protected static $_description = 'Обновляет курсы валют с сайта ЦБРФ';
 
+    #[\Override]
     public function initFieldset(): void
     {
         $this->addFields(
@@ -26,6 +27,7 @@ class CurrencyRateCBRF extends AutolaunchAbstract
         );
     }
 
+    #[\Override]
     protected function run(array $params)
     {
         if (isset($GLOBALS['argv'][2]) && $GLOBALS['argv'][2] === 'today') {

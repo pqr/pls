@@ -22,6 +22,7 @@ class FieldMoney extends FieldFloat
     public $currencyIso;
     public $decimals = 2;
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -32,6 +33,7 @@ class FieldMoney extends FieldFloat
         $this->tableAlign = 'right';
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         $value = (double)$value;
@@ -43,6 +45,7 @@ class FieldMoney extends FieldFloat
         return self::beautify($value, $this->short, $currencyIso, $this->useSymbol, $this->decimals);
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         $outHtml = parent::getHtmlInputInner($value, $data, $idPrefix);
@@ -59,6 +62,7 @@ class FieldMoney extends FieldFloat
         return $outHtml;
     }
 
+    #[\Override]
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         $value = (double)$value;
@@ -100,6 +104,7 @@ class FieldMoney extends FieldFloat
         return $outHtml;
     }
 
+    #[\Override]
     public static function parseFromDb($dbValue)
     {
         if ($dbValue === null) {
@@ -108,6 +113,7 @@ class FieldMoney extends FieldFloat
         return round((float)$dbValue, 2);
     }
 
+    #[\Override]
     public static function empty($value): bool
     {
         $value = (double)$value;

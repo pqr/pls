@@ -90,6 +90,7 @@ class Shippers extends Subtable
         }
     }
 
+    #[\Override]
     public function getHtmlEdit()
     {
         $this->loadFromShipmentRequest();

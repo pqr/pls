@@ -10,6 +10,7 @@ class UpdateCustomerOutstandingCache extends AutolaunchAbstract
     protected static $title = 'Daily Update Customer Outstanding Cache';
     protected static $description = 'customer_openinvoices, customer_openinvoicespercompany';
 
+    #[\Override]
     public function run(array $params): void
     {
         $customerObjBase = new CustomerObj();

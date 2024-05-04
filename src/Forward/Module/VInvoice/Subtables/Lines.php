@@ -33,16 +33,19 @@ class Lines extends Subtable
         $this->_cacheOnlyUniqueValues = true;
     }
 
+    #[\Override]
     protected function getExcelFilename()
     {
         return 'Vendor Invoice ' . $this->_masterObj['Name'] . ' details';
     }
 
+    #[\Override]
     protected function getExcelWorksheetName()
     {
         return 'Vendor Invoice Details';
     }
 
+    #[\Override]
     protected function getDataQuery()
     {
         $query = "SELECT vil.*
@@ -55,6 +58,7 @@ class Lines extends Subtable
         return $query;
     }
 
+    #[\Override]
     public function getHtmlEdit()
     {
         //Добавим строки в подтаблицу, если в GET запросе есть ключевой параметр fromCostSheet - значит попали сюда

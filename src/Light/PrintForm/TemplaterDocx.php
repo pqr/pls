@@ -20,6 +20,7 @@ class TemplaterDocx extends TemplaterAbstract
         $this->templateProcessor = new TemplateProcessor($templateFilepathAbs);
     }
 
+    #[\Override]
     public function writeData(array $data): void
     {
         $keys = array_keys($data);
@@ -27,6 +28,7 @@ class TemplaterDocx extends TemplaterAbstract
         $this->templateProcessor->setValue($keys, $values);
     }
 
+    #[\Override]
     public function saveDocx(string $dest): void
     {
         $this->templateProcessor->saveAs($dest);

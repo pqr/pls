@@ -49,11 +49,13 @@ class UserModuleUserObj extends ObjAbstract
         );
     }
 
+    #[\Override]
     public function getMasterFieldKey(): string
     {
         return 'ID';
     }
 
+    #[\Override]
     public function getMasterModuleForDbLog(): string
     {
         return 'UserModule';

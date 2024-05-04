@@ -15,6 +15,7 @@ class FieldSelect2Multiple extends FieldSelect
 
     protected $logicSqlWhere = "OR";
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -23,16 +24,19 @@ class FieldSelect2Multiple extends FieldSelect
         $this->editWidth = 'full';
     }
 
+    #[\Override]
     protected function getEditCssClass($value, array $data)
     {
         return parent::getEditCssClass($value, $data) . ' select-select2multiple';
     }
 
+    #[\Override]
     protected function getEditTagParams($value, array $data)
     {
         return parent::getEditTagParams($value, $data) . ' multiple size=1';
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         // Это поле требует подключения библиотки select2 на стороне клиента
@@ -41,6 +45,7 @@ class FieldSelect2Multiple extends FieldSelect
         return parent::getHtmlInputInner($value, $data, $idPrefix);
     }
 
+    #[\Override]
     protected function getHtmlInputTplData($value, array $data, $idPrefix)
     {
         $tdata = parent::getHtmlInputTplData($value, $data, $idPrefix);
@@ -49,6 +54,7 @@ class FieldSelect2Multiple extends FieldSelect
         return $tdata;
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         if (array_key_exists($this->key, $request)) {
@@ -67,6 +73,7 @@ class FieldSelect2Multiple extends FieldSelect
         return '';
     }
 
+    #[\Override]
     protected function getSqlWhereInner($value): string
     {
         $sql = [];

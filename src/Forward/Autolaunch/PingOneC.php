@@ -13,6 +13,7 @@ class PingOneC extends AutolaunchAbstract
     protected static $title = 'Проверить подключение к 1С';
     protected static $description = 'Отправляет пустой GET запрос на hs/CreateCustomerInvoice". В качестве ответа должна прийти диагностическая информация с настройками 1С!';
 
+    #[\Override]
     protected function run(array $params)
     {
         $client = new Client(['verify' => false]);

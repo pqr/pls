@@ -40,6 +40,7 @@ class UserAccess extends ModuleAbstract
         );
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->addFilters(
@@ -115,6 +116,7 @@ class UserAccess extends ModuleAbstract
         ]);
     }
 
+    #[\Override]
     protected function tableLoadData()
     {
         if ($this->getFiltersSqlWhere() === '1') {

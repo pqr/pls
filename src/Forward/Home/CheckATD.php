@@ -34,6 +34,7 @@ class CheckATD extends HomeBlockAbstract
         );
     }
 
+    #[\Override]
     protected function getDataQuery(int $userId)
     {
         return "SELECT shipment.ID, shipment.Name, shipment.MAWBNumber, shipment.ETD, shipment.ReadyForCarriageDate
@@ -53,6 +54,7 @@ class CheckATD extends HomeBlockAbstract
                   ORDER BY shipment.ETD";
     }
 
+    #[\Override]
     protected function tableLoadData(int $userId)
     {
         if (User::hasSpecialAccess(Application::SA_HOME_CHECKATD, $userId)) {

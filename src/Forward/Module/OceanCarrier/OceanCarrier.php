@@ -28,6 +28,7 @@ class OceanCarrier extends ModuleAbstract
         );
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;

@@ -28,6 +28,7 @@ class Banks extends Subtable
         ]);
     }
 
+    #[\Override]
     protected function getMasterFieldKey(): string
     {
         return 'CompanyID';

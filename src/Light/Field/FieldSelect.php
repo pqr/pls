@@ -115,6 +115,7 @@ class FieldSelect extends FieldOptionsAbstract
      */
     public $avatar = false;
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -126,6 +127,7 @@ class FieldSelect extends FieldOptionsAbstract
         $this->anyText = Config::$lang === 'ru' ? '...любой...' : '...any...';
     }
 
+    #[\Override]
     protected function getEditCssClass($value, array $data)
     {
         $cssClass = parent::getEditCssClass($value, $data);
@@ -156,6 +158,7 @@ class FieldSelect extends FieldOptionsAbstract
         return $cssClass;
     }
 
+    #[\Override]
     protected function getEditTagParams($value, array $data)
     {
         $editTagParams = (string)parent::getEditTagParams($value, $data);
@@ -190,6 +193,7 @@ class FieldSelect extends FieldOptionsAbstract
         return trim($editTagParams);
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         if (!$this->multiple) {
@@ -212,6 +216,7 @@ class FieldSelect extends FieldOptionsAbstract
         return $outHtml;
     }
 
+    #[\Override]
     protected function getOptionHtml($option, $originalValue, $forTable)
     {
         if ($this->avatar && $originalValue && is_numeric($originalValue)) {
@@ -223,6 +228,7 @@ class FieldSelect extends FieldOptionsAbstract
         return parent::getOptionHtml($option, $originalValue, $forTable);
     }
 
+    #[\Override]
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         if (!$this->multiple) {
@@ -263,6 +269,7 @@ class FieldSelect extends FieldOptionsAbstract
         return array_filter(explode('|', (string) $value));
     }
 
+    #[\Override]
     protected function getHtmlInputTplData($value, array $data, $idPrefix)
     {
         $tdata = parent::getHtmlInputTplData($value, $data, $idPrefix);
@@ -272,6 +279,7 @@ class FieldSelect extends FieldOptionsAbstract
         return $tdata;
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         if ($this->select2) {
@@ -451,6 +459,7 @@ class FieldSelect extends FieldOptionsAbstract
         return $this->getEvaluatedOptions();
     }
 
+    #[\Override]
     public function allowSqlWhereValue($value)
     {
         if ($value === '%') {
@@ -463,6 +472,7 @@ class FieldSelect extends FieldOptionsAbstract
         return true;
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $value = parent::getDataFromRequestInner($request);
@@ -503,6 +513,7 @@ class FieldSelect extends FieldOptionsAbstract
 
     }
 
+    #[\Override]
     protected function convertToNullIfNeeded($value)
     {
         if ($this->select2 && $this->multiple) {
@@ -511,6 +522,7 @@ class FieldSelect extends FieldOptionsAbstract
         return parent::convertToNullIfNeeded($value);
     }
 
+    #[\Override]
     protected function getSqlWhereInner($value): string
     {
         if ($this->multiple && str_contains($value, '|')) {
@@ -534,6 +546,7 @@ class FieldSelect extends FieldOptionsAbstract
         return parent::getSqlWhereInner($value);
     }
 
+    #[\Override]
     public function prefetchOptions(array $ids): void
     {
         parent::prefetchOptions($ids);

@@ -16,6 +16,7 @@ class AjaxChangeField extends ActionAbstract
 {
     public $onlyAjax = true;
 
+    #[\Override]
     public function hasAccess(): bool
     {
         $fieldKey = $this->getFieldKey();
@@ -66,6 +67,7 @@ class AjaxChangeField extends ActionAbstract
         return Request::getQueryParam('fieldKey');
     }
 
+    #[\Override]
     public function __invoke()
     {
         if (Request::isPost()) {

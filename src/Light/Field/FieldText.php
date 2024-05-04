@@ -12,6 +12,7 @@ class FieldText extends FieldAbstract
     public $markdown = false;
     public $markdownInfo = false;
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -22,6 +23,7 @@ class FieldText extends FieldAbstract
         $this->filterOperator = self::FILTER_LIKE;
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         if ($this->markdown) {
@@ -34,6 +36,7 @@ class FieldText extends FieldAbstract
         return $html;
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         $value = (string)$value;
@@ -72,6 +75,7 @@ class FieldText extends FieldAbstract
         return $html;
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $value = parent::getDataFromRequestInner($request);
@@ -82,6 +86,7 @@ class FieldText extends FieldAbstract
         return $value;
     }
 
+    #[\Override]
     public static function empty($value): bool
     {
         return trim((string) $value) === '';

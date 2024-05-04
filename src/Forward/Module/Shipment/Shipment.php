@@ -73,17 +73,20 @@ class Shipment extends ModuleAbstract
         $this->allowDelete = User::hasSpecialAccess(Application::SA_SHIPMENT_DELETE);
     }
 
+    #[\Override]
     protected function initPrintForms()
     {
         $this->addPrintForm(new MAWBExcel());
     }
 
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(Shippers::class);
     }
 
+    #[\Override]
     protected function initList()
     {
         $getSqlSelectInvoices = function ($firstLetter) {
@@ -171,6 +174,7 @@ class Shipment extends ModuleAbstract
         );
     }
 
+    #[\Override]
     protected function initFieldsFromSubtables()
     {
         parent::initFieldsFromSubtables();
@@ -190,6 +194,7 @@ class Shipment extends ModuleAbstract
         ]);
     }
 
+    #[\Override]
     protected function initCopyModes()
     {
         $this->addCopyMode(
@@ -225,6 +230,7 @@ class Shipment extends ModuleAbstract
         );
     }
 
+    #[\Override]
     protected function initCssJs()
     {
         parent::initCssJs();
@@ -233,6 +239,7 @@ class Shipment extends ModuleAbstract
         }
     }
 
+    #[\Override]
     protected function initMassactions()
     {
         $this->addMassactionMassUpdate();
@@ -260,6 +267,7 @@ class Shipment extends ModuleAbstract
         Response::redirect(DocsInventory::class, ['addnew' => 1, 'fromShipmentIds' => implode(',', $ids)]);
     }
 
+    #[\Override]
     protected function initViewSubmenu()
     {
         $subject = ApplicationAbstract::getParam('EmailNoticeSubject');
@@ -314,6 +322,7 @@ class Shipment extends ModuleAbstract
     }
 
 
+    #[\Override]
     protected function initFilters()
     {
         //Узнаем самый ранний месяц и самый поздний год в поле shipment.Month для фильтра по месяцам
@@ -526,6 +535,7 @@ class Shipment extends ModuleAbstract
         ];
     }
 
+    #[\Override]
     protected function getDataFromPost()
     {
         $dataFromRequest = parent::getDataFromPost();
@@ -567,6 +577,7 @@ class Shipment extends ModuleAbstract
         return $dataFromRequest;
     }
 
+    #[\Override]
     protected function validateUnique(array $dataFromRequest)
     {
         if ($dataFromRequest['MAWBNumber'] != '') {
@@ -593,6 +604,7 @@ class Shipment extends ModuleAbstract
         }
     }
 
+    #[\Override]
     protected function validateMandatory(array $dataFromRequest)
     {
         if (isset($dataFromRequest['TrafficID']) && $dataFromRequest['TrafficID'] == Constant::TRAFFIC_FINANCE) {
@@ -695,6 +707,7 @@ class Shipment extends ModuleAbstract
         }
     }
 
+    #[\Override]
     protected function getTplData()
     {
         $tdata = parent::getTplData();
@@ -770,12 +783,14 @@ class Shipment extends ModuleAbstract
         return $tdata;
     }
 
+    #[\Override]
     protected function initAddNewJsData()
     {
         parent::initAddNewJsData();
         $this->addAddNewEditPageParams();
     }
 
+    #[\Override]
     protected function initEditJsData()
     {
         parent::initEditJsData();
@@ -802,6 +817,7 @@ class Shipment extends ModuleAbstract
         ]);
     }
 
+    #[\Override]
     protected function initListJsData()
     {
         parent::initListJsData();
@@ -810,6 +826,7 @@ class Shipment extends ModuleAbstract
         Response::addJsData(['criteriaArr' => $criteriaArr]);
     }
 
+    #[\Override]
     protected function getViewEditLogTabsmenuItems()
     {
         $menuItems = parent::getViewEditLogTabsmenuItems();
@@ -862,6 +879,7 @@ class Shipment extends ModuleAbstract
         return $out;
     }
 
+    #[\Override]
     protected function hasWriteAccessRightToObj(ObjAbstract $obj)
     {
         // Узнаем статус перевозки, и, если статус Closed, прверим что у пользователя есть права на редактирование
@@ -869,6 +887,7 @@ class Shipment extends ModuleAbstract
             || User::hasSpecialAccess(Application::SA_SHIPMENT_CHANGECLOSED);
     }
 
+    #[\Override]
     protected function hasWriteAccessRightToFolder(ObjAbstract $obj)
     {
         // Разрешаем загрузать в папку всем и всегда
@@ -915,6 +934,7 @@ class Shipment extends ModuleAbstract
         }
     }
 
+    #[\Override]
     protected function proceedAddNew()
     {
         $this->loadFromQuotaionRequest();
@@ -927,6 +947,7 @@ class Shipment extends ModuleAbstract
         parent::proceedAddNew();
     }
 
+    #[\Override]
     protected function afterSubmit(
         ObjAbstract $obj,
         array $dataFromPost,
@@ -1267,6 +1288,7 @@ class Shipment extends ModuleAbstract
     /**
      * Переопределяем стандартный метод, чтобы запретить удаление файлов к которым привязаны счета
      */
+    #[\Override]
     protected function sendDeleteConfirmDialog()
     {
         //Найдём число привязанных счетов
@@ -1736,6 +1758,7 @@ class Shipment extends ModuleAbstract
         Response::json($newCsLines);
     }
 
+    #[\Override]
     protected function getAccessSqlWhere(): string
     {
         return BuAccess::getSqlWhereBu()

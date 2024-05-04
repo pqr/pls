@@ -22,6 +22,7 @@ class Vendor extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(Responsibles::class);
@@ -29,6 +30,7 @@ class Vendor extends ModuleAbstract
         $this->addSubtable(Contacts::class);
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;

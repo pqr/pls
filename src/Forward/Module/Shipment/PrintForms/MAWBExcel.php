@@ -15,6 +15,7 @@ final class MAWBExcel extends PrintForm
         parent::__construct('MAWBExcel', 'MAWB', self::FORMAT_EXCEL, self::OUT_STREAM);
     }
 
+    #[\Override]
     protected function getTplDataForExcel(ObjAbstract $obj): array
     {
         $tdata = parent::getTplDataForExcel($obj);

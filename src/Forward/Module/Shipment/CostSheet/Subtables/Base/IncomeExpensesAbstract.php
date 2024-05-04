@@ -24,11 +24,13 @@ abstract class IncomeExpensesAbstract extends Subtable
         $this->allowTableLayouts = false;
     }
 
+    #[\Override]
     protected function getMasterModule()
     {
         return 'Shipment';
     }
 
+    #[\Override]
     public function loadData(): void
     {
         parent::loadData();
@@ -54,6 +56,7 @@ abstract class IncomeExpensesAbstract extends Subtable
         return $this->_sumAmoutPerInvNum['InvNum' . $invNum] ?? 0;
     }
 
+    #[\Override]
     protected function initTableFieldsAdditional()
     {
         if ($this->isStateView()) {
@@ -101,6 +104,7 @@ abstract class IncomeExpensesAbstract extends Subtable
      * чтобы при нажатии кнопки Edit на экране Cost-sheet рендрилась таблица с другим именем (с суффиктом Edit)
      * @return string|void
      */
+    #[\Override]
     public function getTableName()
     {
         $tableName = parent::getTableName();
@@ -111,6 +115,7 @@ abstract class IncomeExpensesAbstract extends Subtable
         return $tableName;
     }
 
+    #[\Override]
     protected function isFindId(array $rowData):bool
     {
         if (isset($_GET['fromInvNum']) && isset($rowData['InvNum']) && $_GET['fromInvNum'] == $rowData['InvNum']) {
@@ -120,6 +125,7 @@ abstract class IncomeExpensesAbstract extends Subtable
         return parent::isFindId($rowData);
     }
 
+    #[\Override]
     protected function getTableRowTagParams(array $rowData, int $rowNum):string
     {
         //Если в GET параметрах есть параметр fromInvNum, значит нужно подсветить все строки с этим номером счёта
@@ -138,6 +144,7 @@ abstract class IncomeExpensesAbstract extends Subtable
         return $tagParams;
     }
 
+    #[\Override]
     public function getHtmlTableForAjax($printHeadBlock = true, $printIfEmpty = false)
     {
         $outHtml = parent::getHtmlTableForAjax($printHeadBlock, $printIfEmpty);

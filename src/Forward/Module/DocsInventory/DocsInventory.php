@@ -34,11 +34,13 @@ class DocsInventory extends ModuleAbstract
 
     }
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(Lines::class);
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->addFilters(
@@ -76,6 +78,7 @@ class DocsInventory extends ModuleAbstract
         );
     }
 
+    #[\Override]
     protected function proceedAddNew()
     {
         if (isset($_GET['fromShipmentIds'])) {

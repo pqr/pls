@@ -16,6 +16,7 @@ class ConcatinaterHtml implements ConcatinaterInterface
     {
     }
 
+    #[\Override]
     public function concat(array $files, string $resultFile, string $title): void
     {
         $bodyHtmls = [];

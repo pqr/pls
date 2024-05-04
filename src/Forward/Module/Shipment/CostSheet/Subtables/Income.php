@@ -23,6 +23,7 @@ class Income extends IncomeExpensesAbstract
         $this->_obj->setSubtable($this);
     }
 
+    #[\Override]
     protected function getInvIdForRow(array $rowData)
     {
         if (!isset($rowData['InvNum']) || !$rowData['InvNum']) {

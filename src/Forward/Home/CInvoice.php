@@ -50,6 +50,7 @@ class CInvoice extends HomeBlockAbstract
         );
     }
 
+    #[\Override]
     protected function getDataQuery(int $userId)
     {
         return "SELECT ID
@@ -68,6 +69,7 @@ class CInvoice extends HomeBlockAbstract
                   ORDER BY CustomerID, Status, DocDate";
     }
 
+    #[\Override]
     protected function tableLoadData(int $userId)
     {
         if (User::hasSpecialAccess(Application::SA_HOME_CINVOICE, $userId)) {

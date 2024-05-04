@@ -22,6 +22,7 @@ class AirfreightRate extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->addFilters(

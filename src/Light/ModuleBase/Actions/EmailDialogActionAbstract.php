@@ -48,11 +48,13 @@ abstract class EmailDialogActionAbstract extends ActionAbstract
         $this->fieldset = new Fieldset();
     }
 
+    #[\Override]
     public function getSubmenuHtml(): string
     {
         return Ico::i('fa-envelope ' . $this->submenuEmailIconColor) . ' ' . $this->submenuTitle;
     }
 
+    #[\Override]
     public function __invoke(): void
     {
         if (!Request::isAjax()) {

@@ -37,6 +37,7 @@ class LinesObj extends ObjAbstract
         );
     }
 
+    #[\Override]
     public function getDescriptionHtml()
     {
         return $this->_data['FileNumber'] . ' ' . htmlspecialchars((string) $this->_data['Name']);

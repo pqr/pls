@@ -2380,6 +2380,7 @@ abstract class ModuleAbstract extends Table
         return $this->_state === self::STATE_LIST_EXCEL;
     }
 
+    #[\Override]
     public function getHtmlTableForAjax()
     {
         $outHtml = parent::getHtmlTableForAjax();

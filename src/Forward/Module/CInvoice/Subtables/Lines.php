@@ -76,16 +76,19 @@ class Lines extends Subtable
         }
     }
 
+    #[\Override]
     protected function getExcelFilename()
     {
         return 'Customer Invoice ' . $this->_masterObj['Name'] . ' details';
     }
 
+    #[\Override]
     protected function getExcelWorksheetName()
     {
         return 'Customer Invoice Details';
     }
 
+    #[\Override]
     protected function getDataQuery()
     {
         $query = "SELECT cil.*
@@ -99,6 +102,7 @@ class Lines extends Subtable
         return $query;
     }
 
+    #[\Override]
     public function getHtmlEdit()
     {
         $this->getField('Amount')->setParam(

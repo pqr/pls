@@ -62,6 +62,7 @@ abstract class ResponsiblesSubtableAbstract extends Subtable
      * Переопределяем метод, чтобы добавить LEFT JOIN user и сделать сортировку по user.Name
      * @return string
      */
+    #[\Override]
     protected function getDataQuery()
     {
         $query = "SELECT r.ID

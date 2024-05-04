@@ -36,6 +36,7 @@ class Many2ManyAbstract extends Subtable
      * Переопределяем запрос на выборку, чтобы включить сортировку по полю Name в _slaveTable
      * @return string
      */
+    #[\Override]
     protected function getDataQuery()
     {
         $query = "SELECT " . $this->getDbTable() . ".*

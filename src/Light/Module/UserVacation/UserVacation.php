@@ -20,6 +20,7 @@ class UserVacation extends ModuleAbstract
 
     public $tableLinkFieldKeys = [];
 
+    #[\Override]
     protected function validateUnique(array $dataFromPost)
     {
         // Проверим пересечение по датам с уже имеющимися записями
@@ -50,6 +51,7 @@ class UserVacation extends ModuleAbstract
         }
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->addFilters(
@@ -70,6 +72,7 @@ class UserVacation extends ModuleAbstract
         ];
     }
 
+    #[\Override]
     protected function initList()
     {
         $this->addFields(
@@ -78,6 +81,7 @@ class UserVacation extends ModuleAbstract
         );
     }
 
+    #[\Override]
     protected function initCssJs()
     {
         if ($this->isStateAddNew() || $this->isStateEdit()) {
@@ -93,6 +97,7 @@ class UserVacation extends ModuleAbstract
         }
     }
 
+    #[\Override]
     public function getHtmlTableForAjax()
     {
         $outHtml = parent::getHtmlTableForAjax();
@@ -139,6 +144,7 @@ class UserVacation extends ModuleAbstract
     }
 
 
+    #[\Override]
     protected function proceedListRenderInitialPage()
     {
         parent::proceedListRenderInitialPage();

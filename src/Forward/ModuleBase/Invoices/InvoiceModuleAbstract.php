@@ -26,6 +26,7 @@ abstract class InvoiceModuleAbstract extends ModuleAbstract
         $this->tableDefaultOrderBy = 'ID DESC';
     }
 
+    #[\Override]
     protected function initCssJs()
     {
         parent::initCssJs();
@@ -47,6 +48,7 @@ abstract class InvoiceModuleAbstract extends ModuleAbstract
      * @param ObjAbstract $obj
      * @return array
      */
+    #[\Override]
     public function getOldDataBeforeSubmitOrDelete(ObjAbstract $obj)
     {
         $oldData = parent::getOldDataBeforeSubmitOrDelete($obj);
@@ -57,6 +59,7 @@ abstract class InvoiceModuleAbstract extends ModuleAbstract
         return $oldData;
     }
 
+    #[\Override]
     protected function afterSubmit(ObjAbstract $obj, array $dataFromPost, $affectedRows, array $oldData, Msg $msgBuff, $fromMultipleUpdat)
     {
         //Обновим все кеширюущие поля связанные с изменением или созданием счёта
@@ -66,6 +69,7 @@ abstract class InvoiceModuleAbstract extends ModuleAbstract
         $obj->updateCacheAfterSubmit($oldData, $msgBuff, true, $dbLogMsg);
     }
 
+    #[\Override]
     protected function afterDelete(ObjAbstract $obj, array $oldData)
     {
         /** @var $obj InvoiceObjAbstract */

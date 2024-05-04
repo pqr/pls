@@ -18,6 +18,7 @@ class Email extends AutolaunchAbstract
      */
     protected $maxLoops = 50;
 
+    #[\Override]
     protected function run(array $params)
     {
         $pid = uniqid('', false);

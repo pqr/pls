@@ -33,6 +33,7 @@ class Responsibles extends Subtable
         $this->_cacheFieldsKeys = ['UserID'];
     }
 
+    #[\Override]
     public function getHtmlEdit()
     {
         //Добавим в подтаблицу одну строку с Responsible CS из перевозки

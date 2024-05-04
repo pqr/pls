@@ -23,6 +23,7 @@ class UserVacationObj extends ObjAbstract
         );
     }
 
+    #[\Override]
     public function getDescriptionHtml()
     {
         return htmlspecialchars((string) $this->getFieldText('UserID'));

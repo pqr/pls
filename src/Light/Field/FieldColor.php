@@ -31,6 +31,7 @@ class FieldColor extends FieldAbstract
 
     public $source;
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -47,6 +48,7 @@ class FieldColor extends FieldAbstract
         }
     }
 
+    #[\Override]
     public function getText($value, array $data = [], $forTable = false)
     {
         if (!$this->checkAccessFunction($data)) {
@@ -75,6 +77,7 @@ class FieldColor extends FieldAbstract
         return '<i class="fas fa-palette colorpalette" ' . $tagParams . '></i>';
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         if ($forTable === 'total') {
@@ -90,11 +93,13 @@ class FieldColor extends FieldAbstract
         return $html;
     }
 
+    #[\Override]
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         return (int)$value;
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         self::initColorPallete();
@@ -116,6 +121,7 @@ class FieldColor extends FieldAbstract
         return $value ? " color$value" : '';
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $value = parent::getDataFromRequestInner($request);
@@ -126,11 +132,13 @@ class FieldColor extends FieldAbstract
         return $value;
     }
 
+    #[\Override]
     public function getHtmlForLog($value, array $data)
     {
         return '<span class="color' . (int)$value . ' color-span">' . $value . '</span>';
     }
 
+    #[\Override]
     public function allowSqlWhereValue($value)
     {
         return (int)$value !== 0;

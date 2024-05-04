@@ -140,6 +140,7 @@ class ShipmentAccounting extends ModuleAbstract
 
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $compnayIdsSql = implode(',', array_keys(Constant::$onecCompany));
@@ -204,6 +205,7 @@ class ShipmentAccounting extends ModuleAbstract
         }
     }
 
+    #[\Override]
     protected function initMassactions()
     {
         $this->addMassaction('DownloadDocs', 'Собрать полный комплект документов', '', '', true);
@@ -293,6 +295,7 @@ class ShipmentAccounting extends ModuleAbstract
         Response::streamFileFromFilesystem($resultFilepath);
     }
 
+    #[\Override]
     public function getFiltersSqlWhere()
     {
         // Ограничим доступ только к накладным относящимся к рублёвым компаниям
@@ -343,6 +346,7 @@ class ShipmentAccounting extends ModuleAbstract
         return $sqlWhere;
     }
 
+    #[\Override]
     protected function initViewSubmenu()
     {
         $this->addSubmenuLinkViewFunc(Ico::i('file-archive-o') . ' Комплект документов', 'DownloadDocs')

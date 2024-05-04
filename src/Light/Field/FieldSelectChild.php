@@ -24,11 +24,13 @@ class FieldSelectChild extends FieldSelect
      */
     public $relations;
 
+    #[\Override]
     protected function getEditCssClass($value, array $data)
     {
         return parent::getEditCssClass($value, $data) . ' select-child';
     }
 
+    #[\Override]
     protected function getEditTagParams($value, array $data)
     {
         $tagParams = parent::getEditTagParams($value, $data);

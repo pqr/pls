@@ -17,11 +17,13 @@ class CPayment extends PaymentModuleAbstract
     protected $textSaveBtn = 'Customer Payment';
     public $tableLayoutDefault = 'CompanyID|Name|CustomerID|PaymentDate|Amount|CurrencyISO|Comments';
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(CInvoices::class);
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->addFilters(
@@ -61,6 +63,7 @@ class CPayment extends PaymentModuleAbstract
         ];
     }
 
+    #[\Override]
     protected function getAccessSqlWhere(): string
     {
         return BuAccess::getSqlWhereCustomerId()

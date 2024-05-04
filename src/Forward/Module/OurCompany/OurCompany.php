@@ -18,6 +18,7 @@ class OurCompany extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(Banks::class);

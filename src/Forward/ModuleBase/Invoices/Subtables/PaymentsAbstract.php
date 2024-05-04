@@ -52,16 +52,19 @@ abstract class PaymentsAbstract extends Subtable
         $this->tableDataTotal = ['Name' => 'Total'];
     }
 
+    #[\Override]
     protected function getExcelFilename()
     {
         return 'Payments for invoice ' . $this->_masterObj['Name'];
     }
 
+    #[\Override]
     protected function getExcelWorksheetName()
     {
         return 'Payments';
     }
 
+    #[\Override]
     protected function getDataQuery()
     {
         $firstLetter = $this->getFirstLetter();
@@ -86,6 +89,7 @@ abstract class PaymentsAbstract extends Subtable
                   ORDER BY p.PaymentDate, p.Name";
     }
 
+    #[\Override]
     protected function getTableRowLinkUrlParams(array $rowData, int $rowNum): array
     {
         $firstLetter = $this->getFirstLetter();

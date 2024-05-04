@@ -13,6 +13,7 @@ class DailyMaintainance extends AutolaunchAbstract
     protected static $title = 'System: Daily Database Maintainance';
     protected static $description = 'Очищает modulesession, удаляет log_autolaunch > 3000шт, log_filter старше 6 мес., удаляет temp/concatenate_pdfs, очищает папки *_pdfs и *_massaction, зипует старые логи';
 
+    #[\Override]
     public function run(array $params): void
     {
         $this->clearModulesession();

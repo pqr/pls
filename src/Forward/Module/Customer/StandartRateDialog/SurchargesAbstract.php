@@ -26,6 +26,7 @@ abstract class SurchargesAbstract extends Subtable
         );
     }
 
+    #[\Override]
     protected function getMasterFieldKey(): string
     {
         return 'CustomerStandartRateID';

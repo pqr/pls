@@ -16,6 +16,7 @@ class DiskFreeSpace extends AutolaunchAbstract
     protected static $title = 'Проверяет свободное место на диске с программой и диске с папками.';
     protected static $description = 'Если свободного места меньше 1 Гб, то отправляются E-mail уведомления на ' . self::NOTIFY_EMAILS . '. Провека должна запускаться раз в день.';
 
+    #[\Override]
     protected function run(array $params)
     {
         if (!Config::$filesfolderLocal) {

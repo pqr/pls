@@ -3,6 +3,7 @@ namespace Light\Field;
 
 class FieldInt extends FieldNumberAbstract
 {
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -13,11 +14,13 @@ class FieldInt extends FieldNumberAbstract
         $this->tableAlign = 'center';
     }
 
+    #[\Override]
     protected function getEditCssClass($value, array $data)
     {
         return 'input-int ' . parent::getEditCssClass($value, $data);
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         $value = (int)$value;
@@ -31,6 +34,7 @@ class FieldInt extends FieldNumberAbstract
         return $outHtml;
     }
 
+    #[\Override]
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         $value = (int)round((double)$value);
@@ -40,12 +44,14 @@ class FieldInt extends FieldNumberAbstract
         return $value;
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         $value = (int)$value;
         return parent::getHtmlInputInner($value, $data, $idPrefix);
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $value = parent::getDataFromRequestInner($request);
@@ -56,11 +62,13 @@ class FieldInt extends FieldNumberAbstract
         return (int)$value;
     }
 
+    #[\Override]
     public function allowSqlWhereValue($value)
     {
         return (int)$value !== 0;
     }
 
+    #[\Override]
     public static function parseFromDb($dbValue)
     {
         if ($dbValue === null) {

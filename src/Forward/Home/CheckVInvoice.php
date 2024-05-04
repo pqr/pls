@@ -47,6 +47,7 @@ class CheckVInvoice extends HomeBlockAbstract
         );
     }
 
+    #[\Override]
     protected function getDataQuery(int $userId)
     {
         return "SELECT ID, Name, Amount, CurrencyISO, DueDate, Status,
@@ -65,6 +66,7 @@ class CheckVInvoice extends HomeBlockAbstract
                   ORDER BY Status, DaysLeft, DueDate, Name";
     }
 
+    #[\Override]
     protected function tableLoadData(int $userId)
     {
         if (User::hasSpecialAccess(Application::SA_HOME_VINVOICE, $userId)) {

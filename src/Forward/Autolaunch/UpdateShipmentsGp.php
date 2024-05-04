@@ -12,6 +12,7 @@ class UpdateShipmentsGp extends AutolaunchAbstract
     protected static $title = 'Update Shipments GP';
     protected static $description = 'Обновляет кеш по GP модуле Shipments где CreatedDateTime >= 2018-03-01. При этом обновляются кеширующие таблицы <strong>cinvoice_file_amount</strong> и <strong>vinvoice_file_amount</strong>';
 
+    #[\Override]
     public function run(array $params): void
     {
         //Обновим кеш по шипментам

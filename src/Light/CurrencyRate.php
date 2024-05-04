@@ -26,6 +26,7 @@ class CurrencyRate implements \JsonSerializable
         $this->validDate = $validDate;
     }
 
+    #[\Override]
     public function jsonSerialize()
     {
         return [

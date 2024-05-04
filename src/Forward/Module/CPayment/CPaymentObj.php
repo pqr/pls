@@ -60,6 +60,7 @@ class CPaymentObj extends PaymentObjAbstract
      * если этот массив не передан вообще, то все счета будут автоматически закрываться
      * @param string $dbLogMsg
      */
+    #[\Override]
     public function updateCacheAfterSubmit(
         array $oldData,
         Msg $msgBuff = null,
@@ -113,6 +114,7 @@ class CPaymentObj extends PaymentObjAbstract
         $customerObj->updateCacheOpenAndOverdueInvoicesAmount();
     }
 
+    #[\Override]
     public function updateCacheAfterDelete(array $oldInvoiceIds, $dbLogMsg): void
     {
         parent::updateCacheAfterDelete($oldInvoiceIds, $dbLogMsg);

@@ -15,6 +15,7 @@ use Light\FilesFolder;
 
 class ImportCInvoice extends ImporterAbstract
 {
+    #[\Override]
     public function import(array $data): int
     {
         if (!$this->validateData($data)) {
@@ -147,6 +148,7 @@ class ImportCInvoice extends ImporterAbstract
         return $cinvObj->getId();
     }
 
+    #[\Override]
     protected function validateData(array $data)
     {
         $result = parent::validateData($data);

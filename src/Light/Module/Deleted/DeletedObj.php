@@ -53,6 +53,7 @@ class DeletedObj extends ObjAbstract
 
     }
 
+    #[\Override]
     public function getDescriptionHtml()
     {
         return $this->getFieldHtml('TableID') . ' ID ' . $this->_data['RecordID'];

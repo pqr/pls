@@ -101,6 +101,7 @@ class AutolaunchLog extends Table
      * @param int $rowNum
      * @return array
      */
+    #[\Override]
     protected function getTableRowLinkUrlParams(array $rowDataCalculated, int $rowNum): array
     {
         return ['id' => $rowDataCalculated['ID']] + $this->getModuleSessionUrlParams();

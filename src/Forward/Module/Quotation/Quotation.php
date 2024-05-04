@@ -31,8 +31,8 @@ use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 class Quotation extends ModuleAbstract
 {
-    private const EXCEL_CARGO_STARTROW = 15;
-    private const EXCEL_DETAILS_STARTROW = 20;
+    private const int EXCEL_CARGO_STARTROW = 15;
+    private const int EXCEL_DETAILS_STARTROW = 20;
 
     protected $textSaveBtn = 'Quotation';
     public $folders = true;
@@ -139,6 +139,7 @@ class Quotation extends ModuleAbstract
 
     }
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(Cargo::class);
@@ -146,11 +147,13 @@ class Quotation extends ModuleAbstract
         $this->addSubtable(Expenses::class);
     }
 
+    #[\Override]
     protected function initMassactions()
     {
         $this->addMassactionMassUpdate();
     }
 
+    #[\Override]
     protected function initCopyModes()
     {
         $allFieldKeys = $this->getFieldset()->getKeys();
@@ -159,6 +162,7 @@ class Quotation extends ModuleAbstract
         $this->addCopyMode('Copy', $allFieldKeys);
     }
 
+    #[\Override]
     protected function initCssJs()
     {
         parent::initCssJs();
@@ -169,6 +173,7 @@ class Quotation extends ModuleAbstract
         }
     }
 
+    #[\Override]
     protected function initFilters()
     {
 
@@ -292,6 +297,7 @@ class Quotation extends ModuleAbstract
         ];
     }
 
+    #[\Override]
     protected function getAccessSqlWhere(): string
     {
         return BuAccess::getSqlWhereCustomerId()
@@ -299,10 +305,12 @@ class Quotation extends ModuleAbstract
             . " AND " . Constant::getCreatedDateSqlWhere();
     }
 
+    #[\Override]
     protected function validateUnique(array $dataFromRequest)
     {
     }
 
+    #[\Override]
     protected function validateMandatory(array $dataFromPost)
     {
         if ($dataFromPost['Status'] === 'lost') {
@@ -312,6 +320,7 @@ class Quotation extends ModuleAbstract
         parent::validateMandatory($dataFromPost);
     }
 
+    #[\Override]
     protected function initViewSubmenu()
     {
         //Кнопка экспорта в Excel
@@ -338,6 +347,7 @@ class Quotation extends ModuleAbstract
         }
     }
 
+    #[\Override]
     protected function afterSubmit(
         ObjAbstract $obj,
         array $dataFromPost,

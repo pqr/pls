@@ -22,11 +22,13 @@ class TemplaterPhp extends TemplaterAbstract
         parent::__construct($templateFilepathAbs);
     }
 
+    #[\Override]
     public function writeData(array $data): void
     {
         $this->bodyHtml = Template::parseTpl($this->templateFilepathAbs, $data);
     }
 
+    #[\Override]
     public function saveHtml(string $dest): void
     {
         $fullHtml = $this->getFullHtml();
@@ -34,6 +36,7 @@ class TemplaterPhp extends TemplaterAbstract
         $fs->dumpFile($dest, $fullHtml);
     }
 
+    #[\Override]
     public function savePdf(string $dest, bool $landscape): void
     {
         $fullHtml = $this->getFullHtml();
@@ -45,6 +48,7 @@ class TemplaterPhp extends TemplaterAbstract
         $proc->mustRun();
     }
 
+    #[\Override]
     public function savePdfAsync(string $dest, bool $landscape): ?Process
     {
         $fullHtml = $this->getFullHtml();
@@ -58,6 +62,7 @@ class TemplaterPhp extends TemplaterAbstract
         return $proc;
     }
 
+    #[\Override]
     public function saveDoc(string $dest): void
     {
         $fullHtml = $this->getFullHtml();

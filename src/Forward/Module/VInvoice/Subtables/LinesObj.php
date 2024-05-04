@@ -43,6 +43,7 @@ class LinesObj extends ObjAbstract
         );
     }
 
+    #[\Override]
     public function getDescriptionHtml()
     {
         return $this->getFieldHtml('MAWBNumber') . ' ' . $this->getFieldHtml('Name');

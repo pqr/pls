@@ -17,6 +17,7 @@ class CurrencyRate extends ModuleAbstract
     protected $textSaveBtn = 'Currency Rate';
     public $tableDefaultOrderBy = 'ValidDate DESC';
 
+    #[\Override]
     protected function initFilters()
     {
         $this->addFilters(
@@ -26,6 +27,7 @@ class CurrencyRate extends ModuleAbstract
         $this->addFiltersDatesFromUntil('ValidDate', ['name' => 'Valid']);
     }
 
+    #[\Override]
     protected function initListLinks()
     {
         if (User::hasWriteAccess() && User::hasReadAccess('Autolaunch')) {

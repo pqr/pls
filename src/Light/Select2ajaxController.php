@@ -10,9 +10,9 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class Select2ajaxController
 {
-    private const UPDATE_ACTION_RESET = 'reset';
-    private const UPDATE_ACTION_CHANGE = 'change';
-    private const UPDATE_ACTION_DONTCHANGE = 'dontchange';
+    private const string UPDATE_ACTION_RESET = 'reset';
+    private const string UPDATE_ACTION_CHANGE = 'change';
+    private const string UPDATE_ACTION_DONTCHANGE = 'dontchange';
 
     public function proceed(FieldSelect $field, ServerRequestInterface $request): array
     {

@@ -56,11 +56,13 @@ class VendorOutstanding extends HomeBlockAbstract
         );
     }
 
+    #[\Override]
     protected function getDataQuery(int $userId)
     {
         return '';
     }
 
+    #[\Override]
     protected function tableLoadData(int $userId)
     {
         if (!User::hasSpecialAccess(Application::SA_HOME_VOUTSTANDING, $userId)) {
@@ -207,6 +209,7 @@ class VendorOutstanding extends HomeBlockAbstract
         return implode('<br>', $lines);
     }
 
+    #[\Override]
     protected function getCountForTitle()
     {
         // Отобразим число просроченных счетов по клиентам на этом Home

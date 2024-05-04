@@ -26,6 +26,7 @@ class CheckATA extends HomeBlockAbstract
         );
     }
 
+    #[\Override]
     protected function getDataQuery(int $userId)
     {
         return "SELECT shipment.ID, shipment.Name, shipment.MAWBNumber, shipment.ETA
@@ -37,6 +38,7 @@ class CheckATA extends HomeBlockAbstract
                   ORDER BY shipment.ETA";
     }
 
+    #[\Override]
     protected function tableLoadData(int $userId)
     {
         if (User::hasSpecialAccess(Application::SA_HOME_CHECKATA, $userId)) {

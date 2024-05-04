@@ -12,6 +12,7 @@ class FieldYesNo extends FieldSelect
     public $cssClassYes = 'yes';
     public $cssClassNo = 'no';
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -34,6 +35,7 @@ class FieldYesNo extends FieldSelect
         $this->editWidth = 'small';
     }
 
+    #[\Override]
     public function getNameTableSettings()
     {
         return parent::getNameTableSettings() . ' (Y/N)';

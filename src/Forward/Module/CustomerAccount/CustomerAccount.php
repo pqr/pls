@@ -25,11 +25,13 @@ class CustomerAccount extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(Customers::class);
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
@@ -38,6 +40,7 @@ class CustomerAccount extends ModuleAbstract
         $this->addFilter(GeneralFields::buIdsFilter());
     }
 
+    #[\Override]
     protected function initViewSubmenu()
     {
         if (isset(Constant::$onecCompany[$this->_obj['CompanyID']])) {
@@ -61,6 +64,7 @@ class CustomerAccount extends ModuleAbstract
         }
     }
 
+    #[\Override]
     protected function getAccessSqlWhere(): string
     {
         return BuAccess::getSqlWhereBu() . " AND " . CustomerAccess::getSqlWhereCustomerAccount();

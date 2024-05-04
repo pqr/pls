@@ -22,17 +22,20 @@ class VendorAccount extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(Vendors::class);
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
         $this->addFilterText(['Name', 'OneCName']);
     }
 
+    #[\Override]
     protected function initViewSubmenu()
     {
         if (isset(Constant::$onecCompany[$this->_obj['CompanyID']])) {

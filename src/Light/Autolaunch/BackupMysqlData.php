@@ -25,7 +25,7 @@ class BackupMysqlData extends AutolaunchAbstract
     protected static $title = 'Backup Database';
     protected static $description = '<a href="?a=SettingsBackup">Settings >></a>';
 
-    private const MAX_MAIL_SIZE_MB = 10;
+    private const int MAX_MAIL_SIZE_MB = 10;
 
     /** @var string */
     private $backupDir;
@@ -39,6 +39,7 @@ class BackupMysqlData extends AutolaunchAbstract
     /** @var Filesystem */
     protected $fs;
 
+    #[\Override]
     protected function run(array $params)
     {
         try {

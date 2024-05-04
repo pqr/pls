@@ -12,6 +12,7 @@ class DownloadProductionCalendarFromXML extends AutolaunchAbstract
     protected static $title = 'Скачать производственный календарь';
     protected static $description = 'Скачивает производственный календарь в формате XML с сайта xmlcalendar.ru';
 
+    #[\Override]
     public function initFieldset(): void
     {
         $this->addFields(
@@ -23,6 +24,7 @@ class DownloadProductionCalendarFromXML extends AutolaunchAbstract
         );
     }
 
+    #[\Override]
     protected function run(array $params)
     {
         // распарсим производственный календарь в XML

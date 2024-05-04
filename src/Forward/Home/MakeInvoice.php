@@ -28,6 +28,7 @@ class MakeInvoice extends HomeBlockAbstract
         );
     }
 
+    #[\Override]
     protected function getDataQuery(int $userId)
     {
         return "SELECT shipment.ID, shipment.Name, shipment.MAWBNumber, shipment.ATA

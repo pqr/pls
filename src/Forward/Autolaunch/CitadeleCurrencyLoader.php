@@ -14,6 +14,7 @@ class CitadeleCurrencyLoader extends AutolaunchAbstract
     protected static $title = 'Update Currency from Citadele';
     protected static $description = '<a href="http://www.citadele.ee/ru/rates/" target="_blank">http://www.citadele.ee/ru/rates/</a>';
 
+    #[\Override]
     protected function run(array $params)
     {
         $date = date('Y-m-d');

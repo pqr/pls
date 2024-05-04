@@ -13,6 +13,7 @@ class FieldFloat extends FieldNumberAbstract
 {
     public $precision = 2;
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -23,11 +24,13 @@ class FieldFloat extends FieldNumberAbstract
         $this->tableAlign = 'center';
     }
 
+    #[\Override]
     protected function getEditCssClass($value, array $data)
     {
         return 'input-float ' . parent::getEditCssClass($value, $data);
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         $value = (double)$value;
@@ -41,6 +44,7 @@ class FieldFloat extends FieldNumberAbstract
         return $outHtml;
     }
 
+    #[\Override]
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         $value = (double)$value;
@@ -50,12 +54,14 @@ class FieldFloat extends FieldNumberAbstract
         return $value;
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         $value = (double)$value;
         return parent::getHtmlInputInner($value, $data, $idPrefix);
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $value = parent::getDataFromRequestInner($request);
@@ -72,11 +78,13 @@ class FieldFloat extends FieldNumberAbstract
         return (double)str_replace(',', '.', (string) $value);
     }
 
+    #[\Override]
     public function allowSqlWhereValue($value)
     {
         return (float)$value !== 0.0;
     }
 
+    #[\Override]
     public static function parseFromDb($dbValue)
     {
         if ($dbValue === null) {

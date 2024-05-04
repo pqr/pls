@@ -13,6 +13,7 @@ class FieldCheckbox extends FieldAbstract
     public $cssClassYes = 'yes';
     public $cssClassNo = 'no';
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -27,11 +28,13 @@ class FieldCheckbox extends FieldAbstract
         }
     }
 
+    #[\Override]
     public function getNameTableSettings()
     {
         return parent::getNameTableSettings() . ' (' . $this->textYes . '/' . $this->textNo . ')';
     }
 
+    #[\Override]
     public function getViewCssClass($value, array $data = [], $forTable = false, $excludeViewMaxWidth = false)
     {
         $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeViewMaxWidth);
@@ -42,6 +45,7 @@ class FieldCheckbox extends FieldAbstract
         return trim((string) $viewCssClass);
     }
 
+    #[\Override]
     public function getText($value, array $data = [], $forTable = false)
     {
         if (!$this->checkAccessFunction($data)) {
@@ -55,11 +59,13 @@ class FieldCheckbox extends FieldAbstract
         return $value ? $this->textYes : $this->textNo;
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         return $this->getText($value);
     }
 
+    #[\Override]
     protected function ajaxify($value, array $data, $forTable, $outHtml)
     {
         if ($this->groupconcat) {
@@ -84,11 +90,13 @@ class FieldCheckbox extends FieldAbstract
             . '</a>';
     }
 
+    #[\Override]
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         return $this->getText($value);
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         $tdata = $this->getHtmlInputTplData($value, $data, $idPrefix);
@@ -98,6 +106,7 @@ class FieldCheckbox extends FieldAbstract
             $checked . $tdata['cssClass'] . $tdata['tagParams'] . '>';
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $val = $request[$this->key] ?? false;
@@ -107,6 +116,7 @@ class FieldCheckbox extends FieldAbstract
         return $val === '0' || $val === 0 || $val === false || $val === 'false' ? 0 : 1;
     }
 
+    #[\Override]
     public function allowSqlWhereValue($value)
     {
         return !empty($this->sqlWhere);

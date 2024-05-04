@@ -33,6 +33,7 @@ class SettingsBackup extends SettingsPageAbstract
         );
     }
 
+    #[\Override]
     protected function getDescription(): string
     {
         return Link::create(Autolaunch::class, 'Run Backup >>')

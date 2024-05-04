@@ -30,6 +30,7 @@ class Deleted extends ModuleAbstract
         $this->addMassaction('Restore', 'Restore');
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->addFilters(
@@ -70,6 +71,7 @@ class Deleted extends ModuleAbstract
 
     }
 
+    #[\Override]
     public function initViewSubmenu(): void
     {
         $textRestore = Config::$lang === 'ru' ? 'Восстановить' : 'Restore';
@@ -161,6 +163,7 @@ class Deleted extends ModuleAbstract
         return $insertId;
     }
 
+    #[\Override]
     protected function getTableRowCssClass(array $rowDataCalculated, int $rowNum): string
     {
         if ($rowDataCalculated['Restored']) {

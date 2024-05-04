@@ -55,6 +55,7 @@ class VInvoice extends InvoiceModuleAbstract
         $this->getField('Status')->setParam('options', $statusOptions);
     }
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(Responsibles::class);
@@ -62,6 +63,7 @@ class VInvoice extends InvoiceModuleAbstract
         $this->addSubtableReadonly(VPayments::class);
     }
 
+    #[\Override]
     protected function initMassactions()
     {
         if (User::hasSpecialAccess(Application::SA_VINVOICE_ALLOW_STATUS_ACCEPT)) {
@@ -75,6 +77,7 @@ class VInvoice extends InvoiceModuleAbstract
         $this->addMassaction('Download', 'Скачать файлы единым zip архивом', '', '', true);
     }
 
+    #[\Override]
     protected function initCssJs()
     {
         parent::initCssJs();
@@ -86,6 +89,7 @@ class VInvoice extends InvoiceModuleAbstract
         }
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $statusOptions = Finance::$vinvoiceStatuses;
@@ -238,6 +242,7 @@ class VInvoice extends InvoiceModuleAbstract
         ];
     }
 
+    #[\Override]
     protected function initList()
     {
         $this->addFields(
@@ -257,6 +262,7 @@ class VInvoice extends InvoiceModuleAbstract
         ]);
     }
 
+    #[\Override]
     protected function getDataFromPost()
     {
         $dataFromPost = parent::getDataFromPost();
@@ -274,6 +280,7 @@ class VInvoice extends InvoiceModuleAbstract
         return $dataFromPost;
     }
 
+    #[\Override]
     protected function validateUnique(array $dataFromPost)
     {
         //Проверим существование такого счёта для такого Vendor'а в базе
@@ -437,6 +444,7 @@ class VInvoice extends InvoiceModuleAbstract
         ApplicationAbstract::terminate();
     }
 
+    #[\Override]
     protected function afterSubmit(
         ObjAbstract $obj,
         array $dataFromPost,
@@ -500,6 +508,7 @@ class VInvoice extends InvoiceModuleAbstract
         }
     }
 
+    #[\Override]
     protected function proceedAddNew()
     {
         if (isset($_GET['fromCostSheet'])) {
@@ -551,6 +560,7 @@ class VInvoice extends InvoiceModuleAbstract
         }
     }
 
+    #[\Override]
     protected function hasWriteAccessRightToObj(ObjAbstract $obj)
     {
         //Нужно запретить доступ на редактирование счёта если в нём есть закрытые файлы
@@ -678,6 +688,7 @@ class VInvoice extends InvoiceModuleAbstract
         }
     }
 
+    #[\Override]
     protected function getAccessSqlWhere(): string
     {
         return Constant::getCreatedDateSqlWhere();

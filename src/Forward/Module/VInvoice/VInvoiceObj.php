@@ -112,6 +112,7 @@ class VInvoiceObj extends InvoiceObjAbstract
      * @param bool $updateShipmentsGpAndCriteria
      * @param string $dbLogMsg
      */
+    #[\Override]
     public function updateCacheAfterSubmit(
         array $oldData,
         Msg $msgBuff = null,

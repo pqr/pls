@@ -17,6 +17,7 @@ class AirfreightSurcharge extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->addFilters(
@@ -45,6 +46,7 @@ class AirfreightSurcharge extends ModuleAbstract
         ];
     }
 
+    #[\Override]
     protected function validateUnique(array $dataFromRequest)
     {
     }

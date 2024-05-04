@@ -6,6 +6,7 @@ use Forward\Classes\ShipmentCriteria\Rules\Base\RuleBase;
 
 class OpenCInv extends RuleBase
 {
+    #[\Override]
     protected static function getQueryWhere()
     {
         return "EXISTS (SELECT *

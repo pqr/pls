@@ -81,8 +81,8 @@ use Light\User;
  */
 final class ShipmentObj extends ObjAbstract
 {
-    public const SHIPMENT_OPEN = 0;
-    public const SHIPMENT_CLOSED = 1;
+    public const int SHIPMENT_OPEN = 0;
+    public const int SHIPMENT_CLOSED = 1;
 
     public function __construct()
     {
@@ -390,11 +390,13 @@ final class ShipmentObj extends ObjAbstract
         }
     }
 
+    #[\Override]
     public function getDescriptionHtml()
     {
         return htmlspecialchars((string) $this->_data['MAWBNumber']) . ' / Shipment ' . $this->_data['Name'];
     }
 
+    #[\Override]
     public function insertDb(array $fieldsData, $logMsg = '<em>Creation</em>'): void
     {
         //Попробуем определить номер файла (Name) исходя из трафика
@@ -458,6 +460,7 @@ final class ShipmentObj extends ObjAbstract
         );
     }
 
+    #[\Override]
     public function updateDb(array $fieldsData, $logMsg = '')
     {
         // Перед тем как сделать обновление перевозки, нужно проверить, меняется ли TrafficID?
@@ -513,6 +516,7 @@ final class ShipmentObj extends ObjAbstract
         return $affectedRows;
     }
 
+    #[\Override]
     public function deleteDb($dbLogMsg = ''): void
     {
         parent::deleteDb();

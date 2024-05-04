@@ -35,16 +35,19 @@ class MassUpdate extends MassactionAbstract
         $this->objBase = $objBase;
     }
 
+    #[\Override]
     public function getKey(): string
     {
         return Misc::getModule($this->objBase) . 'MassUpdate';
     }
 
+    #[\Override]
     public function hasAccess(): bool
     {
         return User::hasWriteAccess(Misc::getModule($this->objBase));
     }
 
+    #[\Override]
     public function __invoke(array $ids): void
     {
         if (isset($_GET['submit']) && Request::isPost()) {

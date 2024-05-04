@@ -31,6 +31,7 @@ class PendingQuotations7days extends HomeBlockAbstract
         );
     }
 
+    #[\Override]
     protected function getDataQuery(int $userId)
     {
         return "SELECT ID, Name, CustomerID, Status, DATEDIFF(NOW(), CreatedDateTime) AS Days

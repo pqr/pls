@@ -83,6 +83,7 @@ class Lines extends Subtable
         );
     }
 
+    #[\Override]
     protected function getDataQuery()
     {
         return "SELECT dl.*

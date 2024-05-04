@@ -33,11 +33,13 @@ class CActNotReceived extends HomeBlockAbstract
         );
     }
 
+    #[\Override]
     protected function getDataQuery(int $userId)
     {
         return "";
     }
 
+    #[\Override]
     protected function tableLoadData(int $userId)
     {
         $shipments = Db::getAll(

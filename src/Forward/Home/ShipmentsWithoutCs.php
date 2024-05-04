@@ -24,6 +24,7 @@ class ShipmentsWithoutCs extends HomeBlockAbstract
         $this->addField(GeneralFields::customerId());
     }
 
+    #[\Override]
     protected function getDataQuery(int $userId)
     {
         return "SELECT ID

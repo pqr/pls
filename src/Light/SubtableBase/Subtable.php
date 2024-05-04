@@ -520,6 +520,7 @@ abstract class Subtable extends Table
         return $this->subtableOldData ?? [];
     }
 
+    #[\Override]
     protected function getHtmlTableCell(array $rowDataCalculated, int $rowNum, F $field, array $fullLinkParams): string
     {
         if ($this->isStateEdit()
@@ -535,6 +536,7 @@ abstract class Subtable extends Table
         return parent::getHtmlTableCell($rowDataCalculated, $rowNum, $field, $fullLinkParams);
     }
 
+    #[\Override]
     protected function getTableRowTagParams(array $rowDataCalculated, int $rowNum): string
     {
         if ($this->isStateEdit()) {
@@ -545,6 +547,7 @@ abstract class Subtable extends Table
         return '';
     }
 
+    #[\Override]
     public function hasTotalRow(array $dataTotal): bool
     {
         if (!$this->allowTableTotal) {
@@ -569,6 +572,7 @@ abstract class Subtable extends Table
         return false;
     }
 
+    #[\Override]
     protected function getHtmlTableTrTotal(array $allFields, array $dataCalculated)
     {
         $outHtml = parent::getHtmlTableTrTotal($allFields, $dataCalculated);
@@ -848,6 +852,7 @@ abstract class Subtable extends Table
             . '</div>';
     }
 
+    #[\Override]
     protected function getTableAjaxChangeFieldUrl(): string
     {
         return "?a=" . Request::getModule()
@@ -1392,11 +1397,13 @@ abstract class Subtable extends Table
      * которые хранятся в user_tableparam и в user_tablelayout. Добавим к имени таблицы имя мастер-модуля (для уникальности).
      * @return string
      */
+    #[\Override]
     protected function getTableNameForSettings()
     {
         return $this->getMasterModule() . parent::getTableNameForSettings();
     }
 
+    #[\Override]
     protected function getHtmlTableTheadThContent(F $field)
     {
         $html = $this->getHtmlTableTheadThContentAlias($field);

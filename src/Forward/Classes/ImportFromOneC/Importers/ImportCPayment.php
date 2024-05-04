@@ -13,6 +13,7 @@ use Light\Mailer;
 
 class ImportCPayment extends ImporterAbstract
 {
+    #[\Override]
     public function import(array $data): int
     {
         if (!$this->validateData($data)) {
@@ -131,6 +132,7 @@ class ImportCPayment extends ImporterAbstract
 
     }
 
+    #[\Override]
     protected function validateData(array $data)
     {
         $result = parent::validateData($data);

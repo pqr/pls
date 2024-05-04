@@ -15,11 +15,13 @@ class VPayment extends PaymentModuleAbstract
     protected $textSaveBtn = 'Vendor Payment';
     public $tableLayoutDefault = 'CompanyID|Name|VendorID|PaymentDate|Amount|CurrencyISO|Comments';
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(VInvoices::class);
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->addFilters(
@@ -54,6 +56,7 @@ class VPayment extends PaymentModuleAbstract
         ];
     }
 
+    #[\Override]
     protected function getAccessSqlWhere(): string
     {
         return Constant::getCreatedDateSqlWhere();

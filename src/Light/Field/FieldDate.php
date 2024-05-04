@@ -24,7 +24,7 @@ class FieldDate extends FieldInputAbstract
 {
     public const UNTIL_FUTURE_NOTICE = '2099-01-01';
 
-    private const EXCEL_DATE_2000 = 36526; // // 01.01.2000 в формате Excel
+    private const int EXCEL_DATE_2000 = 36526; // // 01.01.2000 в формате Excel
 
     public $cssClassFuture;
     public $cssClassPast;
@@ -39,6 +39,7 @@ class FieldDate extends FieldInputAbstract
      */
     public $asInterval = false;
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -49,6 +50,7 @@ class FieldDate extends FieldInputAbstract
         $this->tableWidthHtml = 79;
     }
 
+    #[\Override]
     public function getViewCssClass($value, array $data = [], $forTable = false, $excludeViewMaxWidth = false)
     {
         $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeViewMaxWidth);
@@ -74,16 +76,19 @@ class FieldDate extends FieldInputAbstract
         return $viewCssClass;
     }
 
+    #[\Override]
     protected function getEditCssClass($value, array $data)
     {
         return 'input-date ' . parent::getEditCssClass($value, $data);
     }
 
+    #[\Override]
     protected function getEditTagParams($value, array $data)
     {
         return parent::getEditTagParams($value, $data) . ' autocomplete="off"';
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         if ($value === self::UNTIL_FUTURE_NOTICE) {
@@ -93,6 +98,7 @@ class FieldDate extends FieldInputAbstract
         return FieldDate::beautify($value);
     }
 
+    #[\Override]
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         if (self::empty($value)) {
@@ -119,6 +125,7 @@ class FieldDate extends FieldInputAbstract
         return $out;
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         if ($value === self::UNTIL_FUTURE_NOTICE) {
@@ -130,6 +137,7 @@ class FieldDate extends FieldInputAbstract
         return parent::getHtmlInputInner($value, $data, $idPrefix);
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $requset)
     {
         $value = parent::getDataFromRequestInner($requset);
@@ -140,12 +148,14 @@ class FieldDate extends FieldInputAbstract
         return $value;
     }
 
+    #[\Override]
     public function allowSqlWhereValue($value)
     {
         $value = trim((string) $value);
         return self::notEmpty($value);
     }
 
+    #[\Override]
     public function getSqlWhereInner($value): string
     {
         if ($this->filterFromUntil) {
@@ -234,6 +244,7 @@ class FieldDate extends FieldInputAbstract
         return date('Y-m-d', $timestamp);
     }
 
+    #[\Override]
     public static function empty($value): bool
     {
         return !$value || $value === '0000-00-00' || !is_string($value);

@@ -44,11 +44,13 @@ class MassactionDownloadAsZip extends MassactionAbstract
         $this->text = $text;
     }
 
+    #[\Override]
     public function getKey(): string
     {
         return 'DownloadAsZip' . implode('', $this->options);
     }
 
+    #[\Override]
     public function __invoke(array $ids): void
     {
         $tmpDir = File::mkdirTmp('massactionDownloadAsZip');

@@ -19,6 +19,7 @@ class FieldDateTime extends FieldInputAbstract
      */
     public $asInterval = false;
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -29,16 +30,19 @@ class FieldDateTime extends FieldInputAbstract
         $this->tableWidthHtml = 110;
     }
 
+    #[\Override]
     protected function getEditCssClass($value, array $data)
     {
         return 'input-datetime ' . parent::getEditCssClass($value, $data);
     }
 
+    #[\Override]
     protected function getEditTagParams($value, array $data)
     {
         return parent::getEditTagParams($value, $data) . ' autocomplete="off"';
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         if ($this->ajax) {
@@ -59,6 +63,7 @@ class FieldDateTime extends FieldInputAbstract
         return $outHtml;
     }
 
+    #[\Override]
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         if (!$value) {
@@ -79,6 +84,7 @@ class FieldDateTime extends FieldInputAbstract
         return $out;
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         Js::addLight('jquery.datetimepicker.js');
@@ -97,6 +103,7 @@ class FieldDateTime extends FieldInputAbstract
         return date(Config::$defaultDateTimeFormat, strtotime((string) $mysqlDateTime));
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $requset)
     {
         $value = parent::getDataFromRequestInner($requset);
@@ -119,12 +126,14 @@ class FieldDateTime extends FieldInputAbstract
         return $value;
     }
 
+    #[\Override]
     public function allowSqlWhereValue($value): bool
     {
         $value = trim((string) $value);
         return self::notEmpty($value);
     }
 
+    #[\Override]
     public function getSqlWhereInner($value): string
     {
         if ($this->filterFromUntil) {
@@ -160,6 +169,7 @@ class FieldDateTime extends FieldInputAbstract
     }
 
 
+    #[\Override]
     public static function empty($value): bool
     {
         return !$value || $value === '0000-00-00 00:00:00';

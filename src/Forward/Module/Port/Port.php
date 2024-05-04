@@ -35,12 +35,14 @@ class Port extends ModuleAbstract
         );
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
         $this->addFilterText(['Name', 'NameRu'], ['name' => 'Name']);
     }
 
+    #[\Override]
     protected function getDeleteConfirmationDialogHtml()
     {
         $portId = $this->_obj->getId();
@@ -59,6 +61,7 @@ class Port extends ModuleAbstract
         return parent::getDeleteConfirmationDialogHtml();
     }
 
+    #[\Override]
     protected function checkDeleteConfirmResult(): bool
     {
         if (isset($_POST['NewPortID'])) {

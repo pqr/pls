@@ -5,6 +5,7 @@ use Forward\Classes\ShipmentCriteria\Rules\Base\RuleBase;
 
 class NotAllVInv extends RuleBase
 {
+    #[\Override]
     protected static function getQueryWhere()
     {
         return "EXISTS (SELECT *

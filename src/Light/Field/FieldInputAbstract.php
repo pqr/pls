@@ -22,6 +22,7 @@ abstract class FieldInputAbstract extends FieldAbstract
     public $inputPattern; // можно задавать regex выражения, например [0-9]* http://htmlbook.ru/html/input/pattern
     public $mask; // можно задавать маску https://github.com/RobinHerbots/Inputmask#via-data-inputmask-attribute
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -29,6 +30,7 @@ abstract class FieldInputAbstract extends FieldAbstract
         $this->inputType = 'text';
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         $tdata = $this->getHtmlInputTplData($value, $data, $idPrefix);
@@ -56,6 +58,7 @@ abstract class FieldInputAbstract extends FieldAbstract
         return $outHtml;
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $value = parent::getDataFromRequestInner($request);

@@ -37,6 +37,7 @@ class BackupMysqlLogs extends AutolaunchAbstract
     /** @var Filesystem */
     protected $fs;
 
+    #[\Override]
     protected function run(array $params)
     {
         try {

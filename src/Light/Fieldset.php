@@ -44,6 +44,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     /**
      * Для имплементации \Iterator
      */
+    #[\Override]
     public function rewind(): void
     {
         $this->_position = 0;
@@ -53,6 +54,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * Для имплементации \Iterator
      * @return F
      */
+    #[\Override]
     public function current()
     {
         return $this->_fields[$this->_fieldKeys[$this->_position]];
@@ -62,6 +64,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * Для имплементации \Iterator
      * @return int
      */
+    #[\Override]
     public function key()
     {
         return $this->_position;
@@ -70,6 +73,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
     /**
      * Для имплементации \Iterator
      */
+    #[\Override]
     public function next(): void
     {
         ++$this->_position;
@@ -79,6 +83,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * Для имплементации \Iterator
      * @return bool
      */
+    #[\Override]
     public function valid()
     {
         return isset($this->_fieldKeys[$this->_position]);
@@ -88,6 +93,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * Для имплемментации \Countable
      * @return int
      */
+    #[\Override]
     public function count()
     {
         return count($this->_fieldKeys);
@@ -98,6 +104,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * @param $fieldKey
      * @param $field
      */
+    #[\Override]
     public function offsetSet($fieldKey, $field): void
     {
         //Если это поле уже есть в массивах $this->_fields и $this->_fieldKeys, то не будем его трогать в $this->_fieldKeys
@@ -115,6 +122,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * @param string $fieldKey
      * @return bool
      */
+    #[\Override]
     public function offsetExists($fieldKey)
     {
         return isset($this->_fields[$fieldKey]);
@@ -125,6 +133,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * Функция умышленно не реализована, поэтому выводит ошибку
      * @param string $fieldKey
      */
+    #[\Override]
     public function offsetUnset($fieldKey): void
     {
         if (isset($this->_fields[$fieldKey])) {
@@ -140,6 +149,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
      * @param string $fieldKey
      * @return F|null
      */
+    #[\Override]
     public function offsetGet($fieldKey): ?F
     {
         return $this->_fields[$fieldKey] ?? null;
@@ -651,6 +661,7 @@ class Fieldset implements \Iterator, \Countable, \ArrayAccess, \JsonSerializable
         return $fields;
     }
 
+    #[\Override]
     public function jsonSerialize()
     {
         return $this->_fields;

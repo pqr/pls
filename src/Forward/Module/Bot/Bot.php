@@ -18,6 +18,7 @@ class Bot extends ModuleBotAbstract
 
     public const LIMIT = 15;
 
+    #[\Override]
     protected function getWizardMessageForCommand(string $command)
     {
         return match ($command) {
@@ -32,6 +33,7 @@ class Bot extends ModuleBotAbstract
         };
     }
 
+    #[\Override]
     protected function runCommands(array $commands)
     {
         $descriptions = [];
@@ -216,6 +218,7 @@ class Bot extends ModuleBotAbstract
         return FieldMonth::parse($monthText);
     }
 
+    #[\Override]
     protected function getStartMessageAuthorized()
     {
         return strip_tags(file_get_contents(__DIR__ . '/BotStartMessageAuthorized.html'));

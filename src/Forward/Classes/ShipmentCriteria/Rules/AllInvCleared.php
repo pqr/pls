@@ -6,6 +6,7 @@ use Forward\Classes\ShipmentCriteria\Rules\Base\RuleBase;
 
 class AllInvCleared extends RuleBase
 {
+    #[\Override]
     protected static function getQueryWhere()
     {
         return "IFNULL((SELECT SUM(IF(cs.InvNum = '', 1, 0))

@@ -93,16 +93,19 @@ abstract class InvoicesAbstract extends Subtable
         return Db::getAll($query, $invIds);
     }
 
+    #[\Override]
     protected function getExcelFilename()
     {
         return 'Payment ' . $this->_masterObj['Name'] . ' details';
     }
 
+    #[\Override]
     protected function getExcelWorksheetName()
     {
         return 'Payment Details';
     }
 
+    #[\Override]
     protected function getDataQuery()
     {
         $firstLetter = $this->getFirstLetter();
@@ -139,6 +142,7 @@ abstract class InvoicesAbstract extends Subtable
      * @param array $dataFromRequest
      * @return array
      */
+    #[\Override]
     protected function getRowDataFromPost($rowNum, array $dataFromRequest)
     {
         $rowDataFromRequest = parent::getRowDataFromPost($rowNum, $dataFromRequest);
@@ -153,6 +157,7 @@ abstract class InvoicesAbstract extends Subtable
         return $rowDataFromRequest;
     }
 
+    #[\Override]
     protected function getTableRowLinkUrlParams(array $rowData, int $rowNum): array
     {
         $firstLetter = $this->getFirstLetter();

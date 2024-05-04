@@ -18,6 +18,7 @@ class CInvoicePrintForm extends PrintForm
         $this->stamp = str_contains((string) $key, 'Stamp');
     }
 
+    #[\Override]
     public function testForObj(ObjAbstract $obj): bool
     {
         return ($obj['CompanyID'] == Constant::OC_GTS && !$this->stamp)
@@ -25,16 +26,19 @@ class CInvoicePrintForm extends PrintForm
             || $obj['CompanyID'] == Constant::OC_PLS_USD;
     }
 
+    #[\Override]
     protected function getTitleHtml(ObjAbstract $obj): string
     {
         return 'Invoice ' . strip_tags((string) $obj->getDescriptionHtml());
     }
 
+    #[\Override]
     protected function getTitleHtmlMultiple(int $count): string
     {
         return 'Invoices (' . $count . ')';
     }
 
+    #[\Override]
     protected function getTemplate(ObjAbstract $obj): string
     {
         //Определим файл шаблона на основе компании и языка
@@ -46,6 +50,7 @@ class CInvoicePrintForm extends PrintForm
         };
     }
 
+    #[\Override]
     protected function getTplData(ObjAbstract $obj): array
     {
         //Для начала в переменные для шаблона попадают все поля из шапки счёта

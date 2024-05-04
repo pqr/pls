@@ -11,10 +11,11 @@ use Light\User;
 
 class Migrate extends AutolaunchAbstract
 {
-    private const RESULT_ERROR = 2;
-    private const RESULT_SKIPPED = 0;
-    private const RESULT_SUSCCESS = 1;
+    private const int RESULT_ERROR = 2;
+    private const int RESULT_SKIPPED = 0;
+    private const int RESULT_SUSCCESS = 1;
 
+    #[\Override]
     protected function run(array $params)
     {
         Config::$sqlErrorThrowException = true;

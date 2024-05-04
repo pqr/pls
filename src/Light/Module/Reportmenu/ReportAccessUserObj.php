@@ -38,6 +38,7 @@ class ReportAccessUserObj extends ObjAbstract
         );
     }
 
+    #[\Override]
     public function getDescriptionHtml()
     {
         return $this->getFieldHtml('ReportClass') . ' - ' . $this->getFieldHtml('UserID');

@@ -29,6 +29,7 @@ class TemplaterExcel extends TemplaterAbstract
         $this->titleExcelSheet = str_replace('/', '_', $titleExcelSheet);
     }
 
+    #[\Override]
     public function writeData(array $data): void
     {
         $this->xlsWriter->replaceData($data, $this->fieldset, $this->tableOpts);
@@ -36,16 +37,19 @@ class TemplaterExcel extends TemplaterAbstract
         $this->xlsWriter->getSpreadsheet()->getActiveSheet()->setTitle($this->titleExcelSheet);
     }
 
+    #[\Override]
     public function saveExcel(string $dest): void
     {
         $this->xlsWriter->save($dest);
     }
 
+    #[\Override]
     public function savePdf(string $dest, bool $landscape): void
     {
         $this->xlsWriter->savePdf($dest);
     }
 
+    #[\Override]
     public function savePdfAsync(string $dest, bool $landscape): ?Process
     {
         // Для Excel шаблона асинхронная генерация PDF не предусмотрена, поэтому просто запускаем синхронный метод

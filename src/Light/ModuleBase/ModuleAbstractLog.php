@@ -204,6 +204,7 @@ class ModuleAbstractLog extends Table
         $this->setTableData($tableData);
     }
 
+    #[\Override]
     public function getHtmlTableForAjax()
     {
         $outHtml = parent::getHtmlTableForAjax();

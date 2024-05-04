@@ -47,6 +47,7 @@ abstract class ReportAbstract extends Table
      * в вёрстке и js коде для обновления таблицы через ajax
      * @return string
      */
+    #[\Override]
     final public function getTableName()
     {
         return 'Report' . Misc::getClass($this);
@@ -213,6 +214,7 @@ abstract class ReportAbstract extends Table
         $this->tableData = [$foundRow];
     }
 
+    #[\Override]
     public function getHtmlTableForAjax()
     {
         $outHtml = parent::getHtmlTableForAjax();

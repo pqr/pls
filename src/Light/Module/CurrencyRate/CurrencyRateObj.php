@@ -36,11 +36,13 @@ class CurrencyRateObj extends ObjAbstract
         );
     }
 
+    #[\Override]
     public function getDescriptionHtml()
     {
         return $this->_data['CurrencyISO'] . ' on ' . $this->getFieldHtml('ValidDate');
     }
 
+    #[\Override]
     public function insertDb(array $fieldsData, $dbLogMsg = '')
     {
         $id = parent::insertDb($fieldsData, $dbLogMsg);
@@ -48,6 +50,7 @@ class CurrencyRateObj extends ObjAbstract
         return $id;
     }
 
+    #[\Override]
     public function updateDb(array $fieldsData, $dbLogMsg = ''): void
     {
         $affectedRows = parent::updateDb($fieldsData, $dbLogMsg);
@@ -56,6 +59,7 @@ class CurrencyRateObj extends ObjAbstract
         }
     }
 
+    #[\Override]
     public function deleteDb($dbLogMsg = ''): void
     {
         parent::deleteDb($dbLogMsg);

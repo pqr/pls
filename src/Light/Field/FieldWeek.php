@@ -6,6 +6,7 @@ use Light\Db;
 
 class FieldWeek extends FieldInputAbstract
 {
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -44,6 +45,7 @@ class FieldWeek extends FieldInputAbstract
         return [$week, $year];
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         $outHtml = '';
@@ -63,6 +65,7 @@ class FieldWeek extends FieldInputAbstract
         return $outHtml;
     }
 
+    #[\Override]
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         $out = '';
@@ -74,6 +77,7 @@ class FieldWeek extends FieldInputAbstract
         return $out;
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         [$week, $year] = self::getAsTouple($value);
@@ -97,6 +101,7 @@ class FieldWeek extends FieldInputAbstract
         return $outHtml;
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $value = null;
@@ -157,6 +162,7 @@ class FieldWeek extends FieldInputAbstract
         return $value;
     }
 
+    #[\Override]
     public function allowSqlWhereValue($value)
     {
         [$week, $year] = self::getAsTouple($value);
@@ -168,6 +174,7 @@ class FieldWeek extends FieldInputAbstract
      * @param string $value
      * @return string
      */
+    #[\Override]
     public function getSqlWhereInner($value): string
     {
         [$week, $year] = self::getAsTouple($value);
@@ -182,6 +189,7 @@ class FieldWeek extends FieldInputAbstract
         return $sqlWhere;
     }
 
+    #[\Override]
     public static function empty($value): bool
     {
         return $value === '0000-00' || $value === null;

@@ -75,6 +75,7 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable, \Stringab
         $this->_descriptionFunction = $function;
     }
 
+    #[\Override]
     public function offsetSet($offset, $value): void
     {
         if ($offset === null) {
@@ -84,16 +85,19 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable, \Stringab
         }
     }
 
+    #[\Override]
     public function offsetExists($offset)
     {
         return isset($this->_data[$offset]);
     }
 
+    #[\Override]
     public function offsetUnset($offset): void
     {
         unset($this->_data[$offset]);
     }
 
+    #[\Override]
     public function offsetGet($offset)
     {
         return $this->_data[$offset] ?? null;
@@ -676,11 +680,13 @@ abstract class ObjAbstract implements \ArrayAccess, \JsonSerializable, \Stringab
         }
     }
 
+    #[\Override]
     public function __toString(): string
     {
         return strip_tags((string) $this->getDescriptionHtml());
     }
 
+    #[\Override]
     public function jsonSerialize()
     {
         return $this->_data;

@@ -35,6 +35,7 @@ class Customer extends ModuleAbstract
         $this->allowExportToExcel = User::hasResponsibleRole(Application::ROLE_ALLOWEXCEL);
     }
 
+    #[\Override]
     protected function initSubtables()
     {
         $this->addSubtable(CustomerAccounts::class);
@@ -46,6 +47,7 @@ class Customer extends ModuleAbstract
         $this->addSubtable(Consignee::class);
     }
 
+    #[\Override]
     protected function initList()
     {
         parent::initList();
@@ -97,6 +99,7 @@ class Customer extends ModuleAbstract
 
     }
 
+    #[\Override]
     protected function initFilters()
     {
         $this->allowFiltersLayoutChange = false;
@@ -116,6 +119,7 @@ class Customer extends ModuleAbstract
     }
 
 
+    #[\Override]
     protected function getTplData()
     {
         $tdata = parent::getTplData();
@@ -139,6 +143,7 @@ class Customer extends ModuleAbstract
         StandartRateDialog::proceed($customerObj);
     }
 
+    #[\Override]
     protected function initCssJs()
     {
         parent::initCssJs();
@@ -152,6 +157,7 @@ class Customer extends ModuleAbstract
         }
     }
 
+    #[\Override]
     protected function getAccessSqlWhere(): string
     {
         return BuAccess::getSqlWhereBu() . " AND " . CustomerAccess::getSqlWhere("ID");

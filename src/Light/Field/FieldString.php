@@ -4,6 +4,7 @@ namespace Light\Field;
 
 class FieldString extends FieldInputAbstract
 {
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -11,6 +12,7 @@ class FieldString extends FieldInputAbstract
         $this->filterOperator = self::FILTER_LIKE;
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         $outHtml = htmlspecialchars((string) $value);
@@ -20,11 +22,13 @@ class FieldString extends FieldInputAbstract
         return $outHtml;
     }
 
+    #[\Override]
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         return (string)$value;
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $value = parent::getDataFromRequestInner($request);
@@ -35,6 +39,7 @@ class FieldString extends FieldInputAbstract
         return $value;
     }
 
+    #[\Override]
     public function getSqlWhereInner($filterValue): string
     {
         $maxLength = (int)$this->editMaxLength;
@@ -50,6 +55,7 @@ class FieldString extends FieldInputAbstract
         return parent::getSqlWhereInner($filterValue);
     }
 
+    #[\Override]
     public static function empty($value): bool
     {
         return trim((string) $value) === '';

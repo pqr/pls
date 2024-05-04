@@ -6,6 +6,7 @@ use Forward\Classes\ShipmentCriteria\Rules\Base\RuleBase;
 
 class NoVInv extends RuleBase
 {
+    #[\Override]
     protected static function getQueryWhere()
     {
         return "NOT EXISTS (SELECT *

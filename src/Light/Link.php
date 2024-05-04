@@ -364,6 +364,7 @@ class Link implements \Stringable
             . '</a>';
     }
 
+    #[\Override]
     public function __toString(): string
     {
         return $this->innerHtml !== '' ? $this->getHtml() : $this->getHref();

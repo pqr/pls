@@ -21,6 +21,7 @@ use Light\User;
 
 class UserSettings extends SettingsPageAbstract
 {
+    #[\Override]
     public function __invoke()
     {
         Js::addLight('UserSettings.js');
@@ -106,12 +107,14 @@ class UserSettings extends SettingsPageAbstract
         );
     }
 
+    #[\Override]
     protected function loadData()
     {
         $sqlSelect = $this->fieldset->getSqlSelect();
         $this->data = Db::getRow("SELECT $sqlSelect FROM user WHERE ID = @i", User::getId());
     }
 
+    #[\Override]
     protected function getDataFromPost(): array
     {
         $dataFromRequest = parent::getDataFromPost();
@@ -124,6 +127,7 @@ class UserSettings extends SettingsPageAbstract
         return $dataFromRequest;
     }
 
+    #[\Override]
     protected function updateDb(array $dataFromRequest)
     {
         $obj = new SimpleObj();
@@ -134,6 +138,7 @@ class UserSettings extends SettingsPageAbstract
         $obj->updateDb($dataFromRequest, 'Обновление из экрана настроек пользователя');
     }
 
+    #[\Override]
     protected function getTemplateData(): array
     {
         $tdata = parent::getTemplateData();

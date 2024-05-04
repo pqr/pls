@@ -9,6 +9,7 @@ class ProductionCalendar extends ModuleAbstract
 {
     protected $textSaveBtn = 'Дату';
 
+    #[\Override]
     protected function initFilters()
     {
         $this->addFilterYear('production_calendar', 'Date')

@@ -12,11 +12,13 @@ class ValueObject implements \JsonSerializable, \Stringable
         return $this->value;
     }
 
+    #[\Override]
     public function __toString(): string
     {
         return (string)$this->value;
     }
 
+    #[\Override]
     public function jsonSerialize()
     {
         return $this->value;

@@ -42,6 +42,7 @@ class Application extends ApplicationAbstract
     public const ROLE_BULED = 'LED';
     public const ROLE_ALLOWEXCEL = 'Excel';
 
+    #[\Override]
     protected function init()
     {
         if ((string)Application::getParam('blocked') === '1'
@@ -57,6 +58,7 @@ class Application extends ApplicationAbstract
         Db::query("SET sql_mode = 'ALLOW_INVALID_DATES'");
     }
 
+    #[\Override]
     protected function registerModules()
     {
         ModuleRegister::addModule('Shipment', 'Shipments', '');
@@ -98,6 +100,7 @@ class Application extends ApplicationAbstract
         ModuleRegister::addModule('Block', 'Block Base', 'System');
     }
 
+    #[\Override]
     public function getHomeBlocks()
     {
         return [
@@ -115,6 +118,7 @@ class Application extends ApplicationAbstract
         ];
     }
 
+    #[\Override]
     public function getUserRolesList()
     {
         return [
@@ -127,6 +131,7 @@ class Application extends ApplicationAbstract
         ];
     }
 
+    #[\Override]
     public function getSpecialAccessList()
     {
         return [

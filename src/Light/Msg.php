@@ -22,6 +22,7 @@ class Msg implements \Countable, \JsonSerializable
         $this->messages[] = ['type' => $type, 'msg' => $msg];
     }
 
+    #[\Override]
     public function count()
     {
         return count($this->messages);
@@ -200,6 +201,7 @@ class Msg implements \Countable, \JsonSerializable
         return false;
     }
 
+    #[\Override]
     public function jsonSerialize()
     {
         return $this->messages;

@@ -226,6 +226,7 @@ class CInvoiceObj extends InvoiceObjAbstract
      * файлам в самом конце, а не после создания каждого счёта
      * @param string $dbLogMsg
      */
+    #[\Override]
     public function updateCacheAfterSubmit(
         array $oldData,
         Msg $msgBuff = null,
@@ -307,6 +308,7 @@ class CInvoiceObj extends InvoiceObjAbstract
         $this->updateDb(['Name' => $name], 'Auto');
     }
 
+    #[\Override]
     public function updateCacheAfterDelete(array $oldFileNumbers, $dbLogMsg)
     {
         //Вызовем метод предка, чтобы обновить стандартные поля для объектов унаследованных от InvoiceObjAbstract

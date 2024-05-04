@@ -6,6 +6,7 @@ use Forward\Classes\ShipmentCriteria\Rules\Base\RuleBase;
 
 class ToBeClosed extends RuleBase
 {
+    #[\Override]
     protected static function getQueryWhere()
     {
         return "FileClosed = 0

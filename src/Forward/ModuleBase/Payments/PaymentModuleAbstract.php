@@ -28,6 +28,7 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
 
     }
 
+    #[\Override]
     protected function initCssJs()
     {
         parent::initCssJs();
@@ -38,6 +39,7 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
         }
     }
 
+    #[\Override]
     protected function validateUnique(array $dataFromPost)
     {
     }
@@ -117,6 +119,7 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
      * @param ObjAbstract $obj
      * @return array
      */
+    #[\Override]
     public function getOldDataBeforeSubmitOrDelete(ObjAbstract $obj)
     {
         $oldData = parent::getOldDataBeforeSubmitOrDelete($obj);
@@ -127,6 +130,7 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
         return $oldData;
     }
 
+    #[\Override]
     protected function afterSubmit(
         ObjAbstract $obj,
         array $dataFromPost,
@@ -141,6 +145,7 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
         $obj->updateCacheAfterSubmit($oldData, $msgBuff, true, $dbLogMsg);
     }
 
+    #[\Override]
     protected function afterDelete(ObjAbstract $obj, array $oldData)
     {
         /** @var $obj PaymentObjAbstract */

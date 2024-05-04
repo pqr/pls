@@ -11,6 +11,7 @@ class FieldMoneyWithCurrency extends FieldMoney
     protected $defaultCurrencyIso = '';
     protected $currencyIsoFieldKey;
 
+    #[\Override]
     protected function initDefaultParams()
     {
         parent::initDefaultParams();
@@ -29,6 +30,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         return str_replace('Amount', '', (string) $this->key) . 'CurrencyISO';
     }
 
+    #[\Override]
     public function getSqlSelect()
     {
         $sqlSelect = parent::getSqlSelect();
@@ -39,6 +41,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         return $sqlSelect;
     }
 
+    #[\Override]
     protected function calcGroupconcatSum($value)
     {
         $lines = explode("\n", (string) $value);
@@ -60,6 +63,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         return implode("\n", $outLines);
     }
 
+    #[\Override]
     public function getViewCssClass($value, array $data = [], $forTable = false, $excludeViewMaxWidth = false)
     {
         $viewCssClass = parent::getViewCssClass($value, $data, $forTable, $excludeViewMaxWidth);
@@ -86,6 +90,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         return $viewCssClass;
     }
 
+    #[\Override]
     protected function getHtmlInner($value, array $data, $forTable)
     {
         if ($value === false || $value === null) {
@@ -101,6 +106,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         return FieldMoney::beautify($amount, $this->short, $currencyIso, $this->useSymbol);
     }
 
+    #[\Override]
     protected function getExcelInner($value, array $data, int $groupconcatLinesCount = null)
     {
         [, $amount] = self::getAsTouple($value);
@@ -148,6 +154,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         return $amount;
     }
 
+    #[\Override]
     protected function getHtmlInputInner($value, array $data, $idPrefix)
     {
         [$currencyIso, $amount] = self::getAsTouple($value);
@@ -178,6 +185,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         return $outHtml;
     }
 
+    #[\Override]
     protected function getDataFromRequestInner(array $request)
     {
         $value = null;
@@ -203,12 +211,14 @@ class FieldMoneyWithCurrency extends FieldMoney
      * @param int $decimals
      * @return string
      */
+    #[\Override]
     public static function beautify($value, $short = false, $currencyIso = null, $useSymbol = false, int $decimals = 2)
     {
         [$currencyIso, $amount] = self::getAsTouple($value);
         return FieldMoney::beautify($amount, $short, $currencyIso, $useSymbol, $decimals);
     }
 
+    #[\Override]
     public static function parseFromDb($dbValue)
     {
         return $dbValue;
@@ -230,6 +240,7 @@ class FieldMoneyWithCurrency extends FieldMoney
         return self::createMoneyWithCurrency($fieldMoney->key, $params + $sourceParams);
     }
 
+    #[\Override]
     public static function empty($value): bool
     {
         if (!$value) {
