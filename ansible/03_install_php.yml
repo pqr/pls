@@ -2,57 +2,56 @@
 - hosts: all
   become: true
   vars_files:
-   - vars_decrypted.yml
+    - vars_decrypted.yml
 
   tasks:
-  # Установить репозиторий php:
-  - name: Add repository for Ubuntu
-    apt_repository: repo={{ php_use_ppa }}
-    tags: php
+    # Установить репозиторий php:
+    - name: Add repository for Ubuntu
+      apt_repository: repo={{ php_use_ppa }}
+      tags: php
 
-  # Установить нужные пакеты php:
-  - name: Install base php packages
-    apt: name={{ item }} state=latest
-    loop:
-      - php-common
-      - php{{ php_version }}-cli
-      - php{{ php_version }}-common
-      - php{{ php_version }}-curl
-      - php{{ php_version }}-fpm
-      - php{{ php_version }}-gd
-      - php{{ php_version }}-imap
-      - php{{ php_version }}-intl
-      - php{{ php_version }}-json
-      - php{{ php_version }}-mbstring
-      - php{{ php_version }}-mysql
-      - php{{ php_version }}-opcache
-      - php{{ php_version }}-readline
-      - php{{ php_version }}-xml
-      - php{{ php_version }}-xsl
-      - php{{ php_version }}-zip
-    notify: reload php-fpm
-    tags: php
+    # Установить нужные пакеты php:
+    - name: Install base php packages
+      apt: name={{ item }} state=latest
+      loop:
+        - php-common
+        - php{{ php_version }}-cli
+        - php{{ php_version }}-common
+        - php{{ php_version }}-curl
+        - php{{ php_version }}-fpm
+        - php{{ php_version }}-gd
+        - php{{ php_version }}-imap
+        - php{{ php_version }}-intl
+        - php{{ php_version }}-mbstring
+        - php{{ php_version }}-mysql
+        - php{{ php_version }}-opcache
+        - php{{ php_version }}-readline
+        - php{{ php_version }}-xml
+        - php{{ php_version }}-xsl
+        - php{{ php_version }}-zip
+      notify: reload php-fpm
+      tags: php
 
-  # Установить конфигурации php
-  - name: Install configs for php{{ php_version }}
-    template: src=files/{{ item }}.j2 dest=/{{ item }} backup=yes
-    loop:
-      - etc/php/{{ php_version }}/mods-available/99-forwardlog.ini
-      - etc/php/{{ php_version }}/fpm/php-fpm.conf
-      - etc/php/{{ php_version }}/fpm/pool.d/www.conf
-    notify: reload php-fpm
-    tags: conf
+    # Установить конфигурации php
+    - name: Install configs for php{{ php_version }}
+      template: src=files/{{ item }}.j2 dest=/{{ item }} backup=yes
+      loop:
+        - etc/php/{{ php_version }}/mods-available/99-forwardlog.ini
+        - etc/php/{{ php_version }}/fpm/php-fpm.conf
+        - etc/php/{{ php_version }}/fpm/pool.d/www.conf
+      notify: reload php-fpm
+      tags: conf
 
-  - name: Create link for 99-forwardlog.ini into conf.d (fpm and cli)
-    file:
-      src: "/etc/php/{{ php_version }}/mods-available/99-basis.ini"
-      dest: "{{ item }}/99-basis.ini"
-      state: link
-    loop:
-      - "/etc/php/{{ php_version }}/fpm/conf.d"
-      - "/etc/php/{{ php_version }}/cli/conf.d"
-    notify: reload php-fpm
-    tags: conf
+    - name: Create link for 99-forwardlog.ini into conf.d (fpm and cli)
+      file:
+        src: "/etc/php/{{ php_version }}/mods-available/99-basis.ini"
+        dest: "{{ item }}/99-basis.ini"
+        state: link
+      loop:
+        - "/etc/php/{{ php_version }}/fpm/conf.d"
+        - "/etc/php/{{ php_version }}/cli/conf.d"
+      notify: reload php-fpm
+      tags: conf
 
   handlers:
     - name: reload php-fpm
