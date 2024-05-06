@@ -17,9 +17,11 @@ class Db
     public static function connect(): void
     {
         try {
-            self::$mysqli = new \mysqli(Config::$mysqlHost, Config::$mysqlUser, Config::$mysqlPassword,
+            self::$mysqli = new \mysqli(
+                Config::$mysqlHost, Config::$mysqlUser, Config::$mysqlPassword,
                 Config::$mysqlDb,
-                Config::$mysqlPort);
+                Config::$mysqlPort,
+            );
             if (self::$mysqli->connect_error) {
                 echo self::$mysqli->connect_error;
                 exit();
@@ -40,8 +42,10 @@ class Db
 
     /**
      * низкоуровневая функция, вызывает оригинальную mysqli::query
+     *
      * @param string $query
-     * @param array $params
+     * @param array  $params
+     *
      * @return mixed|\mysqli_result
      * @throws \RuntimeException
      */
@@ -85,14 +89,15 @@ class Db
         $array = preg_split(
             '/(@[nsifuapl12]{1,2}_[a-zA-Z0-9_]*|@[nsifuapl12]{1,2})/u',
             (string) $rawQuery,
-            null,
-            PREG_SPLIT_DELIM_CAPTURE
+            -1,
+            PREG_SPLIT_DELIM_CAPTURE,
         );
         //$anum = count($args);
         $anum = count($params);
         $pnum = floor(count($array) / 2);
         if ($pnum != $anum) {
             self::riseError($rawQuery, "Number of args ($anum) doesn't match number of placeholders ($pnum)");
+
             return false;
         }
 
@@ -114,13 +119,13 @@ class Db
                     $part = self::quote($value);
                     break;
                 case '@s':
-                    $part = "'" . self::$mysqli->real_escape_string($value) . "'";
+                    $part = "'".self::$mysqli->real_escape_string($value)."'";
                     break;
                 case '@i':
-                    $part = (int)$value;
+                    $part = (int) $value;
                     break;
                 case '@f':
-                    $part = (double)$value;
+                    $part = (double) $value;
                     break;
                 case '@a':
                     $part = self::createIn($value);
@@ -129,13 +134,13 @@ class Db
                     $part = self::createSet($value);
                     break;
                 case '@l':
-                    $part = "'%" . self::$mysqli->real_escape_string($value) . "%'";
+                    $part = "'%".self::$mysqli->real_escape_string($value)."%'";
                     break;
                 case '@l1':
-                    $part = "'%" . self::$mysqli->real_escape_string($value) . "'";
+                    $part = "'%".self::$mysqli->real_escape_string($value)."'";
                     break;
                 case '@l2':
-                    $part = "'" . self::$mysqli->real_escape_string($value) . "%'";
+                    $part = "'".self::$mysqli->real_escape_string($value)."%'";
                     break;
                 case '@p':
                     $part = $value;
@@ -143,18 +148,21 @@ class Db
             }
             $outQuery .= $part;
         }
+
         return $outQuery;
     }
 
     /**
      * Завершает работу скрипта с информацией об ошибке на экран пользователя
+     *
      * @param $query
      * @param $errMsg
+     *
      * @throws \RuntimeException
      */
     private static function riseError($query, $errMsg): void
     {
-        $msg = 'SQL error: ' . $query . "\n\n" . $errMsg;
+        $msg = 'SQL error: '.$query."\n\n".$errMsg;
 
         ErrorHandler::reportSqlError($query, $errMsg);
 
@@ -162,7 +170,7 @@ class Db
             throw new \RuntimeException($msg);
         }
 
-        $msgHtml = 'SQL error: ' . $query . htmlspecialchars((string) $errMsg);
+        $msgHtml = 'SQL error: '.$query.htmlspecialchars((string) $errMsg);
         Response::sendErrorMsg($msgHtml);
     }
 
@@ -194,7 +202,9 @@ class Db
 
     /**
      * Возвращает данные в виде массивов с индексами (не ассоциативных с ключами)
+     *
      * @param $query
+     *
      * @return array
      * @throws \Exception
      */
@@ -258,8 +268,10 @@ class Db
 
     /**
      * Возвращает ассоциативный массив, ключи - имена полей из базы
-     * @param $query
+     *
+     * @param       $query
      * @param array ...$params
+     *
      * @return array
      * @throws \Exception
      */
@@ -280,8 +292,10 @@ class Db
 
     /**
      * Возвращает массив с индексами 0, 1, 2...
-     * @param $query
+     *
+     * @param       $query
      * @param array ...$params
+     *
      * @return array
      * @throws \Exception
      */
@@ -317,11 +331,12 @@ class Db
 
     public static function getCount($table, string $where = ''): int
     {
-        $query = "SELECT count(*) FROM " . self::quote($table);
+        $query = "SELECT count(*) FROM ".self::quote($table);
         if ($where) {
-            $query .= " WHERE " . $where;
+            $query .= " WHERE ".$where;
         }
-        return (int)self::getOne($query);
+
+        return (int) self::getOne($query);
     }
 
     /**
@@ -329,11 +344,12 @@ class Db
      * разделённые запятыми. Эти значения затем удобно подставить в какой-нибудь IN(...) запрос.
      * Если у казанной таблице нет значений, тогда этом метод вернёт строку '0', которую также
      * можно безопасно подставить в IN(...)
+     *
      * @return string
      */
     public static function getUniqueValuesComa(string $fieldKey, string $dbTable, string $sqlWhere = '')
     {
-        $query = "SELECT GROUP_CONCAT(" . Db::quote($fieldKey) . ") FROM " . Db::quote($dbTable);
+        $query = "SELECT GROUP_CONCAT(".Db::quote($fieldKey).") FROM ".Db::quote($dbTable);
         if ($sqlWhere) {
             $query .= " WHERE $sqlWhere";
         }
@@ -341,17 +357,19 @@ class Db
         if (!$valuesComa) {
             $valuesComa = '0';
         }
+
         return $valuesComa;
     }
 
     /**
      * Добавляет экранирующие кавычки к имени таблицы.
      * Это нужно сделать аккуратно, т.к. имя таблицы может содержать имя базы через точку
+     *
      * @return string
      */
     public static function quote(string $table): string
     {
-        return '`' . str_replace(".", "`.`", $table) . '`';
+        return '`'.str_replace(".", "`.`", $table).'`';
     }
 
     public static function esc($value): string
@@ -366,14 +384,15 @@ class Db
         }
         $parts = [];
         foreach ($onDuplicateUpdateFieldKeys as $fieldKey) {
-            $parts[] = self::quote($fieldKey) . " = VALUES(" . self::quote($fieldKey) . ")";
+            $parts[] = self::quote($fieldKey)." = VALUES(".self::quote($fieldKey).")";
         }
-        return " ON DUPLICATE KEY UPDATE " . implode(', ', $parts);
+
+        return " ON DUPLICATE KEY UPDATE ".implode(', ', $parts);
     }
 
     public static function insertIgnoreRow(
         array $fieldValues,
-        string $table
+        string $table,
     ) {
         return self::insertRow($fieldValues, $table, false, true);
     }
@@ -383,21 +402,22 @@ class Db
         string $table,
         bool $replace = false,
         $ignore = false,
-        array $onDuplicateUpdateFieldKeys = []
+        array $onDuplicateUpdateFieldKeys = [],
     ) {
-        $fieldKeys = implode(',', array_map(self::class . '::quote', array_keys($fieldValues)));
+        $fieldKeys = implode(',', array_map(self::class.'::quote', array_keys($fieldValues)));
 
         $query = ($replace ? 'REPLACE' : 'INSERT')
-            . (!$replace && $ignore ? ' IGNORE' : '')
-            . " INTO " . self::quote($table)
-            . " ($fieldKeys)"
-            . " VALUES (" . self::createIn($fieldValues) . ")";
+            .(!$replace && $ignore ? ' IGNORE' : '')
+            ." INTO ".self::quote($table)
+            ." ($fieldKeys)"
+            ." VALUES (".self::createIn($fieldValues).")";
 
         if (!$replace && $onDuplicateUpdateFieldKeys) {
             $query .= self::getOnDuplicateQuery($onDuplicateUpdateFieldKeys);
         }
 
         self::query($query);
+
         return self::getInsertId();
     }
 
@@ -408,10 +428,12 @@ class Db
 
     /**
      * Вставляет несколько строк одним запросом, возвращает число вставленных строк
-     * @param array $rows массив строк. Важно: каждая строка должна содержать одинаковый набор полей
+     *
+     * @param array  $rows массив строк. Важно: каждая строка должна содержать одинаковый набор полей
      * @param string $table
-     * @param bool $replace
-     * @param bool $ignore
+     * @param bool   $replace
+     * @param bool   $ignore
+     *
      * @return int
      * @throws \Exception
      */
@@ -420,27 +442,28 @@ class Db
         $table,
         $replace = false,
         $ignore = false,
-        array $onDuplicateUpdateFieldKeys = []
+        array $onDuplicateUpdateFieldKeys = [],
     ) {
         if (!$rows) {
             return 0;
         }
 
         $firstRow = reset($rows);
-        $fieldKeys = implode(',', array_map(self::class . '::quote', array_keys($firstRow)));
+        $fieldKeys = implode(',', array_map(self::class.'::quote', array_keys($firstRow)));
 
         $query = ($replace ? 'REPLACE' : 'INSERT')
-            . (!$replace && $ignore ? ' IGNORE' : '')
-            . " INTO " . self::quote($table)
-            . " (" . $fieldKeys . ")"
-            . " VALUES "
-            . implode(',', array_map(fn($fieldValues) => "(" . self::createIn($fieldValues) . ")", $rows));
+            .(!$replace && $ignore ? ' IGNORE' : '')
+            ." INTO ".self::quote($table)
+            ." (".$fieldKeys.")"
+            ." VALUES "
+            .implode(',', array_map(fn ($fieldValues) => "(".self::createIn($fieldValues).")", $rows));
 
         if (!$replace && $onDuplicateUpdateFieldKeys) {
             $query .= self::getOnDuplicateQuery($onDuplicateUpdateFieldKeys);
         }
 
         self::query($query);
+
         return self::getAffectedRows();
     }
 
@@ -451,6 +474,7 @@ class Db
 
     /**
      * @param  $id
+     *
      * @return int affected rows
      * @throws \Exception
      */
@@ -460,9 +484,9 @@ class Db
             return 0;
         }
 
-        $query = "UPDATE " . self::quote($table)
-            . " SET " . self::createSet($fieldValues)
-            . " WHERE ID = '" . self::$mysqli->real_escape_string($id) . "'";
+        $query = "UPDATE ".self::quote($table)
+            ." SET ".self::createSet($fieldValues)
+            ." WHERE ID = '".self::$mysqli->real_escape_string($id)."'";
 
         self::query($query);
 
@@ -480,7 +504,7 @@ class Db
         }
 
         //Сформируем запрос на выборку данных удаляемой записи(ей)
-        $selectQuery = "SELECT * FROM " . self::quote($tableName) . " WHERE ID = $id";
+        $selectQuery = "SELECT * FROM ".self::quote($tableName)." WHERE ID = $id";
         $data = self::getAll($selectQuery);
         if ($data) {
             $tableId = DbLog::getTableId($tableName);
@@ -514,7 +538,8 @@ class Db
         }
 
         //Физически удаляем требуюемую запись
-        $delQuery = "DELETE FROM " . self::quote($tableName) . " WHERE ID = $id";
+        $delQuery = "DELETE FROM ".self::quote($tableName)." WHERE ID = $id";
+
         return self::query($delQuery);
     }
 
@@ -526,8 +551,8 @@ class Db
         }
 
         $query = "SELECT ID
-                  FROM " . self::quote($tableName) . "
-                  WHERE Name = '" . self::$mysqli->real_escape_string($value) . "'";
+                  FROM ".self::quote($tableName)."
+                  WHERE Name = '".self::$mysqli->real_escape_string($value)."'";
         if ($id = self::getOne($query)) {
             return $id;
         }
@@ -564,6 +589,7 @@ class Db
     public static function explodeByComa(string $filterComaSeparated): array
     {
         $filterComaSeparated = str_replace(['"', "\r", "\n", ";"], ['', '', ',', ','], $filterComaSeparated);
+
         return array_map('trim', explode(',', $filterComaSeparated));
     }
 
@@ -571,12 +597,14 @@ class Db
      * возваращает строку для sql запроса where в виде "($SQLVarName LIKE '1234' OR $SQLVarName LIKE '3456')" с номерами,
      * либо возвращает строку "1", что так же подходит для sql условия where
      * $NormalStrLen можно указать = -1, тогда в SQL запросе вместо LIKE будет =
+     *
      * @param string $filterComaSeparated
      * @param string $sqlVarName
-     * @param int $normalStrLen
-     * @param bool $fullLike
-     * @param bool $isIntField если true, будет применяться intval вместо $this->_app->db->esc
+     * @param int    $normalStrLen
+     * @param bool   $fullLike
+     * @param bool   $isIntField если true, будет применяться intval вместо $this->_app->db->esc
      * @param string $default
+     *
      * @return string
      */
     public static function getSqlWhereSeparatedByComa(
@@ -585,7 +613,7 @@ class Db
         $normalStrLen = 0,
         $fullLike = false,
         $isIntField = false,
-        $default = '1'
+        $default = '1',
     ) {
         $query = $default; //Условие для WHERE принимаем за 1. Будет изменено
 
@@ -610,8 +638,8 @@ class Db
                 [$from, $to] = explode('-', (string) $elem, 2);
                 if (is_numeric($from) && is_numeric($to)) {
 
-                    $fromInt = (int)$from;
-                    $toInt = (int)$to;
+                    $fromInt = (int) $from;
+                    $toInt = (int) $to;
                     $diff = $toInt - $fromInt;
                     if ($diff >= 0 && $diff <= 1000) {
                         $minStrLen = strlen($from);
@@ -663,29 +691,30 @@ class Db
             //Добавим элементы запроса из эквивалентных значений
             if (count($valuesEqual) === 1) {
                 //Найден всего один элемент
-                $queryArr[] = $sqlVarName . " = '" . self::$mysqli->real_escape_string($valuesEqual[0]) . "'";
+                $queryArr[] = $sqlVarName." = '".self::$mysqli->real_escape_string($valuesEqual[0])."'";
             } elseif (count($valuesEqual) > 1) {
                 //Найдено множество элементов
                 //Внесём в запрос в виде IN
-                $queryArr[] = $sqlVarName . " IN (" . self::createIn($valuesEqual) . ")";
+                $queryArr[] = $sqlVarName." IN (".self::createIn($valuesEqual).")";
             }
 
             //Добавим запрос элементы типа LIKE
             if (count($valuesLike)) {
                 foreach ($valuesLike as $val) {
                     if ($fullLike) {
-                        $queryArr[] = $sqlVarName . " LIKE '%" . self::$mysqli->real_escape_string($val) . "%'";
+                        $queryArr[] = $sqlVarName." LIKE '%".self::$mysqli->real_escape_string($val)."%'";
                     } else {
-                        $queryArr[] = $sqlVarName . " LIKE '" . self::$mysqli->real_escape_string($val) . "%'";
+                        $queryArr[] = $sqlVarName." LIKE '".self::$mysqli->real_escape_string($val)."%'";
                     }
                 }
             }
 
             if (count($queryArr)) {
-                $query = "(" . implode(' OR ', $queryArr) . ")";
+                $query = "(".implode(' OR ', $queryArr).")";
             }
 
         }
+
         return $query;
     }
 
@@ -693,10 +722,12 @@ class Db
      * Склеивает несколько строк из в один большой SQL WHERE блок через указанный разделитель ($separator)
      * Особенность в том, что перед склейкой этот метод убирает пустые элементы
      * Метод с переменным числом параметров
-     * @param string $separator
-     * @param string $sqlWhere1
-     * @param string $sqlWhere2
+     *
+     * @param string      $separator
+     * @param string      $sqlWhere1
+     * @param string      $sqlWhere2
      * @param null|string $_ [optional]
+     *
      * @return string
      */
     public static function maybeImplodeSqlWheres($separator, $sqlWhere1, $sqlWhere2, $_ = null)
@@ -711,8 +742,9 @@ class Db
             return '';
         }
 
-        $separator = ' ' . trim($separator) . ' ';
-        return '(' . implode($separator, $argv) . ')';
+        $separator = ' '.trim($separator).' ';
+
+        return '('.implode($separator, $argv).')';
     }
 
     public static function getSqlWhereDates(string $sqlVarName, $dateFrom, $dateUntil, $asInterval = false)
@@ -730,22 +762,22 @@ class Db
 
         if ($asInterval) {
             if ($dateFrom !== '') {
-                $query[] = $sqlVarName . "Until >= '" . self::$mysqli->real_escape_string($dateFrom) . "'";
+                $query[] = $sqlVarName."Until >= '".self::$mysqli->real_escape_string($dateFrom)."'";
             }
             if ($dateUntil !== '') {
-                $query[] = $sqlVarName . "From <= '" . self::$mysqli->real_escape_string($dateUntil) . "'";
+                $query[] = $sqlVarName."From <= '".self::$mysqli->real_escape_string($dateUntil)."'";
             }
         } else {
             if ($dateFrom !== '') {
-                $query[] = $sqlVarName . " >= '" . self::$mysqli->real_escape_string($dateFrom) . "'";
+                $query[] = $sqlVarName." >= '".self::$mysqli->real_escape_string($dateFrom)."'";
             }
             if ($dateUntil !== '') {
-                $query[] = $sqlVarName . " <= '" . self::$mysqli->real_escape_string($dateUntil) . "'";
+                $query[] = $sqlVarName." <= '".self::$mysqli->real_escape_string($dateUntil)."'";
             }
         }
 
         if (count($query)) {
-            $query = '(' . implode(' AND ', $query) . ')';
+            $query = '('.implode(' AND ', $query).')';
         } else {
             $query = '1';
         }
@@ -770,13 +802,14 @@ class Db
 
     public static function truncate($table): void
     {
-        self::query("TRUNCATE TABLE " . Db::quote($table));
+        self::query("TRUNCATE TABLE ".Db::quote($table));
     }
 
     public static function escString($value)
     {
-        $value = (string)$value;
-        return "'" . self::esc($value) . "'";
+        $value = (string) $value;
+
+        return "'".self::esc($value)."'";
     }
 
     public static function createIn($data)
@@ -790,7 +823,7 @@ class Db
                 $value = 'NULL';
             } elseif (!is_numeric($value) || str_starts_with($value, "0")) {
                 // Если это НЕ число или это чисно, но начинаетс с 0 - тогда оборачиваем в кавычки
-                $value = "'" . self::$mysqli->real_escape_string($value) . "'";
+                $value = "'".self::$mysqli->real_escape_string($value)."'";
             }
         }
 
@@ -810,11 +843,12 @@ class Db
             } elseif ($value === null) {
                 $sqlValue = 'NULL';
             } else {
-                $sqlValue = "'" . self::$mysqli->real_escape_string($value) . "'";
+                $sqlValue = "'".self::$mysqli->real_escape_string($value)."'";
             }
 
-            $query[] = self::quote($key) . '=' . $sqlValue;
+            $query[] = self::quote($key).'='.$sqlValue;
         }
+
         return implode(',', $query);
     }
 
@@ -824,13 +858,13 @@ class Db
         foreach ($keyValues as $fieldKey => $value) {
             $fieldSqlWhere = Db::quote($fieldKey);
             if (is_int($value) || is_float($value)) {
-                $fieldSqlWhere .= ' = ' . $value;
+                $fieldSqlWhere .= ' = '.$value;
             } elseif (is_array($value)) {
                 $fieldSqlWhere .= Db::parse(' IN (@a)', $value);
             } elseif ($value === null) {
                 $fieldSqlWhere .= " IS NULL";
             } else {
-                $fieldSqlWhere .= " = " . Db::escString($value);
+                $fieldSqlWhere .= " = ".Db::escString($value);
             }
 
             $where[] = $fieldSqlWhere;
