@@ -19,12 +19,14 @@ class Table implements \JsonSerializable
      * Выводить ли блок над таблицей с кол-вом найденных записей, пажинацией, кнопкой экспорта в Excel и проч?
      * По умолчанию false, т.к. для таблиц создаваемых напрямую из класса Table это наиболее удобное поведение.
      * Но для ModuleAbstract и Subtable и ReportAbstract этот флаг переопределён в true
+     *
      * @var bool
      */
     public $allowTablePrintHeadBlock = false;
 
     /**
      * Печатать ли сообщение "Total records found: xxx" (где xxx - результат вызова $this->getTableTotalRecordsFound())
+     *
      * @var bool
      */
     public $allowTablePrintTotalRecordsFound = true;
@@ -32,12 +34,14 @@ class Table implements \JsonSerializable
     /**
      * Если установить в true, то даже при пустых данных будет выведна структура таблицы и thead.
      * Если же false (по умолчанию), то при пустых данных будет выведено сообщение textTableEmpty (см. ниже)
+     *
      * @var bool
      */
     public $allowTablePrintTheadIfEmpty = false;
 
     /**
      * Прикреплять ли шапку таблицы к верху экрана с помощью position: sticky
+     *
      * @var bool
      */
     public $tableSticky = true;
@@ -54,6 +58,7 @@ class Table implements \JsonSerializable
     /**
      * путь по которому таблица будет делать ajax запрос, чтобы перезагрузить себя с сервера
      * например при пажинации или при применении фильтров
+     *
      * @var string
      */
     public $tableReloadUrl;
@@ -61,6 +66,7 @@ class Table implements \JsonSerializable
     /**
      * Разрешать ли перезагрузку отдельной строки по data-rowid?
      * Поддержка загрузки одной строки должна быть реализована в классах потомках ModuleAbstract и ReportAbstract
+     *
      * @var bool
      */
     public $allowTableReloadRow = false;
@@ -68,36 +74,42 @@ class Table implements \JsonSerializable
     /**
      * модуль, на который автоматически делать ссылки при двойном клике по строке
      * (в тег tr будет добавлен атрибут data-linkid)
+     *
      * @var string
      */
     public $tableLinkModule;
 
     /**
      * Имена полей, которые должны стать ссылками на внешний модуль $this->tableLinkModule
+     *
      * @var array
      */
     public $tableLinkFieldKeys = ['ID', 'Name'];
 
     /**
      * ключевое поле поле, в котором хранится id для подстановки ссылки при использовании tableLinkModule и tableLinkFieldKeys
+     *
      * @var string
      */
     public $tableLinkIdFieldKey = 'ID';
 
     /**
      * дополнительные параметры, которые будут добавлены к ссылкам генерируемым по трём предыдущим свойствам
+     *
      * @var array
      */
     public $tableLinkUrlParams = [];
 
     /**
      * Делать ли ссылки на ключивых полях описанных выше с атрибутом target=_blank?
+     *
      * @var bool
      */
     public $tableLinkBlank = false;
 
     /**
      * Делать ли ссылки на ключевых полях с хешем #ajax
+     *
      * @var bool
      */
     public $tableLinkModuleDialog = false;
@@ -105,6 +117,7 @@ class Table implements \JsonSerializable
     /**
      * Массив ключей полей, которые следует отображать в нужном порядке.
      * Если это поле null, будут выведены все поля.
+     *
      * @var array|null
      */
     public $tableFieldsShow;
@@ -119,30 +132,35 @@ class Table implements \JsonSerializable
 
     /**
      * Системные поля, которые должны быть в начале таблицы, не выводятся в Excel
+     *
      * @var Fieldset|\Light\Field\FieldAbstract[]
      */
     private $fieldsetFirst;
 
     /**
      * Системные поля, которые должны быть в конце таблицы, не выводятся в Excel
+     *
      * @var Fieldset|\Light\Field\FieldAbstract[]
      */
     private $fieldsetLast;
 
     /**
      * Двумерный массив данных. Задаётся с помощью setTableData()
+     *
      * @var array
      */
     protected $tableData = [];
 
     /**
      * Статические данные для total строки. Задаётся с помощью setTableDataTotal()
+     *
      * @var array
      */
     protected $tableDataTotal = [];
 
     /**
      * Параметры таблицы, которые хранятся в базе в user_tableparam
+     *
      * @var TableUserParamsRepository $tableUserParams
      */
     protected $tableUserParams;
@@ -154,7 +172,7 @@ class Table implements \JsonSerializable
         } else {
             $tableClass = static::class;
             if (str_starts_with($tableClass, 'class@anonymous')) {
-                $tableClass = 'Table' . uniqid('Table', true);
+                $tableClass = 'Table'.uniqid('Table', true);
             }
             $this->tableName = str_replace('\\', '_', $tableClass);
         }
@@ -169,7 +187,7 @@ class Table implements \JsonSerializable
         // Если объект не задан явно, попробуем найти соответсвующий класс рядом с текущим файлом модуля
         $tableClass = static::class;
         if (!str_starts_with($tableClass, 'class@anonymous')) {
-            $objClass = $tableClass . 'Obj';
+            $objClass = $tableClass.'Obj';
             if (Misc::classExists($objClass)) {
                 //Файл найден, создаём объект именно этого класса
                 return new $objClass();
@@ -180,6 +198,7 @@ class Table implements \JsonSerializable
         $obj = new SimpleObj();
         $obj->setDbTable(strtolower((string) $this->getTableName()));
         $obj->setMasterModuleForDbLog(Misc::getModule($this));
+
         return $obj;
     }
 
@@ -193,7 +212,7 @@ class Table implements \JsonSerializable
 
     protected function getTableFindIdFromRequest()
     {
-        $key = $this->getTableName() . '_findid';
+        $key = $this->getTableName().'_findid';
         // Проверяем REQUEST, а не GET, т.к. если происходит ajax обновление страницы с помощью js вызова tables.get('...').reload({'TableName_findid' => '...'})
         //в этом случае параметр приходит в POST
         return $_REQUEST[$key] ?? null;
@@ -224,6 +243,7 @@ class Table implements \JsonSerializable
             // Лениво инициализируем при первом обращении
             $this->fieldsetFirst = new Fieldset();
         }
+
         return $this->fieldsetFirst;
     }
 
@@ -236,11 +256,13 @@ class Table implements \JsonSerializable
             // Лениво инициализируем при первом обращении
             $this->fieldsetLast = new Fieldset();
         }
+
         return $this->fieldsetLast;
     }
 
     /**
      * @desc проверяет переданную строку на соответствие реальному набору полей. Заносит существующие в FieldsShow
+     *
      * @param string $fieldsKeysString ключи полей разделённые знаком |
      */
     public function setTableFieldsShow($fieldsKeysString): void
@@ -264,6 +286,7 @@ class Table implements \JsonSerializable
 
     /**
      * Возвращает филдсет с полями, которые реально отображаются
+     *
      * @return Fieldset
      */
     public function getFieldsetShowed()
@@ -294,14 +317,15 @@ class Table implements \JsonSerializable
                 'nameTable' => '<input type="checkbox" class="cb-all">',
                 'getHtmlFunction' => function ($value, array $data) use ($class) {
                     if (!empty($data['ID'])) {
-                        return '<input type="checkbox" class="' . $class . '" value="' . $data[$this->tableCheckboxValueFieldKey] . '">';
+                        return '<input type="checkbox" class="'.$class.'" value="'.$data[$this->tableCheckboxValueFieldKey].'">';
                     }
 
                     return '';
                 },
-            ]
+            ],
         );
         $this->getFieldsetFirst()->addField($checkboxField);
+
         return $checkboxField;
     }
 
@@ -314,20 +338,22 @@ class Table implements \JsonSerializable
                 'nameTable' => '',
                 'getHtmlFunction' => function ($value, array $data) use ($class) {
                     if (!empty($data['ID'])) {
-                        return '<input type="radio" class="' . $class . '" value="' . $data[$this->tableCheckboxValueFieldKey] . '" name="Radio-' . $this->getTableName() . '">';
+                        return '<input type="radio" class="'.$class.'" value="'.$data[$this->tableCheckboxValueFieldKey].'" name="Radio-'.$this->getTableName().'">';
                     }
 
                     return '';
                 },
-            ]
+            ],
         );
         $this->getFieldsetFirst()->addField($checkboxField);
+
         return $checkboxField;
     }
 
     /**
      * Проверяет, отображется ли поле в режиме таблицы?
      * Поле должно иметь mode F::MODE_LIST и быть среди отображаемых в текущих настроках Table layout settings (массив $this->tableFieldsShow)
+     *
      * @return bool
      */
     public function isFieldShowed(string $fieldKey): bool
@@ -359,6 +385,7 @@ class Table implements \JsonSerializable
      * Возвращает имя таблицы, которое будет использовано для записи настроек пользователя в user_tableparam и user_tablelayout
      * Проблема возникает с подтаблицами, которые могут называться одинаково в разных модулях, из-за чего настройки постоянно перезаписывают друг друга
      * Этот метод будет переопределён в классе Subtable
+     *
      * @return string
      */
     protected function getTableNameForSettings()
@@ -373,19 +400,19 @@ class Table implements \JsonSerializable
     public function getHtmlTable()
     {
         return $this->getHtmlTableDivWrapper()
-            . $this->getHtmlTableForAjax()
-            . '</div>';
+            .$this->getHtmlTableForAjax()
+            .'</div>';
     }
 
     protected function getHtmlTableDivWrapper()
     {
         $tableName = $this->getTableName();
 
-        $id = ' id="' . $tableName . '-table-div"';
-        $dataTablename = ' data-tablename="' . $tableName . '"';
+        $id = ' id="'.$tableName.'-table-div"';
+        $dataTablename = ' data-tablename="'.$tableName.'"';
         $linkmodule = '';
         if ($this->tableLinkModule) {
-            $linkmodule = ' data-linkmodule="' . htmlspecialchars(Misc::getModule($this->tableLinkModule)) . '"';
+            $linkmodule = ' data-linkmodule="'.htmlspecialchars(Misc::getModule($this->tableLinkModule)).'"';
         }
 
         $dataLinkBlank = '';
@@ -400,12 +427,12 @@ class Table implements \JsonSerializable
 
         $reloadurl = '';
         if ($this->tableReloadUrl) {
-            $reloadurl = ' data-reloadurl="' . htmlspecialchars(Misc::getModule($this->tableReloadUrl)) . '"';
+            $reloadurl = ' data-reloadurl="'.htmlspecialchars(Misc::getModule($this->tableReloadUrl)).'"';
         }
 
         $ajaxChangeFieldUrl = $this->getTableAjaxChangeFieldUrl();
         if ($ajaxChangeFieldUrl) {
-            $ajaxChangeFieldUrl = ' data-ajaxchangefieldurl="' . $ajaxChangeFieldUrl . '"';
+            $ajaxChangeFieldUrl = ' data-ajaxchangefieldurl="'.$ajaxChangeFieldUrl.'"';
         }
 
         $allowTableReloadUrl = '';
@@ -413,12 +440,13 @@ class Table implements \JsonSerializable
             $allowTableReloadUrl = ' data-allowtablereloadurl=1';
         }
 
-        return '<div class="table-div"' . $id . $dataTablename . $linkmodule . $dataLinkAjax . $dataLinkBlank . $reloadurl . $ajaxChangeFieldUrl . $allowTableReloadUrl . '>';
+        return '<div class="table-div"'.$id.$dataTablename.$linkmodule.$dataLinkAjax.$dataLinkBlank.$reloadurl.$ajaxChangeFieldUrl.$allowTableReloadUrl.'>';
     }
 
 
     /**
      * Возвращает Fieldset из всех отображаемых полей включая _fieldsetFirst и _fieldsetLast
+     *
      * @return array
      */
     protected function getAllFields(): array
@@ -516,7 +544,8 @@ class Table implements \JsonSerializable
     protected function getHtmlTableTotalRecordsFound()
     {
         $msg = Config::$lang === 'ru' ? 'Найдено' : 'Total rows';
-        return '<span class="table-totalrows">' . $msg . ': ' . $this->getTableTotalRecordsFound() . '</span>';
+
+        return '<span class="table-totalrows">'.$msg.': '.$this->getTableTotalRecordsFound().'</span>';
     }
 
     protected function getHtmlTableHeadBlock()
@@ -539,17 +568,17 @@ class Table implements \JsonSerializable
         if (method_exists($this, 'getTablePagesHtml')) {
             /** @var $this \Light\Traits\TablePaginatable */
             $outHtml .= $this->getTablePagesHtml()
-                . $this->getTableHtmlShowAll();
+                .$this->getTableHtmlShowAll();
         }
 
         /** @var $this \Light\Traits\TableExcelExportable */
         if (property_exists($this, 'allowExportToExcel') && $this->allowExportToExcel) {
             /** @var $this \Light\Traits\TableExcelExportable */
             $exportToExcelText = Config::$lang === 'ru' ? 'Экспорт в Excel' : 'Export to Excel';
-            $outHtml .= '<span class="table-excel"><a href="' . $this->tableReloadUrl . '&xls=1">'
-                . Ico::excel()
-                . ' ' . $exportToExcelText
-                . '</a></span>';
+            $outHtml .= '<span class="table-excel"><a href="'.$this->tableReloadUrl.'&xls=1">'
+                .Ico::excel()
+                .' '.$exportToExcelText
+                .'</a></span>';
         }
 
         /** @var $this \Light\Traits\TableSortable */
@@ -584,7 +613,7 @@ class Table implements \JsonSerializable
 
     private function getHtmlTableOpenTableTag(array $allFields)
     {
-        $dataTableName = ' data-tablename="' . $this->getTableName() . '"';
+        $dataTableName = ' data-tablename="'.$this->getTableName().'"';
 
         $class = 'table';
         if ($this->tableSticky) {
@@ -594,7 +623,7 @@ class Table implements \JsonSerializable
         $dataLinkUrlParams = '';
         if ($this->tableLinkUrlParams) {
             $dataLinkUrlParams = http_build_query($this->tableLinkUrlParams);
-            $dataLinkUrlParams = ' data-linkurlparams="' . htmlspecialchars($dataLinkUrlParams) . '"';
+            $dataLinkUrlParams = ' data-linkurlparams="'.htmlspecialchars($dataLinkUrlParams).'"';
         }
 
         $widthAttr = '';
@@ -604,7 +633,7 @@ class Table implements \JsonSerializable
             $fieldsWidth = $this->tableUserParams->loadFieldsWidth();
             if (is_array($fieldsWidth)) {
                 // Проверим, есть ли хотя бы для одного из отображаемых полей настрока пользователя с не нулевой шириной?
-                $hasWidthSettings = A::some($allFields, fn($field) => isset($fieldsWidth[$field->key]) && $fieldsWidth[$field->key]);
+                $hasWidthSettings = A::some($allFields, fn ($field) => isset($fieldsWidth[$field->key]) && $fieldsWidth[$field->key]);
                 if ($hasWidthSettings) {
                     // Пользователь задал какие-то настройки хотя бы для одного поля - значит всю таблицу переводим в режим layout:fixed
                     $class .= ' layoutfixed';
@@ -615,21 +644,22 @@ class Table implements \JsonSerializable
                     foreach ($allFields as $field) {
                         // Если у поля не была задана пользовательская настройка ширины и нет настройки ширины из параметров поля
                         // то примем 150px, чтобы зарезервировать хоть какое-то место под это поле в общей ширине таблицы
-                        $fieldWidth = (int)($field->tableWidthHtml ?: 150);
+                        $fieldWidth = (int) ($field->tableWidthHtml ?: 150);
                         $totalWidth += $fieldWidth;
                     }
-                    $widthAttr = ' width="' . $totalWidth . '"';
+                    $widthAttr = ' width="'.$totalWidth.'"';
                 }
             }
         }
 
-        $class = ' class="' . $class . '"';
+        $class = ' class="'.$class.'"';
 
-        return '<table' . $dataTableName . $class . $dataLinkUrlParams . $widthAttr . '>';
+        return '<table'.$dataTableName.$class.$dataLinkUrlParams.$widthAttr.'>';
     }
 
     /**
      * Возвращает массив из строк, которые должны быть помещены в thead. Обычно это одна строка
+     *
      * @return string
      */
     protected function getHtmlTableThead(array $allFields)
@@ -638,22 +668,22 @@ class Table implements \JsonSerializable
         /** @var FieldAbstract $field */
         foreach ($allFields as $field) {
             $title = $field->getTitle();
-            $title = $title ? ' title="' . htmlspecialchars($title) . '"' : '';
+            $title = $title ? ' title="'.htmlspecialchars($title).'"' : '';
 
             $width = $field->getTableWidthHtml();
-            $width = $width ? ' width="' . htmlspecialchars($width) . '"' : '';
-            $fieldKey = ' data-fieldkey="' . htmlspecialchars((string) $field->key) . '"';
-            $dataTotal = $field->total ? ' data-total="' . $field->getType() . '"' : '';
+            $width = $width ? ' width="'.htmlspecialchars($width).'"' : '';
+            $fieldKey = ' data-fieldkey="'.htmlspecialchars((string) $field->key).'"';
+            $dataTotal = $field->total ? ' data-total="'.$field->getType().'"' : '';
 
             $cssClass = '';
             if ($field->tableAlign) {
-                $cssClass = 'ta' . $field->tableAlign[0]; //получается 'tac' (если center) или 'tar' (если right)
+                $cssClass = 'ta'.$field->tableAlign[0]; //получается 'tac' (если center) или 'tar' (если right)
                 $cssClass = " class=$cssClass";
             }
 
-            $outHtml .= '<th' . $title . $width . $fieldKey . $dataTotal . $cssClass . '>'
-                . $this->getHtmlTableTheadThContent($field)
-                . '</th>';
+            $outHtml .= '<th'.$title.$width.$fieldKey.$dataTotal.$cssClass.'>'
+                .$this->getHtmlTableTheadThContent($field)
+                .'</th>';
         }
         $outHtml .= '</tr></thead>';
 
@@ -671,7 +701,9 @@ class Table implements \JsonSerializable
     /**
      * Метод переопределяется в ModuleAbstract, т.к. там данные не находятся в массиве $this->tableData,
      * а лениво подгружаются из результатов mysqli запроса
+     *
      * @param int $rowNum
+     *
      * @return array
      */
     protected function getTableRowData($rowNum)
@@ -715,6 +747,7 @@ class Table implements \JsonSerializable
             $value = $field->getCalculatedValue($value, $rowData, true);
             $rowDataCalculated[$fieldKey] = $value;
         }
+
         return $rowDataCalculated;
     }
 
@@ -722,6 +755,7 @@ class Table implements \JsonSerializable
      * Метод для переопределения в классах потомках.
      * Он вызывается на всех строках, кроме последней total строки, поэтому $rowNum указан как int
      * (для последней total строки агрумент $rowNum был бы 'total', но этот метод не вызывается для total строки)
+     *
      * @return string
      */
     protected function getTableRowCssClass(array $rowDataCalculated, int $rowNum): string
@@ -743,6 +777,7 @@ class Table implements \JsonSerializable
      * Возвращает url-параметры для строки. Они будут вставлены в аттрибут data-urlparams в теге tr,
      * Эти url-параметры в итоге будут использованы при двойном клике на строке (см. Table.js)
      * и при клике на одну из ссылок $this->_listLinkFieldKeys
+     *
      * @return array
      */
     protected function getTableRowLinkUrlParams(array $rowDataCalculated, int $rowNum): array
@@ -762,6 +797,7 @@ class Table implements \JsonSerializable
 
     /**
      * Метод переопределяется в Subtable, когда в режиме редактирования нужно выводить поля в режиме редактирования
+     *
      * @return string
      */
     protected function getHtmlTableCell(array $rowDataCalculated, int $rowNum, F $field, array $fullLinkParams): string
@@ -825,22 +861,22 @@ class Table implements \JsonSerializable
 
         if (!empty($rowDataCalculated['Color'])) {
             //Если существует поле с зарезервированным именем Color, то внесём этот цвет в класс строки
-            $cssClass .= ' color' . $rowDataCalculated['Color'];
+            $cssClass .= ' color'.$rowDataCalculated['Color'];
         }
 
-        $cssClass = $cssClass ? ' class="' . $cssClass . '"' : '';
+        $cssClass = $cssClass ? ' class="'.$cssClass.'"' : '';
 
-        $dataLinkId = isset($rowDataCalculated[$this->tableLinkIdFieldKey]) ? ' data-linkid="' . $rowDataCalculated[$this->tableLinkIdFieldKey] . '"' : '';
+        $dataLinkId = isset($rowDataCalculated[$this->tableLinkIdFieldKey]) ? ' data-linkid="'.$rowDataCalculated[$this->tableLinkIdFieldKey].'"' : '';
 
-        $dataRowId = isset($rowDataCalculated['ID']) ? ' data-rowid="' . $rowDataCalculated['ID'] . '"' : '';
+        $dataRowId = isset($rowDataCalculated['ID']) ? ' data-rowid="'.$rowDataCalculated['ID'].'"' : '';
 
         $rowLinkUrlParams = $this->getTableRowLinkUrlParams($rowDataCalculated, $rowNum);
-        $dataLinkUrlParams = $rowLinkUrlParams ? ' data-linkurlparams="' . htmlspecialchars(http_build_query($rowLinkUrlParams)) . '"' : '';
+        $dataLinkUrlParams = $rowLinkUrlParams ? ' data-linkurlparams="'.htmlspecialchars(http_build_query($rowLinkUrlParams)).'"' : '';
 
         $fullLinkParams = $this->tableLinkUrlParams + $rowLinkUrlParams;
 
         $tagParams = $this->getTableRowTagParams($rowDataCalculated, $rowNum);
-        $tagParams = $tagParams ? ' ' . $tagParams : '';
+        $tagParams = $tagParams ? ' '.$tagParams : '';
 
         $outHtml = "<tr{$cssClass}{$dataLinkId}{$dataRowId}{$dataLinkUrlParams}{$tagParams}>";
 
@@ -862,22 +898,22 @@ class Table implements \JsonSerializable
 
                 // Добавим этот класс внутрь содержимого, обернув содержимое дополнительным div
                 if ($field->viewMaxWidth) {
-                    $divCssClass = 'overflow' . $field->viewMaxWidth;
+                    $divCssClass = 'overflow'.$field->viewMaxWidth;
                     $tdHtml = "<div class=\"$divCssClass\">$tdHtml</div>";
                 }
             }
 
             if ($field->tableAlign) {
-                $tdCssClass .= ' ta' . $field->tableAlign[0]; //получается 'tac' (если center) или 'tar' (если right)
+                $tdCssClass .= ' ta'.$field->tableAlign[0]; //получается 'tac' (если center) или 'tar' (если right)
             }
 
-            $tdCssClass = $tdCssClass ? ' class="' . $tdCssClass . '"' : '';
+            $tdCssClass = $tdCssClass ? ' class="'.$tdCssClass.'"' : '';
 
             $tdTitle = $field->getViewTitle($value, $rowDataCalculated, true);
-            $tdTitle = $tdTitle ? ' title="' . htmlspecialchars((string) $tdTitle) . '"' : '';
+            $tdTitle = $tdTitle ? ' title="'.htmlspecialchars((string) $tdTitle).'"' : '';
 
             $tdTagParams = $field->getViewTagParams($value, $rowDataCalculated, true);
-            $tdTagParams = $tdTagParams ? ' ' . $tdTagParams : '';
+            $tdTagParams = $tdTagParams ? ' '.$tdTagParams : '';
 
             $outHtml .= "<td{$tdCssClass}{$tdTitle}{$tdTagParams}>{$tdHtml}</td>";
 
@@ -890,8 +926,10 @@ class Table implements \JsonSerializable
 
     /**
      * Возвращает значения для total строки таблицы
+     *
      * @param array|null $fields опционально можно передать массив полей, по которым делать подсчёт
-     * этот массив передаётся явно при рендеринге в html для оптимизации
+     *                           этот массив передаётся явно при рендеринге в html для оптимизации
+     *
      * @return array
      */
     public function getTableDataTotal(array $dataCalculated, array $fields = null): array
@@ -936,6 +974,7 @@ class Table implements \JsonSerializable
      * Функция проверяет, нужно ли выводить total строку?
      * Этот метод переопределяется в Subtable, где в режиме Edit строка total выводится обязательно,
      * если есть хотя бы одно поле со свойством total
+     *
      * @return bool
      */
     public function hasTotalRow(array $dataTotal): bool
@@ -945,7 +984,7 @@ class Table implements \JsonSerializable
         }
         // По умолчанию логика такая: если есть данные $dataTotal (которые собраны на основе колонок или заданы вручную)
         // то total строку выводить нужно!
-        return (bool)$dataTotal;
+        return (bool) $dataTotal;
     }
 
     protected function getHtmlTableTrTotal(array $allFields, array $dataCalculated)
@@ -971,10 +1010,10 @@ class Table implements \JsonSerializable
                 $tdCssClass = $field->getViewCssClass($totalValue, $dataTotal, 'total');
             }
             if ($field->tableAlign) {
-                $tdCssClass .= ' ta' . $field->tableAlign[0]; //получается 'tac' (если center) или 'tar' (если right)
+                $tdCssClass .= ' ta'.$field->tableAlign[0]; //получается 'tac' (если center) или 'tar' (если right)
             }
 
-            $tdCssClass = $tdCssClass ? ' class="' . $tdCssClass . '"' : '';
+            $tdCssClass = $tdCssClass ? ' class="'.$tdCssClass.'"' : '';
 
             // Формируем html представление только для тех ячеек, у которых реально определено значнеие в массиве $totalRowData
             // иначе можем получить total строку из большого кол-ва значений по умолчанию (нули, No, и т.п)
@@ -1048,6 +1087,7 @@ class Table implements \JsonSerializable
      * Тут может быть нюанс: если поле типа MONEY_WITH_CURRENCY, то считать total нужно только в том случае, если все
      * значения имеют одинаковую валюту.
      * Также при типе MONEY_WITH_CURRENCY меняется тип возвращаемого значения - это уже не просто число, но строка
+     *
      * @return float|string $total
      */
     public function tableCalcFieldTotal(F $field, array $dataCalculated)
@@ -1071,6 +1111,7 @@ class Table implements \JsonSerializable
             foreach ($amountPerCurrency as $currencyIso => $totalAmount) {
                 $resultAmountsWithCurrency[] = "$currencyIso $totalAmount";
             }
+
             // Возвращаем как groupconcat поле
             return implode("\n", $resultAmountsWithCurrency);
         }
@@ -1088,8 +1129,8 @@ class Table implements \JsonSerializable
             } else {
                 $amountsLines = [$cellText];
             }
-            foreach($amountsLines as $amountValue) {
-                $totalAmount += round($amountValue, $precision);
+            foreach ($amountsLines as $amountValue) {
+                $totalAmount += round((float) $amountValue, $precision);
             }
         }
 
@@ -1128,14 +1169,14 @@ class Table implements \JsonSerializable
         $query = "INSERT INTO user_tableparam (
                       CreatedBy,
                       TableName,
-                      " . Db::quote($paramName) . "
+                      ".Db::quote($paramName)."
 
                   ) VALUES (
-                         " . User::getId() . "
-                      , '" . Db::esc($tableName) . "'
-                      , '" . Db::esc($value) . "'
+                         ".User::getId()."
+                      , '".Db::esc($tableName)."'
+                      , '".Db::esc($value)."'
 
-                  ) ON DUPLICATE KEY UPDATE " . Db::quote($paramName) . " = VALUES(" . $paramName . ")";
+                  ) ON DUPLICATE KEY UPDATE ".Db::quote($paramName)." = VALUES(".$paramName.")";
 
         Db::query($query);
     }
@@ -1147,14 +1188,17 @@ class Table implements \JsonSerializable
                 "SELECT * 
                  FROM user_tableparam
                  WHERE TableName = @s AND CreatedBy = @i"
-                , $this->getTableNameForSettings()
-                , User::getId()
+                ,
+                $this->getTableNameForSettings()
+                ,
+                User::getId(),
             );
         }
     }
 
     /**
      * Сохраняет переданный параметр/парамтры в таблицу user_tableparam
+     *
      * @param string $name
      * @param string $value
      */
@@ -1200,6 +1244,7 @@ class Table implements \JsonSerializable
             return '';
         }
         $linkModule = Misc::getModule($this->tableLinkModule);
-        return Link::create($linkModule)->action(AjaxChangeField::class)->getHref() . '&id=';
+
+        return Link::create($linkModule)->action(AjaxChangeField::class)->getHref().'&id=';
     }
 }
