@@ -742,7 +742,7 @@ class Db
             return '';
         }
 
-        $separator = ' '.trim($separator).' ';
+        $separator = ' '.trim((string)$separator).' ';
 
         return '('.implode($separator, $argv).')';
     }

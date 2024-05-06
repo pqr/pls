@@ -59,7 +59,7 @@ abstract class PaymentModuleAbstract extends ModuleAbstract
             $customerOrVendor = 'Vendor';
         }
 
-        $value = trim($value);
+        $value = trim((string)$value);
 
         $customerOrVendorId = (int)$_GET[$customerOrVendor . 'ID'];
         $accountId = (int)$_GET[$customerOrVendor . 'AccountID'];

@@ -1340,7 +1340,7 @@ abstract class FieldAbstract implements \JsonSerializable
                 $result .= " $callResult";
             }
         } else {
-            $viewCssClass = trim($viewCssClass);
+            $viewCssClass = trim((string)$viewCssClass);
             if ($viewCssClass) {
                 $result .= ' ' . $viewCssClass;
             }
