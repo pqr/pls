@@ -548,7 +548,7 @@ class CInvoice extends InvoiceModuleAbstract
         try {
             $res = $client->post($url, ['body' => $body]);
         } catch (RequestException $e) {
-            $msg = 'Не удалось подключиться к серверу 1С.<br>' . $e->getMessage();
+            $msg = 'Не удалось подключиться к серверу 1С.<br>' . $e->getMessage() . '<br>' . $e->getResponse()?->getBody()->getContents();
             Session::flashError($msg);
             Session::flashInfo(
                 'Отправленные данные:<pre>' . json_encode(
