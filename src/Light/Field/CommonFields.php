@@ -17,6 +17,7 @@ class CommonFields
     public const VAT_0 = 0;
     public const VAT_18 = 18;
     public const VAT_20 = 20;
+    public const VAT_22 = 22;
 
     public const VAT_OPTIONS = [
         self::VAT_EMPTY => '',
@@ -24,6 +25,7 @@ class CommonFields
         self::VAT_0 => '0%',
         self::VAT_18 => '18%',
         self::VAT_20 => '20%',
+        self::VAT_22 => '22%',
     ];
 
     public static function getFullVatPercent(string $date): int
@@ -31,7 +33,10 @@ class CommonFields
         if ($date < '2019-01-01') {
             return self::VAT_18;
         }
-        return self::VAT_20;
+        if ($date < '2026-01-01') {
+            return self::VAT_20;
+        }
+        return self::VAT_22;
     }
 
     public static function id(array $params = []): FieldInt
