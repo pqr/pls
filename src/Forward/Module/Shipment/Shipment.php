@@ -1367,6 +1367,8 @@ class Shipment extends ModuleAbstract
             $exceltemplate = 'ShipmentRequestPF14.xlsx';
         } elseif ($shipmentObj['CompanyID'] == Constant::OC_PLS17_OOO) {
             $exceltemplate = 'ShipmentRequestPLS17.xlsx';
+        } elseif ($shipmentObj['CompanyID'] == Constant::OC_PRO_AIR_SPB) {
+            $exceltemplate = 'ShipmentRequestProAir21.xlsx';
         } elseif ($shipmentObj['CompanyID'] == Constant::OC_PGL18_OOO) {
             $exceltemplate = 'ShipmentRequestPGL18.xlsx';
         } elseif ($shipmentObj['CompanyID'] == Constant::OC_PRO_AIR_OOO) {
