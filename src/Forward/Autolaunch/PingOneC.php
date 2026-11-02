@@ -16,7 +16,12 @@ class PingOneC extends AutolaunchAbstract
     #[\Override]
     protected function run(array $params)
     {
-        $client = new Client(['verify' => false]);
+        $client = new Client([
+            'verify' => false,
+            'auth' => ForwardConfig::$onecBasicAuthUsername !== ''
+                ? [ForwardConfig::$onecBasicAuthUsername, ForwardConfig::$onecBasicAuthPassword, 'basic']
+                : null,
+        ]);
         foreach (Constant::$onecCompany as $path) {
             $this->_msgBuff->addEmptyLine();
             $url = 'https://' . ForwardConfig::$onecIp . ":" . ForwardConfig::$onecPort . "/$path/hs/CreateCustomerInvoice";
